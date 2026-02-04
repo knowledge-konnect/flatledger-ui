@@ -26,10 +26,10 @@ const SubscriptionManagement = lazy(() => import('./pages/SubscriptionManagement
 // Loading fallback component
 function PageLoader() {
   return (
-    <div className=\"flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950\">
-      <div className=\"text-center\">
-        <div className=\"animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4\"></div>
-        <p className=\"text-slate-600 dark:text-slate-300\">Loading...</p>
+    <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+        <p className="text-slate-600 dark:text-slate-300">Loading...</p>
       </div>
     </div>
   );
@@ -48,8 +48,8 @@ export default function Router() {
     return (
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path=\"/change-password\" element={<ChangePassword />} />
-          <Route path=\"*\" element={<Navigate to=\"/change-password\" replace />} />
+          <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="*" element={<Navigate to="/change-password" replace />} />
         </Routes>
       </Suspense>
     );
@@ -60,19 +60,19 @@ export default function Router() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public routes */}
-          <Route path=\"/\" element={<LandingPage />} />
-          <Route path=\"/login\" element={!isAuthenticated ? <Login /> : <Navigate to=\"/dashboard\" />} />
-          <Route path=\"/signup\" element={!isAuthenticated ? <Signup /> : <Navigate to=\"/dashboard\" />} />
-          <Route path=\"/forgot-password\" element={<ForgotPassword />} />
-          <Route path=\"/change-password\" element={<ChangePassword />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
+          <Route path="/signup" element={!isAuthenticated ? <Signup /> : <Navigate to="/dashboard" />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/change-password" element={<ChangePassword />} />
 
           {/* Public SaaS pages */}
-          <Route path=\"/subscription\" element={<Subscription />} />
-          <Route path=\"/free-trial\" element={<FreeTrial />} />
+          <Route path="/subscription" element={<Subscription />} />
+          <Route path="/free-trial" element={<FreeTrial />} />
 
           {/* Protected routes */}
           <Route
-            path=\"/dashboard\"
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <Dashboard />
@@ -80,7 +80,7 @@ export default function Router() {
             }
           />
           <Route
-            path=\"/flats\"
+            path="/flats"
             element={
               <ProtectedRoute>
                 <Flats />
@@ -88,7 +88,7 @@ export default function Router() {
             }
           />
           <Route
-            path=\"/billing\"
+            path="/billing"
             element={
               <ProtectedRoute>
                 <Billing />
@@ -96,7 +96,7 @@ export default function Router() {
             }
           />
           <Route
-            path=\"/payments\"
+            path="/payments"
             element={
               <ProtectedRoute>
                 <Payments />
@@ -104,7 +104,7 @@ export default function Router() {
             }
           />
           <Route
-            path=\"/expenses\"
+            path="/expenses"
             element={
               <ProtectedRoute>
                 <Expenses />
@@ -112,7 +112,7 @@ export default function Router() {
             }
           />
           <Route
-            path=\"/reports\"
+            path="/reports"
             element={
               <ProtectedRoute>
                 <Reports />
@@ -120,7 +120,7 @@ export default function Router() {
             }
           />
           <Route
-            path=\"/users\"
+            path="/users"
             element={
               <ProtectedRoute>
                 <Users />
@@ -128,7 +128,7 @@ export default function Router() {
             }
           />
           <Route
-            path=\"/settings\"
+            path="/settings"
             element={
               <ProtectedRoute>
                 <Settings />
@@ -136,7 +136,7 @@ export default function Router() {
             }
           />
           <Route
-            path=\"/subscription/manage\"
+            path="/subscription/manage"
             element={
               <ProtectedRoute>
                 <SubscriptionManagement />
@@ -145,7 +145,7 @@ export default function Router() {
           />
 
           {/* Fallback */}
-          <Route path=\"*\" element={<Navigate to=\"/\" />} />
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Suspense>
 
