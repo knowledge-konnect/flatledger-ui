@@ -4,11 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthProvider';
 import { useToast } from '../components/ui/Toast';
-import { handleApiError } from '../api/client';
 import { AlertMessages } from '../lib/alertMessages';
 
 const loginSchema = z.object({
@@ -23,6 +22,7 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const {
     register,
@@ -37,39 +37,40 @@ export default function Login() {
     try {
       await login(data);
       showToast(AlertMessages.success.loginSuccess, 'success');
-      
-      // Check if user needs to change password - Router will handle the redirect
-      // Router checks the forcePasswordChange flag automatically
-      // So just navigate to dashboard and Router will redirect if needed
       setTimeout(() => {
         navigate('/dashboard');
       }, 500);
-    } catch (error: any) {
+    } catch {
       showToast(AlertMessages.error.invalidCredentials, 'error');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center px-4 py-12">
+      <div className="w-full max-w-form animate-fade-in">
         {/* Brand Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 gradient-primary rounded-xl mb-4">
-            <Building2 className="w-8 h-8 text-white" />
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-600 rounded-xl mb-4">
+            <Building2 className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Welcome back</h1>
-          <p className="subheading">Sign in to your society dashboard</p>
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white mb-1">
+            Welcome back
+          </h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Sign in to your society dashboard
+          </p>
         </div>
 
         {/* Form Card */}
-        <div className="card-base p-8 shadow-md">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <div className="card" data-testid="login-form">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Input
               label="Email or Username"
               placeholder="your@email.com or username"
-              icon={<Mail className="w-5 h-5" />}
+              icon={<Mail className="w-4 h-4" />}
               error={errors.usernameOrEmail?.message}
+              data-testid="input-email"
               {...register('usernameOrEmail')}
             />
 
@@ -77,22 +78,25 @@ export default function Login() {
               label="Password"
               type="password"
               placeholder="Enter your password"
-              icon={<Lock className="w-5 h-5" />}
+              icon={<Lock className="w-4 h-4" />}
               error={errors.password?.message}
+              data-testid="input-password"
               {...register('password')}
             />
 
-            <div className="flex items-center justify-between text-sm pt-2">
-              <label className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-300 cursor-pointer transition-colors">
+            <div className="flex items-center justify-between text-sm pt-1">
+              <label className="flex items-center gap-2 text-slate-600 dark:text-slate-400 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="rounded border-slate-300 dark:border-slate-600 accent-indigo-600"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-primary-600 focus:ring-primary-500 focus:ring-offset-0"
                 />
-                Remember me
+                <span>Remember me</span>
               </label>
               <a
                 href="/forgot-password"
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-semibold micro-interaction"
+                className="text-primary-600 hover:text-primary-700 font-medium"
               >
                 Forgot password?
               </a>
@@ -100,21 +104,21 @@ export default function Login() {
 
             <Button
               type="submit"
-              variant="primary"
-              size="lg"
-              className="w-full mt-6"
               isLoading={isLoading}
+              className="w-full mt-2"
+              size="lg"
+              data-testid="login-submit-btn"
             >
               Sign In
             </Button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Don't have an account?{' '}
               <a
                 href="/signup"
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-semibold micro-interaction"
+                className="text-primary-600 hover:text-primary-700 font-medium"
               >
                 Sign up
               </a>
@@ -123,13 +127,13 @@ export default function Login() {
         </div>
 
         {/* Footer */}
-        <p className="mt-6 text-center text-xs text-slate-600 dark:text-slate-400">
+        <p className="mt-6 text-center text-xs text-slate-400">
           By signing in, you agree to our{' '}
-          <a href="#" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-semibold">
+          <a href="#" className="text-primary-600 hover:text-primary-700">
             Terms of Service
           </a>{' '}
           and{' '}
-          <a href="#" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 font-semibold">
+          <a href="#" className="text-primary-600 hover:text-primary-700">
             Privacy Policy
           </a>
         </p>

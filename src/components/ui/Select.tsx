@@ -4,29 +4,31 @@ import { cn } from '../../lib/utils';
 export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label?: string;
   error?: string;
+  helperText?: string;
   options: { value: string; label: string }[];
 }
 
 const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, label, error, options, ...props }, ref) => {
+  ({ className, label, error, helperText, options, id, ...props }, ref) => {
+    const selectId = id || props.name || `select-${Math.random().toString(36).substr(2, 9)}`;
+    
     return (
-      <div className="w-full">
+      <div className="form-group">
         {label && (
-          <label className="block text-sm font-semibold text-slate-900 dark:text-white mb-2">
+          <label htmlFor={selectId} className="label">
             {label}
           </label>
         )}
         <select
+          id={selectId}
           ref={ref}
           className={cn(
-            'w-full px-4 py-2.5 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white',
-            'focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 dark:focus:border-indigo-500',
-            'transition-all duration-300',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
-            'hover:border-indigo-300 dark:hover:border-indigo-600',
-            error && 'border-red-500 focus:ring-red-500/50 focus:border-red-500 dark:border-red-400 dark:focus:border-red-400',
+            'input appearance-none cursor-pointer',
+            'bg-[url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3E%3Cpath stroke=\'%236b7280\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'m6 8 4 4 4-4\'/%3E%3C/svg%3E")] bg-[length:20px] bg-[right_8px_center] bg-no-repeat pr-10',
+            error && 'input-error',
             className
           )}
+          data-testid={props['data-testid'] || `select-${props.name || 'field'}`}
           {...props}
         >
           {options.map((option) => (
@@ -35,9 +37,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
             </option>
           ))}
         </select>
-        {error && (
-          <p className="mt-2 text-sm text-red-600 dark:text-red-400 font-semibold">{error}</p>
-        )}
+        {error && <p className="error-text">{error}</p>}
+        {helperText && !error && <p className="helper-text">{helperText}</p>}
       </div>
     );
   }

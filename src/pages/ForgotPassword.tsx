@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Building2, Mail, ArrowLeft } from 'lucide-react';
+import { Building2, Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import Button from '../components/ui/Button';
 import { useForgotPassword } from '../hooks/api/useAuth';
 import { useToast } from '../components/ui/Toast';
+import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -31,73 +32,73 @@ export default function ForgotPassword() {
       await forgotPasswordMutation.mutateAsync(data.email);
       setSubmitted(true);
       showToast('Password reset link sent to your email', 'success');
-    } catch (error: any) {
-      showToast(error.response?.data?.message || 'Failed to send reset link', 'error');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      showToast(err.response?.data?.message || 'Failed to send reset link', 'error');
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-violet-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center px-4">
+      <div className="w-full max-w-form animate-fade-in">
+        {/* Brand Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <Building2 className="w-10 h-10 text-indigo-600" />
-            <span className="text-2xl font-bold font-heading text-gray-900 dark:text-white">
-              SocietyLedger
-            </span>
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-600 rounded-xl mb-4">
+            <Building2 className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white mb-1">
             Reset Password
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {submitted
               ? 'Check your email for reset instructions'
               : 'Enter your email to receive a reset link'}
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-premium-lg p-8">
+        {/* Card */}
+        <div className="card" data-testid="forgot-password-form">
           {submitted ? (
-            <div className="text-center space-y-6">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
-                <Mail className="w-8 h-8 text-green-600 dark:text-green-400" />
+            <div className="text-center space-y-5">
+              <div className="w-16 h-16 bg-success-100 dark:bg-success-900/30 rounded-xl flex items-center justify-center mx-auto">
+                <CheckCircle className="w-8 h-8 text-success-600 dark:text-success-400" />
               </div>
-              <p className="text-gray-600 dark:text-gray-300">
-                We've sent a password reset link to your email address. Please check your inbox and follow the instructions.
-              </p>
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                  Email Sent!
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  We've sent a password reset link to your email address. Please check your inbox and follow the instructions.
+                </p>
+              </div>
               <Button
-                variant="outline"
+                variant="secondary"
                 className="w-full"
                 onClick={() => window.location.href = '/login'}
+                data-testid="back-to-login-btn"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
+                <ArrowLeft className="w-4 h-4" />
                 Back to Login
               </Button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="email"
-                    placeholder="Email address"
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    {...register('email')}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">
-                    {errors.email.message}
-                  </p>
-                )}
-              </div>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <Input
+                label="Email Address"
+                type="email"
+                placeholder="your@email.com"
+                icon={<Mail className="w-4 h-4" />}
+                error={errors.email?.message}
+                data-testid="input-email"
+                {...register('email')}
+              />
 
               <Button
                 type="submit"
+                isLoading={forgotPasswordMutation.isPending}
                 className="w-full"
                 size="lg"
-                isLoading={forgotPasswordMutation.isPending}
+                data-testid="send-reset-btn"
               >
                 Send Reset Link
               </Button>
@@ -107,8 +108,9 @@ export default function ForgotPassword() {
                 variant="ghost"
                 className="w-full"
                 onClick={() => window.location.href = '/login'}
+                data-testid="back-btn"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
+                <ArrowLeft className="w-4 h-4" />
                 Back to Login
               </Button>
             </form>

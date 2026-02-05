@@ -1,7 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import Button from './Button';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -34,44 +33,45 @@ export default function Modal({
   if (!isOpen) return null;
 
   const sizes = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
+    sm: 'max-w-modal-sm',
+    md: 'max-w-modal',
+    lg: 'max-w-modal-lg',
     xl: 'max-w-4xl',
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-4 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" data-testid="modal-overlay">
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300"
+        className="modal-overlay"
         onClick={onClose}
       />
       <div
         className={cn(
-          'relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg w-full animate-scale-in',
-          'max-h-[95vh] md:max-h-[90vh] overflow-hidden flex flex-col',
+          'relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl w-full',
+          'max-h-[90vh] overflow-hidden flex flex-col animate-scale-in',
           sizes[size]
         )}
+        data-testid="modal-content"
       >
         {(title || showCloseButton) && (
-          <div className="flex items-center justify-between p-4 md:p-5 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
             {title && (
-              <h2 className="text-lg md:text-xl font-semibold text-slate-900 dark:text-white">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
                 {title}
               </h2>
             )}
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="ml-auto p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-smooth focus:outline-none focus:ring-2 focus:ring-slate-500/30"
-                aria-label="Close modal"
+                className="p-2 -mr-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                data-testid="modal-close-btn"
               >
-                <X className="w-5 h-5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors" />
+                <X className="w-5 h-5 text-slate-500" />
               </button>
             )}
           </div>
         )}
-        <div className="flex-1 overflow-y-auto p-4 md:p-5 text-slate-900 dark:text-white">{children}</div>
+        <div className="flex-1 overflow-y-auto p-6">{children}</div>
       </div>
     </div>
   );
@@ -79,7 +79,7 @@ export default function Modal({
 
 export function ModalFooter({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('flex flex-col-reverse sm:flex-row items-center justify-end gap-2 sm:gap-3 px-4 md:px-5 py-3 md:py-4 border-t border-slate-200 dark:border-slate-700', className)}>
+    <div className={cn('flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-800', className)}>
       {children}
     </div>
   );

@@ -40,17 +40,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   };
 
   const styles = {
-    success: 'bg-green-600 text-white shadow-lg',
-    error: 'bg-red-600 text-white shadow-lg',
-    info: 'bg-indigo-600 text-white shadow-lg',
-    warning: 'bg-amber-600 text-white shadow-lg',
-  };
-
-  const borderStyles = {
-    success: 'border-l-4 border-green-700',
-    error: 'border-l-4 border-red-700',
-    info: 'border-l-4 border-indigo-700',
-    warning: 'border-l-4 border-amber-700',
+    success: 'bg-success-600',
+    error: 'bg-error-600',
+    info: 'bg-primary-600',
+    warning: 'bg-warning-600',
   };
 
   return (
@@ -63,19 +56,16 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <div
               key={toast.id}
               className={cn(
-                'flex items-center gap-3 p-4 rounded-lg shadow-xl pointer-events-auto',
-                'animate-in slide-in-from-right-full duration-300',
-                'animate-out slide-out-to-right-full duration-300',
-                styles[toast.type],
-                borderStyles[toast.type]
+                'flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg pointer-events-auto text-white animate-slide-up',
+                styles[toast.type]
               )}
+              data-testid="toast-notification"
             >
               <Icon className="w-5 h-5 flex-shrink-0" />
               <p className="flex-1 text-sm font-medium">{toast.message}</p>
               <button
                 onClick={() => removeToast(toast.id)}
                 className="flex-shrink-0 p-1 rounded hover:bg-white/20 transition-colors"
-                aria-label="Close notification"
               >
                 <X className="w-4 h-4" />
               </button>
