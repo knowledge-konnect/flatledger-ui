@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Building2, Mail, ArrowLeft } from 'lucide-react';
+import { Building2, Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import Button from '../components/ui/Button';
 import { useForgotPassword } from '../hooks/api/useAuth';
 import { useToast } from '../components/ui/Toast';
+import Input from '../components/ui/Input';
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -37,80 +37,83 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-violet-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <Building2 className="w-10 h-10 text-indigo-600" />
-            <span className="text-2xl font-bold font-heading text-gray-900 dark:text-white">
-              SocietyLedger
-            </span>
+    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-primary-50/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 flex items-center justify-center px-4">
+      <div className="w-full max-w-md animate-slide-in-up">
+        {/* Brand Header */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-lg shadow-primary-500/25 mb-4">
+            <Building2 className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">
             Reset Password
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
+          <p className="text-neutral-600 dark:text-neutral-400">
             {submitted
               ? 'Check your email for reset instructions'
               : 'Enter your email to receive a reset link'}
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-premium-lg p-8">
+        {/* Card */}
+        <div className="card shadow-xl">
           {submitted ? (
             <div className="text-center space-y-6">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
-                <Mail className="w-8 h-8 text-green-600 dark:text-green-400" />
+              <div className="w-20 h-20 bg-gradient-to-br from-success-100 to-success-200 dark:from-success-900/30 dark:to-success-800/30 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                <CheckCircle className="w-10 h-10 text-success-600 dark:text-success-400" />
               </div>
-              <p className="text-gray-600 dark:text-gray-300">
-                We've sent a password reset link to your email address. Please check your inbox and follow the instructions.
-              </p>
-              <Button
-                variant="outline"
-                className="w-full"
+              <div>
+                <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-2">
+                  Email Sent!
+                </h3>
+                <p className="text-neutral-600 dark:text-neutral-400">
+                  We've sent a password reset link to your email address. Please check your inbox and follow the instructions.
+                </p>
+              </div>
+              <button
                 onClick={() => window.location.href = '/login'}
+                className="btn btn-secondary w-full"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
+                <ArrowLeft className="w-4 h-4" />
                 Back to Login
-              </Button>
+              </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="email"
-                    placeholder="Email address"
-                    className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    {...register('email')}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">
-                    {errors.email.message}
-                  </p>
-                )}
-              </div>
+              <Input
+                label="Email Address"
+                type="email"
+                placeholder="your@email.com"
+                icon={<Mail className="w-5 h-5" />}
+                error={errors.email?.message}
+                {...register('email')}
+              />
 
-              <Button
+              <button
                 type="submit"
-                className="w-full"
-                size="lg"
-                isLoading={forgotPasswordMutation.isPending}
+                disabled={forgotPasswordMutation.isPending}
+                className="btn btn-primary btn-lg w-full"
               >
-                Send Reset Link
-              </Button>
+                {forgotPasswordMutation.isPending ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Sending...
+                  </>
+                ) : (
+                  'Send Reset Link'
+                )}
+              </button>
 
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                className="w-full"
                 onClick={() => window.location.href = '/login'}
+                className="btn btn-ghost w-full"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
+                <ArrowLeft className="w-4 h-4" />
                 Back to Login
-              </Button>
+              </button>
             </form>
           )}
         </div>
