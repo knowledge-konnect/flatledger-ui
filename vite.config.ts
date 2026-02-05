@@ -9,6 +9,12 @@ export default defineConfig({
     host: '0.0.0.0',
   },
   optimizeDeps: {
+    include: ['react-is'],
     exclude: ['lucide-react'],
+  },
+  resolve: {
+    alias: {
+      '@': '/app/src',
+    },
   },
 });
