@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthProvider';
 import { useToast } from '../components/ui/Toast';
 import { handleApiError } from '../api/client';
@@ -47,8 +48,8 @@ export default function Signup() {
       });
       showToast(AlertMessages.success.signupSuccess, 'success');
       navigate('/dashboard');
-    } catch (error: any) {
-      const apiError = handleApiError(error);
+    } catch (error: unknown) {
+      handleApiError(error);
       showToast(AlertMessages.error.signupFailed, 'error');
     } finally {
       setIsLoading(false);
@@ -56,35 +57,36 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-primary-50/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 flex flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-2xl animate-slide-in-up">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center px-4 py-12">
+      <div className="w-full max-w-[560px] animate-fade-in">
         {/* Brand Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-lg shadow-primary-500/25 mb-4">
-            <Building2 className="w-8 h-8 text-white" />
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-600 rounded-xl mb-4">
+            <Building2 className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white mb-1">
             Create your account
           </h1>
-          <p className="text-neutral-600 dark:text-neutral-400">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             Set up your society management in minutes
           </p>
         </div>
 
         {/* Form Card */}
-        <div className="card shadow-xl">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="card" data-testid="signup-form">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Account Details Section */}
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
                 Account Details
               </h3>
-              <div className="grid md:grid-cols-2 gap-5">
+              <div className="grid md:grid-cols-2 gap-4">
                 <Input
                   label="Full Name"
                   placeholder="John Doe"
-                  icon={<User className="w-5 h-5" />}
+                  icon={<User className="w-4 h-4" />}
                   error={errors.name?.message}
+                  data-testid="input-name"
                   {...register('name')}
                 />
 
@@ -92,100 +94,83 @@ export default function Signup() {
                   label="Email Address"
                   type="email"
                   placeholder="your@email.com"
-                  icon={<Mail className="w-5 h-5" />}
+                  icon={<Mail className="w-4 h-4" />}
                   error={errors.email?.message}
+                  data-testid="input-email"
                   {...register('email')}
                 />
               </div>
 
-              <div className="mt-5">
+              <div className="mt-4">
                 <Input
                   label="Password"
                   type="password"
                   placeholder="Min. 6 characters"
-                  icon={<Lock className="w-5 h-5" />}
+                  icon={<Lock className="w-4 h-4" />}
                   error={errors.password?.message}
+                  data-testid="input-password"
                   {...register('password')}
                 />
               </div>
             </div>
 
             {/* Divider */}
-            <div className="border-t border-neutral-200 dark:border-neutral-700" />
+            <div className="border-t border-slate-200 dark:border-slate-800" />
 
             {/* Society Details Section */}
             <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-4">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">
                 Society Information
               </h3>
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <Input
                   label="Society Name"
                   placeholder="e.g., Greenwoods Apartments"
-                  icon={<Building2 className="w-5 h-5" />}
+                  icon={<Building2 className="w-4 h-4" />}
                   error={errors.societyName?.message}
+                  data-testid="input-society-name"
                   {...register('societyName')}
                 />
 
-                <div>
-                  <label className="label">
-                    Society Address
-                  </label>
+                <div className="form-group">
+                  <label className="label">Society Address</label>
                   <div className="relative">
-                    <MapPin className="absolute left-4 top-4 w-5 h-5 text-neutral-400 dark:text-neutral-500 pointer-events-none" />
+                    <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
                     <textarea
                       placeholder="Enter full society address"
                       rows={3}
                       className={cn(
-                        'w-full pl-12 pr-4 py-3 rounded-xl',
-                        'text-base',
-                        'bg-white dark:bg-neutral-800',
-                        'text-neutral-900 dark:text-white',
-                        'placeholder:text-neutral-400 dark:placeholder:text-neutral-500',
-                        'border-2 border-neutral-200 dark:border-neutral-700',
-                        'focus:border-primary-500 dark:focus:border-primary-500',
-                        'focus:ring-4 focus:ring-primary-500/10',
-                        'transition-all duration-200',
-                        'outline-none resize-none',
-                        errors.societyAddress && 'border-error-500 focus:border-error-500 focus:ring-error-500/10'
+                        'input pl-10 min-h-[80px] py-2.5 resize-none',
+                        errors.societyAddress && 'input-error'
                       )}
+                      data-testid="input-society-address"
                       {...register('societyAddress')}
                     />
                   </div>
                   {errors.societyAddress && (
-                    <p className="mt-2 text-sm text-error-600 dark:text-error-400 font-medium animate-slide-in-up">
-                      {errors.societyAddress.message}
-                    </p>
+                    <p className="error-text">{errors.societyAddress.message}</p>
                   )}
                 </div>
               </div>
             </div>
 
-            <button
+            <Button
               type="submit"
-              disabled={isLoading}
-              className="btn btn-primary btn-lg w-full mt-8"
+              isLoading={isLoading}
+              className="w-full mt-2"
+              size="lg"
+              data-testid="signup-submit-btn"
             >
-              {isLoading ? (
-                <>
-                  <svg className="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Creating account...
-                </>
-              ) : (
-                'Create Account'
-              )}
-            </button>
+              Create Account
+            </Button>
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Already have an account?{' '}
               <a
                 href="/login"
-                className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-semibold transition-colors"
+                className="text-primary-600 hover:text-primary-700 font-medium"
               >
                 Sign in
               </a>
