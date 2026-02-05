@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthProvider';
 import { ToastProvider } from './components/ui/Toast';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import Router from './Router';
 
 const queryClient = new QueryClient({
@@ -17,17 +18,19 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <ToastProvider>
-            <AuthProvider>
-              <Router />
-            </AuthProvider>
-          </ToastProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <ToastProvider>
+              <AuthProvider>
+                <Router />
+              </AuthProvider>
+            </ToastProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

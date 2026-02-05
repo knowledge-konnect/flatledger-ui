@@ -1,12 +1,23 @@
 import { useEffect, useState } from 'react';
 
-export function useDebounce<T>(value: T, delay = 300) {
-  const [debounced, setDebounced] = useState(value);
+/**
+ * Debounces a value by delaying updates until after a specified time
+ * Perfect for search inputs, API calls, etc.
+ * @param value - The value to debounce
+ * @param delay - Delay in milliseconds (default: 500ms)
+ */
+export function useDebounce<T>(value: T, delay: number = 500): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
-    const id = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(id);
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
   }, [value, delay]);
 
-  return debounced;
+  return debouncedValue;
 }
