@@ -15,13 +15,13 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ChangePassword = lazy(() => import('./pages/ChangePassword'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Flats = lazy(() => import('./pages/Flats'));
-const Billing = lazy(() => import('./pages/Billing'));
-const Payments = lazy(() => import('./pages/Payments'));
+const Maintenance = lazy(() => import('./pages/Maintenance'));
 const Expenses = lazy(() => import('./pages/Expenses'));
 const Reports = lazy(() => import('./pages/Reports'));
 const Users = lazy(() => import('./pages/Users'));
 const Settings = lazy(() => import('./pages/Settings'));
 const SubscriptionManagement = lazy(() => import('./pages/SubscriptionManagement'));
+const PremiumDashboard = lazy(() => import('./pages/PremiumDashboard'));
 
 // Loading fallback component
 function PageLoader() {
@@ -44,7 +44,6 @@ export default function Router() {
 
   // If user is authenticated and needs to change password, redirect to change password page
   if (isAuthenticated && user && user.forcePasswordChange === true) {
-    console.log('[ROUTER DEBUG] User requires password change, redirecting to /change-password');
     return (
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -88,18 +87,10 @@ export default function Router() {
             }
           />
           <Route
-            path="/billing"
+            path="/maintenance"
             element={
               <ProtectedRoute>
-                <Billing />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/payments"
-            element={
-              <ProtectedRoute>
-                <Payments />
+                <Maintenance />
               </ProtectedRoute>
             }
           />
@@ -140,6 +131,14 @@ export default function Router() {
             element={
               <ProtectedRoute>
                 <SubscriptionManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/premium-dashboard"
+            element={
+              <ProtectedRoute>
+                <PremiumDashboard />
               </ProtectedRoute>
             }
           />

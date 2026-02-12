@@ -10,8 +10,12 @@ import { Alert, AlertDescription } from '../components/ui/Alert';
 import { useSubscription } from '../hooks/useSubscription';
 import { useRazorpayPayment } from '../hooks/useRazorpayPayment';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../components/ui/Toast';
+import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 
 export default function SubscriptionManagement() {
+    const { showToast } = useToast();
+    const { showErrorToast } = useApiErrorToast();
     const navigate = useNavigate();
     const {
         accessAllowed,
@@ -23,7 +27,6 @@ export default function SubscriptionManagement() {
         loading,
         error,
         createTrial,
-        subscribe,
         cancelSubscription,
         refreshStatus,
         clearError,
@@ -34,7 +37,7 @@ export default function SubscriptionManagement() {
 
     const { isLoading: isPaymentLoading, isProcessing, initiatePayment } = useRazorpayPayment(
         // onPaymentSuccess
-        (subscriptionId: string) => {
+        (_subscriptionId: string) => {
             setPaymentError(null);
             // Refresh subscription status to reflect active subscription
             refreshStatus().then(() => {
@@ -61,8 +64,25 @@ export default function SubscriptionManagement() {
     const handleCreateTrial = async () => {
         try {
             await createTrial();
-        } catch (error) {
-            console.error('Error creating trial:', error);
+        } catch (error: any) {
+            const errorData = error?.response?.data;
+            if (errorData) {
+                showErrorToast({
+                    ok: false,
+                    message: errorData.message || 'Failed to create trial',
+                    code: errorData.code,
+                    fieldErrors: errorData.errors?.reduce(
+                        (acc: any, err: any) => {
+                            acc[err.field] = err.messages;
+                            return acc;
+                        },
+                        {}
+                    ),
+                    traceId: errorData.traceId,
+                });
+            } else {
+                showToast('Failed to create trial', 'error');
+            }
         }
     };
 
@@ -77,8 +97,25 @@ export default function SubscriptionManagement() {
                 amount,
                 currency: 'INR',
             });
-        } catch (error) {
-            setPaymentError(error instanceof Error ? error.message : 'Failed to initiate payment');
+        } catch (error: any) {
+            const errorData = error?.response?.data;
+            const errorMessage = errorData?.message || 'Failed to initiate payment';
+            setPaymentError(errorMessage);
+            if (errorData) {
+                showErrorToast({
+                    ok: false,
+                    message: errorMessage,
+                    code: errorData.code,
+                    fieldErrors: errorData.errors?.reduce(
+                        (acc: any, err: any) => {
+                            acc[err.field] = err.messages;
+                            return acc;
+                        },
+                        {}
+                    ),
+                    traceId: errorData.traceId,
+                });
+            }
         }
     };
 
@@ -87,8 +124,25 @@ export default function SubscriptionManagement() {
         if (reason) {
             try {
                 await cancelSubscription(reason);
-            } catch (error) {
-                console.error('Error canceling subscription:', error);
+            } catch (error: any) {
+                const errorData = error?.response?.data;
+                if (errorData) {
+                    showErrorToast({
+                        ok: false,
+                        message: errorData.message || 'Failed to cancel subscription',
+                        code: errorData.code,
+                        fieldErrors: errorData.errors?.reduce(
+                            (acc: any, err: any) => {
+                                acc[err.field] = err.messages;
+                                return acc;
+                            },
+                            {}
+                        ),
+                        traceId: errorData.traceId,
+                    });
+                } else {
+                    showToast('Failed to cancel subscription', 'error');
+                }
             }
         }
     };
@@ -115,7 +169,7 @@ export default function SubscriptionManagement() {
                 return 'info';
             case 'expired':
             case 'cancelled':
-                return 'danger';
+                return 'error';
             default:
                 return 'default';
         }
@@ -126,7 +180,7 @@ export default function SubscriptionManagement() {
             <div className="space-y-6">
                 {/* Error Display */}
                 {error && (
-                    <Alert variant="destructive">
+                    <Alert variant="error">
                         <AlertTriangle className="h-4 w-4" />
                         <AlertDescription>{error}</AlertDescription>
                         <Button variant="ghost" size="sm" onClick={clearError} className="ml-auto">
@@ -137,7 +191,7 @@ export default function SubscriptionManagement() {
 
                 {/* Payment Error Display */}
                 {paymentError && (
-                    <Alert variant="destructive">
+                    <Alert variant="error">
                         <AlertTriangle className="h-4 w-4" />
                         <AlertDescription>{paymentError}</AlertDescription>
                         <Button

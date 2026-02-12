@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Plus, Copy, Check, Edit, Trash, AlertCircle } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -21,9 +21,13 @@ import { formatDate } from '../lib/utils';
 import { useUsers, useCreateUser } from '../hooks/useUsers';
 import { usersApi } from '../api/usersApi';
 import { useToast } from '../components/ui/Toast';
-import { RoleId, RoleCode, ROLE_CODE_TO_ID, ROLE_LABELS, ROLE_ID_TO_CODE } from '../types/roles';
+import { useApiErrorToast } from '../hooks/useApiErrorHandler';
+import { RoleId } from '../types/roles';
 import { User } from '../api/usersApi';
 import { AlertMessages } from '../lib/alertMessages';
+import { useFlats } from '../hooks/useFlatsApi';
+import { FlatDto } from '../api/flatsApi';
+import { useAuth } from '../contexts/AuthProvider';
 
 /* =====================================================
    ROLE CONFIGURATION
@@ -38,9 +42,9 @@ const ROLE_OPTIONS = [
 
 const ROLE_ID_BADGE: Record<
   RoleId,
-  { label: string; variant: 'danger' | 'info' | 'default' | 'success' }
+  { label: string; variant: 'error' | 'info' | 'default' | 'success' }
 > = {
-  [RoleId.SOCIETY_ADMIN]: { label: 'Society Admin', variant: 'danger' },
+  [RoleId.SOCIETY_ADMIN]: { label: 'Society Admin', variant: 'error' },
   [RoleId.ACCOUNTANT]: { label: 'Accountant', variant: 'info' },
   [RoleId.MEMBER]: { label: 'Member', variant: 'default' },
   [RoleId.AUDITOR]: { label: 'Auditor', variant: 'success' },
@@ -70,13 +74,39 @@ export default function Users() {
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [selectedRoleId, setSelectedRoleId] = useState<RoleId>(RoleId.MEMBER); // default role
+  const [selectedFlatPublicId, setSelectedFlatPublicId] = useState<string>('');
 
   // API hooks
   const { data: usersData, isLoading, isError } = useUsers();
   const createUserMutation = useCreateUser();
   const { showToast } = useToast();
+  const { showErrorToast } = useApiErrorToast();
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
+  const { data: flatsData = [] } = useFlats(currentUser?.societyId ? Number(currentUser.societyId) : undefined);
   const users = (usersData || []) as User[];
+  const flats = (flatsData || []) as FlatDto[];
+
+  /* =====================================================
+     HELPER FUNCTIONS
+  ===================================================== */
+
+  // Auto-populate email and mobile when a flat owner is selected
+  const handleFlatSelection = (flatPublicId: string) => {
+    setSelectedFlatPublicId(flatPublicId);
+    const selectedFlat = flats.find(f => f.publicId === flatPublicId);
+    if (selectedFlat) {
+      setName(selectedFlat.ownerName);
+      setEmail(selectedFlat.contactEmail || '');
+      setMobile(selectedFlat.contactMobile || '');
+    }
+  };
+
+  // Create dropdown options from flats
+  const flatOwnerOptions = flats.map(flat => ({
+    value: flat.publicId,
+    label: `${flat.ownerName} (${flat.flatNo})`
+  }));
 
   /* =====================================================
      CREATE USER
@@ -108,9 +138,27 @@ export default function Users() {
       setShowModal(false);
       setName('');
       setEmail('');
+      setMobile('');
       setSelectedRoleId(RoleId.MEMBER);
+      setSelectedFlatPublicId('');
     } catch (error: any) {
-      showToast(AlertMessages.error.userCreationFailed, 'error');
+      if (error?.response?.data) {
+        showErrorToast({
+          ok: false,
+          message: error.response.data.message || AlertMessages.error.userCreationFailed,
+          code: error.response.data.code,
+          fieldErrors: error.response.data.errors?.reduce(
+            (acc: any, err: any) => {
+              acc[err.field] = err.messages;
+              return acc;
+            },
+            {}
+          ),
+          traceId: error.response.data.traceId,
+        });
+      } else {
+        showToast(AlertMessages.error.userCreationFailed, 'error');
+      }
     }
   }
 
@@ -148,8 +196,25 @@ export default function Users() {
       setEmail('');
       setMobile('');
       setSelectedRoleId(RoleId.MEMBER);
+      setSelectedFlatPublicId('');
     } catch (error: any) {
-      showToast(AlertMessages.error.userUpdateFailed, 'error');
+      if (error?.response?.data) {
+        showErrorToast({
+          ok: false,
+          message: error.response.data.message || AlertMessages.error.userUpdateFailed,
+          code: error.response.data.code,
+          fieldErrors: error.response.data.errors?.reduce(
+            (acc: any, err: any) => {
+              acc[err.field] = err.messages;
+              return acc;
+            },
+            {}
+          ),
+          traceId: error.response.data.traceId,
+        });
+      } else {
+        showToast(AlertMessages.error.userUpdateFailed, 'error');
+      }
     } finally {
       setIsUpdating(false);
     }
@@ -173,7 +238,23 @@ export default function Users() {
       setShowDeleteModal(false);
       setDeleteTarget(null);
     } catch (error: any) {
-      showToast(AlertMessages.error.userDeleteFailed, 'error');
+      if (error?.response?.data) {
+        showErrorToast({
+          ok: false,
+          message: error.response.data.message || AlertMessages.error.userDeleteFailed,
+          code: error.response.data.code,
+          fieldErrors: error.response.data.errors?.reduce(
+            (acc: any, err: any) => {
+              acc[err.field] = err.messages;
+              return acc;
+            },
+            {}
+          ),
+          traceId: error.response.data.traceId,
+        });
+      } else {
+        showToast(AlertMessages.error.userDeleteFailed, 'error');
+      }
     } finally {
       setIsDeleting(false);
     }
@@ -326,7 +407,7 @@ export default function Users() {
                     </TableCell>
 
                     <TableCell className="hidden xl:table-cell">
-                      <Badge variant={user.forcePasswordChange ? 'danger' : 'success'} className="text-xs">
+                      <Badge variant={user.forcePasswordChange ? 'error' : 'success'} className="text-xs">
                         {user.forcePasswordChange ? 'Required' : 'Changed'}
                       </Badge>
                     </TableCell>
@@ -395,14 +476,25 @@ export default function Users() {
           setEmail('');
           setMobile('');
           setSelectedRoleId(RoleId.MEMBER);
+          setSelectedFlatPublicId('');
         }}
         title={isEditing ? 'Edit User' : 'Add User'}
       >
-        <div className="space-y-4">
+        <div className="space-y-4 p-6">
+          {!isEditing && (
+            <Select
+              label="Select Flat Owner"
+              value={selectedFlatPublicId}
+              onChange={(e) => handleFlatSelection(e.target.value)}
+              options={flatOwnerOptions.length > 0 ? flatOwnerOptions : [{ value: '', label: 'No flat owners available' }]}
+            />
+          )}
+
           <Input
             label="Full Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            readOnly={!isEditing && selectedFlatPublicId !== ''}
           />
 
           <Input
@@ -410,6 +502,7 @@ export default function Users() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            readOnly={!isEditing && selectedFlatPublicId !== ''}
           />
 
           <Input
@@ -418,6 +511,7 @@ export default function Users() {
             value={mobile}
             onChange={(e) => setMobile(e.target.value)}
             placeholder="+91 XXXXX XXXXX"
+            readOnly={!isEditing && selectedFlatPublicId !== ''}
           />
 
           <Select
@@ -462,7 +556,7 @@ export default function Users() {
         title="✅ User Created Successfully"
         size="md"
       >
-        <div className="space-y-3 overflow-hidden">
+        <div className="space-y-3 overflow-hidden p-6">
           {/* Success Header - Compact */}
           <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/40 dark:to-emerald-900/40 p-3 rounded-lg border-2 border-green-400 dark:border-green-600">
             <p className="text-xs font-bold text-green-900 dark:text-green-100 mb-2">📋 USER DETAILS</p>
@@ -540,7 +634,7 @@ export default function Users() {
         title="⚠️ Password Not Copied"
         size="sm"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 p-6">
           <p className="text-sm text-gray-900 dark:text-gray-100">
             You haven't copied the temporary password yet. Once you close this dialog, <strong>you won't be able to retrieve it</strong>.
           </p>
@@ -599,7 +693,7 @@ export default function Users() {
         title="Delete User"
         size="sm"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 p-6">
           {deleteTarget && (
             <>
               <p className="text-sm text-foreground">

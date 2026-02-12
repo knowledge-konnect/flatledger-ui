@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useForgotPassword } from '../hooks/api/useAuth';
 import { useToast } from '../components/ui/Toast';
+import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 
@@ -17,6 +18,7 @@ type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export default function ForgotPassword() {
   const [submitted, setSubmitted] = useState(false);
   const { showToast } = useToast();
+  const { showErrorToast } = useApiErrorToast();
   const forgotPasswordMutation = useForgotPassword();
 
   const {
@@ -33,8 +35,24 @@ export default function ForgotPassword() {
       setSubmitted(true);
       showToast('Password reset link sent to your email', 'success');
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      showToast(err.response?.data?.message || 'Failed to send reset link', 'error');
+      const errorData = (error as any)?.response?.data;
+      if (errorData) {
+        showErrorToast({
+          ok: false,
+          message: errorData.message || 'Failed to send reset link',
+          code: errorData.code,
+          fieldErrors: errorData.errors?.reduce(
+            (acc: any, err: any) => {
+              acc[err.field] = err.messages;
+              return acc;
+            },
+            {}
+          ),
+          traceId: errorData.traceId,
+        });
+      } else {
+        showToast('Failed to send reset link', 'error');
+      }
     }
   };
 

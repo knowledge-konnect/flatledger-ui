@@ -156,7 +156,7 @@ src/
 │   ├── ForgotPassword.tsx
 │   ├── LandingPage.tsx
 │   ├── Login.tsx
-│   ├── Payments.tsx
+│   ├── Maintenance.tsx
 │   ├── Reports.tsx
 │   ├── Settings.tsx
 │   ├── Signup.tsx

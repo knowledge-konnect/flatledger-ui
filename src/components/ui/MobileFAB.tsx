@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, X, FileText, CreditCard, TrendingDown, Building } from 'lucide-react';
+import { Plus, X, CreditCard, TrendingDown, Building } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface FABAction {
@@ -14,15 +14,9 @@ export default function MobileFAB() {
 
   const actions: FABAction[] = [
     {
-      icon: FileText,
-      label: 'Generate Bills',
-      onClick: () => window.location.href = '/billing',
-      color: 'bg-indigo-600',
-    },
-    {
       icon: CreditCard,
       label: 'Record Payment',
-      onClick: () => window.location.href = '/payments',
+      onClick: () => window.location.href = '/maintenance',
       color: 'bg-green-600',
     },
     {

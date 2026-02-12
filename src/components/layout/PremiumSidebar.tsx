@@ -2,7 +2,6 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home,
   Building,
-  Receipt,
   DollarSign,
   TrendingDown,
   BarChart3,
@@ -30,8 +29,7 @@ export function PremiumSidebar({ onCollapse }: SidebarProps) {
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
-    } catch (error) {
-      console.error('Error parsing user data:', error);
+    } catch {
     }
   }, []);
 
@@ -49,8 +47,7 @@ export function PremiumSidebar({ onCollapse }: SidebarProps) {
   const navigationItems = [
     { to: '/dashboard', icon: Home, label: 'Dashboard' },
     { to: '/flats', icon: Building, label: 'Flats' },
-    { to: '/billing', icon: Receipt, label: 'Billing' },
-    { to: '/payments', icon: DollarSign, label: 'Payments' },
+    { to: '/maintenance', icon: DollarSign, label: 'Maintenance' },
     { to: '/expenses', icon: TrendingDown, label: 'Expenses' },
   ];
 

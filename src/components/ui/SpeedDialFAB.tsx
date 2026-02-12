@@ -100,18 +100,18 @@ export function DashboardFAB() {
     {
       icon: FileText,
       label: 'Generate Bill',
-      onClick: () => console.log('Generate Bill'),
+      onClick: () => {},
     },
     {
       icon: DollarSign,
       label: 'Record Payment',
-      onClick: () => console.log('Record Payment'),
+      onClick: () => {},
       color: 'bg-green-600 hover:bg-green-700',
     },
     {
       icon: TrendingDown,
       label: 'Add Expense',
-      onClick: () => console.log('Add Expense'),
+      onClick: () => {},
       color: 'bg-red-600 hover:bg-red-700',
     },
   ];

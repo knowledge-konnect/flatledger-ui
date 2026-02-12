@@ -8,6 +8,7 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthProvider';
 import { useToast } from '../components/ui/Toast';
+import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { AlertMessages } from '../lib/alertMessages';
 
 const loginSchema = z.object({
@@ -19,6 +20,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const { showToast } = useToast();
+  const { showErrorToast } = useApiErrorToast();
   const { login } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -40,8 +42,25 @@ export default function Login() {
       setTimeout(() => {
         navigate('/dashboard');
       }, 500);
-    } catch {
-      showToast(AlertMessages.error.invalidCredentials, 'error');
+    } catch (error: any) {
+      const errorData = error?.response?.data;
+      if (errorData) {
+        showErrorToast({
+          ok: false,
+          message: errorData.message || AlertMessages.error.invalidCredentials,
+          code: errorData.code,
+          fieldErrors: errorData.errors?.reduce(
+            (acc: any, err: any) => {
+              acc[err.field] = err.messages;
+              return acc;
+            },
+            {}
+          ),
+          traceId: errorData.traceId,
+        });
+      } else {
+        showToast(AlertMessages.error.invalidCredentials, 'error');
+      }
       setIsLoading(false);
     }
   };

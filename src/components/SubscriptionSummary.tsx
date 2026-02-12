@@ -8,7 +8,7 @@ import { useSubscription } from '../hooks/useSubscription';
 
 export const SubscriptionSummary: React.FC = () => {
   const navigate = useNavigate();
-  const { status, trialDaysRemaining, planName, monthlyAmount, loading } = useSubscription();
+  const { status, trialDaysRemaining, planName, loading } = useSubscription();
 
   const getStatusIcon = () => {
     switch (status) {
@@ -38,18 +38,12 @@ export const SubscriptionSummary: React.FC = () => {
     }
   };
 
+  // Always show Upgrade button for testing, but restore previous navigation
   const getActionButton = () => {
-    if (status === 'trial' || status === 'expired' || status === 'cancelled') {
-      return (
-        <Button size="sm" onClick={() => navigate('/subscription/manage')} data-testid="upgrade-btn">
-          <Crown className="h-4 w-4" />
-          Upgrade
-        </Button>
-      );
-    }
     return (
-      <Button variant="secondary" size="sm" onClick={() => navigate('/subscription/manage')} data-testid="view-details-btn">
-        View Details
+      <Button size="sm" onClick={() => navigate('/subscription/manage')} data-testid="upgrade-btn">
+        <Crown className="h-4 w-4" />
+        Upgrade
       </Button>
     );
   };
@@ -84,8 +78,13 @@ export const SubscriptionSummary: React.FC = () => {
           {planName && (
             <p className="text-sm text-slate-500">
               {planName}
-              {monthlyAmount && ` - ₹${monthlyAmount}/month`}
             </p>
+          )}
+          {status === 'trial' && trialDaysRemaining !== null && (
+            <p className="text-xs text-info-600">Your free trial is active. Enjoy all features for {trialDaysRemaining} more day{trialDaysRemaining === 1 ? '' : 's'}.</p>
+          )}
+          {status === 'expired' && (
+            <p className="text-xs text-error-600">Your trial has ended. Please contact support to renew your subscription.</p>
           )}
         </div>
         {getActionButton()}

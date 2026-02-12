@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, Download, Edit, Trash, AlertCircle } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import StatusBadge from '../components/ui/StatusBadge';
@@ -16,6 +15,7 @@ import { formatCurrency } from '../lib/utils';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { logger } from '../lib/logger';
 
 const flatSchema = z.object({
   flatNumber: z.string().min(1, 'Flat number is required'),
@@ -34,6 +34,7 @@ type FlatFormData = z.infer<typeof flatSchema>;
 import { useFlats, useCreateFlat, useUpdateFlat, useDeleteFlat } from '../hooks/useFlatsApi';
 import { useAuth } from '../contexts/AuthProvider';
 import { useToast } from '../components/ui/Toast';
+import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 
 // We'll map API FlatDto to the UI model used below
 type UIFLat = {
@@ -57,8 +58,8 @@ export default function Flats() {
   const debouncedSearch = useDebounce(searchQuery, 250);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [sortBy, setSortBy] = useState<'createdAt' | 'flatNumber'>('createdAt');
-  const [sortDir, setSortDir] = useState<'desc' | 'asc'>('desc');
+  const [sortBy] = useState<'createdAt' | 'flatNumber'>('createdAt');
+  const [sortDir] = useState<'desc' | 'asc'>('desc');
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedFlat, setSelectedFlat] = useState<any>(null);
@@ -67,14 +68,20 @@ export default function Flats() {
   const { user } = useAuth();
   const societyId = user?.societyId ? Number(user.societyId) : undefined;
 
-  const { data: apiFlats, isLoading: apiFlatsLoading, isError: apiFlatsError } = useFlats(societyId);
+  const { data: apiFlats, isLoading: apiFlatsLoading } = useFlats(societyId);
+  
   const createFlat = useCreateFlat();
   const updateFlat = useUpdateFlat();
   const deleteFlat = useDeleteFlat();
   const { data: statuses } = useFlatStatuses();
   const { showToast } = useToast();
+  const { showErrorToast } = useApiErrorToast();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<UIFLat | null>(null);
+
+  // Ensure arrays are always arrays (memoized to prevent infinite loop)
+  const safeStatuses = useMemo(() => Array.isArray(statuses) ? statuses : [], [statuses]);
+  const safeApiFlats = useMemo(() => Array.isArray(apiFlats) ? apiFlats : [], [apiFlats]);
 
   // explicit empty form baseline
   const emptyForm: FlatFormData = {
@@ -157,16 +164,32 @@ export default function Flats() {
           showToast('Flat created successfully', 'success');
         }
       }
-    } catch (error) {
-      console.error('Error adding flat:', error);
-      showToast('Failed to add flat. Please try again.', 'error');
+    } catch (error: any) {
+      if (error?.response?.data) {
+        showErrorToast({
+          ok: false,
+          message: error.response.data.message || 'Failed to add flat. Please try again.',
+          code: error.response.data.code,
+          fieldErrors: error.response.data.errors?.reduce(
+            (acc: any, err: any) => {
+              acc[err.field] = err.messages;
+              return acc;
+            },
+            {}
+          ),
+          traceId: error.response.data.traceId,
+        });
+      } else {
+        showToast(error?.message || 'Failed to add flat. Please try again.', 'error');
+      }
     }
   };
 
   // Map API flats to UI model whenever apiFlats or statuses change
   useEffect(() => {
-    if (!apiFlats) return;
-    const mapped = apiFlats.map((f) => {
+    if (!safeApiFlats || !Array.isArray(safeApiFlats)) return;
+    logger.log(`[Flats] Mapping ${safeApiFlats.length} API flats to UI model with ${safeStatuses.length} available statuses`);
+    const mapped = safeApiFlats.map((f) => {
       let statusDisplay = '';
       let sid: number | undefined;
       // Prefer server-provided display name
@@ -175,10 +198,10 @@ export default function Flats() {
         sid = (f as any).statusId as number | undefined;
       } else if ((f as any).statusId != null) {
         sid = (f as any).statusId as number;
-        statusDisplay = statuses?.find(s => s.id === sid)?.displayName ?? String(sid);
+        statusDisplay = safeStatuses.find(s => s.id === sid)?.displayName ?? String(sid);
       } else if ((f as any).status) {
         const code = (f as any).status as string;
-        statusDisplay = statuses?.find(s => s.code === code)?.displayName ?? code;
+        statusDisplay = safeStatuses.find(s => s.code === code)?.displayName ?? code;
       }
 
       return {
@@ -195,8 +218,9 @@ export default function Flats() {
         createdAt: (f as any).createdAt,
       } as UIFLat;
     });
+    logger.log(`[Flats] Successfully mapped ${mapped.length} UI flats`);
     setFlats(mapped);
-  }, [apiFlats, statuses]);
+  }, [safeApiFlats, safeStatuses]);
 
   // Filter, sort and paginate
   const processed = flats.filter(flat => {
@@ -387,7 +411,7 @@ export default function Flats() {
         title={isEditing ? 'Edit Flat' : 'Add New Flat'}
         size="lg"
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="form-group space-y-4 md:space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="form-group space-y-4 md:space-y-6 p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="form-field">
               <label className="block text-sm font-semibold text-foreground mb-2">
@@ -397,7 +421,7 @@ export default function Flats() {
                 type="text"
                 placeholder="e.g., A-101"
                 {...register('flatNumber')}
-                className="input-base"
+                className="input"
               />
               {errors.flatNumber && (
                 <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
@@ -415,7 +439,7 @@ export default function Flats() {
                 type="text"
                 placeholder="Full name"
                 {...register('ownerName')}
-                className="input-base"
+                className="input"
               />
               {errors.ownerName && (
                 <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
@@ -433,7 +457,7 @@ export default function Flats() {
                 type="email"
                 placeholder="owner@example.com"
                 {...register('ownerEmail')}
-                className="input-base"
+                className="input"
               />
               {errors.ownerEmail && (
                 <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
@@ -453,7 +477,7 @@ export default function Flats() {
                 minLength={10}
                 placeholder="+1234567890"
                 {...register('ownerPhone')}
-                className="input-base"
+                className="input"
               />
               {errors.ownerPhone && (
                 <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
@@ -472,7 +496,7 @@ export default function Flats() {
                 placeholder="5000"
                 step="0.01"
                 {...register('maintenanceAmount')}
-                className="input-base"
+                className="input"
               />
               {errors.maintenanceAmount && (
                 <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
@@ -488,10 +512,10 @@ export default function Flats() {
               </label>
               <select
                 {...register('statusId')}
-                className="input-base"
+                className="input"
               >
                 <option value="">Select Status</option>
-                {statuses?.map((s) => (
+                {safeStatuses.map((s) => (
                   <option key={s.id} value={s.id}>{s.displayName}</option>
                 ))}
               </select>
@@ -538,7 +562,7 @@ export default function Flats() {
         title="Delete Flat"
         size="sm"
       >
-        <div className="py-4">
+        <div className="py-4 px-6">
           <p className="text-sm text-gray-700 dark:text-gray-300">Are you sure you want to delete <strong>{deleteTarget?.flatNumber}</strong>? This action cannot be undone.</p>
         </div>
         <ModalFooter>
@@ -563,9 +587,25 @@ export default function Flats() {
                 showToast('Flat deleted', 'success');
                 setShowDeleteModal(false);
                 setDeleteTarget(null);
-              } catch (err) {
-                console.error('Delete failed', err);
-                showToast('Failed to delete flat', 'error');
+              } catch (err: any) {
+                const errorData = err?.response?.data;
+                if (errorData) {
+                  showErrorToast({
+                    ok: false,
+                    message: errorData.message || 'Failed to delete flat',
+                    code: errorData.code,
+                    fieldErrors: errorData.errors?.reduce(
+                      (acc: any, errItem: any) => {
+                        acc[errItem.field] = errItem.messages;
+                        return acc;
+                      },
+                      {}
+                    ),
+                    traceId: errorData.traceId,
+                  });
+                } else {
+                  showToast('Failed to delete flat', 'error');
+                }
               }
             }}
           >

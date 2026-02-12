@@ -1,35 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSubscription } from '../hooks/useSubscription';
 import Button from '../components/ui/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import CardDescription from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
-import { Alert, AlertDescription } from '../components/ui/Alert';
 import { Loader2, CheckCircle, XCircle, AlertTriangle, CreditCard, Calendar } from 'lucide-react';
+import { usePlans } from '../hooks/usePlans';
+import { Alert, AlertDescription } from '../components/ui/Alert';
+import { useToast } from '../components/ui/Toast';
 
-interface SubscriptionManagerProps {
-  onTrialCreated?: (trialEnd: string) => void;
-  onSubscribed?: (subscriptionId: string) => void;
-  onCancelled?: () => void;
-}
-
-/**
- * SubscriptionManager Component
- *
- * A comprehensive React component for managing user subscriptions
- * Features:
- * - Displays current subscription status
- * - Handles trial creation
- * - Manages subscription actions (subscribe/cancel)
- * - Error handling with retry logic
- * - Loading states and user feedback
- * - Error boundaries for graceful failure handling
- */
-export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
-  onTrialCreated,
-  onSubscribed,
-  onCancelled,
-}) => {
+export const SubscriptionManager: React.FC = () => {
+  const { showToast } = useToast();
   const {
     accessAllowed,
     status,
@@ -46,44 +26,45 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
     clearError,
   } = useSubscription();
 
-  // Handle trial creation on component mount if no subscription exists
-  useEffect(() => {
-    if (status === null && !loading) {
-      // Automatically create trial for new users
-      handleCreateTrial();
-    }
-  }, [status, loading]);
+  // Plan selection state
+  const { plans, plansLoading, plansError } = usePlans();
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
-  const handleCreateTrial = async () => {
-    try {
-      const result = await createTrial();
-      if (result?.succeeded) {
-        onTrialCreated?.(result.trialEnd);
-      }
-    } catch (error) {
-      console.error('Error creating trial:', error);
+  // Set default selected plan when plans load
+  React.useEffect(() => {
+    if (plans.length > 0 && !selectedPlanId) {
+      setSelectedPlanId(plans[0].id);
     }
-  };
+  }, [plans, selectedPlanId]);
 
-  const handleSubscribe = async (planId: string, amount: number, paymentMethod: string, paymentReference: string) => {
+  const [subscribing, setSubscribing] = useState(false);
+  const handleSubscribe = async () => {
+    if (!selectedPlanId) return;
+    const plan = plans.find((p) => p.id === selectedPlanId);
+    if (!plan) return;
+    setSubscribing(true);
     try {
-      const result = await subscribe(planId, amount, paymentMethod, paymentReference);
-      if (result?.succeeded) {
-        onSubscribed?.(result.data.subscriptionId);
-      }
+      await subscribe(plan.id, plan.monthlyAmount, 'razorpay', 'demo_ref');
+      showToast('Subscription successful!', 'success');
+      refreshStatus();
     } catch (error) {
-      console.error('Error subscribing:', error);
+      showToast('Subscription failed. Please try again.', 'error');
+    } finally {
+      setSubscribing(false);
     }
   };
 
-  const handleCancelSubscription = async (reason: string) => {
+  const [cancelling, setCancelling] = useState(false);
+  const handleCancelSubscription = async () => {
+    setCancelling(true);
     try {
-      const result = await cancelSubscription(reason);
-      if (result?.succeeded) {
-        onCancelled?.();
-      }
+      await cancelSubscription('User requested cancellation');
+      showToast('Subscription cancelled.', 'info');
+      refreshStatus();
     } catch (error) {
-      console.error('Error canceling subscription:', error);
+      showToast('Failed to cancel subscription.', 'error');
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -101,147 +82,121 @@ export const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
     }
   };
 
-  const getStatusBadgeVariant = () => {
-    switch (status) {
-      case 'active':
-        return 'success';
-      case 'trial':
-        return 'info';
-      case 'expired':
-      case 'cancelled':
-        return 'danger';
-      default:
-        return 'default';
-    }
-  };
-
-  if (loading && status === null) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center p-6">
-          <Loader2 className="h-6 w-6 animate-spin mr-2" />
-          <span>Loading subscription status...</span>
+  return (
+    <div className="max-w-2xl mx-auto py-8 px-4">
+      <Card className="mb-6 shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-xl">
+            {getStatusIcon()}
+            Subscription Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant={status === 'active' ? 'success' : status === 'trial' ? 'info' : 'error'}>
+                  {status?.toUpperCase() || 'UNKNOWN'}
+                </Badge>
+                {status === 'trial' && trialDaysRemaining !== null && (
+                  <Badge variant="neutral">{trialDaysRemaining} days left</Badge>
+                )}
+              </div>
+              {planName && (
+                <div className="text-sm text-slate-500">Current Plan: <span className="font-semibold text-slate-900 dark:text-white">{planName}</span></div>
+              )}
+              {trialEnd && status === 'trial' && (
+                <div className="text-xs text-slate-400">Trial ends: {new Date(trialEnd).toLocaleDateString()}</div>
+              )}
+              {status === 'expired' && (
+                <div className="text-xs text-red-600">Your trial has ended. Please upgrade to continue.</div>
+              )}
+            </div>
+            <div className="text-right">
+              <div className={`text-lg font-semibold ${accessAllowed ? 'text-green-600' : 'text-red-600'}`}>{accessAllowed ? '✓ Access Granted' : '✗ Access Denied'}</div>
+            </div>
+          </div>
+          {/* Plan Selection */}
+          <div className="mt-6">
+            <div className="mb-2 font-semibold text-slate-900 dark:text-white">Choose a Plan</div>
+            {plansLoading ? (
+              <div className="text-slate-500">Loading plans...</div>
+            ) : plansError ? (
+              <div className="text-red-500">{plansError}</div>
+            ) : plans.length > 0 ? (
+              <div className="flex flex-col md:flex-row gap-4">
+                {plans.map((plan: any) => (
+                  <label
+                    key={plan.id}
+                    className={`flex-1 cursor-pointer p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-start min-w-[160px] ${selectedPlanId === plan.id ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-300 dark:hover:border-indigo-600'}`}
+                    tabIndex={0}
+                    onClick={() => setSelectedPlanId(plan.id)}
+                    onKeyPress={e => { if (e.key === 'Enter') setSelectedPlanId(plan.id); }}
+                  >
+                    <input
+                      type="radio"
+                      name="plan"
+                      value={plan.id}
+                      checked={selectedPlanId === plan.id}
+                      onChange={() => setSelectedPlanId(plan.id)}
+                      className="mr-2 accent-indigo-600"
+                      aria-label={`Select ${plan.name} plan`}
+                    />
+                    <span className="font-bold text-lg text-slate-900 dark:text-white">{plan.name}</span>
+                    <span className="text-indigo-700 dark:text-indigo-300 font-bold text-xl">₹{plan.monthlyAmount}{plan.name.toLowerCase().includes('year') ? '/year' : '/month'}</span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">{plan.description}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <div className="text-slate-500">No plans available.</div>
+            )}
+          </div>
+          {/* Actions */}
+          <div className="flex gap-3 mt-6 flex-wrap">
+            <Button
+              variant="outline"
+              onClick={refreshStatus}
+              disabled={loading || subscribing || cancelling}
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Refresh Status
+            </Button>
+            {(status === 'trial' || status === 'expired' || status === 'cancelled') && plans.length > 0 && (
+              <Button
+                onClick={handleSubscribe}
+                disabled={loading || subscribing || !selectedPlanId}
+                isLoading={subscribing}
+                className="bg-indigo-600 text-white hover:bg-indigo-700"
+              >
+                <CreditCard className="h-4 w-4 mr-2" />
+                {subscribing ? 'Processing...' : 'Upgrade'}
+              </Button>
+            )}
+            {status === 'active' && (
+              <Button
+                variant="danger"
+                onClick={handleCancelSubscription}
+                disabled={loading || cancelling}
+                isLoading={cancelling}
+              >
+                {cancelling ? 'Cancelling...' : 'Cancel Subscription'}
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Error Display */}
       {error && (
         <Card className="border-red-200 bg-red-50 dark:bg-red-900/10">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-red-700 dark:text-red-300">
               <AlertTriangle className="h-4 w-4" />
               <span>{error}</span>
-              <Button variant="ghost" size="sm" onClick={clearError} className="ml-auto">
-                ✕
-              </Button>
+              <Button variant="ghost" size="sm" onClick={clearError} className="ml-auto">✕</Button>
             </div>
           </CardContent>
         </Card>
       )}
-
-      {/* Subscription Status Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {getStatusIcon()}
-            Subscription Status
-          </CardTitle>
-          <CardDescription>
-            Manage your SocietyLedger subscription
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Badge variant={getStatusBadgeVariant()}>
-                  {status?.toUpperCase()}
-                </Badge>
-                {status === 'trial' && trialDaysRemaining !== null && (
-                  <Badge variant="default">
-                    {trialDaysRemaining} days remaining
-                  </Badge>
-                )}
-              </div>
-              {planName && (
-                <p className="text-sm text-muted-foreground">
-                  Plan: {planName}
-                  {monthlyAmount && ` - ₹${monthlyAmount}/month`}
-                </p>
-              )}
-              {trialEnd && status === 'trial' && (
-                <p className="text-sm text-muted-foreground">
-                  Trial ends: {new Date(trialEnd).toLocaleDateString()}
-                </p>
-              )}
-            </div>
-            <div className="text-right">
-              <div className={`text-lg font-semibold ${accessAllowed ? 'text-green-600' : 'text-red-600'}`}>
-                {accessAllowed ? '✓ Access Granted' : '✗ Access Denied'}
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              onClick={refreshStatus}
-              disabled={loading}
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Refresh Status
-            </Button>
-
-            {status === 'trial' && (
-              <Button
-                onClick={() => handleSubscribe('pro-plan', 299, 'razorpay', 'demo_ref')}
-                disabled={loading}
-              >
-                <CreditCard className="h-4 w-4 mr-2" />
-                Upgrade to Pro
-              </Button>
-            )}
-
-            {status === 'active' && (
-              <Button
-                variant="danger"
-                onClick={() => handleCancelSubscription('User requested cancellation')}
-                disabled={loading}
-              >
-                Cancel Subscription
-              </Button>
-            )}
-
-            {!status && (
-              <Button
-                onClick={handleCreateTrial}
-                disabled={loading}
-              >
-                Start Free Trial
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Usage Instructions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Integration Notes</CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>• Call <code>createTrial()</code> automatically on user registration</p>
-          <p>• Check <code>accessAllowed</code> before enabling premium features</p>
-          <p>• Use <code>subscribe()</code> after successful payment completion</p>
-          <p>• Handle 401 errors by redirecting to login</p>
-          <p>• Retry logic is built-in for 500 errors (up to 3 attempts)</p>
-        </CardContent>
-      </Card>
     </div>
   );
 };
@@ -265,8 +220,7 @@ export class SubscriptionErrorBoundary extends React.Component<
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Subscription component error:', error, errorInfo);
+  componentDidCatch(_error: Error, _errorInfo: React.ErrorInfo) {
   }
 
   render() {
@@ -274,9 +228,9 @@ export class SubscriptionErrorBoundary extends React.Component<
       return (
         <Card>
           <CardContent className="p-6">
-            <Alert variant="destructive">
+            <Alert variant="error">
               <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
+              <div className="text-sm">
                 Something went wrong with the subscription manager.
                 <Button
                   variant="outline"
@@ -286,7 +240,7 @@ export class SubscriptionErrorBoundary extends React.Component<
                 >
                   Try Again
                 </Button>
-              </AlertDescription>
+              </div>
             </Alert>
           </CardContent>
         </Card>

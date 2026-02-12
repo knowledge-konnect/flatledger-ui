@@ -8,7 +8,7 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthProvider';
 import { useToast } from '../components/ui/Toast';
-import { handleApiError } from '../api/client';
+import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { AlertMessages } from '../lib/alertMessages';
 import { cn } from '../lib/utils';
 
@@ -24,9 +24,11 @@ type SignupFormData = z.infer<typeof signupSchema>;
 
 export default function Signup() {
   const { showToast } = useToast();
+  const { showErrorToast } = useApiErrorToast();
   const { register: registerUser } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+
 
   const {
     register,
@@ -49,8 +51,28 @@ export default function Signup() {
       showToast(AlertMessages.success.signupSuccess, 'success');
       navigate('/dashboard');
     } catch (error: unknown) {
-      handleApiError(error);
-      showToast(AlertMessages.error.signupFailed, 'error');
+      if (error instanceof Error) {
+        const errorData = (error as any)?.response?.data;
+        if (errorData) {
+          showErrorToast({
+            ok: false,
+            message: errorData.message || AlertMessages.error.signupFailed,
+            code: errorData.code,
+            fieldErrors: errorData.errors?.reduce(
+              (acc: any, err: any) => {
+                acc[err.field] = err.messages;
+                return acc;
+              },
+              {}
+            ),
+            traceId: errorData.traceId,
+          });
+        } else {
+          showToast(error.message || AlertMessages.error.signupFailed, 'error');
+        }
+      } else {
+        showToast(AlertMessages.error.signupFailed, 'error');
+      }
     } finally {
       setIsLoading(false);
     }

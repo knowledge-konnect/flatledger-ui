@@ -3,6 +3,7 @@ import { authApi } from '../api/authApi';
 import { subscriptionApi } from '../api/subscriptionApi';
 import { AuthState, LoginCredentials, RegisterCredentials, User } from '../types/auth';
 import { handleApiError } from '../api/client';
+import { logger } from '../lib/logger';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
@@ -22,6 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const setAuthState = (user: User | null, token: string | null) => {
+    logger.log(`[AuthProvider] Setting auth state - user: ${user?.name || 'null'}, authenticated: ${!!token}`);
     setState({
       user,
       accessToken: token,
@@ -49,11 +51,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (credentials: LoginCredentials) => {
     try {
+      logger.log(`[AuthProvider.login] Starting login for user: ${credentials.usernameOrEmail}`);
       const { auth, user } = await authApi.login(credentials);
-      console.log('Login successful, user object:', user); // Debug log
-      console.log('[DEBUG] User forcePasswordChange flag:', user.forcePasswordChange);
       setAuthState(user, auth.accessToken);
+      logger.log(`[AuthProvider.login] Login successful for user: ${user.name}`);
     } catch (error) {
+      logger.error(`[AuthProvider.login] Login failed`, error);
       setAuthState(null, null);
       throw handleApiError(error);
     }
@@ -61,23 +64,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (credentials: RegisterCredentials) => {
     try {
+      logger.log(`[AuthProvider.register] Starting registration for user: ${credentials.name}`);
       const { auth, user } = await authApi.register(credentials);
       setAuthState(user, auth.accessToken);
+      logger.log(`[AuthProvider.register] Registration successful for user: ${user.name}`);
 
       // Automatically create trial subscription for new users
       try {
         const trialResult = await subscriptionApi.createTrial();
         if (trialResult.succeeded) {
-          console.log('Trial subscription created successfully:', trialResult.trialEnd);
+          logger.log(`[AuthProvider.register] Trial subscription created`);
         } else {
-          console.warn('Failed to create trial subscription:', trialResult.error);
           // Don't fail registration if trial creation fails
+          logger.warn(`[AuthProvider.register] Trial creation returned false status`);
         }
-      } catch (trialError) {
-        console.warn('Error creating trial subscription:', trialError);
+      } catch (error) {
         // Don't fail registration if trial creation fails
+        logger.warn(`[AuthProvider.register] Trial creation failed`, error);
       }
     } catch (error) {
+      logger.error(`[AuthProvider.register] Registration failed`, error);
       setAuthState(null, null);
       throw handleApiError(error);
     }
@@ -85,13 +91,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     // Clear auth state immediately to prevent any API calls with old token
+    logger.log(`[AuthProvider.logout] Starting logout`);
     setAuthState(null, null);
     try {
       // Attempt to notify server of logout (this may fail if token is invalid)
       await authApi.logout();
+      logger.log(`[AuthProvider.logout] Logout successful`);
     } catch (error) {
       // Logout failed on server, but local state is already cleared
-      console.error('Server logout failed:', error);
+      logger.warn(`[AuthProvider.logout] Server logout failed (local state already cleared)`, error);
     }
   };
 
@@ -105,8 +113,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('accessToken');
+      logger.log(`[AuthProvider.initAuth] Initializing auth - token present: ${!!token}`);
       
       if (!token) {
+        logger.log(`[AuthProvider.initAuth] No token found, skipping auth initialization`);
         setState(prev => ({ ...prev, isLoading: false }));
         return;
       }
@@ -115,7 +125,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Always fetch fresh user data from the server to ensure flags like forcePasswordChange are current
         const user = await authApi.getMe();
         setAuthState(user, token);
+        logger.log(`[AuthProvider.initAuth] Auth initialized with user: ${user.name}`);
       } catch (error) {
+        logger.warn(`[AuthProvider.initAuth] Failed to fetch fresh user data, trying stored user`);
         // If /auth/me fails but token exists, still try to use stored user data
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
@@ -123,15 +135,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const user = JSON.parse(storedUser);
             // Use stored user but mark that refresh failed
             setAuthState(user, token);
-            console.warn('Using cached user data after server check failed:', error);
+            logger.log(`[AuthProvider.initAuth] Initialized with stored user data: ${user.name}`);
             return;
           } catch (parseError) {
             // Invalid stored user data
+            logger.error(`[AuthProvider.initAuth] Failed to parse stored user data`, parseError);
           }
         }
         // If no valid user data available, clear auth state
+        logger.log(`[AuthProvider.initAuth] No valid user data available, clearing auth state`);
         setAuthState(null, null);
-        console.error('Auth initialization failed:', error);
       }
     };
 

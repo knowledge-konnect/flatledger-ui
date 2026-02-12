@@ -5,7 +5,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import Navbar from '../components/layout/Navbar'
 import { ArrowLeft, CheckCircle, AlertCircle, Loader } from 'lucide-react'
 import { paymentApi } from '@/api/paymentApi'
-import { useToast } from '@/hooks/use-toast'
+import { useToast } from '../components/ui/Toast'
+import { useApiErrorToast } from '../hooks/useApiErrorHandler'
 
 declare global {
   interface Window {
@@ -16,7 +17,8 @@ declare global {
 export default function Payment() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { toast } = useToast()
+  const { showToast } = useToast()
+  const { showErrorToast } = useApiErrorToast()
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -53,11 +55,13 @@ export default function Payment() {
         currency: 'INR',
       })
 
-      const options = {
-        key: process.env.REACT_APP_RAZORPAY_KEY_ID || '',
-        amount: orderData.amount,
-        currency: orderData.currency,
-        order_id: orderData.id,
+      if ('data' in orderData && orderData.data) {
+        const { amount, currency, orderId } = orderData.data
+        const options = {
+          key: process.env.REACT_APP_RAZORPAY_KEY_ID || '',
+          amount,
+          currency,
+          order_id: orderId,
         name: 'SocietyLedger',
         description: `${plan.name} Plan Subscription`,
         handler: async (response: any) => {
@@ -71,18 +75,20 @@ export default function Payment() {
             })
 
             // Payment successful
-            toast({
-              title: 'Payment Successful!',
-              description: 'Your subscription has been activated.',
-            })
+            showToast('Your subscription has been activated.', 'success')
             navigate('/payment-success', { state: { planId, orderId: response.razorpay_order_id } })
-          } catch (err) {
-            console.error('Payment verification failed:', err)
-            toast({
-              title: 'Payment Verification Failed',
-              description: 'Please contact support if amount was debited.',
-              variant: 'destructive',
-            })
+          } catch (err: any) {
+            const errData = err?.response?.data;
+            if (errData) {
+              showErrorToast({
+                ok: false,
+                message: errData.message || 'Payment verification failed',
+                code: errData.code,
+                traceId: errData.traceId,
+              });
+            } else {
+              showToast('Please contact support if amount was debited.', 'error')
+            }
           } finally {
             setIsProcessing(false)
           }
@@ -100,23 +106,30 @@ export default function Payment() {
       rzp1.on('payment.failed', (response: any) => {
         setError(`Payment failed: ${response.error.description}`)
         setIsProcessing(false)
-        toast({
-          title: 'Payment Failed',
-          description: response.error.description,
-          variant: 'destructive',
-        })
+        showToast(response.error.description, 'error')
       })
       rzp1.open()
-    } catch (err) {
-      console.error('Payment error:', err)
+      } else {
+        const errorMessage = 'error' in orderData ? orderData.error : 'Failed to create payment order'
+        setError(errorMessage)
+        setIsProcessing(false)
+        showToast(errorMessage, 'error')
+      }
+      } catch (err: any) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred'
+      const errData = err?.response?.data;
       setError(errorMessage)
       setIsProcessing(false)
-      toast({
-        title: 'Payment Error',
-        description: errorMessage,
-        variant: 'destructive',
-      })
+      if (errData) {
+        showErrorToast({
+          ok: false,
+          message: errData.message || errorMessage,
+          code: errData.code,
+          traceId: errData.traceId,
+        });
+      } else {
+        showToast(errorMessage, 'error')
+      }
     }
   }
 

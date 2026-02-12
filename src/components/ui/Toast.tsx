@@ -22,7 +22,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const showToast = useCallback((message: string, type: ToastType = 'info') => {
     const id = Math.random().toString(36).substring(7);
     setToasts((prev) => [...prev, { id, message, type }]);
-
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4000);
@@ -53,6 +52,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((toast) => {
           const Icon = icons[toast.type];
           return (
+// ...existing code...
             <div
               key={toast.id}
               className={cn(
@@ -61,13 +61,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               )}
               data-testid="toast-notification"
             >
-              <Icon className="w-5 h-5 flex-shrink-0" />
-              <p className="flex-1 text-sm font-medium">{toast.message}</p>
+              <Icon className="w-5 h-5 flex-shrink-0 text-white" />
+              <p className="flex-1 text-sm font-medium text-white">{toast.message}</p>
               <button
                 onClick={() => removeToast(toast.id)}
-                className="flex-shrink-0 p-1 rounded hover:bg-white/20 transition-colors"
+                className="flex-shrink-0 p-1 rounded text-white hover:bg-white/20 transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 text-white" />
               </button>
             </div>
           );

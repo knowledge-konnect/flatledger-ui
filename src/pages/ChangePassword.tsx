@@ -4,6 +4,7 @@ import { Eye, EyeOff, Lock, Building2, Info } from 'lucide-react';
 import Input from '../components/ui/Input';
 import { useChangePassword } from '../hooks/useChangePassword';
 import { useToast } from '../components/ui/Toast';
+import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { useAuth } from '../contexts/AuthProvider';
 import { AlertMessages } from '../lib/alertMessages';
 
@@ -11,6 +12,7 @@ export default function ChangePassword() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { showToast } = useToast();
+  const { showErrorToast } = useApiErrorToast();
   const { mutate: changePassword, isPending } = useChangePassword();
 
   const [formData, setFormData] = useState({
@@ -87,8 +89,25 @@ export default function ChangePassword() {
           navigate('/login');
         }, 1500);
       },
-      onError: (error) => {
-        showToast(AlertMessages.error.passwordChangeFailed, 'error');
+      onError: (error: any) => {
+        const errorData = error?.response?.data;
+        if (errorData) {
+          showErrorToast({
+            ok: false,
+            message: errorData.message || AlertMessages.error.passwordChangeFailed,
+            code: errorData.code,
+            fieldErrors: errorData.errors?.reduce(
+              (acc: any, err: any) => {
+                acc[err.field] = err.messages;
+                return acc;
+              },
+              {}
+            ),
+            traceId: errorData.traceId,
+          });
+        } else {
+          showToast(AlertMessages.error.passwordChangeFailed, 'error');
+        }
       },
     });
   };

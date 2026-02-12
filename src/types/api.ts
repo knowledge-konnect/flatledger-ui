@@ -10,6 +10,27 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+export interface FieldError {
+  field: string;
+  messages: string[];
+}
+
+export interface ErrorResponse {
+  code: string;
+  message: string;
+  errors?: FieldError[];
+  traceId?: string;
+}
+
+export interface ApiResult<T> {
+  ok: boolean;
+  message: string;
+  data?: T;
+  code?: string;
+  fieldErrors?: Record<string, string[]>;
+  traceId?: string;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;
@@ -25,3 +46,4 @@ export interface PaginationParams {
   order?: 'asc' | 'desc';
   search?: string;
 }
+

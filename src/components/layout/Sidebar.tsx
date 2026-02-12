@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Building2, FileText, CreditCard, TrendingUp, Users, Settings, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, Building2, CreditCard, TrendingUp, Users, Settings, LogOut, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthProvider';
 import { useToast } from '../ui/Toast';
 import { cn } from '../../lib/utils';
@@ -9,8 +9,7 @@ import { AlertMessages } from '../../lib/alertMessages';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Flats', href: '/flats', icon: Building2 },
-  { name: 'Billing', href: '/billing', icon: FileText },
-  { name: 'Payments', href: '/payments', icon: CreditCard },
+  { name: 'Maintenance', href: '/maintenance', icon: CreditCard },
   { name: 'Expenses', href: '/expenses', icon: TrendingUp },
   { name: 'Reports', href: '/reports', icon: TrendingUp },
   { name: 'Users', href: '/users', icon: Users },

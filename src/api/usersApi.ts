@@ -1,4 +1,5 @@
 import { PaginatedResponse, PaginationParams, ApiResponse } from '../types/api';
+import { unwrapArrayData } from './responseUtils';
 import apiClient from './client';
 import { RoleId } from '../types/roles';
 
@@ -43,8 +44,8 @@ export interface ChangePasswordDto {
 
 export const usersApi = {
   async getUsers(params?: PaginationParams): Promise<User[]> {
-    const response = await apiClient.get<ApiResponse<User[]>>('/users', { params });
-    return response.data.data;
+    const response = await apiClient.get<ApiResponse<unknown>>('/users', { params });
+    return unwrapArrayData<User>(response.data.data, 'users');
   },
 
   async getUserById(id: string): Promise<User> {

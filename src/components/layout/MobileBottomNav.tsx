@@ -1,13 +1,12 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Building, Receipt, DollarSign, User } from 'lucide-react';
+import { Home, Building, DollarSign, User } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export function MobileBottomNav() {
   const navItems = [
     { to: '/dashboard', icon: Home, label: 'Home' },
     { to: '/flats', icon: Building, label: 'Flats' },
-    { to: '/billing', icon: Receipt, label: 'Bills' },
-    { to: '/payments', icon: DollarSign, label: 'Payments' },
+    { to: '/maintenance', icon: DollarSign, label: 'Maintenance' },
     { to: '/settings', icon: User, label: 'Profile' },
   ];
 

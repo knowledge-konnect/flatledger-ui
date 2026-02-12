@@ -1,0 +1,476 @@
+================================================================================
+                    DASHBOARD BACKEND API SUGGESTIONS
+================================================================================
+
+Last Updated: February 11, 2026
+Purpose: Provide complete data structure and endpoint specifications for 
+the SocietyLedger Dashboard (both standard and premium versions)
+
+================================================================================
+1. API ENDPOINTS & STRUCTURE
+================================================================================
+
+BASE ENDPOINT: /api/dashboard
+
+---
+
+1.1 GET /api/dashboard/summary
+Purpose: Get complete dashboard data in a single request
+HTTP Method: GET
+Authentication: Required (Bearer Token)
+Rate Limit: 10 requests/minute
+
+Request Parameters:
+  - societyId (path/header): string (required) - validates society ownership
+  - period (query): "6months" | "1year" (optional, default: "6months")
+
+Response: {
+  status: "success",
+  data: {
+    stats: {
+      totalCollection: number,        // Sum of all paid payments
+      outstandingDues: number,        // Sum of unpaid invoices
+      totalFlats: number,             // Count of flats in society
+      collectionRate: number,         // Percentage (0-100)
+      
+      changes: {
+        totalCollection: string,      // "+12%" or "-5%"
+        outstandingDues: string,      // "-8%" or "+3%"
+        totalFlats: string,           // "+4" or "-2"
+        collectionRate: string        // "+3%" or "-1%"
+      }
+    },
+    
+    chartData: [
+      {
+        month: string,                // "Jul", "Aug", "Sep", etc. (last 6 months)
+        income: number,               // Total payments received
+        expense: number               // Total expenses recorded
+      }
+      // ... 6 months of data
+    ],
+    
+    expenseBreakdown: [
+      {
+        name: string,                 // "Maintenance", "Utilities", "Security", "Other"
+        value: number,                // Total amount by category
+        percentage: number            // % of total expenses
+      }
+      // ... all expense categories
+    ],
+    
+    recentActivity: [
+      {
+        id: string,
+        type: "payment" | "expense" | "bill",
+        description: string,          // e.g., "A-101 Maintenance Payment", "Electricity Bill"
+        amount: number,               // Positive for income, negative for expenses
+        status: "completed" | "pending",
+        date: string,                 // ISO format: "2025-12-15T10:30:00Z"
+        references: {
+          flatId?: string,
+          invoiceId?: string,
+          expenseId?: string
+        }
+      }
+      // ... latest 5 activities
+    ]
+  },
+  timestamp: string                   // ISO timestamp
+}
+
+Error Responses:
+  - 401 Unauthorized
+  - 403 Forbidden (no access to society)
+  - 404 Not Found (society doesn't exist)
+  - 500 Internal Server Error
+
+---
+
+1.2 GET /api/dashboard/stats
+Purpose: Get only statistics cards data (lightweight endpoint)
+HTTP Method: GET
+Authentication: Required
+
+Response: {
+  status: "success",
+  data: {
+    totalCollection: number,
+    outstandingDues: number,
+    totalFlats: number,
+    collectionRate: number,
+    changes: {
+      totalCollection: string,
+      outstandingDues: string,
+      totalFlats: string,
+      collectionRate: string
+    }
+  }
+}
+
+---
+
+1.3 GET /api/dashboard/charts
+Purpose: Get financial chart data only
+HTTP Method: GET
+Authentication: Required
+
+Query Parameters:
+  - months (optional): 6 | 12 | 24 (default: 6)
+  - startDate (optional): YYYY-MM-DD
+  - endDate (optional): YYYY-MM-DD
+
+Response: {
+  status: "success",
+  data: [
+    {
+      month: string,
+      income: number,
+      expense: number
+    }
+  ]
+}
+
+---
+
+1.4 GET /api/dashboard/expenses/breakdown
+Purpose: Get expense breakdown by category
+HTTP Method: GET
+Authentication: Required
+
+Query Parameters:
+  - period (optional): "current-month" | "current-year" (default: "current-year")
+
+Response: {
+  status: "success",
+  data: [
+    {
+      name: string,
+      value: number,
+      percentage: number,
+      description?: string
+    }
+  ]
+}
+
+---
+
+1.5 GET /api/dashboard/activity
+Purpose: Get recent activity log
+HTTP Method: GET
+Authentication: Required
+
+Query Parameters:
+  - limit (optional): number (default: 5, max: 50)
+  - offset (optional): number (default: 0)
+  - type (optional): "payment" | "expense" | "bill"
+  - status (optional): "completed" | "pending"
+
+Response: {
+  status: "success",
+  data: {
+    activities: [
+      {
+        id: string,
+        type: "payment" | "expense" | "bill",
+        description: string,
+        amount: number,
+        status: "completed" | "pending",
+        date: string,
+        references: {
+          flatId?: string,
+          invoiceId?: string,
+          expenseId?: string
+        }
+      }
+    ],
+    total: number,
+    limit: number,
+    offset: number
+  }
+}
+
+================================================================================
+2. DATABASE QUERIES
+================================================================================
+
+2.1 Total Collection (Last Period)
+SQL Query:
+  SELECT COALESCE(SUM(p.amount), 0) as totalCollection
+  FROM payments p
+  JOIN invoices i ON p.invoice_id = i.id
+  WHERE i.society_id = $societyId
+  AND p.status = 'COMPLETED'
+  AND p.created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH);
+
+2.2 Outstanding Dues
+SQL Query:
+  SELECT COALESCE(SUM(i.amount), 0) as outstandingDues
+  FROM invoices i
+  WHERE i.society_id = $societyId
+  AND i.status IN ('PENDING', 'OVERDUE');
+
+2.3 Total Flats
+SQL Query:
+  SELECT COUNT(*) as totalFlats
+  FROM flats
+  WHERE society_id = $societyId
+  AND deleted_at IS NULL;
+
+2.4 Collection Rate (Percentage)
+SQL Query:
+  SELECT 
+    ROUND(
+      (SUM(CASE WHEN p.status = 'COMPLETED' THEN 1 ELSE 0 END) * 100.0) / 
+      COUNT(*), 2
+    ) as collectionRate
+  FROM invoices i
+  LEFT JOIN payments p ON i.id = p.invoice_id
+  WHERE i.society_id = $societyId
+  AND i.created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH);
+
+2.5 Monthly Income vs Expense (Last 6 Months)
+SQL Query:
+  SELECT 
+    DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL (SELECT MAX(n.i) FROM 
+    (SELECT 0 as i UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL 
+    SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) n), DAY) FROM 
+    (SELECT 0 as i UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL 
+    SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5) n) as month,
+    
+    COALESCE(SUM(CASE WHEN t.type = 'DEBIT' THEN t.amount ELSE 0 END), 0) as income,
+    COALESCE(SUM(CASE WHEN t.type = 'CREDIT' THEN t.amount ELSE 0 END), 0) as expense
+  FROM transactions t
+  WHERE t.society_id = $societyId
+  GROUP BY YEAR(t.created_at), MONTH(t.created_at)
+  ORDER BY year DESC, month DESC
+  LIMIT 6;
+
+Alternative (Simpler):
+  SELECT 
+    DATE_FORMAT(p.created_at, '%b') as month,
+    COALESCE(SUM(p.amount), 0) as income,
+    0 as expense
+  FROM payments p
+  WHERE p.society_id = $societyId AND p.status = 'COMPLETED'
+  GROUP BY DATE_FORMAT(p.created_at, '%Y-%m')
+  UNION ALL
+  SELECT 
+    DATE_FORMAT(e.created_at, '%b') as month,
+    0 as income,
+    COALESCE(SUM(e.amount), 0) as expense
+  FROM expenses e
+  WHERE e.society_id = $societyId
+  GROUP BY DATE_FORMAT(e.created_at, '%Y-%m');
+
+2.6 Expense Breakdown by Category (Current Year)
+SQL Query:
+  SELECT 
+    ec.name,
+    COALESCE(SUM(e.amount), 0) as value
+  FROM expenses e
+  LEFT JOIN expense_categories ec ON e.category_id = ec.id
+  WHERE e.society_id = $societyId
+  AND YEAR(e.created_at) = YEAR(NOW())
+  GROUP BY ec.id, ec.name
+  ORDER BY value DESC;
+
+2.7 Recent Activity (Last 5 Activities)
+SQL Query:
+  (SELECT 
+    CONCAT('inv_', i.id) as id,
+    'bill' as type,
+    CONCAT(f.flat_number, ' - Monthly Bill') as description,
+    i.amount,
+    i.status,
+    i.created_at as date,
+    f.id as flatId
+  FROM invoices i
+  LEFT JOIN flats f ON i.flat_id = f.id
+  WHERE i.society_id = $societyId)
+  UNION ALL
+  (SELECT 
+    CONCAT('pay_', p.id) as id,
+    'payment' as type,
+    CONCAT(f.flat_number, ' - Maintenance Payment') as description,
+    p.amount,
+    p.status,
+    p.created_at as date,
+    f.id as flatId
+  FROM payments p
+  LEFT JOIN invoices i ON p.invoice_id = i.id
+  LEFT JOIN flats f ON i.flat_id = f.id
+  WHERE i.society_id = $societyId)
+  UNION ALL
+  (SELECT 
+    CONCAT('exp_', e.id) as id,
+    'expense' as type,
+    e.description,
+    -e.amount,
+    'completed' as status,
+    e.created_at as date,
+    NULL as flatId
+  FROM expenses e
+  WHERE e.society_id = $societyId)
+  ORDER BY date DESC
+  LIMIT 5;
+
+================================================================================
+3. IMPLEMENTATION NOTES
+================================================================================
+
+3.1 Caching Strategy:
+  - Cache dashboard summary for 5 minutes per society
+  - Use Redis key: "dashboard:summary:{societyId}"
+  - Invalidate cache on:
+    * New payment recorded
+    * New expense added
+    * Invoice status change
+    * Bill generated
+
+3.2 Performance Optimization:
+  - Use database indexes on:
+    * invoices (society_id, status, created_at)
+    * payments (society_id, status, created_at)
+    * expenses (society_id, created_at, category_id)
+    * flats (society_id, deleted_at)
+  
+  - Use database views for complex aggregations
+  - Consider materialized views for monthly data
+
+3.3 Data Consistency:
+  - All amounts in INR (Indian Rupees)
+  - Dates in ISO 8601 format with timezone
+  - Percentage values as numbers (0-100)
+  - Status values should be consistent across endpoints
+
+3.4 Security Considerations:
+  - Validate societyId matches authenticated user's society access
+  - Implement row-level security (RLS) if using PostgreSQL
+  - Log all dashboard data access for audit trail
+  - Rate limit dashboard endpoints to prevent abuse
+
+3.5 Historical Data:
+  - Store historical snapshots of stats daily (for trend calculation)
+  - Keep 1 year of monthly data
+  - Calculate period-over-period changes from historical data
+
+3.6 Calculation Formula for Changes:
+  - CurrentValue = Data from current period
+  - PreviousValue = Data from same period last year
+  - Change = ((CurrentValue - PreviousValue) / PreviousValue) * 100
+
+================================================================================
+4. DATABASE SCHEMA REQUIREMENTS
+================================================================================
+
+Ensure these tables exist with proper relationships:
+  - societies (id, name, ...)
+  - flats (id, society_id, flat_number, ...)
+  - invoices (id, society_id, flat_id, amount, status, due_date, ...)
+  - payments (id, invoice_id, amount, status, ...)
+  - expenses (id, society_id, amount, category_id, description, ...)
+  - expense_categories (id, society_id, name, ...)
+  - transactions (id, society_id, type, amount, ...) [optional accounting table]
+  - users (id, society_id, email, name, ...)
+
+================================================================================
+5. FRONTEND CONSUMPTION EXAMPLE
+================================================================================
+
+TypeScript Interface for Frontend:
+
+interface DashboardStats {
+  totalCollection: number;
+  outstandingDues: number;
+  totalFlats: number;
+  collectionRate: number;
+  changes: {
+    totalCollection: string;
+    outstandingDues: string;
+    totalFlats: string;
+    collectionRate: string;
+  };
+}
+
+interface ChartDataPoint {
+  month: string;
+  income: number;
+  expense: number;
+}
+
+interface ExpenseCategory {
+  name: string;
+  value: number;
+  percentage?: number;
+}
+
+interface ActivityLog {
+  id: string;
+  type: 'payment' | 'expense' | 'bill';
+  description: string;
+  amount: number;
+  status: 'completed' | 'pending';
+  date: string;
+  references?: {
+    flatId?: string;
+    invoiceId?: string;
+    expenseId?: string;
+  };
+}
+
+interface DashboardData {
+  stats: DashboardStats;
+  chartData: ChartDataPoint[];
+  expenseBreakdown: ExpenseCategory[];
+  recentActivity: ActivityLog[];
+}
+
+================================================================================
+6. TESTING CHECKLIST
+================================================================================
+
+Functional Tests:
+  ✓ GET /api/dashboard/summary returns all data correctly
+  ✓ GET /api/dashboard/stats returns accurate statistics
+  ✓ GET /api/dashboard/charts returns correct monthly data
+  ✓ GET /api/dashboard/expenses/breakdown groups by category
+  ✓ GET /api/dashboard/activity returns activities in chronological order
+  ✓ Period parameter filters data correctly
+  ✓ Limit/offset pagination works
+  ✓ Type filtering works for activity endpoint
+
+Security Tests:
+  ✓ Unauthorized requests are rejected
+  ✓ Users cannot access other society data
+  ✓ Token validation works
+  ✓ Rate limiting is enforced
+
+Performance Tests:
+  ✓ Response time < 500ms (with cache)
+  ✓ Database queries are optimized
+  ✓ No N+1 query problems
+  ✓ Pagination works for large datasets
+
+Data Validation Tests:
+  ✓ All numbers are correctly calculated
+  ✓ Percentages are between 0-100
+  ✓ Dates are in ISO format
+  ✓ Null/zero handling is correct
+
+================================================================================
+7. FUTURE ENHANCEMENTS
+================================================================================
+
+  - Predictive analytics (forecast future collections)
+  - Comparison reports (month-to-month, year-to-year)
+  - Customizable date ranges per endpoint
+  - Export to PDF/CSV functionality
+  - Scheduled email reports
+  - Real-time notifications for overdue payments
+  - Trend analysis with moving averages
+  - Collection efficiency metrics by flat
+
+================================================================================
+END OF BACKEND API SUGGESTIONS
+================================================================================

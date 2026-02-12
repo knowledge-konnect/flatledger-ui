@@ -1,3 +1,10 @@
+/* Stronger input border for inputs inside modal popups */
+.modal input.input,
+.modal textarea.input,
+.modal .input {
+  @apply border-slate-400 dark:border-slate-500;
+  @apply bg-white dark:bg-slate-900;
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -25,6 +25,7 @@ function PopoverContent({
 }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
   return (
     <PopoverPrimitive.Portal>
+      {/* Overlay with blur, below content (optional for popover, can be omitted if not desired) */}
       <PopoverPrimitive.Content
         data-slot="popover-content"
         align={align}

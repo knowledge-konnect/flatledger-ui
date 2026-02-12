@@ -1,4 +1,5 @@
 import { ApiResponse } from '../types/api';
+import { unwrapArrayData } from './responseUtils';
 import apiClient from './client';
 
 export interface FlatDto {
@@ -64,13 +65,13 @@ export const flatsApi = {
     return response.data.data as unknown as void;
   },
   async listBySociety(societyId: number): Promise<FlatDto[]> {
-    const response = await apiClient.get<ApiResponse<FlatDto[]>>(`/flats/society/${societyId}`);
-    return response.data.data;
+    const response = await apiClient.get<ApiResponse<unknown>>(`/flats/society/${societyId}`);
+    return unwrapArrayData<FlatDto>(response.data.data, 'flats');
   },
 
   async getStatuses(): Promise<FlatStatusDto[]> {
-    const response = await apiClient.get<ApiResponse<FlatStatusDto[]>>('/flats/statuses');
-    return response.data.data;
+    const response = await apiClient.get<ApiResponse<unknown>>('/flats/statuses');
+    return unwrapArrayData<FlatStatusDto>(response.data.data, 'statuses');
   },
   
 

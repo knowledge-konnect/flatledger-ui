@@ -1,12 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { flatsApi, FlatDto, CreateFlatDto, UpdateFlatDto, FlatStatusDto } from '../api/flatsApi';
+import { logger } from '../lib/logger';
 
 export function useFlats(societyId?: number) {
   return useQuery({
     queryKey: ['flats', societyId],
     queryFn: async (): Promise<FlatDto[]> => {
       if (!societyId) return [];
-      return flatsApi.listBySociety(societyId);
+      logger.log(`[useFlats] Fetching flats for societyId: ${societyId}`);
+      const result = await flatsApi.listBySociety(societyId);
+      logger.log(`[useFlats] Loaded ${result.length} flats`);
+      return result;
     },
     enabled: !!societyId,
   });

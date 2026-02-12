@@ -53,15 +53,17 @@ export function EnhancedToastProvider({ children }: { children: ReactNode }) {
   };
 
   const styles = {
-    success: 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800 text-green-800 dark:text-green-200',
-    error: 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 text-red-800 dark:text-red-200',
-    info: 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200',
-    warning: 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200',
+    success: 'bg-green-600 border-green-700 text-white',
+    error: 'bg-red-600 border-red-700 text-white',
+    info: 'bg-blue-600 border-blue-700 text-white',
+    warning: 'bg-amber-600 border-amber-700 text-white',
   };
 
   return (
     <ToastContext.Provider value={{ toasts, showToast, removeToast }}>
       {children}
+      {/* Overlay for toasts, if needed, with blur (optional, can be omitted if not desired) */}
+      {/* Toast content, always above overlay, no blur */}
       <div className="fixed bottom-4 right-4 z-50 space-y-2 max-w-sm w-full">
         {toasts.map((toast, index) => {
           const Icon = icons[toast.type];
@@ -69,20 +71,20 @@ export function EnhancedToastProvider({ children }: { children: ReactNode }) {
             <div
               key={toast.id}
               className={cn(
-                'p-4 rounded-lg border-2 shadow-lg backdrop-blur-sm',
+                'p-4 rounded-lg border-2 shadow-lg', // removed backdrop-blur-sm from toast content
                 'animate-slide-in-right',
                 styles[toast.type]
               )}
               style={{ animationDelay: `${index * 0.1}s` }}
             >
               <div className="flex items-start gap-3">
-                <Icon className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <Icon className="w-5 h-5 flex-shrink-0 mt-0.5 text-white" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{toast.message}</p>
+                  <p className="text-sm font-medium text-white">{toast.message}</p>
                   {toast.action && (
                     <button
                       onClick={toast.action.onClick}
-                      className="mt-2 text-xs font-semibold underline hover:no-underline"
+                      className="mt-2 text-xs font-semibold text-white underline hover:no-underline"
                     >
                       {toast.action.label}
                     </button>
@@ -90,9 +92,9 @@ export function EnhancedToastProvider({ children }: { children: ReactNode }) {
                 </div>
                 <button
                   onClick={() => removeToast(toast.id)}
-                  className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                  className="p-1 rounded text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4 text-white" />
                 </button>
               </div>
               {/* Progress bar */}

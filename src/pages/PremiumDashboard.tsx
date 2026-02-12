@@ -32,8 +32,7 @@ export default function PremiumDashboard() {
       if (storedUser) {
         setUser(JSON.parse(storedUser));
       }
-    } catch (error) {
-      console.error('Error parsing user data:', error);
+    } catch {
     }
   }, []);
 
@@ -183,7 +182,7 @@ export default function PremiumDashboard() {
                     border: '1px solid rgba(0,0,0,0.1)',
                     borderRadius: '0.75rem',
                   }}
-                  formatter={(value: number) => `₹${(value / 100000).toFixed(1)}L`}
+                  formatter={(value?: number) => value !== undefined ? `₹${(value / 100000).toFixed(1)}L` : ''}
                 />
                 <Legend />
                 <Bar dataKey="income" fill="#8b5cf6" radius={[8, 8, 0, 0]} />
@@ -206,7 +205,7 @@ export default function PremiumDashboard() {
                     border: '1px solid rgba(0,0,0,0.1)',
                     borderRadius: '0.75rem',
                   }}
-                  formatter={(value: number) => `₹${(value / 100000).toFixed(1)}L`}
+                  formatter={(value?: number) => value !== undefined ? `₹${(value / 100000).toFixed(1)}L` : ''}
                 />
                 <Line
                   type="monotone"

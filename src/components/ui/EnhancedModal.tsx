@@ -55,17 +55,17 @@ export default function EnhancedModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
+      {/* Backdrop with blur, below content */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in z-40"
         onClick={closeOnOverlayClick ? onClose : undefined}
         aria-hidden="true"
       />
 
-      {/* Modal */}
+      {/* Modal content, always above overlay, no blur */}
       <div
         className={cn(
-          'relative w-full backdrop-blur-xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl animate-scale-in max-h-[90vh] overflow-hidden flex flex-col',
+          'relative z-50 w-full bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl animate-scale-in max-h-[90vh] overflow-hidden flex flex-col',
           sizeClasses[size],
           className
         )}

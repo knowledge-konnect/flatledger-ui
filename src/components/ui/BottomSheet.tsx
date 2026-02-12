@@ -38,16 +38,16 @@ export function BottomSheet({
 
   return (
     <div className="fixed inset-0 z-50 md:hidden">
-      {/* Backdrop */}
+      {/* Backdrop with blur, below content */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in z-40"
         onClick={onClose}
       />
 
-      {/* Sheet */}
+      {/* Sheet content, always above overlay, no blur */}
       <div
         className={cn(
-          'absolute bottom-0 left-0 right-0',
+          'absolute bottom-0 left-0 right-0 z-50',
           'bg-white dark:bg-slate-900',
           'rounded-t-3xl',
           'shadow-2xl',
