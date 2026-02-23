@@ -3,7 +3,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthProvider';
 import { ToastProvider } from './components/ui/Toast';
-import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { ErrorBoundary } from './components/shared/ErrorBoundary';
 import Router from './Router';
 
 const queryClient = new QueryClient({

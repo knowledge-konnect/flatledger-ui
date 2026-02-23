@@ -113,20 +113,20 @@ export default function ChangePassword() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-primary-50/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] flex items-center justify-center p-4">
       <div className="w-full max-w-md animate-slide-in-up">
         {/* Brand Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-600 rounded-2xl shadow-lg shadow-primary-500/25 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#2563EB] rounded-2xl shadow-sm mb-4">
             <Lock className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">
+          <h1 className="text-4xl font-bold text-[#0F172A] dark:text-[#F8FAFC] mb-2">
             {user?.forcePasswordChange ? 'Set Your Password' : 'Change Password'}
           </h1>
-          <p className="text-neutral-600 dark:text-neutral-400">
+          <p className="text-[#64748B] dark:text-[#94A3B8]">
             {user?.name && `Welcome, ${user.name}`}
           </p>
-          <p className="text-sm text-neutral-500 dark:text-neutral-500 mt-2 max-w-sm mx-auto">
+          <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-2 max-w-sm mx-auto">
             {user?.forcePasswordChange
               ? 'Your admin created your account with a temporary password. Please set a new password to continue.'
               : 'You are required to change your password before accessing the dashboard.'}
@@ -142,7 +142,7 @@ export default function ChangePassword() {
                 {user?.forcePasswordChange ? 'Temporary Password' : 'Current Password'}
               </label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500 pointer-events-none" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748B] dark:text-[#94A3B8] pointer-events-none" />
                 <input
                   type={showPassword.current ? 'text' : 'password'}
                   name="currentPassword"
@@ -160,13 +160,13 @@ export default function ChangePassword() {
                       current: !prev.current,
                     }))
                   }
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-400 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F8FAFC] transition-colors"
                 >
                   {showPassword.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {errors.currentPassword && (
-                <p className="mt-2 text-sm text-error-600 dark:text-error-400 font-medium animate-slide-in-up">
+                <p className="mt-2 text-sm text-[#DC2626] dark:text-[#EF4444] font-medium animate-slide-in-up">
                   {errors.currentPassword}
                 </p>
               )}
@@ -176,7 +176,7 @@ export default function ChangePassword() {
             <div>
               <label className="label">New Password</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500 pointer-events-none" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748B] dark:text-[#94A3B8] pointer-events-none" />
                 <input
                   type={showPassword.new ? 'text' : 'password'}
                   name="newPassword"
@@ -194,17 +194,17 @@ export default function ChangePassword() {
                       new: !prev.new,
                     }))
                   }
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-400 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F8FAFC] transition-colors"
                 >
                   {showPassword.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {errors.newPassword && (
-                <p className="mt-2 text-sm text-error-600 dark:text-error-400 font-medium animate-slide-in-up">
+                <p className="mt-2 text-sm text-[#DC2626] dark:text-[#EF4444] font-medium animate-slide-in-up">
                   {errors.newPassword}
                 </p>
               )}
-              <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-500">
+              <p className="mt-2 text-xs text-[#64748B] dark:text-[#94A3B8]">
                 Must be at least 6 characters long
               </p>
             </div>
@@ -213,7 +213,7 @@ export default function ChangePassword() {
             <div>
               <label className="label">Confirm New Password</label>
               <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400 dark:text-neutral-500 pointer-events-none" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748B] dark:text-[#94A3B8] pointer-events-none" />
                 <input
                   type={showPassword.confirm ? 'text' : 'password'}
                   name="confirmPassword"
@@ -231,13 +231,13 @@ export default function ChangePassword() {
                       confirm: !prev.confirm,
                     }))
                   }
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 hover:text-neutral-600 dark:hover:text-neutral-400 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F8FAFC] transition-colors"
                 >
                   {showPassword.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {errors.confirmPassword && (
-                <p className="mt-2 text-sm text-error-600 dark:text-error-400 font-medium animate-slide-in-up">
+                <p className="mt-2 text-sm text-[#DC2626] dark:text-[#EF4444] font-medium animate-slide-in-up">
                   {errors.confirmPassword}
                 </p>
               )}
@@ -276,9 +276,9 @@ export default function ChangePassword() {
           </form>
 
           {/* Info Box */}
-          <div className="mt-6 p-4 bg-info-50 dark:bg-info-900/20 border border-info-200 dark:border-info-800 rounded-xl flex gap-3">
-            <Info className="w-5 h-5 text-info-600 dark:text-info-400 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-info-800 dark:text-info-200">
+          <div className="mt-6 p-4 bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 border border-[#2563EB]/20 dark:border-[#3B82F6]/20 rounded-xl flex gap-3">
+            <Info className="w-5 h-5 text-[#2563EB] dark:text-[#3B82F6] flex-shrink-0 mt-0.5" />
+            <p className="text-sm text-[#0F172A] dark:text-[#F8FAFC]">
               <span className="font-semibold">Security Tip:</span> Choose a strong password with a mix of
               uppercase, lowercase, numbers, and special characters.
             </p>

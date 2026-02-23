@@ -178,6 +178,12 @@ export default function SubscriptionManagement() {
     return (
         <DashboardLayout title="Subscription Management">
             <div className="space-y-6">
+                {/* Page Header */}
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Subscription Management</h2>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Manage your subscription plan and billing</p>
+                </div>
+
                 {/* Error Display */}
                 {error && (
                     <Alert variant="error">
@@ -206,7 +212,7 @@ export default function SubscriptionManagement() {
                 )}
 
                 {/* Current Subscription Status */}
-                <Card>
+                <Card className="overflow-hidden hover:shadow-md transition-all duration-200">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             {getStatusIcon()}
@@ -290,7 +296,7 @@ export default function SubscriptionManagement() {
                 </Card>
 
                 {/* Plan Details */}
-                <Card>
+                <Card className="overflow-hidden hover:shadow-md transition-all duration-200">
                     <CardHeader>
                         <CardTitle>Plan Details</CardTitle>
                     </CardHeader>
@@ -327,7 +333,7 @@ export default function SubscriptionManagement() {
                 </Card>
 
                 {/* Manual Payment Instructions */}
-                <Card>
+                <Card className="overflow-hidden hover:shadow-md transition-all duration-200">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <CreditCard className="h-5 w-5" />
@@ -354,7 +360,7 @@ export default function SubscriptionManagement() {
                 </Card>
 
                 {/* Support Contact */}
-                <Card>
+                <Card className="overflow-hidden hover:shadow-md transition-all duration-200">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Mail className="h-5 w-5" />

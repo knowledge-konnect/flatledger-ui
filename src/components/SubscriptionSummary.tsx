@@ -8,7 +8,9 @@ import { useSubscription } from '../hooks/useSubscription';
 
 export const SubscriptionSummary: React.FC = () => {
   const navigate = useNavigate();
-  const { status, trialDaysRemaining, planName, loading } = useSubscription();
+  const { status, trialDaysRemaining, planName, loading, error } = useSubscription();
+
+  console.log('🔍 [SubscriptionSummary] State:', { status, trialDaysRemaining, planName, loading, error });
 
   const getStatusIcon = () => {
     switch (status) {
@@ -52,7 +54,29 @@ export const SubscriptionSummary: React.FC = () => {
     return (
       <Card className="flex items-center justify-center p-4" data-testid="subscription-loading">
         <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-600 border-t-transparent mr-2" />
-        <span className="text-sm text-slate-500">Loading...</span>
+        <span className="text-sm text-slate-500">Loading subscription...</span>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-4" data-testid="subscription-error">
+        <div className="flex items-center gap-2 text-error-600">
+          <AlertTriangle className="h-5 w-5" />
+          <span className="text-sm">{error}</span>
+        </div>
+      </Card>
+    );
+  }
+
+  if (!status) {
+    return (
+      <Card className="p-4" data-testid="subscription-no-data">
+        <div className="flex items-center gap-2 text-slate-500">
+          <AlertTriangle className="h-5 w-5" />
+          <span className="text-sm">No subscription data available</span>
+        </div>
       </Card>
     );
   }

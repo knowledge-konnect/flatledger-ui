@@ -1,189 +1,139 @@
 import { ApiResponse } from '../types/api';
 import apiClient from './client';
 
-// Types for subscription API
-export interface TrialResponse {
-  succeeded: true;
-  message: string;
-  trialEnd: string;
+/* =====================================================
+   TYPES & INTERFACES (Following API Documentation)
+===================================================== */
+
+/**
+ * Subscription Status Response
+ * GET /subscriptions/status
+ */
+export interface SubscriptionStatusData {
+  status: 'trial' | 'active' | 'expired' | 'cancelled';
+  trialDaysRemaining?: number | null;
+  trialEndDate?: string | null;
+  accessAllowed: boolean;
+  planName?: string | null;
+  monthlyAmount?: number | null;
+  currency?: string | null;
 }
 
-export interface TrialError {
-  succeeded: false;
-  error: 'ALREADY_HAS_SUBSCRIPTION' | 'NO_DEFAULT_PLAN';
+/**
+ * Trial Creation Response
+ * POST /subscriptions/trial
+ */
+export interface TrialData {
+  status: 'trial';
+  trialDaysRemaining: number;
+  trialEndDate: string;
+  accessAllowed: boolean;
 }
 
-export interface SubscriptionStatusResponse {
-  succeeded: true;
-  data: {
-    accessAllowed: boolean;
-    status: 'trial' | 'active' | 'expired' | 'cancelled';
-    trialDaysRemaining?: number;
-    planName: string;
-    monthlyAmount: number;
-  };
-}
-
-export interface SubscriptionStatusError {
-  succeeded: false;
-  error: 'USER_NOT_FOUND';
-}
-
+/**
+ * Subscribe Request
+ * POST /subscriptions/subscribe
+ */
 export interface SubscribeRequest {
-  planId: string;
+  planId: string; // UUID - plan's public identifier
+  razorpayOrderId: string; // Razorpay order ID
+  razorpayPaymentId: string; // Razorpay payment ID
+  razorpaySignature: string; // Razorpay signature for verification
+}
+
+/**
+ * Subscribe Response
+ * POST /subscriptions/subscribe
+ */
+export interface SubscribeData {
+  subscriptionId: string; // UUID
+  planName: string;
+  status: 'active';
+  startDate: string; // ISO 8601 date
+  endDate: string; // ISO 8601 date
   amount: number;
-  paymentMethod: string;
-  paymentReference: string;
+  currency: string;
 }
 
-export interface SubscribeResponse {
-  succeeded: true;
-  data: {
-    subscriptionId: string;
-    invoiceId: string;
-    status: 'active';
-  };
-  message: string;
-}
-
-export interface SubscribeError {
-  succeeded: false;
-  error: 'INVALID_PLAN' | 'ALREADY_SUBSCRIBED';
-}
-
+/**
+ * Cancel Subscription Request
+ * POST /subscriptions/cancel
+ */
 export interface CancelSubscriptionRequest {
-  reason: string;
+  reason: string; // Required cancellation reason
+  feedback?: string; // Optional feedback
 }
 
-export interface CancelSubscriptionResponse {
-  succeeded: true;
-  message: string;
-}
+/* =====================================================
+   API SERVICE (Following API Documentation Endpoints)
+===================================================== */
 
-export interface CancelSubscriptionError {
-  succeeded: false;
-  error: 'NO_ACTIVE_SUBSCRIPTION';
-}
-
+/**
+ * Subscriptions API Service
+ * Manages trial and paid subscriptions for users
+ */
 export const subscriptionApi = {
   /**
-   * Create a trial subscription for a new user
-   * Automatically called on user registration/login
-   * @returns Promise<TrialResponse | TrialError>
+   * Create a 30-day free trial subscription
+   * POST /subscriptions/trial
+   * Automatically called on first user registration/login
+   * @returns Promise<TrialData>
    */
-  async createTrial(): Promise<TrialResponse | TrialError> {
-    try {
-      const response = await apiClient.post<ApiResponse<TrialResponse>>('/subscriptions/trial');
-      if (response.data.succeeded) {
-        return response.data.data;
-      } else {
-        return {
-          succeeded: false,
-          error: 'ALREADY_HAS_SUBSCRIPTION'
-        };
-      }
-    } catch (error: any) {
-      // Handle specific error cases
-      if (error.response?.status === 400) {
-        return {
-          succeeded: false,
-          error: error.response.data?.error || 'ALREADY_HAS_SUBSCRIPTION'
-        };
-      }
-      throw error;
+  async createTrial(): Promise<TrialData> {
+    const response = await apiClient.post<ApiResponse<TrialData>>('/subscriptions/trial');
+    
+    if (!response.data.succeeded) {
+      throw new Error(response.data.message || 'Failed to create trial subscription');
     }
+    
+    return response.data.data;
   },
 
   /**
    * Get current user's subscription status
+   * GET /subscriptions/status
    * Call on app load or feature access to check permissions
-   * @returns Promise<SubscriptionStatusResponse | SubscriptionStatusError>
+   * @returns Promise<SubscriptionStatusData>
    */
-  async getStatus(): Promise<SubscriptionStatusResponse | SubscriptionStatusError> {
-    try {
-      const response = await apiClient.get<ApiResponse<SubscriptionStatusResponse['data']>>('/subscriptions/status');
-      if (response.data.succeeded) {
-        return {
-          succeeded: true,
-          data: response.data.data
-        };
-      } else {
-        return {
-          succeeded: false,
-          error: 'USER_NOT_FOUND'
-        };
-      }
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        return {
-          succeeded: false,
-          error: 'USER_NOT_FOUND'
-        };
-      }
-      throw error;
+  async getStatus(): Promise<SubscriptionStatusData> {
+    const response = await apiClient.get<ApiResponse<SubscriptionStatusData>>('/subscriptions/status');
+    
+    if (!response.data.succeeded) {
+      throw new Error(response.data.message || 'Failed to get subscription status');
     }
+    
+    return response.data.data;
   },
 
   /**
-   * Subscribe to a plan after payment completion
-   * Call after successful payment (Stripe/Razorpay callback)
-   * @param request Subscription details
-   * @returns Promise<SubscribeResponse | SubscribeError>
+   * Subscribe to a plan after successful payment
+   * POST /subscriptions/subscribe
+   * Call after Razorpay payment verification
+   * @param request SubscribeRequest with payment details
+   * @returns Promise<SubscribeData>
    */
-  async subscribe(request: SubscribeRequest): Promise<SubscribeResponse | SubscribeError> {
-    try {
-      const response = await apiClient.post<ApiResponse<SubscribeResponse['data']>>('/subscriptions/subscribe', request);
-      if (response.data.succeeded) {
-        return {
-          succeeded: true,
-          data: response.data.data,
-          message: response.data.message
-        };
-      } else {
-        return {
-          succeeded: false,
-          error: 'INVALID_PLAN'
-        };
-      }
-    } catch (error: any) {
-      if (error.response?.status === 400) {
-        return {
-          succeeded: false,
-          error: error.response.data?.error || 'INVALID_PLAN'
-        };
-      }
-      throw error;
+  async subscribe(request: SubscribeRequest): Promise<SubscribeData> {
+    const response = await apiClient.post<ApiResponse<SubscribeData>>('/subscriptions/subscribe', request);
+    
+    if (!response.data.succeeded) {
+      throw new Error(response.data.message || 'Failed to create subscription');
     }
+    
+    return response.data.data;
   },
 
   /**
    * Cancel the current active subscription
+   * POST /subscriptions/cancel
    * Call from settings page after user confirmation
-   * @param request Cancellation reason
-   * @returns Promise<CancelSubscriptionResponse | CancelSubscriptionError>
+   * @param request CancelSubscriptionRequest with reason
+   * @returns Promise<void>
    */
-  async cancel(request: CancelSubscriptionRequest): Promise<CancelSubscriptionResponse | CancelSubscriptionError> {
-    try {
-      const response = await apiClient.post<ApiResponse<null>>('/subscriptions/cancel', request);
-      if (response.data.succeeded) {
-        return {
-          succeeded: true,
-          message: response.data.message
-        };
-      } else {
-        return {
-          succeeded: false,
-          error: 'NO_ACTIVE_SUBSCRIPTION'
-        };
-      }
-    } catch (error: any) {
-      if (error.response?.status === 400) {
-        return {
-          succeeded: false,
-          error: 'NO_ACTIVE_SUBSCRIPTION'
-        };
-      }
-      throw error;
+  async cancel(request: CancelSubscriptionRequest): Promise<void> {
+    const response = await apiClient.post<ApiResponse<null>>('/subscriptions/cancel', request);
+    
+    if (!response.data.succeeded) {
+      throw new Error(response.data.message || 'Failed to cancel subscription');
     }
   }
 };

@@ -25,9 +25,15 @@ type SignupFormData = z.infer<typeof signupSchema>;
 export default function Signup() {
   const { showToast } = useToast();
   const { showErrorToast } = useApiErrorToast();
-  const { register: registerUser } = useAuth();
+  const { register: registerUser, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+
+  // If already authenticated, don't render the form at all
+  // This prevents flickering when Router redirects
+  if (isAuthenticated) {
+    return null;
+  }
 
 
   const {
@@ -41,7 +47,8 @@ export default function Signup() {
   const onSubmit = async (data: SignupFormData) => {
     setIsLoading(true);
     try {
-      await registerUser({
+      // 1. Call register and get auth response
+      const authResponse = await registerUser({
         name: data.name,
         email: data.email,
         password: data.password,
@@ -49,8 +56,16 @@ export default function Signup() {
         societyAddress: data.societyAddress,
       });
       showToast(AlertMessages.success.signupSuccess, 'success');
-      navigate('/dashboard');
+      
+      // 2. If backend returns tokens, navigate to /dashboard, else navigate to /login
+      if (authResponse?.accessToken && authResponse?.refreshToken) {
+        navigate('/dashboard');
+      } else {
+        navigate('/login');
+      }
+      // Keep isLoading true to prevent flickering until redirect completes
     } catch (error: unknown) {
+      // 4. Handle validation errors using showErrorToast
       if (error instanceof Error) {
         const errorData = (error as any)?.response?.data;
         if (errorData) {
@@ -73,23 +88,23 @@ export default function Signup() {
       } else {
         showToast(AlertMessages.error.signupFailed, 'error');
       }
-    } finally {
+      // 3. Disable submit button during request (re-enable on error)
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-[560px] animate-fade-in">
         {/* Brand Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-600 rounded-xl mb-4">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-[#2563EB] rounded-xl mb-4 shadow-sm">
             <Building2 className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white mb-1">
+          <h1 className="text-2xl font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1">
             Create your account
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">
             Set up your society management in minutes
           </p>
         </div>
@@ -151,6 +166,7 @@ export default function Signup() {
                   icon={<Building2 className="w-4 h-4" />}
                   error={errors.societyName?.message}
                   data-testid="input-society-name"
+                  autoComplete="off"
                   {...register('societyName')}
                 />
 
@@ -179,6 +195,7 @@ export default function Signup() {
             <Button
               type="submit"
               isLoading={isLoading}
+              disabled={isLoading}
               className="w-full mt-2"
               size="lg"
               data-testid="signup-submit-btn"

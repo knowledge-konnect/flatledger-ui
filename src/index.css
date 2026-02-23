@@ -34,10 +34,10 @@
     --input-height-sm: 32px;
     --input-height-lg: 48px;
     
-    /* Border Radius */
-    --radius-sm: 4px;
-    --radius: 6px;
-    --radius-md: 8px;
+    /* Border Radius - Premium feel */
+    --radius-sm: 6px;
+    --radius: 8px;
+    --radius-md: 10px;
     --radius-lg: 12px;
     --radius-xl: 16px;
   }
@@ -52,7 +52,7 @@
   }
 
   body {
-    @apply bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100;
+    @apply bg-[#F8FAFC] dark:bg-[#020617] text-[#0F172A] dark:text-[#F8FAFC];
     @apply font-sans text-base;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -128,10 +128,11 @@
   }
 
   .btn-primary {
-    @apply bg-primary-600 text-white;
-    @apply hover:bg-primary-700;
-    @apply active:bg-primary-800;
-    @apply focus-visible:ring-primary-500;
+    @apply bg-[#2563EB] text-white;
+    @apply hover:bg-[#1D4ED8];
+    @apply active:bg-[#1E40AF];
+    @apply focus-visible:ring-[#2563EB]/20;
+    @apply shadow-sm;
   }
 
   .btn-secondary {
@@ -163,18 +164,19 @@
   }
 
   /* ============================================
-     CARDS - 12px Radius, Clean Borders
+     CARDS - 8px Radius, Subtle Shadows
      ============================================ */
   
   .card {
-    @apply bg-white dark:bg-slate-900;
-    @apply border border-slate-200 dark:border-slate-800;
-    @apply rounded-lg;
+    @apply bg-white dark:bg-[#020617];
+    @apply border border-[#E2E8F0] dark:border-[#1E293B];
+    @apply rounded-xl;
+    @apply shadow-sm;
     @apply p-6;
   }
 
   .card-hover {
-    @apply transition-shadow duration-200;
+    @apply transition-all duration-200;
     @apply hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700;
   }
 
@@ -182,7 +184,7 @@
     @apply cursor-pointer;
     @apply transition-all duration-200;
     @apply hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700;
-    @apply active:scale-[0.99];
+    @apply hover:-translate-y-0.5;
   }
 
   /* ============================================
@@ -190,14 +192,15 @@
      ============================================ */
   
   .input {
-    @apply w-full h-input min-h-[40px] px-3;
+    @apply w-full h-input min-h-[40px] px-3 py-2;
     @apply text-sm text-slate-900 dark:text-white;
     @apply placeholder:text-slate-400 dark:placeholder:text-slate-500;
     @apply bg-white dark:bg-slate-900;
     @apply border border-slate-300 dark:border-slate-700;
-    @apply rounded-md;
-    @apply transition-colors duration-150;
-    @apply focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500;
+    @apply rounded-lg;
+    @apply shadow-sm;
+    @apply transition-all duration-150;
+    @apply focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20;
   }
 
   .input-sm {
@@ -231,9 +234,9 @@
   
   .badge {
     @apply inline-flex items-center gap-1;
-    @apply px-2 py-0.5;
+    @apply px-2.5 py-1;
     @apply text-xs font-medium;
-    @apply rounded;
+    @apply rounded-md;
   }
 
   .badge-primary {
@@ -281,12 +284,12 @@
   }
 
   /* ============================================
-     TABLE STYLES
+     TABLE STYLES - Premium Design
      ============================================ */
   
   .table-container {
     @apply overflow-x-auto -mx-4 sm:mx-0;
-    @apply rounded-lg border border-slate-200 dark:border-slate-800;
+    @apply rounded-xl border border-[#E2E8F0] dark:border-[#1E293B];
   }
 
   .table {
@@ -294,25 +297,29 @@
   }
 
   .table th {
-    @apply px-4 py-3;
-    @apply text-left text-xs font-semibold uppercase tracking-wider;
-    @apply text-slate-500 dark:text-slate-400;
-    @apply bg-slate-50 dark:bg-slate-800/50;
-    @apply border-b border-slate-200 dark:border-slate-700;
+    @apply px-6 py-4;
+    @apply text-left text-xs font-bold uppercase tracking-wider;
+    @apply text-[#64748B] dark:text-[#94A3B8];
+    @apply bg-[#F8FAFC] dark:bg-[#020617];
+    @apply border-b-2 border-[#E2E8F0] dark:border-[#1E293B];
   }
 
   .table td {
-    @apply px-4 py-3;
-    @apply text-slate-700 dark:text-slate-300;
-    @apply border-b border-slate-100 dark:border-slate-800;
+    @apply px-6 py-4;
+    @apply text-[#0F172A] dark:text-[#F8FAFC];
+    @apply border-b border-[#E2E8F0] dark:border-[#1E293B];
   }
 
   .table tr:last-child td {
     @apply border-b-0;
   }
 
-  .table tr:hover td {
-    @apply bg-slate-50 dark:bg-slate-800/30;
+  .table tbody tr:hover td {
+    @apply bg-[#F8FAFC] dark:bg-[#020617]/50;
+  }
+
+  .table tbody tr {
+    @apply transition-colors duration-150;
   }
 
   /* ============================================
@@ -376,9 +383,9 @@
   
   .header {
     @apply sticky top-0 z-30;
-    @apply h-header;
-    @apply bg-white/95 dark:bg-slate-900/95;
-    @apply backdrop-blur-sm;
+    @apply h-16;
+    @apply bg-white/80 dark:bg-slate-900/80;
+    @apply backdrop-blur-xl;
     @apply border-b border-slate-200 dark:border-slate-800;
   }
 
@@ -467,4 +474,49 @@
     @apply hover:bg-slate-50 dark:hover:bg-slate-800;
     @apply active:bg-slate-100 dark:active:bg-slate-700;
   }
+
+  /* Smooth shadows for modern SaaS look */
+  .shadow-soft {
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+  }
+
+  .shadow-soft-md {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  }
+
+  .shadow-soft-lg {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
 }

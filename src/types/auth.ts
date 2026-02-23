@@ -17,20 +17,33 @@ export interface AuthResponse {
   roles: string[];
   accessTokenExpiresAt?: string;
   refreshTokenExpiresAt?: string;
-  societyId?: number;
-  userId?: number;
+  userPublicId?: string; // UUID format - primary identifier
+  societyPublicId?: string; // UUID format
+  societyId?: number; // Internal ID (not exposed in API)
+  societyName?: string;
+  userId?: number; // Internal ID (not exposed in API)
+  userName?: string;
+  email?: string;
+  role?: string;
+  forcePasswordChange?: boolean;
 }
 
 export interface User {
-  id: string;
+  publicId: string; // UUID - primary identifier
+  id: string; // Internal ID (for backward compatibility)
   email: string;
   name: string;
   userName?: string;
   role?: string;
   roles: string[];
-  societyId: string;
+  societyId: string; // Internal ID (for backward compatibility)
+  societyPublicId: string; // UUID - primary identifier
   societyName?: string | null;
   forcePasswordChange?: boolean;
+  isActive?: boolean;
+  mobile?: string | null;
+  roleDisplayName?: string;
+  lastLogin?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -6,7 +6,18 @@ import {
   ExpenseResponse,
   ExpenseCategory,
 } from '../api/expensesApi';
+import { createActivityLog } from '../api/activityLogsApi';
 import { logger } from '../lib/logger';
+
+// Helper to get current user from localStorage
+const getCurrentUser = () => {
+  try {
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
+  } catch {
+    return null;
+  }
+};
 
 /* =====================================================
    QUERIES
@@ -89,9 +100,29 @@ export function useCreateExpense() {
       logger.log('[useCreateExpense] Creating expense');
       return expensesApi.createExpense(payload);
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       logger.log('[useCreateExpense] Success - invalidating expenses query');
       qc.invalidateQueries({ queryKey: ['expenses'] });
+      
+      // Log activity
+      const user = getCurrentUser();
+      if (user) {
+        try {
+          await createActivityLog({
+            userId: user.id,
+            userName: user.name,
+            action: 'created',
+            entityType: 'expense',
+            entityId: data.publicId,
+            entityName: `${data.vendor} - ${data.description}`,
+            amount: data.amount,
+            societyId: user.societyId,
+            details: `Created expense of ₹${data.amount} for ${data.categoryCode}`,
+          });
+        } catch (error) {
+          logger.error('[useCreateExpense] Failed to log activity:', error);
+        }
+      }
     },
   });
 }
@@ -103,9 +134,40 @@ export function useUpdateExpense() {
       logger.log(`[useUpdateExpense] Updating expense: ${publicId}`);
       return expensesApi.updateExpense(publicId, payload);
     },
-    onSuccess: () => {
+    onSuccess: async (data, variables) => {
       logger.log('[useUpdateExpense] Success - invalidating expenses query');
       qc.invalidateQueries({ queryKey: ['expenses'] });
+      
+      // Log activity based on status change
+      const user = getCurrentUser();
+      if (user) {
+        try {
+          let action: 'updated' | 'approved' | 'rejected' = 'updated';
+          let details = `Updated expense details`;
+          
+          if (variables.payload.status === 'APPROVED') {
+            action = 'approved';
+            details = `Approved expense of ₹${data.amount}`;
+          } else if (variables.payload.status === 'REJECTED') {
+            action = 'rejected';
+            details = `Rejected expense of ₹${data.amount}`;
+          }
+          
+          await createActivityLog({
+            userId: user.id,
+            userName: user.name,
+            action,
+            entityType: 'expense',
+            entityId: variables.publicId,
+            entityName: `${data.vendor} - ${data.description}`,
+            amount: data.amount,
+            societyId: user.societyId,
+            details,
+          });
+        } catch (error) {
+          logger.error('[useUpdateExpense] Failed to log activity:', error);
+        }
+      }
     },
   });
 }
@@ -117,9 +179,60 @@ export function useDeleteExpense() {
       logger.log(`[useDeleteExpense] Deleting expense: ${publicId}`);
       return expensesApi.deleteExpense(publicId);
     },
-    onSuccess: () => {
+    onSuccess: async (_, publicId) => {
       logger.log('[useDeleteExpense] Success - invalidating expenses query');
       qc.invalidateQueries({ queryKey: ['expenses'] });
+      
+      // Log activity
+      const user = getCurrentUser();
+      if (user) {
+        try {
+          await createActivityLog({
+            userId: user.id,
+            userName: user.name,
+            action: 'deleted',
+            entityType: 'expense',
+            entityId: publicId,
+            societyId: user.societyId,
+            details: `Deleted expense`,
+          });
+        } catch (error) {
+          logger.error('[useDeleteExpense] Failed to log activity:', error);
+        }
+      }
+    },
+  });
+}
+
+export function useRestoreExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (publicId: string) => {
+      logger.log(`[useRestoreExpense] Restoring expense: ${publicId}`);
+      return expensesApi.restoreExpense(publicId);
+    },
+    onSuccess: async (data) => {
+      logger.log('[useRestoreExpense] Success - invalidating expenses query');
+      qc.invalidateQueries({ queryKey: ['expenses'] });
+      
+      // Log activity
+      const user = getCurrentUser();
+      if (user) {
+        try {
+          await createActivityLog({
+            userId: user.id,
+            userName: user.name,
+            action: 'updated',
+            entityType: 'expense',
+            entityId: data.publicId,
+            entityName: `${data.vendor} - ${data.description}`,
+            societyId: user.societyId,
+            details: 'Restored deleted expense',
+          });
+        } catch (error) {
+          logger.error('[useRestoreExpense] Failed to log activity:', error);
+        }
+      }
     },
   });
 }

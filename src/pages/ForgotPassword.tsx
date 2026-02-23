@@ -3,7 +3,7 @@ import { Building2, Mail, ArrowLeft, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useForgotPassword } from '../hooks/api/useAuth';
+import { useForgotPassword } from '../hooks/useAuth';
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import Input from '../components/ui/Input';
@@ -57,17 +57,17 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] flex items-center justify-center px-4">
       <div className="w-full max-w-form animate-fade-in">
         {/* Brand Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-600 rounded-xl mb-4">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-[#2563EB] rounded-xl mb-4 shadow-sm">
             <Building2 className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-white mb-1">
+          <h1 className="text-2xl font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1">
             Reset Password
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">
             {submitted
               ? 'Check your email for reset instructions'
               : 'Enter your email to receive a reset link'}
@@ -78,14 +78,14 @@ export default function ForgotPassword() {
         <div className="card" data-testid="forgot-password-form">
           {submitted ? (
             <div className="text-center space-y-5">
-              <div className="w-16 h-16 bg-success-100 dark:bg-success-900/30 rounded-xl flex items-center justify-center mx-auto">
-                <CheckCircle className="w-8 h-8 text-success-600 dark:text-success-400" />
+              <div className="w-16 h-16 bg-[#16A34A]/10 rounded-xl flex items-center justify-center mx-auto">
+                <CheckCircle className="w-8 h-8 text-[#16A34A] dark:text-[#22C55E]" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                <h3 className="text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-2">
                   Email Sent!
                 </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">
                   We've sent a password reset link to your email address. Please check your inbox and follow the instructions.
                 </p>
               </div>

@@ -1,6 +1,14 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+// Get API base URL from environment variables (legacy client - use src/api/client.ts instead)
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (() => {
+  console.error(
+    '❌ VITE_API_BASE_URL is not defined in environment variables.\n' +
+    'Please create a .env file with VITE_API_BASE_URL=<your-api-url>\n' +
+    'See .env.example for reference.'
+  );
+  throw new Error('API URL not configured. Please set VITE_API_BASE_URL in your .env file.');
+})();
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react"
 import { Save, User, Building2, CreditCard, AlertCircle, Loader, Eye, EyeOff } from 'lucide-react'
 import DashboardLayout from "../components/layout/DashboardLayout"
+import PageHeader from "../components/ui/PageHeader"
 import Input from "../components/ui/Input"
 import Button from "../components/ui/Button"
+import Card, { CardContent } from "../components/ui/Card"
 import { useAuth } from "../contexts/AuthProvider"
 import { useSociety, useUpdateSociety } from "../hooks/useSocieties"
 import { useChangePassword } from "../hooks/useChangePassword"
@@ -44,7 +46,9 @@ export default function SettingsPageRedesigned() {
   const [societyFormData, setSocietyFormData] = useState({
     name: "",
     address: ""
-  })
+  });
+  const [displayName, setDisplayName] = useState("");
+  const [displayEmail, setDisplayEmail] = useState("");
   
   const [isSaving, setIsSaving] = useState(false)
   
@@ -74,10 +78,13 @@ export default function SettingsPageRedesigned() {
   useEffect(() => {
     if (user) {
       setProfileFormData({
-        name: user.name || "",
+        name: user.userName || user.name || "",
         email: user.email || "",
-        mobile: "" // Add mobile field to user type if needed
-      })
+        mobile: user.mobile || ""
+      });
+      // Display user info with fallback
+      setDisplayName(user.userName || user.name || "User");
+      setDisplayEmail(user.email || "user@example.com");
     }
   }, [user])
 
@@ -188,22 +195,23 @@ export default function SettingsPageRedesigned() {
 
   return (
     <DashboardLayout title="Settings">
-      <div className="space-y-8">
-        <div>
-          <h2 className="section-heading mb-2">Account Settings</h2>
-          <p className="subheading">Manage your profile, society information, and preferences</p>
-        </div>
+      <div className="space-y-6">
+        <PageHeader
+          title="Settings"
+          description="Manage your profile, society information, and preferences"
+          icon={CreditCard}
+        />
 
-        <div className="border-b border-slate-200 dark:border-slate-800">
+        <div className="border-b border-[#E2E8F0] dark:border-[#1E293B]">
           <div className="flex gap-1 overflow-x-auto pb-0 -mb-px">
             {visibleTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 font-semibold text-sm transition-all whitespace-nowrap border-b-2 flex items-center gap-2 micro-interaction ${
+                className={`px-4 py-3 font-semibold text-sm transition-all whitespace-nowrap border-b-2 flex items-center gap-2 ${
                   activeTab === tab.id
-                    ? "border-indigo-600 dark:border-indigo-500 text-indigo-600 dark:text-indigo-400"
-                    : "border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-300"
+                    ? "border-[#2563EB] dark:border-[#3B82F6] text-[#2563EB] dark:text-[#3B82F6]"
+                    : "border-transparent text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F8FAFC]"
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -216,15 +224,47 @@ export default function SettingsPageRedesigned() {
         <div className="space-y-6">
           {activeTab === "profile" && (
             <div className="space-y-6">
+              {/* Profile Info Card */}
+              <Card className="overflow-hidden bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/20 dark:to-blue-950/20 border-indigo-200 dark:border-indigo-800">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-4">Your Profile</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] dark:from-[#3B82F6] dark:to-[#2563EB] rounded-full flex items-center justify-center text-white font-semibold text-2xl shadow-md">
+                        {((displayName || 'U').charAt(0)).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Full Name</p>
+                        <p className="text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC]">{displayName || 'Loading...'}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Email Address</p>
+                      <p className="text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC]">{displayEmail || 'Loading...'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Role</p>
+                      <p className="text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC]">{user?.role || 'Member'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Society</p>
+                      <p className="text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC]">{user?.societyName || 'N/A'}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Personal Information Card */}
-              <div className="card-base p-8">
-                <h3 className="text-xl font-bold text-foreground mb-6">Personal Information</h3>
+              <Card className="overflow-hidden">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-6">Edit Information</h3>
                 <div className="space-y-6">
                   <Input
                     label="Full Name"
                     placeholder="Enter your name"
                     value={profileFormData.name}
                     onChange={(e) => handleProfileInputChange('name', e.target.value)}
+                    disabled
                   />
                   <Input
                     label="Email Address"
@@ -257,11 +297,13 @@ export default function SettingsPageRedesigned() {
                     </Button>
                   </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
               
               {/* Change Password Card */}
-              <div className="card-base p-8">
-                <h3 className="text-xl font-bold text-foreground mb-6">Change Password</h3>
+              <Card className="overflow-hidden">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">Change Password</h3>
                 <div className="space-y-6">
                   <div className="relative">
                     <Input
@@ -327,14 +369,16 @@ export default function SettingsPageRedesigned() {
                     </Button>
                   </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
             </div>
           )}
 
           {activeTab === "society" && (
-            <div className="card-base p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-foreground">Society Information</h3>
+            <Card className="overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Society Information</h3>
                 <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium">
                   Admin Only
                 </span>
@@ -382,13 +426,14 @@ export default function SettingsPageRedesigned() {
                   </div>
                 </>
               )}
-            </div>
+            </CardContent>
+          </Card>
           )}
 
           {activeTab === "subscription" && (
-            <div className="card-base p-8">
-              <h3 className="text-xl font-bold text-foreground mb-8">Subscription & Billing</h3>
-              
+            <Card className="overflow-hidden">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">Subscription & Billing</h3>
               {subscription.loading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader className="w-5 h-5 animate-spin text-slate-400" />
@@ -401,11 +446,11 @@ export default function SettingsPageRedesigned() {
               ) : (
                 <div className="space-y-6">
                   {/* Current Plan */}
-                  <div className="p-6 rounded-lg bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800">
+                  <div className="p-6 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all duration-200">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Current Plan</p>
-                        <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                        <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
                           {subscription.planName || 'No Active Plan'}
                         </p>
                       </div>
@@ -471,7 +516,8 @@ export default function SettingsPageRedesigned() {
                   </div>
                 </div>
               )}
-            </div>
+            </CardContent>
+          </Card>
           )}
         </div>
       </div>

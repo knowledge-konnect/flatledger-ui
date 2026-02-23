@@ -1,16 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Download, Edit, Trash, AlertCircle } from 'lucide-react';
+import { Plus, Search, Download, Edit, Trash, AlertCircle, Home } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Button from '../components/ui/Button';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
+import EmptyState from '../components/ui/EmptyState';
 import StatusBadge from '../components/ui/StatusBadge';
 import Pagination from '../components/ui/Pagination';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useDebounce } from '../hooks/useDebounce';
 import { exportCsv as exportCsvLib } from '../lib/exportCsv';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
-import { useFlatStatuses } from '../hooks/useFlatsApi';
+import { useFlatStatuses, useFlatFinancialSummary } from '../hooks/useFlats';
 import Modal, { ModalFooter } from '../components/ui/Modal';
-import Tooltip from '../components/ui/Tooltip';
 import { formatCurrency } from '../lib/utils';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,19 +26,43 @@ const flatSchema = z.object({
     val => !isNaN(Number(val)) && Number(val) > 0,
     'Maintenance amount must be a positive number'
   ),
-  statusId: z.string().min(1, 'Status is required'),
+  statusCode: z.string().min(1, 'Status is required'),
 });
 
 type FlatFormData = z.infer<typeof flatSchema>;
 
-import { useFlats, useCreateFlat, useUpdateFlat, useDeleteFlat } from '../hooks/useFlatsApi';
+import { useFlats, useCreateFlat, useUpdateFlat, useDeleteFlat } from '../hooks/useFlats';
 import { useAuth } from '../contexts/AuthProvider';
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 
+// Component to fetch and display outstanding balance for a single flat
+function FlatOutstandingBalance({ publicId }: { publicId: string }) {
+  const { data: summary, isLoading } = useFlatFinancialSummary(publicId);
+
+  if (isLoading) {
+    return (
+      <span className="text-slate-400 dark:text-slate-500 text-xs animate-pulse">
+        Loading...
+      </span>
+    );
+  }
+
+  const outstanding = summary?.outstandingAmount || 0;
+  const colorClass = outstanding > 0 
+    ? 'text-[#DC2626] dark:text-[#EF4444] font-bold' 
+    : 'text-[#16A34A] dark:text-[#22C55E] font-bold';
+
+  return (
+    <span className={colorClass}>
+      {formatCurrency(outstanding)}
+    </span>
+  );
+}
+
 // We'll map API FlatDto to the UI model used below
 type UIFLat = {
-  id: string;
+  publicId: string;
   flatNumber: string;
   ownerName: string;
   ownerEmail: string;
@@ -47,10 +71,11 @@ type UIFLat = {
   outstandingBalance: number;
   // UI display name for status
   status: string;
+  // status code (occupied, vacant, rented)
+  statusCode?: string;
   // numeric status id saved in DB
   statusId?: number;
   createdAt?: string;
-  publicId?: string;
 };
 
 export default function Flats() {
@@ -66,9 +91,8 @@ export default function Flats() {
   const [isEditing, setIsEditing] = useState(false);
   const [flats, setFlats] = useState<UIFLat[]>([]);
   const { user } = useAuth();
-  const societyId = user?.societyId ? Number(user.societyId) : undefined;
 
-  const { data: apiFlats, isLoading: apiFlatsLoading } = useFlats(societyId);
+  const { data: apiFlats, isLoading: apiFlatsLoading } = useFlats();
   
   const createFlat = useCreateFlat();
   const updateFlat = useUpdateFlat();
@@ -90,7 +114,7 @@ export default function Flats() {
     ownerEmail: '',
     ownerPhone: '',
     maintenanceAmount: '',
-    statusId: '',
+    statusCode: '',
   };
 
   const {
@@ -119,14 +143,14 @@ export default function Flats() {
 
   const onSubmit = async (data: FlatFormData) => {
     try {
-      if (!societyId) throw new Error('No society selected');
+      if (!user) throw new Error('User not authenticated');
 
-      let selectedStatusId: number | undefined;
-      if ((data as any).statusId) {
-        selectedStatusId = Number((data as any).statusId);
+      let selectedStatusCode: string | undefined;
+      if (data.statusCode) {
+        selectedStatusCode = data.statusCode;
       } else if (statuses && statuses.length) {
-        const def = statuses.find(s => s.code === 'owner_occupied');
-        selectedStatusId = def?.id;
+        const def = statuses.find(s => s.code === 'occupied');
+        selectedStatusCode = def?.code;
       }
 
       if (isEditing && selectedFlat?.publicId) {
@@ -135,9 +159,9 @@ export default function Flats() {
           flatNo: data.flatNumber,
           ownerName: data.ownerName,
           contactMobile: data.ownerPhone,
-          contactEmail: data.ownerEmail,
+          contactEmail: data.ownerEmail || undefined,
           maintenanceAmount: Number(data.maintenanceAmount),
-          statusId: selectedStatusId,
+          statusCode: selectedStatusCode,
         };
         await updateFlat.mutateAsync(payload as any);
         setShowAddModal(false);
@@ -147,19 +171,19 @@ export default function Flats() {
         showToast('Flat updated successfully', 'success');
       } else {
         const payload = {
-          societyId,
           flatNo: data.flatNumber,
           ownerName: data.ownerName,
           contactMobile: data.ownerPhone,
-          contactEmail: data.ownerEmail,
+          contactEmail: data.ownerEmail || undefined,
           maintenanceAmount: Number(data.maintenanceAmount),
-          statusId: selectedStatusId,
+          statusCode: selectedStatusCode,
         };
         const created = await createFlat.mutateAsync(payload as any);
+        
         setShowAddModal(false);
         reset(emptyForm);
-        if (created && created.publicId) {
-          showToast(`Flat ${created.flatNo} created (ID: ${created.publicId})`, 'success');
+        if (created && created.flatNo) {
+          showToast(`Flat ${created.flatNo} created successfully`, 'success');
         } else {
           showToast('Flat created successfully', 'success');
         }
@@ -190,31 +214,23 @@ export default function Flats() {
     if (!safeApiFlats || !Array.isArray(safeApiFlats)) return;
     logger.log(`[Flats] Mapping ${safeApiFlats.length} API flats to UI model with ${safeStatuses.length} available statuses`);
     const mapped = safeApiFlats.map((f) => {
-      let statusDisplay = '';
-      let sid: number | undefined;
-      // Prefer server-provided display name
-      if ((f as any).statusName) {
-        statusDisplay = (f as any).statusName as string;
-        sid = (f as any).statusId as number | undefined;
-      } else if ((f as any).statusId != null) {
-        sid = (f as any).statusId as number;
-        statusDisplay = safeStatuses.find(s => s.id === sid)?.displayName ?? String(sid);
-      } else if ((f as any).status) {
-        const code = (f as any).status as string;
-        statusDisplay = safeStatuses.find(s => s.code === code)?.displayName ?? code;
-      }
+      const matchingStatus = safeStatuses.find(
+        (s) => s.id === f.statusId || s.displayName === f.statusName
+      );
+      const statusCode = matchingStatus?.code;
+      const statusDisplay = f.statusName || matchingStatus?.displayName || '';
 
       return {
-        id: String(f.id),
         publicId: f.publicId,
         flatNumber: f.flatNo,
         ownerName: f.ownerName,
         ownerEmail: f.contactEmail,
         ownerPhone: f.contactMobile,
         maintenanceAmount: f.maintenanceAmount,
-        outstandingBalance: 0,
-        status: statusDisplay || (f as any).status || '',
-        statusId: sid,
+        outstandingBalance: 0, // Will be fetched separately per flat
+        status: statusDisplay,
+        statusCode: statusCode, // Store the code for editing
+        statusId: f.statusId,
         createdAt: (f as any).createdAt,
       } as UIFLat;
     });
@@ -264,135 +280,218 @@ export default function Flats() {
       'Created At': r.createdAt ?? '',
     }));
 
-    exportCsvLib(rowsData, headers, `flats_${societyId ?? 'all'}_${new Date().toISOString().slice(0,10)}.csv`);
+    exportCsvLib(rowsData, headers, `flats_${user?.societyPublicId ?? 'all'}_${new Date().toISOString().slice(0,10)}.csv`);
     showToast('CSV exported', 'success');
   };
 
   return (
     <DashboardLayout title="Flats Management">
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search flats..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="input-base pl-11"
-            />
+      <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950">
+        <div className="space-y-6 relative">{/* Modern Premium Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-2">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30">
+                <Home className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                  Flats
+                </h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                  {flats.length} {flats.length === 1 ? 'unit' : 'units'} • Manage your property portfolio
+                </p>
+              </div>
+            </div>
           </div>
-
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => exportCsv()} disabled={flats.length === 0}>
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-            <Button size="sm" onClick={() => openAddModal()}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Flat
-            </Button>
+          
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+            {/* Premium Search Bar */}
+            <div className="relative sm:w-80">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                <Search className="w-4 h-4 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search flats, owners, contacts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 text-sm 
+                         bg-white dark:bg-slate-900 
+                         border border-slate-200 dark:border-slate-700 
+                         rounded-xl shadow-sm
+                         text-slate-900 dark:text-slate-100
+                         placeholder:text-slate-400
+                         focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500
+                         transition-all duration-200"
+              />
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => exportCsv()} 
+                disabled={flats.length === 0}
+                className="h-10 px-4 font-medium border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={() => openAddModal()}
+                className="h-10 px-4 font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-200"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Flat
+              </Button>
+            </div>
           </div>
         </div>
 
-        <div className="p-0">
+        {/* Premium Table Card */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
           {apiFlatsLoading ? (
-            <div className="space-y-2">
-              {[1,2,3,4,5].map(i => (
-                <div key={i} className="w-full h-10 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
-              ))}
+            <div className="py-20">
+              <LoadingSpinner centered />
             </div>
           ) : (!flats || flats.length === 0) ? (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-bold text-foreground">No flats found</h3>
-              <p className="text-sm text-muted-foreground mt-2">Add your first flat to get started.</p>
-              <div className="mt-4">
-                <Button onClick={() => openAddModal()}>Add Flat</Button>
-              </div>
+            <div className="py-16">
+              <EmptyState
+                icon={Home}
+                title="No flats found"
+                description="Add your first flat to get started"
+                action={{
+                  label: 'Add Flat',
+                  onClick: () => openAddModal(),
+                  icon: Plus,
+                }}
+              />
             </div>
           ) : (
             <>
-              <div className="w-full overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Flat</TableHead>
-                    <TableHead>Owner</TableHead>
-                    <TableHead className="hidden md:table-cell">Phone</TableHead>
-                    <TableHead className="text-right">Maintenance</TableHead>
-                    <TableHead className="hidden lg:table-cell text-right">Outstanding</TableHead>
-                    <TableHead className="hidden sm:table-cell">Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paged.map((flat) => (
-                    <TableRow key={flat.id}>
-                      <TableCell>
-                        <span className="font-semibold text-foreground">
-                          {flat.flatNumber}
-                        </span>
-                      </TableCell>
-                      <TableCell className="font-medium text-foreground">{flat.ownerName}</TableCell>
-                      <TableCell className="hidden md:table-cell text-xs lg:text-sm">
-                        <div className="text-foreground">{flat.ownerPhone}</div>
-                      </TableCell>
-                      <TableCell className="text-right font-medium text-foreground">{formatCurrency(flat.maintenanceAmount)}</TableCell>
-                      <TableCell className="hidden lg:table-cell text-right">
-                        <span className={flat.outstandingBalance > 0 ? 'text-destructive font-semibold' : 'text-success font-semibold'}>
-                          {formatCurrency(flat.outstandingBalance)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <StatusBadge code={flat.status} id={flat.statusId} label={flat.status} kind="flat" />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex gap-1 justify-end">
-                          <Tooltip content="Edit" side="top">
-                            <Button
-                              variant="ghost"
-                              size="sm"
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-50 via-slate-50/70 to-slate-50 dark:from-slate-800/50 dark:via-slate-800/30 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        Flat
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        Owner
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden md:table-cell">
+                        Contact
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        Maintenance
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden lg:table-cell">
+                        Outstanding
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {paged.map((flat) => (
+                      <tr 
+                        key={flat.publicId} 
+                        className="group hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 dark:hover:from-indigo-950/20 dark:hover:to-purple-950/20 transition-all duration-200"
+                      >
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/50 dark:border-indigo-800/50">
+                            <span className="text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                              {flat.flatNumber}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-3">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                              {flat.ownerName}
+                            </span>
+                            {flat.ownerEmail && (
+                              <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-xs">
+                                {flat.ownerEmail}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap hidden md:table-cell">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                            <span className="text-sm text-slate-600 dark:text-slate-300 font-medium">
+                              {flat.ownerPhone}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap text-right">
+                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            {formatCurrency(flat.maintenanceAmount)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap text-right hidden lg:table-cell">
+                          <FlatOutstandingBalance publicId={flat.publicId} />
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap hidden sm:table-cell">
+                          <div className="flex justify-center">
+                            <StatusBadge code={flat.status} id={flat.statusId} label={flat.status} kind="flat" />
+                          </div>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="flex gap-2 justify-center items-center">
+                            <button
                               aria-label={`Edit ${flat.flatNumber}`}
                               onClick={() => {
                                 setSelectedFlat(flat);
-                                // prefill form
                                 reset({
                                   flatNumber: flat.flatNumber,
                                   ownerName: flat.ownerName,
                                   ownerEmail: flat.ownerEmail,
                                   ownerPhone: flat.ownerPhone,
                                   maintenanceAmount: String(flat.maintenanceAmount),
-                                  statusId: flat.statusId ? String(flat.statusId) : '',
+                                  statusCode: flat.statusCode || '',
                                 });
                                 setIsEditing(true);
                                 setShowAddModal(true);
                               }}
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
+                                       bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:scale-110
+                                       dark:bg-indigo-950/50 dark:text-indigo-400 dark:hover:bg-indigo-900/50
+                                       focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                             >
                               <Edit className="w-4 h-4" />
-                            </Button>
-                          </Tooltip>
-
-                          <Tooltip content="Delete" side="top">
-                            <Button
-                              variant="ghost"
-                              size="sm"
+                            </button>
+                            <button
                               aria-label={`Delete ${flat.flatNumber}`}
                               onClick={() => {
                                 setDeleteTarget(flat);
                                 setShowDeleteModal(true);
                               }}
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
+                                       bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-110
+                                       dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/50
+                                       focus:outline-none focus:ring-2 focus:ring-rose-500/50"
                             >
-                              <Trash className="w-4 h-4 text-red-600" />
-                            </Button>
-                          </Tooltip>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                              <Trash className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-              <div className="mt-4">
+
+              {/* Premium Pagination Footer */}
+              <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 px-6 py-3">
                 <Pagination page={page} pageSize={pageSize} total={total} onPageChange={(p) => setPage(p)} onPageSizeChange={(s) => { setPageSize(s); setPage(0); }} />
               </div>
             </>
@@ -511,18 +610,18 @@ export default function Flats() {
                 Status
               </label>
               <select
-                {...register('statusId')}
+                {...register('statusCode')}
                 className="input"
               >
                 <option value="">Select Status</option>
                 {safeStatuses.map((s) => (
-                  <option key={s.id} value={s.id}>{s.displayName}</option>
+                  <option key={s.code} value={s.code}>{s.displayName}</option>
                 ))}
               </select>
-              {errors.statusId && (
+              {errors.statusCode && (
                 <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
                   <AlertCircle className="w-4 h-4" />
-                  {errors.statusId.message}
+                  {errors.statusCode.message}
                 </div>
               )}
             </div>
@@ -613,6 +712,7 @@ export default function Flats() {
           </Button>
         </ModalFooter>
       </Modal>
+      </div>
       {/* Import CSV UI hidden. Export provided above. */}
     </DashboardLayout>
   );

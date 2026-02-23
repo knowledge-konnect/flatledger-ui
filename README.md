@@ -176,12 +176,13 @@ src/
    ```
 
 2. **Environment Variables**
-   Create a `.env` file with:
+   Create a `.env` file based on `.env.example`:
    ```env
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   VITE_API_BASE_URL=http://localhost:3000/api
+   VITE_APP_API_URL=https://localhost:7110
+   VITE_APP_ENV=development
    ```
+   
+   > **Important:** The API URL must be configured in the `.env` file. The application will not start without it.
 
 3. **Run Development Server**
    ```bash

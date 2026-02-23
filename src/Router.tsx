@@ -1,9 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, memo } from 'react';
 import MobileFAB from './components/ui/MobileFAB';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth } from './contexts/AuthProvider';
-import { LoadingSkeleton, DashboardSkeleton } from './components/common/LoadingSkeleton';
 
 // Lazy load all pages for better performance
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -16,15 +15,17 @@ const ChangePassword = lazy(() => import('./pages/ChangePassword'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Flats = lazy(() => import('./pages/Flats'));
 const Maintenance = lazy(() => import('./pages/Maintenance'));
+const MaintenanceLedger = lazy(() => import('./pages/MaintenanceLedger'));
 const Expenses = lazy(() => import('./pages/Expenses'));
 const Reports = lazy(() => import('./pages/Reports'));
 const Users = lazy(() => import('./pages/Users'));
 const Settings = lazy(() => import('./pages/Settings'));
 const SubscriptionManagement = lazy(() => import('./pages/SubscriptionManagement'));
-const PremiumDashboard = lazy(() => import('./pages/PremiumDashboard'));
+const OpeningBalanceEntry = lazy(() => import('./components/OpeningBalance/OpeningBalanceEntry'));
+const Unauthorized = lazy(() => import('./pages/Unauthorized'));
 
 // Loading fallback component
-function PageLoader() {
+const PageLoader = memo(function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950">
       <div className="text-center">
@@ -33,11 +34,13 @@ function PageLoader() {
       </div>
     </div>
   );
-}
+});
 
 export default function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
 
+  // Always show loader while auth state is being determined
+  // This prevents flashing between pages during rapid refreshes
   if (isLoading) {
     return <PageLoader />;
   }
@@ -54,16 +57,26 @@ export default function Router() {
     );
   }
 
+  // Render route tree based on final auth state
+  // isAuthenticated is stable when we reach here (isLoading is false)
   return (
     <>
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
-          <Route path="/signup" element={!isAuthenticated ? <Signup /> : <Navigate to="/dashboard" />} />
+          {/* Redirect logic: check isAuthenticated first to avoid rendering Login when authenticated */}
+          <Route 
+            path="/login" 
+            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
+          />
+          <Route 
+            path="/signup" 
+            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Signup />} 
+          />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/change-password" element={<ChangePassword />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Public SaaS pages */}
           <Route path="/subscription" element={<Subscription />} />
@@ -91,6 +104,14 @@ export default function Router() {
             element={
               <ProtectedRoute>
                 <Maintenance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/flats/:publicId/ledger"
+            element={
+              <ProtectedRoute>
+                <MaintenanceLedger />
               </ProtectedRoute>
             }
           />
@@ -127,6 +148,14 @@ export default function Router() {
             }
           />
           <Route
+            path="/settings/opening-balance"
+            element={
+              <ProtectedRoute>
+                <OpeningBalanceEntry />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/subscription/manage"
             element={
               <ProtectedRoute>
@@ -138,13 +167,16 @@ export default function Router() {
             path="/premium-dashboard"
             element={
               <ProtectedRoute>
-                <PremiumDashboard />
+                <Dashboard />
               </ProtectedRoute>
             }
           />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" />} />
+          {/* Fallback - redirect based on auth state */}
+          <Route 
+            path="*" 
+            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} 
+          />
         </Routes>
       </Suspense>
 

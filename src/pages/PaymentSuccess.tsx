@@ -24,8 +24,8 @@ export default function PaymentSuccess() {
           {/* Success Card */}
           <div className="bg-card rounded-2xl border border-border shadow-lg overflow-hidden">
             {/* Header */}
-            <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-b border-border p-8 text-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <div className="bg-success-50 dark:bg-success-900/20 border-b border-border p-8 text-center">
+              <div className="w-20 h-20 bg-success-600 dark:bg-success-700 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <CheckCircle className="w-10 h-10 text-white" />
               </div>
               <h1 className="text-4xl font-bold text-foreground mb-2">Payment Successful!</h1>
@@ -88,7 +88,7 @@ export default function PaymentSuccess() {
               </div>
 
               {/* Features Unlocked */}
-              <div className="bg-gradient-to-br from-primary/5 to-secondary/5 rounded-xl border border-primary/20 p-6 space-y-4">
+              <div className="bg-primary-50 dark:bg-primary-900/10 rounded-xl border border-primary-200 dark:border-primary-800 p-6 space-y-4">
                 <h3 className="font-semibold text-foreground text-lg">Features Unlocked</h3>
                 <p className="text-sm text-muted-foreground">You now have access to all {planNames[planId] || 'Standard'} plan features:</p>
 

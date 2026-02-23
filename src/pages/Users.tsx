@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { Plus, Copy, Check, Edit, Trash, AlertCircle } from 'lucide-react';
+import { Plus, Copy, Check, Edit, Trash, AlertCircle, Users as UsersIcon } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import PageHeader from '../components/ui/PageHeader';
+import EmptyState from '../components/ui/EmptyState';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
@@ -25,7 +27,7 @@ import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { RoleId } from '../types/roles';
 import { User } from '../api/usersApi';
 import { AlertMessages } from '../lib/alertMessages';
-import { useFlats } from '../hooks/useFlatsApi';
+import { useFlats } from '../hooks/useFlats';
 import { FlatDto } from '../api/flatsApi';
 import { useAuth } from '../contexts/AuthProvider';
 
@@ -316,28 +318,56 @@ export default function Users() {
   return (
     <DashboardLayout title="Users & Access">
       <div className="space-y-6">
+        {/* Page Header */}
+        <PageHeader
+          title="Users & Access"
+          description="Manage user accounts and permissions"
+          icon={UsersIcon}
+          actions={
+            <Button size="md" onClick={() => setShowModal(true)}>
+              <Plus className="w-4 h-4" />
+              Add User
+            </Button>
+          }
+        />
+
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-          <Card>
-            <CardContent className="p-4 lg:p-5">
-              <p className="text-xs lg:text-sm text-slate-600 dark:text-slate-400">Total Users</p>
-              <p className="text-2xl lg:text-3xl font-bold mt-2">{users.length}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card className="hover:shadow-lg transition-all duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-lg bg-[#2563EB]/10 flex items-center justify-center">
+                  <UsersIcon className="w-5 h-5 text-[#2563EB] dark:text-[#3B82F6]" />
+                </div>
+              </div>
+              <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mb-1">Total Users</p>
+              <p className="text-2xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">{users.length}</p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4 lg:p-5">
-              <p className="text-xs lg:text-sm text-slate-600 dark:text-slate-400">Active Users</p>
-              <p className="text-2xl lg:text-3xl font-bold mt-2">
+          <Card className="hover:shadow-lg transition-all duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-lg bg-[#16A34A]/10 dark:bg-[#22C55E]/10 flex items-center justify-center">
+                  <Plus className="w-5 h-5 text-[#16A34A] dark:text-[#22C55E]" />
+                </div>
+              </div>
+              <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mb-1">Active Users</p>
+              <p className="text-2xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                 {users.filter((u: User) => u.isActive).length}
               </p>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4 lg:p-5">
-              <p className="text-xs lg:text-sm text-slate-600 dark:text-slate-400">Admins</p>
-              <p className="text-2xl lg:text-3xl font-bold mt-2">
+          <Card className="hover:shadow-lg transition-all duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-lg bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 flex items-center justify-center">
+                  <Plus className="w-5 h-5 text-[#2563EB] dark:text-[#3B82F6]" />
+                </div>
+              </div>
+              <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mb-1">Admins</p>
+              <p className="text-2xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                 {users.filter((u: User) => u.roleId === RoleId.SOCIETY_ADMIN).length}
               </p>
             </CardContent>
@@ -345,7 +375,7 @@ export default function Users() {
         </div>
 
         {/* Users Table */}
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <CardTitle>Team Members</CardTitle>
@@ -377,20 +407,20 @@ export default function Users() {
                   <TableRow key={user.publicId}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold text-xs flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-[#2563EB] dark:bg-[#3B82F6] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
                           {user.name.charAt(0)}
                         </div>
-                        <span className="font-medium truncate max-w-[120px] lg:max-w-none">{user.name}</span>
+                        <span className="font-semibold text-[#0F172A] dark:text-[#F8FAFC] truncate max-w-[120px] lg:max-w-none">{user.name}</span>
                       </div>
                     </TableCell>
 
                     <TableCell className="text-xs lg:text-sm">
-                      <span className="truncate max-w-[140px] inline-block" title={user.email}>
+                      <span className="text-[#64748B] dark:text-[#94A3B8] truncate max-w-[140px] inline-block" title={user.email}>
                         {user.email}
                       </span>
                     </TableCell>
 
-                    <TableCell className="hidden lg:table-cell text-xs lg:text-sm">
+                    <TableCell className="hidden lg:table-cell text-xs lg:text-sm text-[#64748B] dark:text-[#94A3B8]">
                       {user.mobile ? user.mobile : '—'}
                     </TableCell>
 
@@ -414,9 +444,9 @@ export default function Users() {
 
                     <TableCell className="hidden 2xl:table-cell text-xs lg:text-sm">
                       {user.lastLogin ? (
-                        <span>{formatDate(user.lastLogin)}</span>
+                        <span className="text-[#64748B] dark:text-[#94A3B8]">{formatDate(user.lastLogin)}</span>
                       ) : (
-                        <span className="text-slate-400">Never</span>
+                        <span className="text-[#64748B] dark:text-[#94A3B8]">Never</span>
                       )}
                     </TableCell>
 
@@ -562,30 +592,30 @@ export default function Users() {
             <p className="text-xs font-bold text-green-900 dark:text-green-100 mb-2">📋 USER DETAILS</p>
             <div className="space-y-1.5">
               <div className="flex justify-between items-center bg-white dark:bg-gray-700 p-2 rounded border border-green-200 dark:border-green-700">
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">Name:</span>
-                <span className="text-sm font-bold text-gray-900 dark:text-white">{newUserName}</span>
+                <span className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">Name:</span>
+                <span className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">{newUserName}</span>
               </div>
-              <div className="flex justify-between items-center bg-white dark:bg-gray-700 p-2 rounded border border-green-200 dark:border-green-700">
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">Email:</span>
-                <span className="text-sm font-bold text-gray-900 dark:text-white truncate ml-2">{newUserEmail}</span>
+              <div className="flex justify-between items-center bg-white dark:bg-[#020617] p-2 rounded border border-[#16A34A]/20 dark:border-[#22C55E]/20">
+                <span className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">Email:</span>
+                <span className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate ml-2">{newUserEmail}</span>
               </div>
             </div>
           </div>
 
           {/* Temporary Password Section - Compact */}
           <div className="space-y-2">
-            <p className="text-xs font-bold text-gray-900 dark:text-white flex items-center gap-1">
+            <p className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] flex items-center gap-1">
               🔐 TEMPORARY PASSWORD
             </p>
             <div className="flex gap-2">
-              <div className="flex-1 bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-indigo-700 dark:to-blue-700 px-3 py-3 rounded-lg font-mono text-xl font-bold text-center tracking-wider text-white shadow-lg border-2 border-indigo-700 dark:border-indigo-600 select-all cursor-pointer">
+              <div className="flex-1 bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] dark:from-[#3B82F6] dark:to-[#2563EB] px-3 py-3 rounded-lg font-mono text-xl font-bold text-center tracking-wider text-white shadow-lg border-2 border-[#1D4ED8] dark:border-[#2563EB] select-all cursor-pointer">
                 {temporaryPassword}
               </div>
               <Button
                 size="sm"
                 onClick={copyPasswordToClipboard}
                 variant={passwordCopied ? 'primary' : 'outline'}
-                className={`flex-shrink-0 font-semibold text-xs ${passwordCopied ? 'bg-green-500 hover:bg-green-600 text-white border-0' : 'border-2 border-gray-300 dark:border-gray-600'}`}
+                className={`flex-shrink-0 font-semibold text-xs ${passwordCopied ? 'bg-[#16A34A] hover:bg-[#15803D] text-white border-0' : 'border-2 border-[#E2E8F0] dark:border-[#1E293B]'}`}
               >
                 {passwordCopied ? (
                   <>

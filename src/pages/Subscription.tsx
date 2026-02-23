@@ -59,7 +59,7 @@ export default function Subscription() {
       <Navbar variant="landing" />
 
       {/* Hero Section - Dynamic by selected plan */}
-      <section className="pt-12 md:pt-20 pb-6 md:pb-10 px-2 sm:px-4 lg:px-6 relative overflow-hidden bg-gradient-to-br from-white to-slate-50 dark:from-slate-950 dark:to-slate-900">
+      <section className="pt-12 md:pt-20 pb-6 md:pb-10 px-2 sm:px-4 lg:px-6 relative overflow-hidden bg-white dark:bg-slate-950">
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <div className="inline-block px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-full border border-indigo-200 dark:border-indigo-700 animate-fade-in">
             <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">✨ 1 Month Free • No Credit Card Required</p>

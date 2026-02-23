@@ -3,6 +3,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { Download, FileText, TrendingUp, Calendar, Filter } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import PageHeader from '../components/ui/PageHeader';
 import Button from '../components/ui/Button';
 import Select from '../components/ui/Select';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
@@ -41,71 +42,73 @@ export default function Reports() {
   return (
     <DashboardLayout title="Reports & Analytics">
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-gray-600 dark:text-gray-300">
-              Comprehensive financial reports and analytics for your society
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Select
-              options={[
-                { value: 'last-6-months', label: 'Last 6 Months' },
-                { value: 'this-year', label: 'This Year' },
-                { value: 'last-year', label: 'Last Year' },
-                { value: 'custom', label: 'Custom Range' },
-              ]}
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-            />
-            <Button variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              Export PDF
-            </Button>
-          </div>
-        </div>
+        {/* Page Header */}
+        <PageHeader
+          title="Reports & Analytics"
+          description="Comprehensive financial reports and analytics for your society"
+          icon={FileText}
+          actions={
+            <>
+              <Select
+                options={[
+                  { value: 'last-6-months', label: 'Last 6 Months' },
+                  { value: 'this-year', label: 'This Year' },
+                  { value: 'last-year', label: 'Last Year' },
+                  { value: 'custom', label: 'Custom Range' },
+                ]}
+                value={selectedPeriod}
+                onChange={(e) => setSelectedPeriod(e.target.value)}
+              />
+              <Button variant="outline" size="md">
+                <Download className="w-4 h-4" />
+                Export PDF
+              </Button>
+            </>
+          }
+        />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-800/20 border-green-200 dark:border-green-800">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="hover:shadow-lg transition-all duration-200">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <TrendingUp className="w-6 h-6 text-white" />
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-lg bg-[#16A34A]/10 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-[#16A34A] dark:text-[#22C55E]" />
                 </div>
                 <Badge variant="success">+12%</Badge>
               </div>
-              <p className="text-sm text-green-700 dark:text-green-300 font-medium mb-1">Net Income (6M)</p>
-              <p className="text-2xl font-bold text-green-900 dark:text-green-100">
+              <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mb-1">Net Income (6M)</p>
+              <p className="text-2xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                 {formatCurrency(incomeVsExpenseData.reduce((sum, d) => sum + (d.income - d.expense), 0))}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-800/20 border-blue-200 dark:border-blue-800">
+          <Card className="hover:shadow-md transition-all duration-200">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <FileText className="w-6 h-6 text-white" />
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-lg bg-info-100 dark:bg-info-900/30 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-info-600 dark:text-info-400" />
                 </div>
                 <Badge variant="info">YTD</Badge>
               </div>
-              <p className="text-sm text-blue-700 dark:text-blue-300 font-medium mb-1">Avg Monthly Collection</p>
-              <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Avg Monthly Collection</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
                 {formatCurrency(collectionTrend.reduce((sum, d) => sum + d.collected, 0) / collectionTrend.length)}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-red-50 to-orange-100 dark:from-red-900/20 dark:to-orange-800/20 border-red-200 dark:border-red-800">
+          <Card className="hover:shadow-md transition-all duration-200">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center shadow-lg">
-                  <TrendingUp className="w-6 h-6 text-white" />
+              <div className="flex items-start justify-between mb-3">
+                <div className="w-10 h-10 rounded-lg bg-error-100 dark:bg-error-900/30 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-error-600 dark:text-error-400" />
                 </div>
                 <Badge variant="danger">Alert</Badge>
               </div>
-              <p className="text-sm text-red-700 dark:text-red-300 font-medium mb-1">Total Outstanding</p>
-              <p className="text-2xl font-bold text-red-900 dark:text-red-100">
+              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Total Member Outstanding</p>
+              <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
                 {formatCurrency(outstandingByFlat.reduce((sum, d) => sum + d.outstanding, 0))}
               </p>
             </CardContent>
@@ -206,18 +209,18 @@ export default function Reports() {
                   {outstandingByFlat.map((item, index) => (
                     <TableRow key={index}>
                       <TableCell>
-                        <span className="font-bold text-primary">
+                        <span className="font-bold text-[#2563EB] dark:text-[#3B82F6]">
                           {item.flatNumber}
                         </span>
                       </TableCell>
-                      <TableCell className="font-semibold text-foreground">{item.owner}</TableCell>
+                      <TableCell className="font-semibold text-[#0F172A] dark:text-[#F8FAFC]">{item.owner}</TableCell>
                       <TableCell>
                         <Badge variant={item.months >= 3 ? 'danger' : 'warning'}>
                           {item.months} {item.months === 1 ? 'month' : 'months'}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <span className="font-bold text-destructive">
+                        <span className="font-bold text-[#DC2626] dark:text-[#EF4444]">
                           {formatCurrency(item.outstanding)}
                         </span>
                       </TableCell>
@@ -232,8 +235,8 @@ export default function Reports() {
         <div className="grid md:grid-cols-3 gap-4">
           <Card hover className="cursor-pointer">
             <CardContent className="p-6 text-center">
-              <div className="w-12 h-12 bg-primary/15 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <FileText className="w-6 h-6 text-primary" />
+              <div className="w-12 h-12 bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <FileText className="w-6 h-6 text-[#2563EB] dark:text-[#3B82F6]" />
               </div>
               <h3 className="font-bold text-foreground mb-1">
                 AGM Report

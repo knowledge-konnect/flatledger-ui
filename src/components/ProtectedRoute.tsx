@@ -1,11 +1,17 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthProvider';
 
-export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  roles?: string[]; // Optional roles - if provided, user must have at least one of these roles
+}
 
-  // Show loading screen while checking auth
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles }) => {
+  const { isAuthenticated, isLoading, user } = useAuth();
+  const location = useLocation();
+
+  // 1. If authLoading is true: show loading spinner
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -17,10 +23,25 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
     );
   }
 
+  // 2. If not authenticated: redirect to /login
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    // Preserve the intended destination
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // 3. Support optional roles prop: If user.role not in allowed roles, redirect to /unauthorized
+  if (roles && roles.length > 0) {
+    // Check if user has at least one of the required roles
+    const hasRequiredRole = user?.roles?.some(userRole => roles.includes(userRole)) || 
+                           (user?.role && roles.includes(user.role));
+    
+    if (!hasRequiredRole) {
+      return <Navigate to="/unauthorized" replace />;
+    }
+  }
+
+  // 4. Ensure no protected component renders before auth check completes
+  // Auth check is complete at this point (isLoading = false, isAuthenticated = true, role check passed)
   return <>{children}</>;
 };
 
@@ -31,7 +52,7 @@ export const RequireRole: React.FC<{
   const { user } = useAuth();
 
   if (!user || !roles.some(role => user.roles.includes(role))) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return <>{children}</>;

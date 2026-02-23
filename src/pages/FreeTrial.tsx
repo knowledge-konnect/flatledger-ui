@@ -16,16 +16,16 @@ export default function FreeTrial() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
             <div className="p-8 bg-card border border-border rounded-xl shadow-sm text-center">
               <h2 className="text-lg font-semibold text-foreground mb-4">What you get</h2>
-              <ul className="mx-auto max-w-md space-y-3 text-muted-foreground">
-                <li className="flex items-center justify-center gap-3"><span className="text-primary">•</span> Full access to Professional features for 14 days</li>
-                <li className="flex items-center justify-center gap-3"><span className="text-primary">•</span> Create bills, send email reminders, and track payments</li>
-                <li className="flex items-center justify-center gap-3"><span className="text-primary">•</span> Invite admins and members, export reports</li>
-                <li className="flex items-center justify-center gap-3"><span className="text-primary">•</span> No credit card required, cancel anytime</li>
+              <ul className="mx-auto max-w-md space-y-3 text-[#64748B] dark:text-[#94A3B8]">
+                <li className="flex items-center justify-center gap-3"><span className="text-[#2563EB] dark:text-[#3B82F6]">•</span> Full access to Professional features for 14 days</li>
+                <li className="flex items-center justify-center gap-3"><span className="text-[#2563EB] dark:text-[#3B82F6]">•</span> Create bills, send email reminders, and track payments</li>
+                <li className="flex items-center justify-center gap-3"><span className="text-[#2563EB] dark:text-[#3B82F6]">•</span> Invite admins and members, export reports</li>
+                <li className="flex items-center justify-center gap-3"><span className="text-[#2563EB] dark:text-[#3B82F6]">•</span> No credit card required, cancel anytime</li>
               </ul>
 
               <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Link to="/signup" className="w-full inline-flex items-center justify-center px-6 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-semibold">Start Free Trial</Link>
-                <Link to="/subscription" className="w-full inline-flex items-center justify-center px-6 py-3 rounded-lg border-2 border-border text-foreground">Compare Plans</Link>
+                <Link to="/signup" className="w-full inline-flex items-center justify-center px-6 py-3 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold transition-colors duration-200">Start Free Trial</Link>
+                <Link to="/subscription" className="w-full inline-flex items-center justify-center px-6 py-3 rounded-lg border-2 border-[#E2E8F0] dark:border-[#1E293B] text-[#0F172A] dark:text-[#F8FAFC] hover:bg-[#F8FAFC] dark:hover:bg-[#020617] transition-colors duration-200">Compare Plans</Link>
               </div>
             </div>
 
@@ -44,7 +44,7 @@ export default function FreeTrial() {
               </ol>
 
               <div className="mt-8">
-                <p className="text-sm text-muted-foreground">Need help? <Link to="/suggestions" className="text-primary underline">Contact our team</Link> and we'll walk you through setup.</p>
+                <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Need help? <Link to="/suggestions" className="text-[#2563EB] dark:text-[#3B82F6] underline">Contact our team</Link> and we'll walk you through setup.</p>
               </div>
             </div>
           </div>

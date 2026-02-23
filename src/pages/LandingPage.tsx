@@ -73,7 +73,7 @@ const LandingPage: React.FC = () => {
       <Navbar variant="landing" />
 
       {/* Hero Section */}
-      <section className="pt-32 md:pt-48 pb-24 md:pb-40 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-br from-white to-slate-50 dark:from-slate-950 dark:to-slate-900">
+      <section className="pt-32 md:pt-48 pb-24 md:pb-40 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-white dark:bg-slate-950">
         <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-100/20 dark:bg-indigo-900/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-violet-100/20 dark:bg-violet-900/10 rounded-full blur-3xl pointer-events-none" />
          <div className="max-w-6xl mx-auto relative z-10">
@@ -86,7 +86,7 @@ const LandingPage: React.FC = () => {
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 dark:text-white text-balance animate-slide-in-up leading-tight tracking-tight">
               Effortless Society Management
               <br />
-              <span className="bg-gradient-to-r from-indigo-600 to-indigo-500 bg-clip-text text-transparent">For Committees & Residents</span>
+              <span className="text-primary-600 dark:text-primary-400">For Committees & Residents</span>
             </h1>
             <p className="text-xl md:text-2xl text-slate-700 dark:text-slate-200 max-w-2xl mx-auto leading-relaxed animate-slide-in-up font-medium" style={{ animationDelay: '0.1s' }}>
               Ditch spreadsheets and manual work. Automate bills, payments, reports, and communication. Secure, simple, and built for Indian societies.
@@ -129,7 +129,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 md:py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-50 dark:from-slate-900 via-white dark:via-slate-950 to-white dark:to-slate-950 scroll-mt-40">
+      <section id="features" className="py-24 md:py-32 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 scroll-mt-40">
         <div className="max-w-6xl mx-auto">
             <div className="text-center mb-8 space-y-4">
             <h2 className="section-heading text-foreground animate-slide-in-up">Everything you need</h2>
@@ -148,8 +148,8 @@ const LandingPage: React.FC = () => {
                     className="flex flex-col items-center p-8 bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-lg hover:-translate-y-1 border border-slate-200 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-700 transition-all duration-300 animate-slide-in-up group"
                     style={{ animationDelay: `${0.1 * (index + 1)}s` }}
                   >
-                    <div className={`w-14 h-14 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mb-4 shadow-md group-hover:shadow-lg group-hover:scale-110 transition-all duration-300`}>
-                      <IconComponent className="w-7 h-7 text-white" />
+                    <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-xl flex items-center justify-center mb-4 shadow-sm group-hover:shadow-md group-hover:scale-110 transition-all duration-300">
+                      <IconComponent className="w-7 h-7 text-primary-600 dark:text-primary-400" />
                     </div>
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3 text-center">{feature.title}</h3>
                     <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm text-center">{feature.description}</p>
@@ -162,37 +162,37 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Trust & Security Section */}
-      <section className="py-20 md:py-28 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-50 dark:from-slate-900 to-white dark:to-slate-950">
+      <section className="py-20 md:py-28 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950">
         <div className="max-w-6xl mx-auto">
             <div className="text-center mb-8">
-            <h2 className="text-3xl md:text-5xl font-bold text-indigo-700 dark:text-indigo-300 mb-4 tracking-tight">Why Choose Us?</h2>
+            <h2 className="text-3xl md:text-5xl font-bold text-primary-600 dark:text-primary-400 mb-4 tracking-tight">Why Choose Us?</h2>
             <p className="text-base md:text-lg text-slate-700 dark:text-slate-300 max-w-3xl mx-auto">Empowering societies with a seamless, secure, and modern management experience. Here’s what sets us apart:</p>
           </div>
           <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
             <div className="flex flex-col items-center bg-white dark:bg-slate-900 rounded-xl p-6 md:p-8 shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all duration-300 min-h-[220px]">
-              <div className="w-14 h-14 flex items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 mb-3 md:mb-4">
-                <span className="text-3xl text-white">⚡</span>
+              <div className="w-14 h-14 flex items-center justify-center rounded-full bg-primary-100 dark:bg-primary-900/30 mb-3 md:mb-4">
+                <span className="text-3xl">⚡</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-1 md:mb-2 text-base md:text-lg text-center whitespace-nowrap">Lightning Fast Setup</h3>
               <p className="text-slate-600 dark:text-slate-400 text-xs md:text-sm text-center">Get started in minutes with our intuitive onboarding. No technical skills required.</p>
             </div>
             <div className="flex flex-col items-center bg-white dark:bg-slate-900 rounded-xl p-6 md:p-8 shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all duration-300 min-h-[220px]">
-              <div className="w-14 h-14 flex items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-green-700 mb-3 md:mb-4">
-                <span className="text-3xl text-white">💵</span>
+              <div className="w-14 h-14 flex items-center justify-center rounded-full bg-success-100 dark:bg-success-900/30 mb-3 md:mb-4">
+                <span className="text-3xl">💵</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-1 md:mb-2 text-base md:text-lg text-center whitespace-nowrap">Transparent Pricing</h3>
               <p className="text-slate-600 dark:text-slate-400 text-xs md:text-sm text-center">Simple, affordable plans with no hidden fees. Pay only for what you need.</p>
             </div>
             <div className="flex flex-col items-center bg-white dark:bg-slate-900 rounded-xl p-6 md:p-8 shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all duration-300 min-h-[220px]">
-              <div className="w-14 h-14 flex items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-700 mb-3 md:mb-4">
-                <span className="text-3xl text-white">🔒</span>
+              <div className="w-14 h-14 flex items-center justify-center rounded-full bg-info-100 dark:bg-info-900/30 mb-3 md:mb-4">
+                <span className="text-3xl">🔒</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-1 md:mb-2 text-base md:text-lg text-center whitespace-nowrap">Bank-Grade Security</h3>
               <p className="text-slate-600 dark:text-slate-400 text-xs md:text-sm text-center">Your data is encrypted, backed up daily, and protected by industry best practices.</p>
             </div>
             <div className="flex flex-col items-center bg-white dark:bg-slate-900 rounded-xl p-6 md:p-8 shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all duration-300 min-h-[220px]">
-              <div className="w-14 h-14 flex items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-pink-700 mb-3 md:mb-4">
-                <span className="text-3xl text-white">🌟</span>
+              <div className="w-14 h-14 flex items-center justify-center rounded-full bg-warning-100 dark:bg-warning-900/30 mb-3 md:mb-4">
+                <span className="text-3xl">🌟</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-1 md:mb-2 text-base md:text-lg text-center whitespace-nowrap">Loved by Societies</h3>
               <p className="text-slate-600 dark:text-slate-400 text-xs md:text-sm text-center">Trusted by 500+ societies for reliability, support, and continuous improvement.</p>
@@ -202,7 +202,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 md:py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white dark:from-slate-950 via-slate-50 dark:via-slate-900 to-white dark:to-slate-950 scroll-mt-40">
+      <section id="pricing" className="py-24 md:py-32 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 scroll-mt-40">
         <div className="max-w-6xl mx-auto">
             <div className="text-center mb-8 space-y-4">
             <h2 className="section-heading text-foreground animate-slide-in-up">Simple, Transparent Pricing</h2>
@@ -252,7 +252,7 @@ const LandingPage: React.FC = () => {
                     )}
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-indigo-500 dark:from-indigo-400 dark:to-indigo-300 bg-clip-text text-transparent">₹{plan.monthlyAmount}</span>
+                    <span className="text-4xl font-bold text-primary-600 dark:text-primary-400">₹{plan.monthlyAmount}</span>
                     <span className="text-slate-600 dark:text-slate-400 text-lg font-medium">{plan.name === "Monthly" ? "/ month" : "/ year"}</span>
                   </div>
                   <div className="mt-2 text-slate-600 dark:text-slate-400 text-sm">
@@ -298,7 +298,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-20 md:py-28 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-50 dark:from-slate-900 via-white dark:via-slate-950 to-white dark:to-slate-950 scroll-mt-40">
+      <section id="faq" className="py-20 md:py-28 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950 scroll-mt-40">
         <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8">
             <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white text-balance">Frequently Asked Questions</h2>
@@ -338,7 +338,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Testimonials Carousel */}
-      <section className="py-24 md:py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-white dark:from-slate-950 via-slate-50 dark:via-slate-900 to-white dark:to-slate-950">
+      <section className="py-24 md:py-32 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-6xl mx-auto">
             <div className="text-center mb-4 space-y-2">
             <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white text-balance animate-slide-in-up">Trusted by 500+ societies</h2>
@@ -397,9 +397,8 @@ const LandingPage: React.FC = () => {
 
       {/* CTA Section */}
       <section className="py-24 md:py-32 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-white dark:bg-slate-950">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 dark:from-indigo-950/20 to-transparent pointer-events-none" />
         <div className="max-w-4xl mx-auto relative z-10">
-            <div className="p-6 md:p-8 bg-gradient-to-br from-indigo-600 to-indigo-700 dark:from-indigo-600 dark:to-indigo-700 rounded-2xl shadow-xl text-center space-y-3 border border-indigo-500/50 hover:shadow-2xl hover:border-indigo-400/50 transition-all duration-300">
+            <div className="p-6 md:p-8 bg-primary-600 dark:bg-primary-700 rounded-2xl shadow-xl text-center space-y-3 border border-primary-500 hover:shadow-2xl transition-all duration-300">
             <h2 className="text-4xl md:text-5xl font-bold text-white animate-slide-in-up">Start your free trial today</h2>
             <p className="text-lg text-white/90 animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
               1 month free, no credit card required. Join 500+ societies managing with SocietyLedger.
@@ -413,7 +412,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white dark:from-slate-950 to-slate-50 dark:to-slate-900">
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col items-center">
           <div className="flex flex-wrap justify-center gap-8 mb-6">
             <a href="/" className="text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors duration-300">

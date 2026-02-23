@@ -3,6 +3,9 @@ import { Plus, Zap, Droplet, Shield, Wrench, TrendingDown, Edit, Trash2, Search,
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import PageHeader from '../components/ui/PageHeader';
+import EmptyState from '../components/ui/EmptyState';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
@@ -361,11 +364,11 @@ export default function Expenses() {
 
   const EmptyState = () => (
     <div className="flex flex-col items-center justify-center py-16">
-      <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-full flex items-center justify-center mb-4 shadow-md">
-        <TrendingDown className="w-10 h-10 text-gray-400" />
+      <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+        <TrendingDown className="w-8 h-8 text-slate-400 dark:text-slate-500" />
       </div>
-      <p className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No expenses found</p>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-8 max-w-sm text-center">
+      <p className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No expenses found</p>
+      <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 max-w-sm text-center">
         {searchTerm ? 'No expenses match your search. Try adjusting your filters.' : 'Start tracking expenses to get insights into your spending patterns.'}
       </p>
       {!searchTerm && (
@@ -373,7 +376,7 @@ export default function Expenses() {
           setSelectedExpense(null);
           reset();
           setShowAddModal(true);
-        }} className="bg-blue-600 hover:bg-blue-700 text-white">
+        }}>
           <Plus className="w-4 h-4 mr-2" />
           Add Your First Expense
         </Button>
@@ -384,60 +387,77 @@ export default function Expenses() {
   return (
     <DashboardLayout title="Expenses">
       <div className="space-y-6">
+        {/* Page Header */}
+        <PageHeader
+          title="Expenses"
+          description="Track and manage society expenses"
+          icon={TrendingDown}
+          actions={
+            <Button size="md" onClick={() => {
+              setSelectedExpense(null);
+              reset();
+              setShowAddModal(true);
+            }}>
+              <Plus className="w-4 h-4" />
+              Add Expense
+            </Button>
+          }
+        />
+
         {/* Header Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {isLoading ? (
-            <>
-              <StatsCardSkeleton />
-              <StatsCardSkeleton />
-              <StatsCardSkeleton />
-            </>
+            <LoadingSpinner centered />
           ) : (
             <>
-              <Card className="bg-gradient-to-br from-red-50 to-orange-100 dark:from-red-900/20 dark:to-orange-800/20 border-red-200 dark:border-red-800 shadow-lg">
-                <CardContent className="p-5">
-                  <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center shadow-lg mb-3">
-                    <TrendingDown className="w-6 h-6 text-white" />
+              <Card className="hover:shadow-lg transition-all duration-200">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-[#DC2626]/10 flex items-center justify-center">
+                      <TrendingDown className="w-5 h-5 text-[#DC2626] dark:text-[#EF4444]" />
+                    </div>
                   </div>
-                  <p className="text-xs font-semibold text-red-700 dark:text-red-300 uppercase tracking-wide mb-1">Total (MTD)</p>
-                  <p className="text-2xl font-bold text-red-900 dark:text-red-100">
+                  <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mb-1">Total (MTD)</p>
+                  <p className="text-2xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
                     {formatCurrency(totalExpenses)}
                   </p>
-                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                  <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
                     {filteredAndSortedExpenses.length} transaction{filteredAndSortedExpenses.length !== 1 ? 's' : ''}
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-blue-50 to-cyan-100 dark:from-blue-900/20 dark:to-cyan-800/20 border-blue-200 dark:border-blue-800 shadow-lg">
-                <CardContent className="p-5">
-                  <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg mb-3">
-                    <Zap className="w-6 h-6 text-white" />
+              <Card className="hover:shadow-md transition-all duration-200">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+                      <Zap className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                    </div>
                   </div>
-                  <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 uppercase tracking-wide mb-1">Categories</p>
-                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                    {categoriesData.length}
+                  <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Active Categories</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+                    {categoryData.length}
                   </p>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                    {categoryData.length} active
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    {categoriesData.length} total categories
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-800/20 border-green-200 dark:border-green-800 shadow-lg">
-                <CardContent className="p-5">
-                  <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center shadow-lg mb-3">
-                    <Plus className="w-6 h-6 text-white" />
+              <Card className="hover:shadow-md transition-all duration-200">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-success-100 dark:bg-success-900/30 flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-success-600 dark:text-success-400" />
+                    </div>
                   </div>
-                  <p className="text-xs font-semibold text-green-700 dark:text-green-300 uppercase tracking-wide mb-1">Quick Action</p>
-                  <Button className="w-full mt-3 bg-green-600 hover:bg-green-700 text-white text-xs h-8" onClick={() => {
-                    setSelectedExpense(null);
-                    reset();
-                    setShowAddModal(true);
-                  }}>
-                    <Plus className="w-3 h-3 mr-1" />
-                    Add Expense
-                  </Button>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Avg Per Transaction</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
+                    {filteredAndSortedExpenses.length > 0 ? formatCurrency(totalExpenses / filteredAndSortedExpenses.length) : formatCurrency(0)}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Based on {filteredAndSortedExpenses.length} expenses
+                  </p>
                 </CardContent>
               </Card>
             </>
@@ -446,7 +466,7 @@ export default function Expenses() {
 
         {/* Breakdown Chart and Categories */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="shadow-lg">
+          <Card>
             <CardHeader>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div>
@@ -683,9 +703,9 @@ export default function Expenses() {
                   <TableBody>
                     {filteredAndSortedExpenses.map((expense) => {
                       return (
-                        <TableRow key={expense.publicId} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <TableRow key={expense.publicId} className="hover:bg-[#F8FAFC] dark:hover:bg-[#020617]/50 transition-colors">
                           <TableCell>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">{formatDate(expense.dateIncurred)}</span>
+                            <span className="text-sm font-semibold text-[#0F172A] dark:text-[#F8FAFC]">{formatDate(expense.dateIncurred)}</span>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
@@ -695,19 +715,19 @@ export default function Expenses() {
                               >
                                 {renderCategoryIcon(expense.categoryCode, 'sm')}
                               </div>
-                              <span className="font-medium text-sm text-gray-900 dark:text-white">
+                              <span className="font-semibold text-sm text-[#0F172A] dark:text-[#F8FAFC]">
                                 {getCategoryLabel(expense.categoryCode)}
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell className="text-sm font-medium text-gray-700 dark:text-gray-300">{expense.vendor}</TableCell>
+                          <TableCell className="text-sm font-medium text-[#64748B] dark:text-[#94A3B8]">{expense.vendor}</TableCell>
                           <TableCell>
-                            <span className="font-bold text-red-600 dark:text-red-400 text-sm">
+                            <span className="font-bold text-[#DC2626] dark:text-[#EF4444] text-sm">
                               {formatCurrency(expense.amount)}
                             </span>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
-                            <span className="text-sm text-gray-600 dark:text-gray-400 truncate max-w-xs">
+                            <span className="text-sm text-[#64748B] dark:text-[#94A3B8] truncate max-w-xs">
                               {expense.description || '—'}
                             </span>
                           </TableCell>

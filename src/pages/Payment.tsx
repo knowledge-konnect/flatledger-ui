@@ -151,7 +151,7 @@ export default function Payment() {
           {/* Main Card */}
           <div className="bg-card rounded-2xl border border-border shadow-lg overflow-hidden">
             {/* Order Summary */}
-            <div className="bg-gradient-to-br from-primary/5 to-secondary/5 border-b border-border p-8">
+            <div className="bg-primary-50 dark:bg-primary-900/10 border-b border-border p-8">
               <h1 className="text-3xl font-bold text-foreground mb-2">Confirm Your Subscription</h1>
               <p className="text-muted-foreground">Review and complete your payment</p>
             </div>
@@ -194,7 +194,7 @@ export default function Payment() {
                   <div className="border-t border-border pt-4 mt-4">
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-foreground">Total due today</span>
-                      <span className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                      <span className="text-3xl font-bold text-primary-600 dark:text-primary-400">
                         ₹{plan.price}
                       </span>
                     </div>
@@ -246,7 +246,7 @@ export default function Payment() {
                 <button
                   onClick={handleRazorpayPayment}
                   disabled={isProcessing}
-                  className="w-full py-4 px-6 bg-gradient-to-r from-primary to-secondary text-white rounded-xl font-semibold shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full py-4 px-6 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isProcessing ? (
                     <>

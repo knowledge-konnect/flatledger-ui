@@ -1,7 +1,7 @@
 import { ReactNode, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import RippleButton from './RippleButton';
+import Button from './Button';
 
 interface EnhancedModalProps {
   isOpen: boolean;
@@ -142,17 +142,17 @@ export function ConfirmModal({
     <EnhancedModal isOpen={isOpen} onClose={onClose} title={title} size="sm">
       <p className="text-slate-600 dark:text-slate-400 mb-6">{message}</p>
       <ModalFooter>
-        <RippleButton variant="ghost" onClick={onClose} disabled={isLoading}>
+        <Button variant="ghost" onClick={onClose} disabled={isLoading}>
           {cancelText}
-        </RippleButton>
-        <RippleButton
+        </Button>
+        <Button
           variant={variant}
           onClick={onConfirm}
           isLoading={isLoading}
           disabled={isLoading}
         >
           {confirmText}
-        </RippleButton>
+        </Button>
       </ModalFooter>
     </EnhancedModal>
   );

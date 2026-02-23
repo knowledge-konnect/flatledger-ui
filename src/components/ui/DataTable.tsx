@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown, Download, Filter } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useIsMobile } from '../../hooks/useMediaQuery';
-import RippleButton from './RippleButton';
+import Button from './Button';
 
 export interface Column<T> {
   key: string;
@@ -183,7 +183,7 @@ export function DataTable<T extends { id: string }>({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <RippleButton
+          <Button
             variant="outline"
             size="sm"
             onClick={exportToCSV}
@@ -191,7 +191,7 @@ export function DataTable<T extends { id: string }>({
           >
             <Download className="w-4 h-4" />
             Export CSV
-          </RippleButton>
+          </Button>
         </div>
       </div>
 

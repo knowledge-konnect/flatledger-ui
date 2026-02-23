@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { subscriptionApi, SubscriptionStatusResponse, TrialResponse, SubscribeResponse, CancelSubscriptionResponse } from '../api/subscriptionApi';
+import { subscriptionApi, SubscriptionStatusData, TrialData, SubscribeData } from '../api/subscriptionApi';
+
+// Type aliases for backward compatibility
+type TrialResponse = TrialData;
+type SubscribeResponse = SubscribeData;
+type CancelSubscriptionResponse = { succeeded: boolean };
 
 interface SubscriptionState {
   accessAllowed: boolean;
@@ -42,14 +47,14 @@ export function useSubscription(): UseSubscriptionReturn {
   /**
    * Update subscription state from API response
    */
-  const updateSubscriptionState = useCallback((data: SubscriptionStatusResponse['data']) => {
+  const updateSubscriptionState = useCallback((data: SubscriptionStatusData) => {
     setState(prev => ({
       ...prev,
       accessAllowed: data.accessAllowed,
       status: data.status,
       trialDaysRemaining: data.trialDaysRemaining || null,
-      planName: data.planName,
-      monthlyAmount: data.monthlyAmount,
+      planName: data.planName || null,
+      monthlyAmount: data.monthlyAmount || null,
       loading: false,
       error: null,
     }));
@@ -84,17 +89,13 @@ export function useSubscription(): UseSubscriptionReturn {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const response = await subscriptionApi.getStatus();
-      if (response.succeeded) {
-        updateSubscriptionState(response.data);
-      } else {
-        setState(prev => ({
-          ...prev,
-          loading: false,
-          error: `Failed to get subscription status: ${response.error}`
-        }));
-      }
-    } catch (error) {
+      console.log('🔍 [useSubscription] Fetching subscription status...');
+      const data = await subscriptionApi.getStatus();
+      console.log('🔍 [useSubscription] Subscription data:', data);
+      
+      updateSubscriptionState(data);
+    } catch (error: any) {
+      console.error('🔍 [useSubscription] Error:', error);
       await handleApiError(error, refreshStatus);
     }
   }, [updateSubscriptionState, handleApiError]);
@@ -107,27 +108,19 @@ export function useSubscription(): UseSubscriptionReturn {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const response = await subscriptionApi.createTrial();
-      if (response.succeeded) {
-        setState(prev => ({
-          ...prev,
-          trialEnd: response.trialEnd,
-          loading: false,
-          error: null
-        }));
-        // Refresh status to get updated state
-        await refreshStatus();
-        return response;
-      } else {
-        setState(prev => ({
-          ...prev,
-          loading: false,
-          error: `Trial creation failed: ${response.error}`
-        }));
-        return null;
-      }
-    } catch (error) {
-      return await handleApiError(error, () => subscriptionApi.createTrial());
+      const data = await subscriptionApi.createTrial();
+      setState(prev => ({
+        ...prev,
+        trialEnd: data.trialEndDate,
+        loading: false,
+        error: null
+      }));
+      // Refresh status to get updated state
+      await refreshStatus();
+      return data;
+    } catch (error: any) {
+      await handleApiError(error);
+      return null;
     }
   }, [refreshStatus, handleApiError]);
 
@@ -143,30 +136,20 @@ export function useSubscription(): UseSubscriptionReturn {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const response = await subscriptionApi.subscribe({
+      const data = await subscriptionApi.subscribe({
         planId,
-        amount,
-        paymentMethod,
-        paymentReference
+        razorpayOrderId: paymentReference,
+        razorpayPaymentId: paymentReference,
+        razorpaySignature: paymentReference,
       });
-
-      if (response.succeeded) {
-        setState(prev => ({ ...prev, loading: false, error: null }));
-        // Refresh status to get updated subscription info
-        await refreshStatus();
-        return response;
-      } else {
-        setState(prev => ({
-          ...prev,
-          loading: false,
-          error: `Subscription failed: ${response.error}`
-        }));
-        return null;
-      }
-    } catch (error) {
-      return await handleApiError(error, () => subscriptionApi.subscribe({
-        planId, amount, paymentMethod, paymentReference
-      }));
+      
+      setState(prev => ({ ...prev, loading: false, error: null }));
+      // Refresh status to get updated subscription info
+      await refreshStatus();
+      return data;
+    } catch (error: any) {
+      await handleApiError(error);
+      return null;
     }
   }, [refreshStatus, handleApiError]);
 
@@ -177,22 +160,14 @@ export function useSubscription(): UseSubscriptionReturn {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      const response = await subscriptionApi.cancel({ reason });
-      if (response.succeeded) {
-        setState(prev => ({ ...prev, loading: false, error: null }));
-        // Refresh status to reflect cancellation
-        await refreshStatus();
-        return response;
-      } else {
-        setState(prev => ({
-          ...prev,
-          loading: false,
-          error: `Cancellation failed: ${response.error}`
-        }));
-        return null;
-      }
-    } catch (error) {
-      return await handleApiError(error, () => subscriptionApi.cancel({ reason }));
+      await subscriptionApi.cancel({ reason });
+      setState(prev => ({ ...prev, loading: false, error: null }));
+      // Refresh status to reflect cancellation
+      await refreshStatus();
+      return { succeeded: true }; // API returns void, return success object for compatibility
+    } catch (error: any) {
+      await handleApiError(error);
+      return null;
     }
   }, [refreshStatus, handleApiError]);
 

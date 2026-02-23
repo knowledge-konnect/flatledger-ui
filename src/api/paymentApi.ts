@@ -1,175 +1,128 @@
 import { ApiResponse } from '../types/api';
 import apiClient from './client';
 
-// Payment Plan Types
+/* =====================================================
+   TYPES & INTERFACES (Following API Documentation)
+===================================================== */
+
+/**
+ * Subscription Plan
+ * GET /plans
+ */
 export interface PaymentPlan {
-  id: 'basic' | 'standard' | 'pro';
+  id: string; // UUID - plan's public identifier
   name: string;
-  price: number;
-  originalPrice?: number;
-  period: 'monthly' | 'yearly';
-  features: string[];
-  popular?: boolean;
   description?: string;
+  monthlyAmount: number;
+  yearlyAmount: number;
+  currency: string; // 'INR', 'USD', etc.
+  features: string[];
+  isActive: boolean;
+  popular?: boolean; // For UI display
 }
 
-// Razorpay Order Request/Response
+/**
+ * Create Razorpay Order Request
+ * POST /payments/create-order
+ */
 export interface CreateOrderRequest {
-  planId: string;
-  amount: number; // Amount in rupees (will be converted to paise by backend)
-  currency?: string; // Default: 'INR'
+  amount: number; // Amount in paise (e.g., 49900 = ₹499.00)
 }
+
+/**
+ * Razorpay Order Response
+ * POST /payments/create-order
+ */
 export interface RazorpayOrderResponse {
-  succeeded: true;
-  data: {
-    orderId: string;
-    keyId: string;
-    amount: number;
-    currency: string;
-  };
-  message: string;
-}
-export interface RazorpayOrderError {
-  succeeded: false;
-  error: string;
+  orderId: string; // Razorpay order ID
+  amount: number; // Amount in paise
+  currency: string; // 'INR'
+  key: string; // Razorpay key ID for checkout
 }
 
-// Payment Verification
+/**
+ * Payment Verification Request
+ * POST /payments/verify-payment
+ */
 export interface VerifyPaymentRequest {
-  razorpay_order_id: string;
-  razorpay_payment_id: string;
-  razorpay_signature: string;
-  planId: string;
+  razorpayOrderId: string; // Razorpay order ID
+  razorpayPaymentId: string; // Razorpay payment ID
+  razorpaySignature: string; // Razorpay signature for verification
 }
+
+/**
+ * Payment Verification Response
+ * POST /payments/verify-payment
+ */
 export interface VerifyPaymentResponse {
-  succeeded: true;
-  data: {
-    subscriptionId: string;
-    status: 'active';
-    message: string;
-  };
-}
-export interface VerifyPaymentError {
-  succeeded: false;
-  error: string;
+  verified: boolean;
+  subscriptionStatus: 'active' | 'expired' | 'trial' | 'cancelled';
+  subscriptionEndDate?: string; // ISO 8601 date
 }
 
-// Payment plans configuration
-export const PAYMENT_PLANS: PaymentPlan[] = [
-  {
-    id: 'basic',
-    name: 'Basic',
-    price: 249,
-    period: 'monthly',
-    features: [
-      'Up to 50 flats',
-      'Basic financial tracking',
-      'Announcement management',
-      'Document storage (1GB)',
-      'Email support',
-    ],
-    description: 'Basic plan for small societies',
-  },
-  {
-    id: 'standard',
-    name: 'Standard',
-    price: 499,
-    originalPrice: 599,
-    period: 'monthly',
-    popular: true,
-    features: [
-      'Up to 200 flats',
-      'Advanced financial reports',
-      'Maintenance tracking',
-      'Document storage (5GB)',
-      'Priority email support',
-      'API access',
-    ],
-    description: 'Standard plan for growing societies',
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: 999,
-    period: 'monthly',
-    features: [
-      'Unlimited flats',
-      'Custom reports & analytics',
-      'Advanced maintenance workflows',
-      'Document storage (25GB)',
-      'Phone & priority support',
-      'White-label option',
-      'Custom integrations',
-    ],
-    description: 'Pro plan for large societies',
-  },
-];
+/* =====================================================
+   API SERVICE (Following API Documentation Endpoints)
+===================================================== */
 
+/**
+ * Payment API Service
+ * Handles Razorpay payment integration for subscriptions
+ */
 export const paymentApi = {
   /**
-   * Create a Razorpay order for subscription payment
-   * @param request Order creation details
-   * @returns Promise with orderId and keyId
+   * Get all available subscription plans
+   * GET /plans
+   * Public endpoint - no authentication required
+   * @returns Promise<PaymentPlan[]>
    */
-  async createOrder(request: CreateOrderRequest): Promise<RazorpayOrderResponse | RazorpayOrderError> {
-    try {
-      const response = await apiClient.post<ApiResponse<RazorpayOrderResponse['data']>>(
-        '/payments/create-order',
-        request
-      );
-      if (response.data.succeeded) {
-        return {
-          succeeded: true,
-          data: response.data.data,
-          message: response.data.message,
-        };
-      } else {
-        return {
-          succeeded: false,
-          error: 'Failed to create order',
-        };
-      }
-    } catch (error: any) {
-      return {
-        succeeded: false,
-        error: error.response?.data?.error || error.message || 'Failed to create order',
-      };
-    }
+  async getPlans(): Promise<PaymentPlan[]> {
+    const response = await apiClient.get<ApiResponse<{ plans: PaymentPlan[] }>>('/plans');
+    return response.data.data.plans || [];
   },
 
   /**
-   * Verify Razorpay payment with backend
-   * CRITICAL: Do NOT trust frontend payment success - always verify with backend
-   * @param request Payment details to verify
-   * @returns Promise with verification result
+   * Get specific plan by ID
+   * GET /plans/{id}
+   * Public endpoint - no authentication required
+   * @param id UUID of the plan
+   * @returns Promise<PaymentPlan>
    */
-  async verifyPayment(request: VerifyPaymentRequest): Promise<VerifyPaymentResponse | VerifyPaymentError> {
-    try {
-      const response = await apiClient.post<ApiResponse<VerifyPaymentResponse['data']>>(
-        '/payments/verify-payment',
-        request
-      );
-      if (response.data.succeeded) {
-        return {
-          succeeded: true,
-          data: response.data.data,
-        };
-      } else {
-        return {
-          succeeded: false,
-          error: 'Payment verification failed',
-        };
-      }
-    } catch (error: any) {
-      return {
-        succeeded: false,
-        error: error.response?.data?.error || error.message || 'Payment verification failed',
-      };
-    }
+  async getPlanById(id: string): Promise<PaymentPlan> {
+    const response = await apiClient.get<ApiResponse<PaymentPlan>>(`/plans/${id}`);
+    return response.data.data;
   },
 
-  // Get plan by ID
-  getPlanById: (planId: PaymentPlan['id']): PaymentPlan | undefined => {
-    return PAYMENT_PLANS.find(plan => plan.id === planId);
+  /**
+   * Create a Razorpay order for subscription payment
+   * POST /payments/create-order
+   * Requires authentication
+   * @param request CreateOrderRequest with amount in paise
+   * @returns Promise<RazorpayOrderResponse>
+   */
+  async createOrder(request: CreateOrderRequest): Promise<RazorpayOrderResponse> {
+    const response = await apiClient.post<ApiResponse<RazorpayOrderResponse>>('/payments/create-order', request);
+    
+    if (!response.data.succeeded) {
+      throw new Error(response.data.message || 'Failed to create payment order');
+    }
+    
+    return response.data.data;
   },
+
+  /**
+   * Verify Razorpay payment signature and activate subscription
+   * POST /payments/verify-payment
+   * Requires authentication
+   * @param request VerifyPaymentRequest with payment details
+   * @returns Promise<VerifyPaymentResponse>
+   */
+  async verifyPayment(request: VerifyPaymentRequest): Promise<VerifyPaymentResponse> {
+    const response = await apiClient.post<ApiResponse<VerifyPaymentResponse>>('/payments/verify-payment', request);
+    
+    if (!response.data.succeeded) {
+      throw new Error(response.data.message || 'Payment verification failed');
+    }
+    
+    return response.data.data;
+  }
 };
