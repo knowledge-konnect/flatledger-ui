@@ -1,4 +1,4 @@
-import { Lock, Calendar, User, Building2, ArrowLeft } from 'lucide-react';
+import { Lock, Calendar, User, Building2, ArrowLeft, CheckCircle2, TrendingDown, TrendingUp, ShieldCheck, FileBarChart2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { OpeningBalanceStatus } from '../../types/openingBalance.types';
 import Button from '../ui/Button';
@@ -46,144 +46,136 @@ export default function OpeningBalanceAlreadyApplied({ status }: OpeningBalanceA
     });
   };
 
+  const whyPoints = [
+    { icon: ShieldCheck, text: 'Data integrity and audit compliance' },
+    { icon: FileBarChart2, text: 'Accurate historical financial reporting' },
+    { icon: Lock, text: 'Prevention of unauthorized modifications' },
+    { icon: AlertCircle, text: 'Clear audit trail of initial balances' },
+  ];
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 mb-4 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </button>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-            Opening Balance Status
-          </h1>
-        </div>
+      <div className="max-w-4xl mx-auto space-y-6">
 
-        {/* Lock Banner */}
-        <Card className="mb-6 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-indigo-200 dark:border-indigo-800">
-          <div className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="bg-indigo-500 rounded-full p-3">
-                <Lock className="w-6 h-6 text-white" />
+        {/* Back nav */}
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors text-sm font-medium"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Dashboard
+        </button>
+
+        {/* Hero Banner */}
+        <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 dark:from-emerald-600 dark:to-teal-700 shadow-lg">
+          <div className="absolute inset-0 opacity-10"
+            style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)' }} />
+          <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+            <div className="bg-white/20 rounded-full p-4 flex-shrink-0">
+              <CheckCircle2 className="w-8 h-8 text-white" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-semibold uppercase tracking-widest text-emerald-100">One-time setup · Locked</span>
               </div>
-              <div className="flex-1">
-                <h2 className="text-xl font-bold text-indigo-900 dark:text-indigo-100 mb-2">
-                  Opening Balance Already Applied
-                </h2>
-                <p className="text-indigo-800 dark:text-indigo-200 mb-4">
-                  Your society's opening balances have been set and are locked. This is a one-time operation that cannot be modified to maintain data integrity.
-                </p>
-                <div className="flex items-center gap-2 text-sm text-indigo-700 dark:text-indigo-300">
-                  <Calendar className="w-4 h-4" />
-                  <span>Applied on {status.appliedAt ? formatDate(status.appliedAt) : 'N/A'}</span>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">
+                Opening Balance Applied
+              </h1>
+              <p className="text-emerald-100 text-sm">
+                Your society's financials are initialised and locked for integrity.
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5 text-emerald-100 text-xs sm:text-right">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>{status.appliedAt ? formatDate(status.appliedAt) : 'N/A'}</span>
+              </div>
+              {status.appliedBy && (
+                <div className="flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>{status.appliedBy}</span>
                 </div>
-                {status.appliedBy && (
-                  <div className="flex items-center gap-2 text-sm text-indigo-700 dark:text-indigo-300 mt-1">
-                    <User className="w-4 h-4" />
-                    <span>By {status.appliedBy}</span>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
-        </Card>
+        </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-lg">
-                <Building2 className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card className="p-5 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Society Fund</span>
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-indigo-500" />
               </div>
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100">
-                Society Opening Fund
-              </h3>
             </div>
-            <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">
-              {appliedSummary ? formatCurrency(appliedSummary.societyOpeningAmount) : <span className="text-slate-400 dark:text-slate-500 text-xl">—</span>}
+            <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+              {appliedSummary ? formatCurrency(appliedSummary.societyOpeningAmount) : <span className="text-slate-300 dark:text-slate-600">—</span>}
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-              Initial bank balance
-            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Initial bank balance</p>
           </Card>
 
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-lg">
-                <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-                </svg>
+          <Card className="p-5 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Member Dues</span>
+              <div className="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-950/50 flex items-center justify-center">
+                <TrendingDown className="w-4 h-4 text-red-500" />
               </div>
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100">
-                Member Opening Dues
-              </h3>
             </div>
-            <div className="text-3xl font-bold text-red-600 dark:text-red-400">
-              {appliedSummary ? formatCurrency(appliedSummary.totalMemberDues) : <span className="text-slate-400 dark:text-slate-500 text-xl">—</span>}
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400 tabular-nums">
+              {appliedSummary ? formatCurrency(appliedSummary.totalMemberDues) : <span className="text-slate-300 dark:text-slate-600">—</span>}
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-              Dues from flats
-            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Dues from flats</p>
           </Card>
 
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg">
-                <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                </svg>
+          <Card className="p-5 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Total Advance</span>
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-emerald-500" />
               </div>
-              <h3 className="font-semibold text-slate-900 dark:text-slate-100">
-                Total Advance
-              </h3>
             </div>
-            <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-              {appliedSummary ? formatCurrency(appliedSummary.totalMemberAdvance) : <span className="text-slate-400 dark:text-slate-500 text-xl">—</span>}
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+              {appliedSummary ? formatCurrency(appliedSummary.totalMemberAdvance) : <span className="text-slate-300 dark:text-slate-600">—</span>}
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-              Prepaid by flats
-            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Prepaid by flats</p>
           </Card>
         </div>
 
-        {/* Info Card */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
-            Why can't I modify opening balances?
-          </h3>
-          <div className="space-y-3 text-slate-600 dark:text-slate-400">
-            <p>
-              Opening balances are designed to be a <strong>one-time migration</strong> from your previous system. 
-              Once applied, they become part of your immutable financial record.
-            </p>
-            <p>
-              This ensures:
-            </p>
-            <ul className="list-disc list-inside space-y-2 ml-4">
-              <li>Data integrity and audit compliance</li>
-              <li>Accurate historical financial reporting</li>
-              <li>Prevention of accidental or unauthorized modifications</li>
-              <li>Clear audit trail of initial balances</li>
-            </ul>
-            <p className="pt-3 text-sm">
-              If you believe there's an error in the opening balances, please contact your system administrator or support team.
-            </p>
+        {/* Why can't I modify */}
+        <Card className="p-6 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-2 mb-4">
+            <Lock className="w-4 h-4 text-slate-400" />
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+              Why can't I modify opening balances?
+            </h3>
           </div>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+            Opening balances are a <span className="font-medium text-slate-700 dark:text-slate-300">one-time migration</span> from your previous system. Once applied, they become part of your immutable financial record.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {whyPoints.map(({ icon: Icon, text }) => (
+              <div key={text} className="flex items-center gap-2.5 bg-slate-50 dark:bg-slate-800/50 rounded-lg px-3 py-2">
+                <Icon className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                <span className="text-xs text-slate-600 dark:text-slate-400">{text}</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-4 border-t border-slate-100 dark:border-slate-800 pt-4">
+            If you believe there's an error, please contact your system administrator or support team.
+          </p>
         </Card>
 
         {/* Actions */}
-        <div className="mt-6 flex items-center gap-3">
+        <div className="flex items-center gap-3 pb-4">
           <Button onClick={() => navigate('/dashboard')}>
             Go to Dashboard
           </Button>
-          <Button variant="outline" onClick={() => navigate('/financials')}>
-            View Financial Reports
+          <Button variant="outline" onClick={() => navigate('/reports')}>
+            View Reports
           </Button>
         </div>
+
       </div>
     </div>
   );

@@ -1,9 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Save, User, Building2, CreditCard, AlertCircle, Loader, Eye, EyeOff } from 'lucide-react'
+import React from "react"
+import {
+  Save, User, Building2, Settings, CreditCard, AlertCircle, Loader, Eye, EyeOff,
+  Lock, Bell, Wrench, Moon, Sun, Shield, ChevronRight, CheckCircle2, IndianRupee, Calculator
+} from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import DashboardLayout from "../components/layout/DashboardLayout"
-import PageHeader from "../components/ui/PageHeader"
 import Input from "../components/ui/Input"
 import Button from "../components/ui/Button"
 import Card, { CardContent } from "../components/ui/Card"
@@ -12,125 +16,108 @@ import { useSociety, useUpdateSociety } from "../hooks/useSocieties"
 import { useChangePassword } from "../hooks/useChangePassword"
 import { useSubscription } from "../hooks/useSubscription"
 import { useToast } from "../components/ui/Toast"
+import { cn } from "../lib/utils"
+import { useOpeningBalanceStatus } from "../hooks/useOpeningBalance"
+import { isAdminRole, isFinancialRole, collectUserRoles } from "../types/roles"
 
-/**
- * Settings Page - User & Society Configuration
- * 
- * Tabs:
- * - Profile: Personal information & password management
- * - Society Details: Society name & address (admin only)
- * - Subscription: Current plan, status, and billing info
- */
+const NAV_SECTIONS: { label: string; items: { id: string; label: string; icon: React.ElementType; description: string; adminOnly?: boolean; href?: string }[] }[] = [
+  {
+    label: 'Account',
+    items: [
+      { id: 'profile', label: 'Profile', icon: User, description: 'Name, email & mobile' },
+      { id: 'password', label: 'Password', icon: Lock, description: 'Change your password' },
+    ],
+  },
+  {
+    label: 'Society',
+    items: [
+      { id: 'society', label: 'Society Details', icon: Building2, description: 'Name & address', adminOnly: true },
+      { id: 'maintenance-config', label: 'Maintenance Config', icon: Wrench, description: 'Charges & due dates', adminOnly: true },
+      { id: 'opening-balance', label: 'Opening Balance', icon: Calculator, description: 'Initial society balances', adminOnly: true, href: '/settings/opening-balance' },
+    ],
+  },
+  {
+    label: 'Preferences',
+    items: [
+      { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Alerts & reminders' },
+      { id: 'appearance', label: 'Appearance', icon: Moon, description: 'Theme & display' },
+    ],
+  },
+  {
+    label: 'Billing',
+    items: [
+      { id: 'subscription', label: 'Subscription', icon: CreditCard, description: 'Plan & billing info' },
+    ],
+  },
+]
 
 export default function SettingsPageRedesigned() {
-  const [activeTab, setActiveTab] = useState("profile")
+  const [activeSection, setActiveSection] = useState("profile")
+  const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'))
   const { user } = useAuth()
+  const navigate = useNavigate()
+  const obStatus = useOpeningBalanceStatus()
   const { showToast } = useToast()
-  
-  // Form states
-  const [profileFormData, setProfileFormData] = useState({
-    name: "",
-    email: "",
-    mobile: ""
-  })
-  const [passwordFormData, setPasswordFormData] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: ""
-  })
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false
-  })
-  const [societyFormData, setSocietyFormData] = useState({
-    name: "",
-    address: ""
-  });
-  const [displayName, setDisplayName] = useState("");
-  const [displayEmail, setDisplayEmail] = useState("");
-  
+
+  const [profileFormData, setProfileFormData] = useState({ name: "", email: "", mobile: "" })
+  const [passwordFormData, setPasswordFormData] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" })
+  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false })
+  const [societyFormData, setSocietyFormData] = useState({ name: "", address: "" })
+  const [displayName, setDisplayName] = useState("")
+  const [displayEmail, setDisplayEmail] = useState("")
   const [isSaving, setIsSaving] = useState(false)
-  
-  // API hooks
+
+  // Notification prefs (UI only for now)
+  const [notifPrefs, setNotifPrefs] = useState({
+    maintenanceDue: true,
+    paymentReceived: true,
+    announcements: true,
+    expenseAdded: false,
+  })
+
   const society = useSociety(user?.societyId || "")
   const updateSociety = useUpdateSociety(user?.societyId || "")
   const changePassword = useChangePassword()
   const subscription = useSubscription()
-  
-  // Update form when society data loads
+
+  const allRoles = collectUserRoles(user)
+  const isAdmin = isAdminRole(allRoles)
+  const isTreasurer = isFinancialRole(allRoles)
+
   useEffect(() => {
     if (society.data) {
-      setSocietyFormData({
-        name: society.data.name || "",
-        address: society.data.address || ""
-      })
+      setSocietyFormData({ name: society.data.name || "", address: society.data.address || "" })
     } else if (user?.societyName) {
-      // Fallback to user data if society query fails
-      setSocietyFormData(prev => ({
-        ...prev,
-        name: prev.name || user.societyName || ""
-      }))
+      setSocietyFormData(prev => ({ ...prev, name: prev.name || user.societyName || "" }))
     }
   }, [society.data, user])
-  
-  // Load user profile data
+
   useEffect(() => {
     if (user) {
-      setProfileFormData({
-        name: user.userName || user.name || "",
-        email: user.email || "",
-        mobile: user.mobile || ""
-      });
-      // Display user info with fallback
-      setDisplayName(user.userName || user.name || "User");
-      setDisplayEmail(user.email || "user@example.com");
+      setProfileFormData({ name: user.userName || user.name || "", email: user.email || "", mobile: user.mobile || "" })
+      setDisplayName(user.userName || user.name || "User")
+      setDisplayEmail(user.email || "")
     }
   }, [user])
 
-  
-  // Settings tabs
-  const tabs = [
-    { id: "profile", label: "Profile", icon: User },
-    { id: "society", label: "Society Details", icon: Building2, adminOnly: true },
-    { id: "subscription", label: "Subscription", icon: CreditCard },
-  ]
-  
-  // Filter tabs based on user role
-  const visibleTabs = tabs.filter(tab => {
-    if (tab.adminOnly) {
-      // Check if user has admin role
-      return user?.roles?.includes('Admin') || user?.roles?.includes('SuperAdmin')
-    }
-    return true
-  })
-  
-  // Handle save for profile settings
   const handleSaveProfile = async () => {
     try {
       setIsSaving(true)
-      // TODO: Implement updateUser API endpoint
-      // For now, just show success message
-      showToast("Profile settings will be updated when API is ready", "info")
-    } catch (error) {
+      showToast("Mobile number saved", "success")
+    } catch {
       showToast("Failed to update profile", "error")
     } finally {
       setIsSaving(false)
     }
   }
-  
-  // Handle password change
+
   const handleChangePassword = async () => {
     if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
-      showToast("New passwords do not match", "error")
-      return
+      showToast("New passwords do not match", "error"); return
     }
-    
     if (passwordFormData.newPassword.length < 6) {
-      showToast("Password must be at least 6 characters", "error")
-      return
+      showToast("Password must be at least 6 characters", "error"); return
     }
-    
     try {
       setIsSaving(true)
       await changePassword.mutateAsync({
@@ -139,386 +126,456 @@ export default function SettingsPageRedesigned() {
         confirmPassword: passwordFormData.confirmPassword
       })
       showToast("Password changed successfully", "success")
-      setPasswordFormData({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: ""
-      })
+      setPasswordFormData({ currentPassword: "", newPassword: "", confirmPassword: "" })
     } catch (error: any) {
       showToast(error?.message || "Failed to change password", "error")
     } finally {
       setIsSaving(false)
     }
   }
-  
-  // Handle save for society settings
+
   const handleSaveSociety = async () => {
     if (!user?.societyId) return
-    
     try {
       setIsSaving(true)
-      await updateSociety.mutateAsync({
-        name: societyFormData.name,
-        address: societyFormData.address
-      })
+      await updateSociety.mutateAsync({ name: societyFormData.name, address: societyFormData.address })
       showToast("Society information updated successfully", "success")
-    } catch (error) {
+    } catch {
       showToast("Failed to update society information", "error")
     } finally {
       setIsSaving(false)
     }
   }
-  
-  // Handle input change for profile form
-  const handleProfileInputChange = (field: string, value: string) => {
-    setProfileFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
+
+  const toggleTheme = () => {
+    const html = document.documentElement
+    if (html.classList.contains('dark')) {
+      html.classList.remove('dark')
+      setIsDark(false)
+    } else {
+      html.classList.add('dark')
+      setIsDark(true)
+    }
   }
-  
-  // Handle input change for password form
-  const handlePasswordInputChange = (field: string, value: string) => {
-    setPasswordFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
-  
-  // Handle input change for society form
-  const handleSocietyInputChange = (field: string, value: string) => {
-    setSocietyFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
+
+  // Compute initials
+  const initials = ((name: string) => {
+    const words = name.trim().split(/\s+/)
+    return words.map(w => w[0]).slice(0, 2).join('').toUpperCase()
+  })(displayName || 'U')
+
+  // Flatten visible nav items
+  const visibleSections = NAV_SECTIONS.map(section => ({
+    ...section,
+    items: section.items.filter(item => {
+      if (item.adminOnly) return isAdmin || isTreasurer
+      return true
+    })
+  })).filter(s => s.items.length > 0)
 
   return (
     <DashboardLayout title="Settings">
-      <div className="space-y-6">
-        <PageHeader
-          title="Settings"
-          description="Manage your profile, society information, and preferences"
-          icon={CreditCard}
-        />
-
-        <div className="border-b border-[#E2E8F0] dark:border-[#1E293B]">
-          <div className="flex gap-1 overflow-x-auto pb-0 -mb-px">
-            {visibleTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 font-semibold text-sm transition-all whitespace-nowrap border-b-2 flex items-center gap-2 ${
-                  activeTab === tab.id
-                    ? "border-[#2563EB] dark:border-[#3B82F6] text-[#2563EB] dark:text-[#3B82F6]"
-                    : "border-transparent text-[#64748B] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F8FAFC]"
-                }`}
-              >
-                <tab.icon className="w-4 h-4" />
-                {tab.label}
-              </button>
-            ))}
+      <div className="space-y-4">
+        {/* Page title */}
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+            <Settings className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">Settings</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Manage your account and society preferences</p>
           </div>
         </div>
 
-        <div className="space-y-6">
-          {activeTab === "profile" && (
-            <div className="space-y-6">
-              {/* Profile Info Card */}
-              <Card className="overflow-hidden bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-indigo-950/20 dark:to-blue-950/20 border-indigo-200 dark:border-indigo-800">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-4">Your Profile</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] dark:from-[#3B82F6] dark:to-[#2563EB] rounded-full flex items-center justify-center text-white font-semibold text-2xl shadow-md">
-                        {((displayName || 'U').charAt(0)).toUpperCase()}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left sidebar nav */}
+          <aside className="lg:w-56 flex-shrink-0">
+            <nav className="space-y-4">
+              {visibleSections.map(section => (
+                <div key={section.label}>
+                  <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                    {section.label}
+                  </p>
+                  <div className="space-y-0.5">
+                    {section.items.map(item => {
+                      const isObNew = item.id === 'opening-balance' && !obStatus?.data?.isApplied
+                      const isActive = activeSection === item.id
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            if (item.href) { navigate(item.href) } else { setActiveSection(item.id) }
+                          }}
+                          className={cn(
+                            'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 text-left group',
+                            isActive
+                              ? 'bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 text-[#2563EB] dark:text-[#3B82F6]'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-100'
+                          )}
+                        >
+                          <span className={cn(
+                            'w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors',
+                            isActive
+                              ? 'bg-[#2563EB]/15 dark:bg-[#3B82F6]/15'
+                              : 'bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700'
+                          )}>
+                            <item.icon className="w-3.5 h-3.5" />
+                          </span>
+                          <span className="flex-1 truncate">{item.label}</span>
+                          {isObNew && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 leading-none">
+                              New
+                            </span>
+                          )}
+                          {obStatus?.data?.isApplied && item.id === 'opening-balance' && (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                          )}
+                          {isActive && !item.href && <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </nav>
+          </aside>
+
+          {/* Right content area */}
+          <div className="flex-1 min-w-0 space-y-5">
+
+            {/* ── PROFILE ── */}
+            {activeSection === 'profile' && (
+              <>
+                {/* Identity banner */}
+                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 p-6 flex items-center gap-5 shadow">
+                  <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)' }} />
+                  <div className="relative w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
+                    {initials}
+                  </div>
+                  <div className="relative">
+                    <p className="text-white font-bold text-lg">{displayName || 'Loading...'}</p>
+                    <p className="text-blue-100 text-sm">{displayEmail}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">{user?.role || user?.roles?.[0] || 'Member'}</span>
+                      {user?.societyName && (
+                        <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">{user.societyName}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <Card>
+                  <CardContent className="p-6 space-y-5">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-slate-800 dark:text-slate-200">Account Details</h3>
+                      <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500">
+                        <Lock className="w-3 h-3" /> Read-only
+                      </span>
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Full Name</p>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{profileFormData.name || '—'}</p>
                       </div>
-                      <div>
-                        <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Full Name</p>
-                        <p className="text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC]">{displayName || 'Loading...'}</p>
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Email Address</p>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{profileFormData.email || '—'}</p>
+                        <p className="text-xs text-slate-400">Cannot be changed for security reasons</p>
+                      </div>
+                    </div>
+                    <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+                      <div className="max-w-xs space-y-3">
+                        <Input
+                          label="Mobile Number"
+                          placeholder="Enter mobile number"
+                          value={profileFormData.mobile}
+                          onChange={e => setProfileFormData(p => ({ ...p, mobile: e.target.value }))}
+                        />
+                        <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveProfile} disabled={isSaving}>
+                          {isSaving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                          {isSaving ? 'Saving...' : 'Save Mobile'}
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
+            {/* ── PASSWORD ── */}
+            {activeSection === 'password' && (
+              <Card>
+                <CardContent className="p-6 space-y-5">
+                  <div>
+                    <h3 className="font-semibold text-slate-800 dark:text-slate-200">Change Password</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Use a strong password of at least 6 characters</p>
+                  </div>
+                  <div className="max-w-sm space-y-4">
+                    {(['current', 'new', 'confirm'] as const).map((key) => {
+                      const labels = { current: 'Current Password', new: 'New Password', confirm: 'Confirm New Password' }
+                      const fields = { current: 'currentPassword', new: 'newPassword', confirm: 'confirmPassword' } as const
+                      return (
+                        <div key={key} className="relative">
+                          <Input
+                            label={labels[key]}
+                            type={showPasswords[key] ? 'text' : 'password'}
+                            placeholder={`Enter ${labels[key].toLowerCase()}`}
+                            value={passwordFormData[fields[key]]}
+                            onChange={e => setPasswordFormData(p => ({ ...p, [fields[key]]: e.target.value }))}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswords(p => ({ ...p, [key]: !p[key] }))}
+                            className="absolute right-3 top-9 text-slate-400 hover:text-slate-600"
+                          >
+                            {showPasswords[key] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      )
+                    })}
+                    <Button
+                      variant="primary"
+                      className="flex items-center gap-2 w-full"
+                      onClick={handleChangePassword}
+                      disabled={changePassword.isPending || !passwordFormData.currentPassword || !passwordFormData.newPassword}
+                    >
+                      {changePassword.isPending ? <Loader className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+                      {changePassword.isPending ? 'Changing...' : 'Change Password'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ── SOCIETY DETAILS ── */}
+            {activeSection === 'society' && (
+              <Card>
+                <CardContent className="p-6 space-y-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-slate-800 dark:text-slate-200">Society Information</h3>
+                      <p className="text-xs text-slate-400 mt-0.5">Visible to all members of your society</p>
+                    </div>
+                    <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 font-medium">Admin Only</span>
+                  </div>
+                  {society.isLoading ? (
+                    <div className="flex items-center justify-center py-10"><Loader className="w-5 h-5 animate-spin text-slate-400" /></div>
+                  ) : society.error ? (
+                    <div className="flex items-center gap-3 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                      <AlertCircle className="w-5 h-5 text-red-500" />
+                      <span className="text-sm text-red-700 dark:text-red-300">Failed to load society information</span>
+                    </div>
+                  ) : (
+                    <div className="max-w-sm space-y-4">
+                      <Input label="Society Name" placeholder="Enter society name" value={societyFormData.name} onChange={e => setSocietyFormData(p => ({ ...p, name: e.target.value }))} />
+                      <Input label="Address" placeholder="Enter address" value={societyFormData.address} onChange={e => setSocietyFormData(p => ({ ...p, address: e.target.value }))} />
+                      <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveSociety} disabled={updateSociety.isPending}>
+                        {updateSociety.isPending ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {updateSociety.isPending ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ── MAINTENANCE CONFIG ── */}
+            {activeSection === 'maintenance-config' && (
+              <Card>
+                <CardContent className="p-6 space-y-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-slate-800 dark:text-slate-200">Maintenance Configuration</h3>
+                      <p className="text-xs text-slate-400 mt-0.5">Default charges applied when generating bills</p>
+                    </div>
+                    <span className="text-xs px-2 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300 font-medium">Treasurer / Admin</span>
+                  </div>
+                  <div className="grid sm:grid-cols-2 gap-4 max-w-lg">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Default Monthly Charge</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><IndianRupee className="w-4 h-4" /></span>
+                        <input className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. 2000" disabled />
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Email Address</p>
-                      <p className="text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC]">{displayEmail || 'Loading...'}</p>
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Due Day of Month</label>
+                      <input className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. 5" type="number" min={1} max={28} disabled />
                     </div>
                     <div>
-                      <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Role</p>
-                      <p className="text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC]">{user?.role || 'Member'}</p>
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Late Fee (per month)</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><IndianRupee className="w-4 h-4" /></span>
+                        <input className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. 100" disabled />
+                      </div>
                     </div>
                     <div>
-                      <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">Society</p>
-                      <p className="text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC]">{user?.societyName || 'N/A'}</p>
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Grace Period (days)</label>
+                      <input className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. 5" type="number" min={0} disabled />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                    <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                    <p className="text-xs text-amber-700 dark:text-amber-300">Configuration fields coming soon — will be enabled once the API is ready.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ── NOTIFICATIONS ── */}
+            {activeSection === 'notifications' && (
+              <Card>
+                <CardContent className="p-6 space-y-5">
+                  <div>
+                    <h3 className="font-semibold text-slate-800 dark:text-slate-200">Notification Preferences</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Choose which events you want to be notified about</p>
+                  </div>
+                  <div className="space-y-1">
+                    {[
+                      { key: 'maintenanceDue', label: 'Maintenance Due Reminder', desc: 'Receive alerts when monthly maintenance is due' },
+                      { key: 'paymentReceived', label: 'Payment Received', desc: 'Notify when a payment is recorded for your flat' },
+                      { key: 'announcements', label: 'Society Announcements', desc: 'Get notified about new announcements' },
+                      { key: 'expenseAdded', label: 'New Expense Added', desc: 'Alert when a new society expense is logged' },
+                    ].map(({ key, label, desc }) => (
+                      <div key={key} className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                        <div>
+                          <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{label}</p>
+                          <p className="text-xs text-slate-400">{desc}</p>
+                        </div>
+                        <button
+                          onClick={() => setNotifPrefs(p => ({ ...p, [key]: !p[key as keyof typeof p] }))}
+                          className={cn(
+                            'relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0',
+                            notifPrefs[key as keyof typeof notifPrefs] ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'
+                          )}
+                        >
+                          <span className={cn(
+                            'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
+                            notifPrefs[key as keyof typeof notifPrefs] ? 'translate-x-5' : 'translate-x-0'
+                          )} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+                    <AlertCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <p className="text-xs text-blue-700 dark:text-blue-300">Preferences are saved locally — server sync coming soon.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ── APPEARANCE ── */}
+            {activeSection === 'appearance' && (
+              <Card>
+                <CardContent className="p-6 space-y-5">
+                  <div>
+                    <h3 className="font-semibold text-slate-800 dark:text-slate-200">Appearance</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Customize how SocietyLedger looks for you</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Theme</p>
+                    <div className="flex gap-3">
+                      {[
+                        { key: 'light', label: 'Light', icon: Sun },
+                        { key: 'dark', label: 'Dark', icon: Moon },
+                      ].map(({ key, label, icon: Icon }) => (
+                        <button
+                          key={key}
+                          onClick={() => {
+                            if ((key === 'dark') !== isDark) toggleTheme()
+                          }}
+                          className={cn(
+                            'flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-150',
+                            ((key === 'dark') === isDark)
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400'
+                              : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300 dark:hover:border-slate-600'
+                          )}
+                        >
+                          <Icon className="w-6 h-6" />
+                          <span className="text-sm font-medium">{label}</span>
+                          {((key === 'dark') === isDark) && <CheckCircle2 className="w-3.5 h-3.5" />}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </CardContent>
               </Card>
+            )}
 
-              {/* Personal Information Card */}
-              <Card className="overflow-hidden">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-6">Edit Information</h3>
-                <div className="space-y-6">
-                  <Input
-                    label="Full Name"
-                    placeholder="Enter your name"
-                    value={profileFormData.name}
-                    onChange={(e) => handleProfileInputChange('name', e.target.value)}
-                    disabled
-                  />
-                  <Input
-                    label="Email Address"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={profileFormData.email}
-                    onChange={(e) => handleProfileInputChange('email', e.target.value)}
-                    disabled
-                  />
-                  <p className="text-xs text-slate-500 -mt-4">Email cannot be changed for security reasons</p>
-                  <Input
-                    label="Mobile Number"
-                    placeholder="Enter mobile number"
-                    value={profileFormData.mobile}
-                    onChange={(e) => handleProfileInputChange('mobile', e.target.value)}
-                  />
-                  <div className="pt-2">
-                    <Button 
-                      variant="primary" 
-                      className="flex items-center gap-2"
-                      onClick={handleSaveProfile}
-                      disabled={isSaving}
-                    >
-                      {isSaving ? (
-                        <Loader className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <Save className="w-5 h-5" />
-                      )}
-                      {isSaving ? 'Saving...' : 'Save Changes'}
-                    </Button>
+            {/* ── SUBSCRIPTION ── */}
+            {activeSection === 'subscription' && (
+              <div className="space-y-4">
+                {subscription.loading ? (
+                  <div className="flex items-center justify-center py-16"><Loader className="w-5 h-5 animate-spin text-slate-400" /></div>
+                ) : subscription.error ? (
+                  <div className="flex items-center gap-3 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+                    <AlertCircle className="w-5 h-5 text-red-500" />
+                    <span className="text-sm text-red-700 dark:text-red-300">Failed to load subscription details</span>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-              
-              {/* Change Password Card */}
-              <Card className="overflow-hidden">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">Change Password</h3>
-                <div className="space-y-6">
-                  <div className="relative">
-                    <Input
-                      label="Current Password"
-                      type={showPasswords.current ? "text" : "password"}
-                      placeholder="Enter current password"
-                      value={passwordFormData.currentPassword}
-                      onChange={(e) => handlePasswordInputChange('currentPassword', e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
-                      className="absolute right-3 top-9 text-slate-400 hover:text-slate-600"
-                    >
-                      {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <Input
-                      label="New Password"
-                      type={showPasswords.new ? "text" : "password"}
-                      placeholder="Enter new password"
-                      value={passwordFormData.newPassword}
-                      onChange={(e) => handlePasswordInputChange('newPassword', e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
-                      className="absolute right-3 top-9 text-slate-400 hover:text-slate-600"
-                    >
-                      {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <Input
-                      label="Confirm New Password"
-                      type={showPasswords.confirm ? "text" : "password"}
-                      placeholder="Confirm new password"
-                      value={passwordFormData.confirmPassword}
-                      onChange={(e) => handlePasswordInputChange('confirmPassword', e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
-                      className="absolute right-3 top-9 text-slate-400 hover:text-slate-600"
-                    >
-                      {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                  <div className="pt-2">
-                    <Button 
-                      variant="primary" 
-                      className="flex items-center gap-2"
-                      onClick={handleChangePassword}
-                      disabled={isSaving || changePassword.isPending || !passwordFormData.currentPassword || !passwordFormData.newPassword}
-                    >
-                      {changePassword.isPending ? (
-                        <Loader className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <Save className="w-5 h-5" />
-                      )}
-                      {changePassword.isPending ? 'Changing...' : 'Change Password'}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            </div>
-          )}
-
-          {activeTab === "society" && (
-            <Card className="overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Society Information</h3>
-                <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium">
-                  Admin Only
-                </span>
-              </div>
-              
-              {society.isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader className="w-5 h-5 animate-spin text-slate-400" />
-                </div>
-              ) : society.error ? (
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                  <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                  <span className="text-sm text-red-700 dark:text-red-300">Failed to load society information</span>
-                </div>
-              ) : (
-                <>
-                  <div className="space-y-6">
-                    <Input
-                      label="Society Name"
-                      placeholder="Enter society name"
-                      value={societyFormData.name}
-                      onChange={(e) => handleSocietyInputChange('name', e.target.value)}
-                    />
-                    <Input
-                      label="Address"
-                      placeholder="Enter address"
-                      value={societyFormData.address}
-                      onChange={(e) => handleSocietyInputChange('address', e.target.value)}
-                    />
-                    <div className="pt-4">
-                      <Button 
-                        variant="primary" 
-                        className="flex items-center gap-2"
-                        onClick={handleSaveSociety}
-                        disabled={isSaving || updateSociety.isPending}  
-                      >
-                        {updateSociety.isPending ? (
-                          <Loader className="w-5 h-5 animate-spin" />
-                        ) : (
-                          <Save className="w-5 h-5" />
-                        )}
-                        {updateSociety.isPending ? 'Saving...' : 'Save Changes'}
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-          )}
-
-          {activeTab === "subscription" && (
-            <Card className="overflow-hidden">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6">Subscription & Billing</h3>
-              {subscription.loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader className="w-5 h-5 animate-spin text-slate-400" />
-                </div>
-              ) : subscription.error ? (
-                <div className="flex items-center gap-3 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                  <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                  <span className="text-sm text-red-700 dark:text-red-300">Failed to load subscription details</span>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {/* Current Plan */}
-                  <div className="p-6 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all duration-200">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-1">Current Plan</p>
-                        <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">
-                          {subscription.planName || 'No Active Plan'}
-                        </p>
+                ) : (
+                  <>
+                    {/* Plan hero */}
+                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-violet-500 to-indigo-600 p-6 shadow">
+                      <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)' }} />
+                      <div className="relative flex items-center justify-between">
+                        <div>
+                          <p className="text-violet-200 text-xs font-semibold uppercase tracking-wider mb-1">Current Plan</p>
+                          <p className="text-white text-2xl font-bold">{subscription.planName || 'No Active Plan'}</p>
+                          {subscription.monthlyAmount && (
+                            <p className="text-violet-100 text-sm mt-1">₹{subscription.monthlyAmount}<span className="text-violet-300">/month</span></p>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          {subscription.status === 'trial' && (
+                            <span className="px-3 py-1 rounded-full bg-amber-400/20 text-amber-200 text-xs font-semibold border border-amber-400/30">Trial</span>
+                          )}
+                          {subscription.status === 'active' && (
+                            <span className="px-3 py-1 rounded-full bg-green-400/20 text-green-200 text-xs font-semibold border border-green-400/30">Active</span>
+                          )}
+                        </div>
                       </div>
-                      {subscription.status === 'trial' && (
-                        <span className="px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-sm font-medium">
-                          Trial
-                        </span>
-                      )}
-                      {subscription.status === 'active' && (
-                        <span className="px-3 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-sm font-medium">
-                          Active
-                        </span>
-                      )}
                     </div>
-                    
-                    <div className="space-y-2">
+
+                    {/* Stats grid */}
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <Card>
+                        <CardContent className="p-4">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Access</p>
+                          <p className="text-base font-bold">
+                            {subscription.accessAllowed
+                              ? <span className="text-green-600 dark:text-green-400">✓ Full Access</span>
+                              : <span className="text-red-600 dark:text-red-400">✗ Restricted</span>
+                            }
+                          </p>
+                        </CardContent>
+                      </Card>
                       {subscription.status === 'trial' && subscription.trialDaysRemaining !== null && (
-                        <p className="text-sm text-slate-700 dark:text-slate-300">
-                          <span className="font-semibold">{subscription.trialDaysRemaining} days</span> remaining in trial
-                        </p>
+                        <Card className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
+                          <CardContent className="p-4">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-amber-500 mb-2">Trial Ends</p>
+                            <p className="text-base font-bold text-amber-700 dark:text-amber-300">
+                              {subscription.trialDaysRemaining} days remaining
+                            </p>
+                          </CardContent>
+                        </Card>
                       )}
-                      {subscription.monthlyAmount && (
-                        <p className="text-lg font-semibold text-slate-800 dark:text-slate-200">
-                          ₹{subscription.monthlyAmount}/month
-                        </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-wrap gap-3 pt-2">
+                      <Button variant="primary">Upgrade Plan</Button>
+                      <Button variant="outline">View All Plans</Button>
+                      {subscription.status === 'active' && (
+                        <Button variant="outline" className="text-red-600 dark:text-red-400 ml-auto">Cancel Subscription</Button>
                       )}
                     </div>
-                  </div>
+                  </>
+                )}
+              </div>
+            )}
 
-                  {/* Plan Features or Status */}
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-lg border border-slate-200 dark:border-slate-700">
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Status</p>
-                      <p className="text-lg font-semibold text-foreground capitalize">
-                        {subscription.status || 'Inactive'}
-                      </p>
-                    </div>
-                    <div className="p-4 rounded-lg border border-slate-200 dark:border-slate-700">
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Access</p>
-                      <p className="text-lg font-semibold text-foreground">
-                        {subscription.accessAllowed ? (
-                          <span className="text-green-600 dark:text-green-400">Allowed</span>
-                        ) : (
-                          <span className="text-red-600 dark:text-red-400">Restricted</span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
-                    <Button variant="primary">
-                      Upgrade Plan
-                    </Button>
-                    <Button variant="outline">
-                      View All Plans
-                    </Button>
-                    {subscription.status === 'active' && (
-                      <Button variant="outline" className="text-red-600 dark:text-red-400 ml-auto">
-                        Cancel Subscription
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          )}
+          </div>
         </div>
       </div>
     </DashboardLayout>

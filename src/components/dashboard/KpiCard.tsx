@@ -17,6 +17,10 @@ interface KpiCardProps {
   color: KpiColorVariant;
   /** Optional small note beneath the value */
   sub?: string;
+  /** Optional 0–100 progress bar shown at the bottom of the card */
+  progress?: number;
+  /** Label shown at right end of the progress bar */
+  progressLabel?: string;
   loading?: boolean;
 }
 
@@ -30,8 +34,19 @@ const colorMap: Record<KpiColorVariant, { bg: string; icon: string; accent: stri
   emerald: { bg: 'bg-emerald-50 dark:bg-emerald-950/20',icon: 'text-emerald-600 dark:text-emerald-400',accent: 'border-l-emerald-500' },
 };
 
-export function KpiCard({ label, value, icon: Icon, color, sub, loading = false }: KpiCardProps) {
+const progressColorMap: Record<KpiColorVariant, string> = {
+  green:   'bg-green-500',
+  red:     'bg-red-500',
+  amber:   'bg-amber-500',
+  orange:  'bg-orange-500',
+  blue:    'bg-blue-500',
+  indigo:  'bg-indigo-500',
+  emerald: 'bg-emerald-500',
+};
+
+export function KpiCard({ label, value, icon: Icon, color, sub, progress, progressLabel, loading = false }: KpiCardProps) {
   const c = colorMap[color];
+  const pct = Math.min(100, Math.max(0, progress ?? 0));
 
   if (loading) {
     return (
@@ -73,6 +88,22 @@ export function KpiCard({ label, value, icon: Icon, color, sub, loading = false 
           <Icon className={`w-5 h-5 ${c.icon}`} />
         </div>
       </div>
+
+      {/* Progress bar — shown only when progress prop is provided */}
+      {progress !== undefined && (
+        <div className="mt-4">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] text-slate-400 dark:text-slate-500">Progress</span>
+            <span className={`text-[11px] font-semibold ${c.icon}`}>{progressLabel ?? `${pct.toFixed(1)}%`}</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+            <div
+              className={`h-full rounded-full ${progressColorMap[color]} transition-all duration-700`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

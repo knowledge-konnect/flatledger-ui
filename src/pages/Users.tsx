@@ -1,56 +1,31 @@
-import { useState } from 'react';
-import { Plus, Copy, Check, Edit, Trash, AlertCircle, Users as UsersIcon } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, Edit, Trash, AlertCircle, Users as UsersIcon, Search } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import PageHeader from '../components/ui/PageHeader';
-import EmptyState from '../components/ui/EmptyState';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import Modal, { ModalFooter } from '../components/ui/Modal';
-import Tooltip from '../components/ui/Tooltip';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '../components/ui/Table';
-import Badge from '../components/ui/Badge';
 import { formatDate } from '../lib/utils';
 import { useUsers, useCreateUser } from '../hooks/useUsers';
 import { usersApi } from '../api/usersApi';
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
-import { RoleId } from '../types/roles';
+import { RoleCode, RoleDisplayName, ROLE_DISPLAY_TO_CODE, ROLE_LABELS } from '../types/roles';
 import { User } from '../api/usersApi';
 import { AlertMessages } from '../lib/alertMessages';
 import { useFlats } from '../hooks/useFlats';
 import { FlatDto } from '../api/flatsApi';
-import { useAuth } from '../contexts/AuthProvider';
 
 /* =====================================================
    ROLE CONFIGURATION
 ===================================================== */
 
-const ROLE_OPTIONS = [
-  { value: String(RoleId.SOCIETY_ADMIN), label: 'Society Admin - Full access' },
-  { value: String(RoleId.ACCOUNTANT), label: 'Accountant - Manage finances' },
-  { value: String(RoleId.MEMBER), label: 'Member - Basic access' },
-  { value: String(RoleId.AUDITOR), label: 'Auditor - Read-only audit access' },
-];
-
-const ROLE_ID_BADGE: Record<
-  RoleId,
-  { label: string; variant: 'error' | 'info' | 'default' | 'success' }
-> = {
-  [RoleId.SOCIETY_ADMIN]: { label: 'Society Admin', variant: 'error' },
-  [RoleId.ACCOUNTANT]: { label: 'Accountant', variant: 'info' },
-  [RoleId.MEMBER]: { label: 'Member', variant: 'default' },
-  [RoleId.AUDITOR]: { label: 'Auditor', variant: 'success' },
-};
+/** Dropdown options for the role selector — derived entirely from enums, never hardcoded */
+const ROLE_OPTIONS = (Object.values(RoleCode) as RoleCode[]).map(code => ({
+  value: code,
+  label: ROLE_LABELS[code],
+}));
 
 /* =====================================================
    COMPONENT
@@ -58,13 +33,7 @@ const ROLE_ID_BADGE: Record<
 
 export default function Users() {
   const [showModal, setShowModal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [temporaryPassword, setTemporaryPassword] = useState('');
-  const [newUserName, setNewUserName] = useState('');
-  const [newUserEmail, setNewUserEmail] = useState('');
-  const [passwordCopied, setPasswordCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
@@ -75,7 +44,8 @@ export default function Users() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
-  const [selectedRoleId, setSelectedRoleId] = useState<RoleId>(RoleId.MEMBER); // default role
+  const [password, setPassword] = useState('');
+  const [selectedRoleCode, setSelectedRoleCode] = useState<RoleCode>(RoleCode.VIEWER); // default role
   const [selectedFlatPublicId, setSelectedFlatPublicId] = useState<string>('');
 
   // API hooks
@@ -84,8 +54,7 @@ export default function Users() {
   const { showToast } = useToast();
   const { showErrorToast } = useApiErrorToast();
   const queryClient = useQueryClient();
-  const { user: currentUser } = useAuth();
-  const { data: flatsData = [] } = useFlats(currentUser?.societyId ? Number(currentUser.societyId) : undefined);
+  const { data: flatsData = [] } = useFlats();
   const users = (usersData || []) as User[];
   const flats = (flatsData || []) as FlatDto[];
 
@@ -115,33 +84,27 @@ export default function Users() {
   ===================================================== */
 
   async function createUser() {
-    if (!name.trim() || !email.trim()) {
+    if (!name.trim() || !password.trim()) {
       showToast(AlertMessages.error.fillAllFields, 'error');
       return;
     }
 
     try {
-      const result = await createUserMutation.mutateAsync({
+      await createUserMutation.mutateAsync({
         name,
-        email,
-        password: '', // Backend will generate temporary password
-        roleId: selectedRoleId,
+        email: email.trim() || undefined,
+        mobile: mobile || undefined,
+        roleCode: selectedRoleCode,
+        password: password.trim(),
       });
-
-      // Show temporary password modal if available
-      if (result.temporaryPassword) {
-        setTemporaryPassword(result.temporaryPassword);
-        setNewUserName(result.name);
-        setNewUserEmail(result.email);
-        setShowPasswordModal(true);
-      }
 
       showToast(AlertMessages.success.userCreated, 'success');
       setShowModal(false);
       setName('');
       setEmail('');
       setMobile('');
-      setSelectedRoleId(RoleId.MEMBER);
+      setPassword('');
+      setSelectedRoleCode(RoleCode.VIEWER);
       setSelectedFlatPublicId('');
     } catch (error: any) {
       if (error?.response?.data) {
@@ -171,7 +134,7 @@ export default function Users() {
   async function handleEditUser() {
     if (!selectedUser) return;
 
-    if (!name.trim() || !email.trim()) {
+    if (!name.trim()) {
       showToast(AlertMessages.error.fillAllFields, 'error');
       return;
     }
@@ -181,9 +144,10 @@ export default function Users() {
       await usersApi.updateUser(selectedUser.publicId, {
         publicId: selectedUser.publicId,
         name,
-        email,
-        mobile: mobile || '', // Send empty string if mobile is not provided
-        roleId: selectedRoleId,
+        email: email.trim() || undefined,
+        mobile: mobile || '',
+        roleCode: selectedRoleCode,
+        isActive: selectedUser.isActive,
       });
 
       showToast(AlertMessages.success.userUpdated, 'success');
@@ -197,7 +161,8 @@ export default function Users() {
       setName('');
       setEmail('');
       setMobile('');
-      setSelectedRoleId(RoleId.MEMBER);
+      setPassword('');
+      setSelectedRoleCode(RoleCode.VIEWER);
       setSelectedFlatPublicId('');
     } catch (error: any) {
       if (error?.response?.data) {
@@ -263,37 +228,19 @@ export default function Users() {
   }
 
   /* =====================================================
-     COPY PASSWORD TO CLIPBOARD
+     SEARCH & FILTER
   ===================================================== */
 
-  function copyPasswordToClipboard() {
-    navigator.clipboard.writeText(temporaryPassword);
-    setPasswordCopied(true);
-    showToast(AlertMessages.success.passwordCopied, 'success');
-    setTimeout(() => setPasswordCopied(false), 2000);
-  }
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = searchQuery.trim().toLowerCase();
 
-  /* =====================================================
-     CLOSE PASSWORD MODAL SAFELY
-  ===================================================== */
-
-  function handleClosePasswordModal() {
-    if (!passwordCopied) {
-      // Show confirmation if password hasn't been copied
-      setShowConfirmDialog(true);
-    } else {
-      // Close directly if password was copied
-      setShowPasswordModal(false);
-      setPasswordCopied(false);
-    }
-  }
-
-  function confirmCloseWithoutCopy() {
-    setShowPasswordModal(false);
-    setPasswordCopied(false);
-    setShowConfirmDialog(false);
-    showToast('Save this password securely before closing!', 'warning');
-  }
+  const filteredUsers = useMemo(() => users.filter(u =>
+    !debouncedSearch ||
+    u.name.toLowerCase().includes(debouncedSearch) ||
+    u.email.toLowerCase().includes(debouncedSearch) ||
+    (u.mobile || '').toLowerCase().includes(debouncedSearch) ||
+    u.roleDisplayName.toLowerCase().includes(debouncedSearch)
+  ), [users, debouncedSearch]);
 
   /* =====================================================
      UI
@@ -302,7 +249,12 @@ export default function Users() {
   if (isLoading) {
     return (
       <DashboardLayout title="Users & Access">
-        <div className="text-center py-8">Loading users...</div>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center space-y-3">
+            <div className="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mx-auto" />
+            <p className="text-sm text-slate-500 dark:text-slate-400">Loading users...</p>
+          </div>
+        </div>
       </DashboardLayout>
     );
   }
@@ -310,190 +262,219 @@ export default function Users() {
   if (isError) {
     return (
       <DashboardLayout title="Users & Access">
-        <div className="text-center py-8 text-red-500">Failed to load users</div>
+        <div className="flex items-center justify-center py-20">
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <span className="text-sm font-medium">Failed to load users. Please try again.</span>
+          </div>
+        </div>
       </DashboardLayout>
     );
   }
 
+  const ROLE_STYLE: Record<string, { dot: string; text: string; bg: string; border: string }> = {
+    [RoleDisplayName.SOCIETY_ADMIN]: { dot: 'bg-purple-500', text: 'text-purple-700 dark:text-purple-300', bg: 'bg-purple-50 dark:bg-purple-950/40', border: 'border-purple-200 dark:border-purple-800/50' },
+    [RoleDisplayName.ADMIN]:         { dot: 'bg-red-500',    text: 'text-red-700 dark:text-red-300',    bg: 'bg-red-50 dark:bg-red-950/40',    border: 'border-red-200 dark:border-red-800/50' },
+    [RoleDisplayName.TREASURER]:     { dot: 'bg-blue-500',   text: 'text-blue-700 dark:text-blue-300',   bg: 'bg-blue-50 dark:bg-blue-950/40',   border: 'border-blue-200 dark:border-blue-800/50' },
+    [RoleDisplayName.SECRETARY]:     { dot: 'bg-teal-500',   text: 'text-teal-700 dark:text-teal-300',   bg: 'bg-teal-50 dark:bg-teal-950/40',   border: 'border-teal-200 dark:border-teal-800/50' },
+    [RoleDisplayName.MANAGER]:       { dot: 'bg-amber-500',  text: 'text-amber-700 dark:text-amber-300',  bg: 'bg-amber-50 dark:bg-amber-950/40',  border: 'border-amber-200 dark:border-amber-800/50' },
+    [RoleDisplayName.VIEWER]:        { dot: 'bg-slate-400',  text: 'text-slate-600 dark:text-slate-300',  bg: 'bg-slate-100 dark:bg-slate-800/60', border: 'border-slate-200 dark:border-slate-700' },
+  };
+
+  const getRoleStyle = (role: string) => ROLE_STYLE[role] ?? ROLE_STYLE[RoleDisplayName.VIEWER];
+
   return (
     <DashboardLayout title="Users & Access">
-      <div className="space-y-6">
-        {/* Page Header */}
-        <PageHeader
-          title="Users & Access"
-          description="Manage user accounts and permissions"
-          icon={UsersIcon}
-          actions={
-            <Button size="md" onClick={() => setShowModal(true)}>
-              <Plus className="w-4 h-4" />
-              Add User
-            </Button>
-          }
-        />
+      <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950">
+        <div className="space-y-6">
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card className="hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-lg bg-[#2563EB]/10 flex items-center justify-center">
-                  <UsersIcon className="w-5 h-5 text-[#2563EB] dark:text-[#3B82F6]" />
-                </div>
+          {/* ── Header ── */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-2">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg shadow-violet-500/30">
+                <UsersIcon className="w-5 h-5 text-white" />
               </div>
-              <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mb-1">Total Users</p>
-              <p className="text-2xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">{users.length}</p>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-lg bg-[#16A34A]/10 dark:bg-[#22C55E]/10 flex items-center justify-center">
-                  <Plus className="w-5 h-5 text-[#16A34A] dark:text-[#22C55E]" />
-                </div>
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                  Users
+                </h1>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                  {users.length} {users.length === 1 ? 'member' : 'members'} · Manage accounts & permissions
+                </p>
               </div>
-              <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mb-1">Active Users</p>
-              <p className="text-2xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {users.filter((u: User) => u.isActive).length}
-              </p>
-            </CardContent>
-          </Card>
+            </div>
 
-          <Card className="hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-lg bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 flex items-center justify-center">
-                  <Plus className="w-5 h-5 text-[#2563EB] dark:text-[#3B82F6]" />
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+              <div className="relative sm:w-72">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+                  <Search className="w-4 h-4 text-slate-400" />
                 </div>
+                <input
+                  type="text"
+                  placeholder="Search name, email, role..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all duration-200"
+                />
               </div>
-              <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mb-1">Admins</p>
-              <p className="text-2xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                {users.filter((u: User) => u.roleId === RoleId.SOCIETY_ADMIN).length}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Users Table */}
-        <Card className="overflow-hidden">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <CardTitle>Team Members</CardTitle>
-              <Button size="sm" onClick={() => setShowModal(true)}>
+              <Button
+                size="sm"
+                onClick={() => setShowModal(true)}
+                className="h-10 px-4 font-medium bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/30 hover:shadow-xl hover:shadow-violet-500/40 transition-all duration-200"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Add User
               </Button>
             </div>
-          </CardHeader>
+          </div>
 
-          <CardContent>
-            <div className="w-full overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead className="hidden lg:table-cell">Mobile</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead className="hidden md:table-cell">Status</TableHead>
-                    <TableHead className="hidden xl:table-cell">Force Pwd</TableHead>
-                    <TableHead className="hidden 2xl:table-cell">Last Login</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
+          {/* ── Stat Pills ── */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: 'Total', value: users.length, color: 'from-violet-500 to-indigo-600', shadow: 'shadow-violet-500/20' },
+              { label: 'Active', value: users.filter(u => u.isActive).length, color: 'from-emerald-500 to-teal-600', shadow: 'shadow-emerald-500/20' },
+              { label: 'Admins', value: users.filter(u => u.roleDisplayName === RoleDisplayName.SOCIETY_ADMIN || u.roleDisplayName === RoleDisplayName.ADMIN).length, color: 'from-red-500 to-rose-600', shadow: 'shadow-red-500/20' },
+              { label: 'Pending Login', value: users.filter(u => u.forcePasswordChange).length, color: 'from-amber-500 to-orange-600', shadow: 'shadow-amber-500/20' },
+            ].map(({ label, value, color, shadow }) => (
+              <div key={label} className={`relative overflow-hidden bg-gradient-to-br ${color} rounded-2xl p-4 shadow-lg ${shadow}`}>
+                <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)' }} />
+                <p className="relative text-white/80 text-xs font-semibold uppercase tracking-wider">{label}</p>
+                <p className="relative text-white text-3xl font-bold mt-0.5">{value}</p>
+              </div>
+            ))}
+          </div>
 
-              <TableBody>
-                {users.map((user: User) => (
-                  <TableRow key={user.publicId}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-[#2563EB] dark:bg-[#3B82F6] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
-                          {user.name.charAt(0)}
-                        </div>
-                        <span className="font-semibold text-[#0F172A] dark:text-[#F8FAFC] truncate max-w-[120px] lg:max-w-none">{user.name}</span>
-                      </div>
-                    </TableCell>
+          {/* ── Table Card ── */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+            {users.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-violet-50 dark:bg-violet-950/30 flex items-center justify-center">
+                  <UsersIcon className="w-8 h-8 text-violet-400" />
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold text-slate-800 dark:text-slate-200">No users yet</p>
+                  <p className="text-sm text-slate-400 mt-1">Add your first team member to get started</p>
+                </div>
+                <Button size="sm" onClick={() => setShowModal(true)} className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white">
+                  <Plus className="w-4 h-4 mr-2" /> Add User
+                </Button>
+              </div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <Search className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                <div className="text-center">
+                  <p className="font-semibold text-slate-700 dark:text-slate-300">No results found</p>
+                  <p className="text-sm text-slate-400 mt-1">Try a different search query</p>
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-50 via-slate-50/70 to-slate-50 dark:from-slate-800/50 dark:via-slate-800/30 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">User</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden md:table-cell">Email</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden lg:table-cell">Mobile</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Role</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">Status</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden xl:table-cell">Last Login</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {filteredUsers.map((user: User) => {
+                      const roleStyle = getRoleStyle(user.roleDisplayName);
+                      const initials = user.name.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+                      return (
+                        <tr key={user.publicId} className="group hover:bg-gradient-to-r hover:from-violet-50/50 hover:to-indigo-50/50 dark:hover:from-violet-950/20 dark:hover:to-indigo-950/20 transition-all duration-200">
+                          {/* User */}
+                          <td className="px-6 py-3 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm">
+                                {initials}
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{user.name}</p>
+                                {user.forcePasswordChange && (
+                                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">Pending first login</span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          {/* Email */}
+                          <td className="px-6 py-3 hidden md:table-cell">
+                            <span className="text-sm text-slate-600 dark:text-slate-300 truncate max-w-[180px] inline-block" title={user.email}>{user.email}</span>
+                          </td>
+                          {/* Mobile */}
+                          <td className="px-6 py-3 whitespace-nowrap hidden lg:table-cell">
+                            {user.mobile ? (
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                <span className="text-sm text-slate-600 dark:text-slate-300 font-medium">{user.mobile}</span>
+                              </div>
+                            ) : <span className="text-slate-400 text-sm">—</span>}
+                          </td>
+                          {/* Role */}
+                          <td className="px-6 py-3 whitespace-nowrap">
+                            <div className="flex justify-center">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${roleStyle.bg} ${roleStyle.text} ${roleStyle.border}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${roleStyle.dot}`} />
+                                {user.roleDisplayName}
+                              </span>
+                            </div>
+                          </td>
+                          {/* Status */}
+                          <td className="px-6 py-3 whitespace-nowrap hidden sm:table-cell">
+                            <div className="flex justify-center">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${user.isActive ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50' : 'bg-slate-100 dark:bg-slate-800/60 text-slate-500 border-slate-200 dark:border-slate-700'}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${user.isActive ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+                                {user.isActive ? 'Active' : 'Inactive'}
+                              </span>
+                            </div>
+                          </td>
+                          {/* Last Login */}
+                          <td className="px-6 py-3 whitespace-nowrap hidden xl:table-cell">
+                            <span className="text-sm text-slate-500 dark:text-slate-400">
+                              {user.lastLogin ? formatDate(user.lastLogin) : 'Never'}
+                            </span>
+                          </td>
+                          {/* Actions */}
+                          <td className="px-6 py-3 whitespace-nowrap">
+                            <div className="flex gap-2 justify-center items-center">
+                              <button
+                                aria-label={`Edit ${user.name}`}
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setName(user.name);
+                                  setEmail(user.email);
+                                  setMobile(user.mobile || '');
+                                  setSelectedRoleCode(ROLE_DISPLAY_TO_CODE[user.roleDisplayName] ?? RoleCode.VIEWER);
+                                  setIsEditing(true);
+                                  setShowModal(true);
+                                }}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:scale-110 dark:bg-indigo-950/50 dark:text-indigo-400 dark:hover:bg-indigo-900/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                aria-label={`Delete ${user.name}`}
+                                onClick={() => { setDeleteTarget(user); setShowDeleteModal(true); }}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-110 dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/50 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                              >
+                                <Trash className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
 
-                    <TableCell className="text-xs lg:text-sm">
-                      <span className="text-[#64748B] dark:text-[#94A3B8] truncate max-w-[140px] inline-block" title={user.email}>
-                        {user.email}
-                      </span>
-                    </TableCell>
-
-                    <TableCell className="hidden lg:table-cell text-xs lg:text-sm text-[#64748B] dark:text-[#94A3B8]">
-                      {user.mobile ? user.mobile : '—'}
-                    </TableCell>
-
-                    <TableCell>
-                      <Badge variant={ROLE_ID_BADGE[user.roleId].variant}>
-                        {ROLE_ID_BADGE[user.roleId].label}
-                      </Badge>
-                    </TableCell>
-
-                    <TableCell className="hidden md:table-cell">
-                      <Badge variant={user.isActive ? 'success' : 'default'}>
-                        {user.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-
-                    <TableCell className="hidden xl:table-cell">
-                      <Badge variant={user.forcePasswordChange ? 'error' : 'success'} className="text-xs">
-                        {user.forcePasswordChange ? 'Required' : 'Changed'}
-                      </Badge>
-                    </TableCell>
-
-                    <TableCell className="hidden 2xl:table-cell text-xs lg:text-sm">
-                      {user.lastLogin ? (
-                        <span className="text-[#64748B] dark:text-[#94A3B8]">{formatDate(user.lastLogin)}</span>
-                      ) : (
-                        <span className="text-[#64748B] dark:text-[#94A3B8]">Never</span>
-                      )}
-                    </TableCell>
-
-                    <TableCell className="text-right">
-                      <div className="flex gap-1 justify-end">
-                        <Tooltip content="Edit" side="top">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            aria-label={`Edit ${user.name}`}
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setName(user.name);
-                              setEmail(user.email);
-                              setMobile(user.mobile || '');
-                              setSelectedRoleId(user.roleId);
-                              setIsEditing(true);
-                              setShowModal(true);
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </Tooltip>
-
-                        <Tooltip content="Delete" side="top">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            aria-label={`Delete ${user.name}`}
-                            onClick={() => {
-                              setDeleteTarget(user);
-                              setShowDeleteModal(true);
-                            }}
-                          >
-                            <Trash className="w-4 h-4 text-red-600" />
-                          </Button>
-                        </Tooltip>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        </div>
 
       {/* Add/Edit User Modal */}
       <Modal
@@ -505,7 +486,8 @@ export default function Users() {
           setName('');
           setEmail('');
           setMobile('');
-          setSelectedRoleId(RoleId.MEMBER);
+          setPassword('');
+          setSelectedRoleCode(RoleCode.VIEWER);
           setSelectedFlatPublicId('');
         }}
         title={isEditing ? 'Edit User' : 'Add User'}
@@ -528,7 +510,7 @@ export default function Users() {
           />
 
           <Input
-            label="Email Address"
+            label="Email Address (Optional)"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -544,10 +526,20 @@ export default function Users() {
             readOnly={!isEditing && selectedFlatPublicId !== ''}
           />
 
+          {!isEditing && (
+            <Input
+              label="Password"
+              type="text"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Set a password for this user"
+            />
+          )}
+
           <Select
             label="Role"
-            value={String(selectedRoleId)}
-            onChange={(e) => setSelectedRoleId(Number(e.target.value) as RoleId)}
+            value={selectedRoleCode}
+            onChange={(e) => setSelectedRoleCode(e.target.value as RoleCode)}
             options={ROLE_OPTIONS}
           />
         </div>
@@ -562,7 +554,8 @@ export default function Users() {
               setName('');
               setEmail('');
               setMobile('');
-              setSelectedRoleId(RoleId.MEMBER);
+              setPassword('');
+              setSelectedRoleCode(RoleCode.VIEWER);
             }}
           >
             Cancel
@@ -575,140 +568,6 @@ export default function Users() {
               ? (isUpdating ? 'Updating...' : 'Update User')
               : (createUserMutation.isPending ? 'Creating...' : 'Create User')
             }
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      {/* Temporary Password Modal */}
-      <Modal
-        isOpen={showPasswordModal}
-        onClose={handleClosePasswordModal}
-        title="✅ User Created Successfully"
-        size="md"
-      >
-        <div className="space-y-3 overflow-hidden p-6">
-          {/* Success Header - Compact */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/40 dark:to-emerald-900/40 p-3 rounded-lg border-2 border-green-400 dark:border-green-600">
-            <p className="text-xs font-bold text-green-900 dark:text-green-100 mb-2">📋 USER DETAILS</p>
-            <div className="space-y-1.5">
-              <div className="flex justify-between items-center bg-white dark:bg-gray-700 p-2 rounded border border-green-200 dark:border-green-700">
-                <span className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">Name:</span>
-                <span className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC]">{newUserName}</span>
-              </div>
-              <div className="flex justify-between items-center bg-white dark:bg-[#020617] p-2 rounded border border-[#16A34A]/20 dark:border-[#22C55E]/20">
-                <span className="text-xs font-semibold text-[#64748B] dark:text-[#94A3B8]">Email:</span>
-                <span className="text-sm font-bold text-[#0F172A] dark:text-[#F8FAFC] truncate ml-2">{newUserEmail}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Temporary Password Section - Compact */}
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-[#0F172A] dark:text-[#F8FAFC] flex items-center gap-1">
-              🔐 TEMPORARY PASSWORD
-            </p>
-            <div className="flex gap-2">
-              <div className="flex-1 bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] dark:from-[#3B82F6] dark:to-[#2563EB] px-3 py-3 rounded-lg font-mono text-xl font-bold text-center tracking-wider text-white shadow-lg border-2 border-[#1D4ED8] dark:border-[#2563EB] select-all cursor-pointer">
-                {temporaryPassword}
-              </div>
-              <Button
-                size="sm"
-                onClick={copyPasswordToClipboard}
-                variant={passwordCopied ? 'primary' : 'outline'}
-                className={`flex-shrink-0 font-semibold text-xs ${passwordCopied ? 'bg-[#16A34A] hover:bg-[#15803D] text-white border-0' : 'border-2 border-[#E2E8F0] dark:border-[#1E293B]'}`}
-              >
-                {passwordCopied ? (
-                  <>
-                    <Check className="w-3 h-3 mr-1" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3 h-3 mr-1" />
-                    Copy
-                  </>
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 italic">Click password or use Copy button</p>
-          </div>
-
-          {/* Important Note - Compact with better color */}
-          <div className="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg border-2 border-red-400 dark:border-red-600">
-            <p className="text-xs font-bold text-red-900 dark:text-red-100 mb-1.5 flex items-center gap-1">
-              ⚠️ CRITICAL
-            </p>
-            <ul className="text-xs text-red-800 dark:text-red-200 space-y-0.5 ml-3 list-disc font-semibold">
-              <li>Share password with user immediately</li>
-              <li>User MUST change on first login</li>
-              <li>NOT retrievable after closing</li>
-              <li>Keep secure & confidential</li>
-            </ul>
-          </div>
-        </div>
-
-        <ModalFooter>
-          <Button
-            onClick={handleClosePasswordModal}
-            variant="primary"
-          >
-            Done
-          </Button>
-        </ModalFooter>
-      </Modal>
-
-      {/* Confirmation Dialog - Password Not Copied */}
-      <Modal
-        isOpen={showConfirmDialog}
-        onClose={() => setShowConfirmDialog(false)}
-        title="⚠️ Password Not Copied"
-        size="sm"
-      >
-        <div className="space-y-4 p-6">
-          <p className="text-sm text-gray-900 dark:text-gray-100">
-            You haven't copied the temporary password yet. Once you close this dialog, <strong>you won't be able to retrieve it</strong>.
-          </p>
-
-          <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg border-2 border-orange-400 dark:border-orange-600">
-            <p className="text-xs font-semibold text-orange-900 dark:text-orange-100">
-              Current Password:
-            </p>
-            <p className="text-sm font-mono font-bold text-orange-700 dark:text-orange-200 mt-1">
-              {temporaryPassword}
-            </p>
-          </div>
-
-          <p className="text-sm text-gray-900 dark:text-gray-100">
-            Would you like to:
-          </p>
-        </div>
-
-        <ModalFooter>
-          <Button
-            variant="outline"
-            onClick={() => setShowConfirmDialog(false)}
-          >
-            ← Go Back & Copy
-          </Button>
-          <Button
-            onClick={() => {
-              copyPasswordToClipboard();
-              setTimeout(() => {
-                setShowPasswordModal(false);
-                setShowConfirmDialog(false);
-                setPasswordCopied(false);
-              }, 300);
-            }}
-            variant="primary"
-            className="flex-1"
-          >
-            Copy & Close
-          </Button>
-          <Button
-            onClick={confirmCloseWithoutCopy}
-            variant="danger"
-          >
-            Close Anyway
           </Button>
         </ModalFooter>
       </Modal>
@@ -765,6 +624,7 @@ export default function Users() {
           </Button>
         </ModalFooter>
       </Modal>
+      </div>
     </DashboardLayout>
   );
 }

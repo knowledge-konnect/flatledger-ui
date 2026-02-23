@@ -22,6 +22,7 @@ const Users = lazy(() => import('./pages/Users'));
 const Settings = lazy(() => import('./pages/Settings'));
 const SubscriptionManagement = lazy(() => import('./pages/SubscriptionManagement'));
 const OpeningBalanceEntry = lazy(() => import('./components/OpeningBalance/OpeningBalanceEntry'));
+const Setup = lazy(() => import('./pages/Setup'));
 const Unauthorized = lazy(() => import('./pages/Unauthorized'));
 
 // Loading fallback component
@@ -152,6 +153,14 @@ export default function Router() {
             element={
               <ProtectedRoute>
                 <OpeningBalanceEntry />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/setup"
+            element={
+              <ProtectedRoute>
+                <Setup />
               </ProtectedRoute>
             }
           />

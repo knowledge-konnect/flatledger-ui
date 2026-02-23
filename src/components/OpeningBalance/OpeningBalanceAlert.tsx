@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useOpeningBalanceStatus } from '../../hooks/useOpeningBalance';
 import { useAlertDismissal } from '../../hooks/useAlertDismissal';
 import { useAuth } from '../../contexts/AuthProvider';
+import { isFinancialRole, collectUserRoles } from '../../types/roles';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 
@@ -14,10 +15,8 @@ export default function OpeningBalanceAlert() {
   const { data: status, isLoading } = useOpeningBalanceStatus();
   const { isDismissed, dismiss } = useAlertDismissal(ALERT_KEY);
 
-  // Only show to Treasurer or Society Admin role
-  const isTreasurer = user?.roles?.some((role: any) => 
-    role.name?.toLowerCase() === 'treasurer' || role.name?.toLowerCase() === 'society admin'
-  );
+  // Only show to financial-role users (Society Admin, Admin, Treasurer)
+  const isTreasurer = isFinancialRole(collectUserRoles(user));
 
   // Don't show if:
   // - Loading

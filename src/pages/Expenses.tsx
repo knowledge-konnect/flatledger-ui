@@ -10,7 +10,6 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import Modal, { ModalFooter } from '../components/ui/Modal';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -214,7 +213,6 @@ export default function Expenses() {
             vendor: data.vendor,
             description: data.description,
             amount: Number(data.amount),
-            status: selectedExpense.status as 'PENDING' | 'APPROVED' | 'REJECTED',
           },
         });
         showToast('Expense updated successfully', 'success');
@@ -226,7 +224,6 @@ export default function Expenses() {
           vendor: data.vendor,
           description: data.description,
           amount: Number(data.amount),
-          status: 'PENDING',
         });
         showToast('Expense added successfully', 'success');
       }
@@ -303,26 +300,14 @@ export default function Expenses() {
   ===================================================== */
 
   const SkeletonRow = () => (
-    <TableRow>
-      <TableCell>
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
-      </TableCell>
-      <TableCell>
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24 animate-pulse"></div>
-      </TableCell>
-      <TableCell>
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
-      </TableCell>
-      <TableCell>
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20 animate-pulse"></div>
-      </TableCell>
-      <TableCell className="hidden md:table-cell">
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-40 animate-pulse"></div>
-      </TableCell>
-      <TableCell>
-        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-28 ml-auto animate-pulse"></div>
-      </TableCell>
-    </TableRow>
+    <tr>
+      <td className="px-6 py-3"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-20 animate-pulse"></div></td>
+      <td className="px-6 py-3"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24 animate-pulse"></div></td>
+      <td className="px-6 py-3"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-32 animate-pulse"></div></td>
+      <td className="px-6 py-3"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-16 animate-pulse"></div></td>
+      <td className="px-6 py-3"><div className="h-6 bg-slate-200 dark:bg-slate-700 rounded-full w-20 animate-pulse"></div></td>
+      <td className="px-6 py-3"><div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-16 ml-auto animate-pulse"></div></td>
+    </tr>
   );
 
   const StatsCardSkeleton = () => (
@@ -405,64 +390,40 @@ export default function Expenses() {
         />
 
         {/* Header Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {isLoading ? (
-            <LoadingSpinner centered />
-          ) : (
-            <>
-              <Card className="hover:shadow-lg transition-all duration-200">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#DC2626]/10 flex items-center justify-center">
-                      <TrendingDown className="w-5 h-5 text-[#DC2626] dark:text-[#EF4444]" />
-                    </div>
-                  </div>
-                  <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mb-1">Total (MTD)</p>
-                  <p className="text-2xl font-bold text-[#0F172A] dark:text-[#F8FAFC]">
-                    {formatCurrency(totalExpenses)}
-                  </p>
-                  <p className="text-xs text-[#64748B] dark:text-[#94A3B8] mt-1">
-                    {filteredAndSortedExpenses.length} transaction{filteredAndSortedExpenses.length !== 1 ? 's' : ''}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-md transition-all duration-200">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
-                      <Zap className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Active Categories</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-                    {categoryData.length}
-                  </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    {categoriesData.length} total categories
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:shadow-md transition-all duration-200">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-10 h-10 rounded-lg bg-success-100 dark:bg-success-900/30 flex items-center justify-center">
-                      <DollarSign className="w-5 h-5 text-success-600 dark:text-success-400" />
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Avg Per Transaction</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-                    {filteredAndSortedExpenses.length > 0 ? formatCurrency(totalExpenses / filteredAndSortedExpenses.length) : formatCurrency(0)}
-                  </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Based on {filteredAndSortedExpenses.length} expenses
-                  </p>
-                </CardContent>
-              </Card>
-            </>
-          )}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-28 rounded-2xl bg-slate-200 dark:bg-slate-700 animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-500 to-rose-600 p-5 text-white shadow-lg">
+              <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
+              <div className="relative">
+                <p className="text-sm font-medium text-white/80 mb-1">Total Expenses (MTD)</p>
+                <p className="text-3xl font-bold text-white">{formatCurrency(totalExpenses)}</p>
+                <p className="text-xs text-white/60 mt-1">{filteredAndSortedExpenses.length} transaction{filteredAndSortedExpenses.length !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 p-5 text-white shadow-lg">
+              <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
+              <div className="relative">
+                <p className="text-sm font-medium text-white/80 mb-1">Active Categories</p>
+                <p className="text-3xl font-bold text-white">{categoryData.length}</p>
+                <p className="text-xs text-white/60 mt-1">{categoriesData.length} total categories</p>
+              </div>
+            </div>
+            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-5 text-white shadow-lg">
+              <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
+              <div className="relative">
+                <p className="text-sm font-medium text-white/80 mb-1">Avg Per Transaction</p>
+                <p className="text-3xl font-bold text-white">{filteredAndSortedExpenses.length > 0 ? formatCurrency(totalExpenses / filteredAndSortedExpenses.length) : formatCurrency(0)}</p>
+                <p className="text-xs text-white/60 mt-1">Based on {filteredAndSortedExpenses.length} expenses</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Breakdown Chart and Categories */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -550,48 +511,59 @@ export default function Expenses() {
           </Card>
 
           <Card className="shadow-md">
-            <CardContent className="p-5">
-              <h4 className="font-bold text-gray-900 dark:text-white mb-4 text-sm uppercase tracking-wide">Category Sidebar</h4>
-              <div className="space-y-2">
+            <div className="px-4 pt-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <p className="text-sm font-bold text-slate-800 dark:text-slate-200">Categories</p>
+              <div className="flex items-center gap-3">
+                {totalExpenses > 0 && (
+                  <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">{formatCurrency(totalExpenses)}</span>
+                )}
+                {selectedCategoryFilter && (
+                  <button onClick={() => setSelectedCategoryFilter('')} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Clear</button>
+                )}
+              </div>
+            </div>
+            <CardContent className="p-3">
+              <div className="grid grid-cols-2 gap-1.5">
                 {isLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                  Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="h-8 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse"></div>
                   ))
                 ) : categoriesData.length > 0 ? (
                   categoriesData.map((category) => {
                     const amount = categoryData.find(d => d.categoryKey === category.code)?.value || 0;
+                    const pct = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
                     const isSelected = selectedCategoryFilter === category.code;
+                    const color = getCategoryColor(category.code);
                     return (
                       <div
                         key={category.code}
                         onClick={() => setSelectedCategoryFilter(isSelected ? '' : category.code)}
-                        className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                        className={`flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer transition-all duration-150 border ${
                           isSelected
-                            ? 'bg-blue-100 dark:bg-blue-900/40 ring-2 ring-blue-500'
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:shadow-sm'
+                            ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-300 dark:border-indigo-700'
+                            : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-slate-200 dark:hover:border-slate-700'
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-9 h-9 rounded-lg flex items-center justify-center shadow-md font-bold"
-                            style={{ backgroundColor: getCategoryColor(category.code), opacity: 0.9 }}
-                          >
-                            {renderCategoryIcon(category.code, 'sm', true)}
+                        <div
+                          className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: `${color}22` }}
+                        >
+                          {renderCategoryIcon(category.code, 'sm')}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">{category.displayName}</span>
+                            <span className="text-[10px] font-semibold tabular-nums" style={{ color }}>{pct.toFixed(0)}%</span>
                           </div>
-                          <div>
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
-                              {category.displayName}
-                            </span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {formatCurrency(amount)}
-                            </span>
+                          <div className="h-1 rounded-full bg-slate-100 dark:bg-slate-700 mt-1 overflow-hidden">
+                            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
                           </div>
                         </div>
                       </div>
                     );
                   })
                 ) : (
-                  <p className="text-xs text-gray-500 dark:text-gray-400">No categories available</p>
+                  <p className="col-span-2 text-xs text-slate-400 dark:text-slate-500 py-4 text-center">No categories available</p>
                 )}
               </div>
             </CardContent>
@@ -628,6 +600,10 @@ export default function Expenses() {
                     onChange={(e) => setSortBy(e.target.value)}
                     className="!py-2 text-sm"
                   />
+                  <Button size="sm" onClick={() => { setSelectedExpense(null); reset(); setShowAddModal(true); }}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Expense
+                  </Button>
                 </div>
               </div>
 
@@ -666,120 +642,103 @@ export default function Expenses() {
           </CardHeader>
           <CardContent className="p-0">
             {isLoading ? (
-              <div className="w-full overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Vendor</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead className="hidden md:table-cell">Description</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-50 via-slate-50/70 to-slate-50 dark:from-slate-800/50 dark:via-slate-800/30 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Category</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Vendor</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Added By</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <SkeletonRow key={i} />
                     ))}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
               </div>
             ) : filteredAndSortedExpenses.length === 0 ? (
               <EmptyState />
             ) : (
-              <div className="w-full overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Vendor</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead className="hidden md:table-cell">Description</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAndSortedExpenses.map((expense) => {
-                      return (
-                        <TableRow key={expense.publicId} className="hover:bg-[#F8FAFC] dark:hover:bg-[#020617]/50 transition-colors">
-                          <TableCell>
-                            <span className="text-sm font-semibold text-[#0F172A] dark:text-[#F8FAFC]">{formatDate(expense.dateIncurred)}</span>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
-                                style={{ backgroundColor: `${getCategoryColor(expense.categoryCode)}20` }}
-                              >
-                                {renderCategoryIcon(expense.categoryCode, 'sm')}
-                              </div>
-                              <span className="font-semibold text-sm text-[#0F172A] dark:text-[#F8FAFC]">
-                                {getCategoryLabel(expense.categoryCode)}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm font-medium text-[#64748B] dark:text-[#94A3B8]">{expense.vendor}</TableCell>
-                          <TableCell>
-                            <span className="font-bold text-[#DC2626] dark:text-[#EF4444] text-sm">
-                              {formatCurrency(expense.amount)}
-                            </span>
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            <span className="text-sm text-[#64748B] dark:text-[#94A3B8] truncate max-w-xs">
-                              {expense.description || '—'}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex gap-2 justify-end items-center">
-                              <span className="text-xs font-bold px-2.5 py-1.5 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 shadow-sm">
-                                {expense.status}
-                              </span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditExpense(expense)}
-                                aria-label="Edit"
-                                className="hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-600"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setDeleteTarget(expense);
-                                  setShowDeleteModal(true);
-                                }}
-                                aria-label="Delete"
-                                className="hover:bg-red-100 dark:hover:bg-red-900/30"
-                              >
-                                <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                  <TableBody>
-                    <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700/50 border-t-2 border-gray-200 dark:border-gray-700 font-semibold hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-200 dark:hover:from-gray-700 dark:hover:to-gray-600">
-                      <TableCell className="text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest">Total</TableCell>
-                      <TableCell>—</TableCell>
-                      <TableCell className="text-xs text-gray-700 dark:text-gray-300 text-right">{filteredAndSortedExpenses.length} items</TableCell>
-                      <TableCell>
-                        <span className="font-bold text-lg text-red-600 dark:text-red-400">
-                          {formatCurrency(totalExpenses)}
-                        </span>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-xs text-gray-600 dark:text-gray-400">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-slate-50 via-slate-50/70 to-slate-50 dark:from-slate-800/50 dark:via-slate-800/30 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Category</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Vendor</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Added By</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {filteredAndSortedExpenses.map((expense) => (
+                      <tr key={expense.publicId} className="group hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 dark:hover:from-indigo-950/20 dark:hover:to-purple-950/20 transition-all duration-200">
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{formatDate(expense.dateIncurred)}</span>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{getCategoryLabel(expense.categoryCode)}</span>
+                        </td>
+                        <td className="px-6 py-3">
+                          <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{expense.vendor}</div>
+                          {expense.description && (
+                            <div className="text-xs text-slate-400 dark:text-slate-500 truncate max-w-[200px]">{expense.description}</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap text-right">
+                          <span className="text-sm font-bold text-rose-600 dark:text-rose-400">{formatCurrency(expense.amount)}</span>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">{expense.createdByName || '—'}</span>
+                        </td>
+                        <td className="px-6 py-3 whitespace-nowrap">
+                          <div className="flex gap-2 justify-center items-center">
+                            <button
+                              aria-label="Edit expense"
+                              onClick={() => handleEditExpense(expense)}
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
+                                         bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:scale-110
+                                         dark:bg-indigo-950/50 dark:text-indigo-400 dark:hover:bg-indigo-900/50
+                                         focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              aria-label="Delete expense"
+                              onClick={() => { setDeleteTarget(expense); setShowDeleteModal(true); }}
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
+                                         bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-110
+                                         dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/50
+                                         focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700/50 border-t-2 border-slate-200 dark:border-slate-700">
+                      <td className="px-6 py-3 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-widest">Total</td>
+                      <td className="px-6 py-3 text-xs text-slate-400">{filteredAndSortedExpenses.length} items</td>
+                      <td className="px-6 py-3"></td>
+                      <td className="px-6 py-3 text-right">
+                        <span className="text-sm font-bold text-rose-600 dark:text-rose-400">{formatCurrency(totalExpenses)}</span>
+                      </td>
+                      <td className="px-6 py-3 text-xs text-slate-400 dark:text-slate-500">
                         Avg: {filteredAndSortedExpenses.length > 0 ? formatCurrency(totalExpenses / filteredAndSortedExpenses.length) : formatCurrency(0)}
-                      </TableCell>
-                      <TableCell>—</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                      </td>
+                      <td className="px-6 py-3"></td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             )}
           </CardContent>
@@ -790,62 +749,55 @@ export default function Expenses() {
       <Modal
         isOpen={showAddModal}
         onClose={handleCloseModal}
-        title={selectedExpense ? '✏️ Edit Expense' : '➕ Add New Expense'}
-        size="lg"
+        title={selectedExpense ? 'Edit Expense' : 'Add New Expense'}
+        size="xl"
       >
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="space-y-5 p-6 pb-24">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-              {selectedExpense ? 'Update the expense details below' : 'Fill in the details to record a new expense'}
-            </p>
-
-            <Input
-              label="Expense Date"
-              type="date"
-              error={errors.date?.message}
-              {...register('date')}
-              className="!bg-gray-50 dark:!bg-gray-800/50"
-            />
-
-            <Select
-              label="Category"
-              options={[
-                { value: '', label: 'Select a category...' },
-                ...categoriesData.map((cat) => ({
-                  value: cat.code,
-                  label: cat.displayName,
-                })),
-              ]}
-              error={errors.categoryCode?.message}
-              {...register('categoryCode')}
-              className="!bg-gray-50 dark:!bg-gray-800/50"
-            />
-
-            <Input
-              label="Vendor Name"
-              placeholder="e.g., ACME Plumbing"
-              error={errors.vendor?.message}
-              {...register('vendor')}
-              className="!bg-gray-50 dark:!bg-gray-800/50"
-            />
-
-            <Input
-              label="Description"
-              placeholder="e.g., Pipe repair in building"
-              error={errors.description?.message}
-              {...register('description')}
-              className="!bg-gray-50 dark:!bg-gray-800/50"
-            />
-
-            <Input
-              label="Amount (₹)"
-              type="number"
-              placeholder="1500"
-              step="0.01"
-              error={errors.amount?.message}
-              {...register('amount')}
-              className="!bg-gray-50 dark:!bg-gray-800/50"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-6">
+            {/* Left column */}
+            <div className="space-y-4">
+              <Input
+                label="Expense Date"
+                type="date"
+                error={errors.date?.message}
+                {...register('date')}
+              />
+              <Select
+                label="Category"
+                options={[
+                  { value: '', label: 'Select a category...' },
+                  ...categoriesData.map((cat) => ({
+                    value: cat.code,
+                    label: cat.displayName,
+                  })),
+                ]}
+                error={errors.categoryCode?.message}
+                {...register('categoryCode')}
+              />
+              <Input
+                label="Amount (₹)"
+                type="number"
+                placeholder="1500"
+                step="0.01"
+                error={errors.amount?.message}
+                {...register('amount')}
+              />
+            </div>
+            {/* Right column */}
+            <div className="space-y-4">
+              <Input
+                label="Vendor Name"
+                placeholder="e.g., ACME Plumbing"
+                error={errors.vendor?.message}
+                {...register('vendor')}
+              />
+              <Input
+                label="Description"
+                placeholder="e.g., Pipe repair in building"
+                error={errors.description?.message}
+                {...register('description')}
+              />
+            </div>
           </div>
         </form>
         <ModalFooter>
@@ -860,7 +812,6 @@ export default function Expenses() {
           <Button
             type="submit"
             disabled={createMutation.isPending || updateMutation.isPending}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
             onClick={handleSubmit(onSubmit)}
           >
             {createMutation.isPending || updateMutation.isPending ? (
@@ -868,21 +819,7 @@ export default function Expenses() {
                 <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 {selectedExpense ? 'Updating...' : 'Adding...'}
               </>
-            ) : (
-              <>
-                {selectedExpense ? (
-                  <>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Update Expense
-                  </>
-                ) : (
-                  <>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Expense
-                  </>
-                )}
-              </>
-            )}
+            ) : selectedExpense ? 'Update Expense' : 'Add Expense'}
           </Button>
         </ModalFooter>
       </Modal>

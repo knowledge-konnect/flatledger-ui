@@ -1,16 +1,13 @@
-﻿import { useState } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
-  TrendingUp,
-  DollarSign,
-  Home,
+  IndianRupee,
   AlertCircle,
-  Calendar,
-  TrendingDown,
+  TrendingUp,
   Landmark,
-  ReceiptText,
-  CreditCard,
   ArrowDownCircle,
-  Users,
+  ReceiptText,
+  ChevronRight,
 } from 'lucide-react';
 import {
   BarChart,
@@ -27,21 +24,20 @@ import {
 } from 'recharts';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { SubscriptionSummary } from '../components/SubscriptionSummary';
-import OpeningBalanceAlert from '../components/OpeningBalance/OpeningBalanceAlert';
-import SetupProgressWidget from '../components/OpeningBalance/SetupProgressWidget';
-import OnboardingWizard from '../components/OpeningBalance/OnboardingWizard';
-import Button from '../components/ui/Button';
+import SetupBanner from '../components/dashboard/SetupBanner';
+import { useSetupProgress } from '../hooks/useSetupProgress';
+import { SETUP_REDIRECTED_KEY } from './Setup';
 import Card from '../components/ui/Card';
 import { KpiCard } from '../components/dashboard/KpiCard';
+import { OccupancyCard } from '../components/dashboard/OccupancyCard';
 import { ActivityItem } from '../components/dashboard/ActivityItem';
 import { useDashboard } from '../hooks/useDashboard';
+import { useFlats } from '../hooks/useFlats';
 import { useAuth } from '../contexts/AuthProvider';
 import { useBillingStatus, useGenerateBilling } from '../hooks/useBillingStatus';
 import BillingReminderBanner from '../components/dashboard/BillingReminderBanner';
-import BillingStatusCard from '../components/dashboard/BillingStatusCard';
 import { useToast } from '../components/ui/Toast';
-import { formatCurrency } from '../lib/utils';
-import { useMemo } from 'react';
+import { formatCurrency, cn } from '../lib/utils';
 
 // ─── Pie chart palette ────────────────────────────────────────────────────────
 const PIE_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#3b82f6', '#ec4899', '#14b8a6'];
@@ -87,25 +83,63 @@ function ListSkeleton({ rows = 5 }: { rows?: number }) {
   );
 }
 
+// ─── Period helpers ───────────────────────────────────────────────────────────
+type PeriodTab = 'this-month' | 'last-month' | 'custom';
+
+function getThisMonthRange() {
+  const now = new Date();
+  return {
+    start: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0],
+    end: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0],
+  };
+}
+
+function getLastMonthRange() {
+  const now = new Date();
+  return {
+    start: new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0],
+    end: new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0],
+  };
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { showToast } = useToast();
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const navigate = useNavigate();
+  const { isComplete: setupComplete, steps: setupSteps } = useSetupProgress();
 
-  // Initialize to current month immediately — single query on mount, no double-fetch
-  const getMonthRange = () => {
-    const now = new Date();
-    return {
-      start: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0],
-      end: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0],
-    };
+  // Auto-redirect brand-new users to the dedicated setup page (once only)
+  useEffect(() => {
+    const alreadyRedirected = (() => {
+      try { return localStorage.getItem(SETUP_REDIRECTED_KEY) === 'true'; } catch { return false; }
+    })();
+    if (!alreadyRedirected && !setupComplete && setupSteps.length > 0) {
+      navigate('/setup', { replace: true });
+    }
+  }, [setupComplete, setupSteps, navigate]);
+
+  const [periodTab, setPeriodTab] = useState<PeriodTab>('this-month');
+  const [startDate, setStartDate] = useState(() => getThisMonthRange().start);
+  const [endDate, setEndDate] = useState(() => getThisMonthRange().end);
+
+  const handlePeriodTab = (tab: PeriodTab) => {
+    setPeriodTab(tab);
+    if (tab === 'this-month') {
+      const r = getThisMonthRange();
+      setStartDate(r.start);
+      setEndDate(r.end);
+    } else if (tab === 'last-month') {
+      const r = getLastMonthRange();
+      setStartDate(r.start);
+      setEndDate(r.end);
+    }
   };
-  const [startDate, setStartDate] = useState(() => getMonthRange().start);
-  const [endDate, setEndDate] = useState(() => getMonthRange().end);
 
   const { data: dashboardData, isLoading } = useDashboard(
     startDate && endDate ? { startDate, endDate } : undefined
   );
+
+  const { data: flats = [], isLoading: flatsLoading } = useFlats();
 
   const {
     data: billingStatus,
@@ -113,15 +147,6 @@ export default function Dashboard() {
     refetch: refetchBillingStatus,
   } = useBillingStatus();
   const generateBilling = useGenerateBilling();
-
-  const handleDateReset = () => {
-    const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    setStartDate(firstDay.toISOString().split('T')[0]);
-    setEndDate(lastDay.toISOString().split('T')[0]);
-    setShowDatePicker(false);
-  };
 
   const billingMonthLabel = useMemo(() => {
     const period = billingStatus?.currentMonth;
@@ -156,60 +181,77 @@ export default function Dashboard() {
   const topDefaulters = dashboardData?.top_defaulters ?? [];
   const recentActivity = dashboardData?.recent_activity ?? [];
 
-  // Only warn when society has flats but zero bills for the period — not for empty periods
-  const showNoBillsBanner = !isLoading && (snap?.total_flats ?? 0) > 0 && snap?.total_billed === 0;
+  const collectionRate = snap?.collection_rate ?? 0;
+  const collectionColor = collectionRate >= 80 ? 'green' : collectionRate >= 50 ? 'amber' : 'red' as any;
 
   return (
     <DashboardLayout title="Dashboard">
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-6" data-testid="dashboard-content">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
-          {/* ── Header ───────────────────────────────────────────────────────── */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
-                Welcome back, {user?.name || 'User'}
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Here's your society's financial overview
-              </p>
-            </div>
-            <Button
-              size="md"
-              variant="outline"
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              data-testid="date-picker-toggle"
-              className="transition-all duration-200"
-            >
-              <Calendar className="w-4 h-4 mr-2" />
-              {startDate && endDate
-                ? new Date(startDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })
-                : 'Select Date'}
-            </Button>
-          </div>
-
-          {/* ── Date Range Picker ─────────────────────────────────────────────── */}
-          {showDatePicker && (
-            <Card className="p-6">
-              <div className="flex flex-col sm:flex-row gap-4 items-end">
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">Start Date</label>
-                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="input" />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-200 mb-2">End Date</label>
-                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="input" />
-                </div>
-                <div className="flex gap-3">
-                  <Button size="md" onClick={() => setShowDatePicker(false)}>Apply</Button>
-                  <Button size="md" variant="outline" onClick={handleDateReset}>Reset</Button>
+          {/* ── Header ─────────────────────────────────────────────────────── */}
+          <div className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm border border-slate-200 dark:border-slate-800">
+            {/* Top row: greeting + subscription + period tabs */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                  Welcome back, {user?.name || 'User'}
+                </h2>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Society's financial overview</p>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* Subscription compact badge */}
+                <SubscriptionSummary compact />
+                {/* Period Tabs */}
+                <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
+                  {([
+                    { key: 'this-month', label: 'This Month' },
+                    { key: 'last-month', label: 'Last Month' },
+                    { key: 'custom',     label: 'Custom' },
+                  ] as { key: PeriodTab; label: string }[]).map(({ key, label }) => (
+                    <button
+                      key={key}
+                      onClick={() => handlePeriodTab(key)}
+                      className={cn(
+                        'px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 whitespace-nowrap',
+                        periodTab === key
+                          ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
                 </div>
               </div>
-            </Card>
-          )}
+            </div>
+            {/* Custom date range — inline below, only when needed */}
+            {periodTab === 'custom' && (
+              <div className="flex flex-col sm:flex-row gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center gap-2 flex-1">
+                  <label className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">From</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                <div className="flex items-center gap-2 flex-1">
+                  <label className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">To</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
-          {/* ── Contextual Widgets ────────────────────────────────────────────── */}
-          <SubscriptionSummary />
+          {/* ── Contextual Banners ────────────────────────────────────────── */}
+          <SetupBanner />
           <BillingReminderBanner
             monthLabel={billingMonthLabel}
             isGenerated={!!billingStatus?.isGenerated}
@@ -217,286 +259,248 @@ export default function Dashboard() {
             isGenerating={generateBilling.isPending}
             onGenerate={handleGenerateBilling}
           />
-          <OpeningBalanceAlert />
-          <SetupProgressWidget />
-          <OnboardingWizard />
 
-          {/* ── No Bills Banner ──────────────────────────────────────────────── */}
-          {showNoBillsBanner && (
-            <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl px-5 py-4">
-              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                No bills generated for this period. Generate billing to see collection data.
-              </p>
-            </div>
-          )}
-
-          {/* ── Executive Snapshot KPIs — Row 1 ─────────────────────────────── */}
+          {/* ── 4 KPI Cards ───────────────────────────────────────────────── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)
             ) : (
               <>
                 <KpiCard
-                  label="Total Billed"
-                  value={formatCurrency(snap?.total_billed ?? 0)}
-                  icon={ReceiptText}
-                  color="blue"
-                  sub={`${snap?.total_flats ?? 0} flats`}
-                />
-                <KpiCard
-                  label="Total Collected"
+                  label="Maintenance Collected"
                   value={formatCurrency(snap?.total_collected ?? 0)}
-                  icon={DollarSign}
-                  color="green"
+                  icon={IndianRupee}
+                  color={collectionColor}
+                  sub={`${collectionRate.toFixed(1)}% collection rate`}
+                  progress={collectionRate}
+                  progressLabel={`of ₹${((snap?.total_billed ?? 0) / 100000).toFixed(1)}L`}
                 />
                 <KpiCard
-                  label="Collection Rate"
-                  value={`${(snap?.collection_rate ?? 0).toFixed(1)}%`}
-                  icon={TrendingUp}
-                  color={(snap?.collection_rate ?? 0) >= 70 ? 'emerald' : 'red'}
-                  sub={(snap?.collection_rate ?? 0) >= 70 ? 'On track' : 'Needs attention'}
-                />
-                <KpiCard
-                  label="Net Cash Flow"
-                  value={formatCurrency(snap?.net_cash_flow ?? 0)}
-                  icon={(snap?.net_cash_flow ?? 0) >= 0 ? TrendingUp : TrendingDown}
-                  color={(snap?.net_cash_flow ?? 0) >= 0 ? 'green' : 'red'}
-                />
-              </>
-            )}
-          </div>
-
-          {/* ── Executive Snapshot KPIs — Row 2 + Billing Status ─────────────── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {isLoading ? (
-              Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)
-            ) : (
-              <>
-                <KpiCard
-                  label="Bill Outstanding"
-                  value={formatCurrency(snap?.bill_outstanding ?? 0)}
-                  icon={AlertCircle}
-                  color={(snap?.bill_outstanding ?? 0) > 0 ? 'red' : 'emerald'}
-                  sub="Current period unpaid"
-                />
-                <KpiCard
-                  label="Opening Dues Remaining"
-                  value={formatCurrency(snap?.opening_dues_remaining ?? 0)}
-                  icon={Home}
-                  color="amber"
-                  sub="From migration"
-                />
-                <KpiCard
-                  label="Total Member Outstanding"
+                  label="Total Pending Dues"
                   value={formatCurrency(snap?.total_member_outstanding ?? 0)}
-                  icon={Users}
-                  color="orange"
-                  sub="Bills + Opening dues"
+                  icon={AlertCircle}
+                  color={(snap?.total_member_outstanding ?? 0) > 0 ? 'red' : 'emerald'}
+                  sub="Bills + opening balance dues"
                 />
                 <KpiCard
-                  label="Bank Balance"
+                  label="Society Expenses"
+                  value={formatCurrency(snap?.total_expense ?? 0)}
+                  icon={ReceiptText}
+                  color="orange"
+                  sub="Total spending this period"
+                />
+                <KpiCard
+                  label="Society Fund Balance"
                   value={formatCurrency(snap?.bank_balance ?? 0)}
                   icon={Landmark}
-                  color="indigo"
+                  color={(snap?.bank_balance ?? 0) >= 0 ? 'indigo' : 'red'}
+                  sub={
+                    (snap?.net_cash_flow ?? 0) >= 0
+                      ? `+${formatCurrency(snap?.net_cash_flow ?? 0)} net this period`
+                      : `${formatCurrency(snap?.net_cash_flow ?? 0)} net this period`
+                  }
                 />
               </>
             )}
           </div>
 
-          {/* ── Charts Section ────────────────────────────────────────────────── */}
-          {(!isLoading && trends.length > 0) || isLoading ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Income vs Expense Bar Chart */}
-              <Card
-                className="lg:col-span-2 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 p-6"
-                data-testid="income-expense-chart"
-              >
-                <div className="mb-5">
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">Income vs Expense</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Last 6 months financial performance</p>
-                </div>
-                {isLoading ? (
-                  <ChartSkeleton height={280} />
-                ) : (
-                  <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={trends.slice(-6)} barGap={4}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-slate-700" />
-                      <XAxis dataKey="label" stroke="#64748b" fontSize={11} tickLine={false} />
-                      <YAxis
-                        stroke="#64748b"
-                        fontSize={11}
-                        tickLine={false}
-                        tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
-                      />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: '#ffffff', border: 'none', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                        formatter={(value: any) => [formatCurrency(Number(value ?? 0)), '']}
-                      />
-                      <Legend wrapperStyle={{ paddingTop: '16px' }} iconType="circle" iconSize={8} />
-                      <Bar dataKey="income" fill="#16a34a" radius={[6, 6, 0, 0]} name="Income" />
-                      <Bar dataKey="expense" fill="#dc2626" radius={[6, 6, 0, 0]} name="Expense" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </Card>
+          {/* ── Charts + Occupancy ────────────────────────────────────────── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-              {/* Expense Breakdown Pie */}
-              {(!isLoading && expBreakdown.length > 0) || isLoading ? (
-                <Card className="rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 p-6" data-testid="expense-pie-chart">
-                  <div className="mb-5">
-                    <h3 className="text-base font-semibold text-slate-900 dark:text-white">Expense Breakdown</h3>
-                    <p className="text-xs text-muted-foreground mt-1">By category</p>
-                  </div>
-                  {isLoading ? (
-                    <ChartSkeleton height={280} />
-                  ) : (
-                    <div className="flex flex-col items-center">
-                      <ResponsiveContainer width="100%" height={200}>
-                        <PieChart>
-                          <Pie
-                            data={expBreakdown}
-                            dataKey="amount"
-                            nameKey="category"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={80}
-                            label={({ percent }) => percent && percent > 0.03 ? `${(percent * 100).toFixed(0)}%` : ''}
-                            labelLine={false}
-                          >
-                            {expBreakdown.map((_, i) => (
-                              <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            formatter={(value: any, name: any) => [formatCurrency(Number(value ?? 0)), name ?? '']}
-                            contentStyle={{ backgroundColor: '#ffffff', border: 'none', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      {/* Legend */}
-                      <ul className="w-full mt-2 space-y-1.5">
-                        {expBreakdown.map((item, i) => (
-                          <li key={i} className="flex items-center justify-between text-xs">
-                            <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400 truncate">
-                              <span
-                                className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }}
-                              />
-                              {item.category}
-                            </span>
-                            <span className="font-medium text-slate-700 dark:text-slate-300 pl-2">
-                              {item.percentage.toFixed(1)}%
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </Card>
-              ) : null}
-            </div>
-          ) : null}
-
-          {/* ── Risk Panel + Recent Activity ─────────────────────────────────── */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {/* Top Outstanding Flats */}
-            <Card className="rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 p-6" data-testid="top-defaulters">
-              <div className="mb-4">
-                <h3 className="text-base font-semibold text-slate-900 dark:text-white">Top Outstanding Flats</h3>
-                <p className="text-xs text-muted-foreground mt-1">Highest pending balances</p>
-              </div>
+            {/* Bar Chart — Income vs Expense */}
+            <Card className="lg:col-span-2 p-6 rounded-2xl shadow-sm" data-testid="income-expense-chart">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">6-Month Income vs Expense</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mb-5">Monthly collection &amp; spending trend</p>
               {isLoading ? (
-                <ListSkeleton rows={5} />
-              ) : topDefaulters.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-40 text-center gap-2">
-                  <span className="text-3xl">🎉</span>
-                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">No outstanding balances</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">All members are up to date</p>
+                <ChartSkeleton height={260} />
+              ) : trends.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[260px] gap-2 text-center">
+                  <TrendingUp className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                  <p className="text-sm text-slate-400 dark:text-slate-500">No trend data yet</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500">Appears once billing is generated</p>
                 </div>
               ) : (
-                <ul className="space-y-2">
-                  {topDefaulters.map((d, i) => {
-                    const isHighest = i === 0;
-                    return (
-                      <li
-                        key={d.flat_no}
-                        className={`flex items-center justify-between px-3 py-2.5 rounded-lg ${
-                          isHighest
-                            ? 'bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30'
-                            : 'bg-slate-50 dark:bg-slate-800/40'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span className={`flex-shrink-0 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center ${
-                            isHighest ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
-                          }`}>
-                            {i + 1}
-                          </span>
-                          <span className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">
-                            Flat {d.flat_no}
-                          </span>
-                        </div>
-                        <span className={`text-sm font-semibold flex-shrink-0 pl-2 ${
-                          isHighest ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400'
-                        }`}>
-                          {formatCurrency(d.outstanding)}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart data={trends.slice(-6)} barGap={3} barCategoryGap="30%">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-slate-700" vertical={false} />
+                    <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis
+                      stroke="#94a3b8"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+                      width={52}
+                    />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: '0 4px 12px rgb(0 0 0 / 0.08)', padding: '10px 14px' }}
+                      formatter={(value: any) => [formatCurrency(Number(value ?? 0)), '']}
+                      cursor={{ fill: 'rgba(99,102,241,0.05)' }}
+                    />
+                    <Legend wrapperStyle={{ paddingTop: '12px', fontSize: '12px' }} iconType="circle" iconSize={8} />
+                    <Bar dataKey="income" fill="#22c55e" radius={[5, 5, 0, 0]} name="Income" />
+                    <Bar dataKey="expense" fill="#f43f5e" radius={[5, 5, 0, 0]} name="Expense" />
+                  </BarChart>
+                </ResponsiveContainer>
               )}
             </Card>
 
-            {/* Recent Activity Feed */}
-            <Card className="lg:col-span-2 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-200 p-6" data-testid="recent-activity">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">Recent Activity</h3>
-                  <p className="text-xs text-muted-foreground mt-1">Latest payments & expenses</p>
+            {/* Flat Occupancy */}
+            <OccupancyCard flats={flats} loading={flatsLoading} />
+          </div>
+
+          {/* ── Bottom Row: Pie + Dues + Activity ─────────────────────────── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+            {/* Expense Breakdown Pie */}
+            <Card className="p-6 rounded-2xl shadow-sm" data-testid="expense-pie-chart">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Where Money Was Spent</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Expense breakdown by category</p>
+              {isLoading ? (
+                <ChartSkeleton height={220} />
+              ) : expBreakdown.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[220px] gap-2 text-center">
+                  <ArrowDownCircle className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                  <p className="text-sm text-slate-400 dark:text-slate-500">No expenses yet</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500">Add expenses to see the breakdown</p>
                 </div>
-                <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
-                  <span className="flex items-center gap-1"><ArrowDownCircle className="w-3.5 h-3.5 text-green-500" /> Payment</span>
-                  <span className="flex items-center gap-1"><CreditCard className="w-3.5 h-3.5 text-red-500" /> Expense</span>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <ResponsiveContainer width="100%" height={200}>
+                    <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+                      <Pie
+                        data={expBreakdown}
+                        dataKey="amount"
+                        nameKey="category"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={48}
+                        outerRadius={72}
+                        paddingAngle={2}
+                      >
+                        {expBreakdown.map((_, i) => (
+                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: any, name: any) => [formatCurrency(Number(value ?? 0)), name ?? '']}
+                        contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: '0 4px 12px rgb(0 0 0 / 0.08)' }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <ul className="w-full mt-3 space-y-2">
+                    {expBreakdown.slice(0, 5).map((item, i) => (
+                      <li key={i} className="flex items-center justify-between text-xs">
+                        <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400 truncate">
+                          <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                          {item.category}
+                        </span>
+                        <span className="font-semibold text-slate-700 dark:text-slate-300 pl-2 tabular-nums">{item.percentage.toFixed(1)}%</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
+              )}
+            </Card>
+
+            {/* Highest Pending Dues */}
+            <Card className="p-6 rounded-2xl shadow-sm" data-testid="top-defaulters">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Highest Pending Dues</h3>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Flats with large outstanding balances</p>
+              {isLoading ? (
+                <ListSkeleton rows={5} />
+              ) : topDefaulters.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[200px] text-center gap-3">
+                  <span className="text-3xl">🎉</span>
+                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">No outstanding balances</p>
+                  <p className="text-xs text-slate-400">All members are up to date</p>
+                </div>
+              ) : (
+                <>
+                  <ul className="space-y-2">
+                    {topDefaulters.map((d, i) => {
+                      const isTop = i === 0;
+                      return (
+                        <li
+                          key={d.flat_no}
+                          onClick={() => navigate('/maintenance')}
+                          className={cn(
+                            'flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-colors duration-150 group',
+                            isTop
+                              ? 'bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/40'
+                              : 'bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/70'
+                          )}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className={cn(
+                              'flex-shrink-0 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center',
+                              isTop ? 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300' : 'bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300'
+                            )}>{i + 1}</span>
+                            <span className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">Flat {d.flat_no}</span>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <span className={cn('text-sm font-semibold tabular-nums', isTop ? 'text-red-600 dark:text-red-400' : 'text-orange-600 dark:text-orange-400')}>
+                              {formatCurrency(d.outstanding)}
+                            </span>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  <button
+                    onClick={() => navigate('/maintenance')}
+                    className="mt-4 w-full text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center justify-center gap-1 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-colors"
+                  >
+                    View all outstanding dues <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </Card>
+
+            {/* Recent Transactions */}
+            <Card className="p-6 rounded-2xl shadow-sm" data-testid="recent-activity">
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Recent Transactions</h3>
               </div>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Latest payments &amp; expenses</p>
               {isLoading ? (
                 <ListSkeleton rows={6} />
               ) : recentActivity.length === 0 ? (
-                <div className="flex items-center justify-center h-[280px] text-slate-400 dark:text-slate-500 text-sm">
-                  No recent activity
+                <div className="flex items-center justify-center h-[200px] text-slate-400 dark:text-slate-500 text-sm">
+                  No recent transactions
                 </div>
               ) : (
-                <div className="overflow-y-auto" style={{ maxHeight: 300 }}>
-                  <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                <>
+                  <div className="overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800" style={{ maxHeight: 260 }}>
                     {recentActivity.map((item, i) => (
                       <ActivityItem
                         key={i}
                         type={item.type}
-                        description={
-                          item.type === 'payment'
-                            ? `Flat ${item.description} — Payment`
-                            : item.description
-                        }
+                        description={item.type === 'payment' ? `Flat ${item.description}` : item.description}
                         amount={item.amount}
                         date={item.date}
                       />
                     ))}
                   </div>
-                </div>
+                  <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      onClick={() => navigate('/maintenance')}
+                      className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 flex items-center gap-0.5"
+                    >
+                      Payments <ChevronRight className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => navigate('/expenses')}
+                      className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 flex items-center gap-0.5"
+                    >
+                      Expenses <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
+                </>
               )}
             </Card>
           </div>
-
-          {/* ── Billing Status Card ───────────────────────────────────────────── */}
-          <BillingStatusCard
-            monthLabel={billingMonthLabel}
-            isGenerated={!!billingStatus?.isGenerated}
-            generatedCount={billingStatus?.generatedCount || 0}
-            isLoading={billingStatusLoading}
-          />
 
         </div>
       </div>

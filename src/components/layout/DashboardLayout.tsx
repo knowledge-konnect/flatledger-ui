@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthProvider';
 import { useToast } from '../ui/Toast';
 import { cn } from '../../lib/utils';
 import { AlertMessages } from '../../lib/alertMessages';
+import ChatBot from '../chatbot/ChatBot';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -160,6 +161,9 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
           </div>
         </main>
       </div>
+
+      {/* In-app Guidance ChatBot */}
+      <ChatBot />
     </div>
   );
 }

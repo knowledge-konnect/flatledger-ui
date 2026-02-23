@@ -12,7 +12,7 @@ export interface User {
   name: string;
   email: string;
   mobile?: string | null;
-  roleDisplayName: string; // Display name: 'Admin', 'Treasurer', 'Member'
+  roleDisplayName: string; // Display name: 'Society Admin' | 'Admin' | 'Treasurer' | 'Secretary' | 'Manager' | 'Viewer'
   isActive: boolean;
   forcePasswordChange?: boolean;
   lastLogin?: string | null; // ISO 8601 DateTime
@@ -27,9 +27,10 @@ export interface User {
  */
 export interface CreateUserDto {
   name: string; // Required
-  email: string; // Required, must be unique
+  email?: string; // Optional, must be unique if provided
   mobile?: string; // Optional
-  roleCode: string; // Required: 'admin', 'treasurer', 'member'
+  roleCode: string; // Required: use RoleCode enum — 'society_admin' | 'admin' | 'treasurer' | 'secretary' | 'manager' | 'viewer'
+  password?: string; // Optional: if provided, used as initial password; otherwise backend auto-generates one
 }
 
 /**
@@ -39,7 +40,7 @@ export interface CreateUserDto {
 export interface CreateUserResponse {
   publicId: string; // UUID
   email: string;
-  temporaryPassword: string; // Auto-generated secure password
+  temporaryPassword: string; 
   message: string;
 }
 
@@ -49,11 +50,11 @@ export interface CreateUserResponse {
  * Admin-only operation
  */
 export interface UpdateUserDto {
-  publicId: string; // UUID - must match path parameter
+  publicId: string; 
   name: string;
-  email: string;
+  email?: string; 
   mobile?: string;
-  roleCode: string; // 'admin', 'treasurer', 'member'
+  roleCode: string; 
   isActive: boolean;
 }
 

@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
-import { Plus, CreditCard, Search, Edit, Trash, DollarSign, AlertCircle, TrendingUp, ChevronDown, ChevronRight, Info, Zap, Lock } from 'lucide-react';
+import { Plus, CreditCard, Search, Edit, Trash, IndianRupee, AlertCircle, TrendingUp, Info, Zap, Lock, Home, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import Card, { CardContent } from '../components/ui/Card';
 import PageHeader from '../components/ui/PageHeader';
 import Tooltip from '../components/ui/Tooltip';
 import EmptyState from '../components/ui/EmptyState';
@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { useAuth } from '../contexts/AuthProvider';
 import { useToast } from '../components/ui/Toast';
 import { useMaintenancePayments, useMaintenanceSummary, useCreateMaintenancePayment, useUpdateMaintenancePayment, useDeleteMaintenancePayment, usePaymentModes } from '../hooks/useBilling';
+import { useBillingStatus } from '../hooks/useBillingStatus';
 import { useFlats, useFlatFinancialSummary } from '../hooks/useFlats';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { flatsApi } from '../api/flatsApi';
@@ -97,7 +98,6 @@ export default function Maintenance() {
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
-  const [showFinancialBreakdown, setShowFinancialBreakdown] = useState(false);
   const [isRefreshingLedger, setIsRefreshingLedger] = useState(false);
   const [localSubmitting, setLocalSubmitting] = useState(false);
   const [lastAllocationSummary, setLastAllocationSummary] = useState<
@@ -114,6 +114,7 @@ export default function Maintenance() {
   // Fetch data
   const { data: payments = [], isLoading: paymentsLoading } = useMaintenancePayments();
   const { data: summary, isLoading: summaryLoading } = useMaintenanceSummary(period);
+  const { data: billingStatus } = useBillingStatus();
   const { data: flats = [] } = useFlats();
   const {
     data: paymentModes = [],
@@ -128,6 +129,12 @@ export default function Maintenance() {
   const safePayments = Array.isArray(payments) ? payments : [];
   const safeFlats = Array.isArray(flats) ? flats : [];
   const safePaymentModes = Array.isArray(paymentModes) ? paymentModes : [];
+
+  // Pre-built O(1) lookup: flatPublicId → ownerName
+  const flatOwnerMap = useMemo(
+    () => new Map(safeFlats.map(f => [f.publicId, f.ownerName])),
+    [safeFlats]
+  );
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset, watch, setValue } = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
@@ -377,39 +384,69 @@ export default function Maintenance() {
           }
         />
 
-        {/* Period Selector */}
-        <Card className="p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Viewing Period</p>
-              <p className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
-                {getMonthOptions().find(o => o.value === period)?.label || period}
-              </p>
-            </div>
+        {/* ── Period Selector + Summary Cards ────────────────────────────── */}
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+
+          {/* Period header bar */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-500 dark:text-slate-400 hidden sm:block">Change month:</span>
-              <select
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
-                className="input w-48 appearance-none cursor-pointer pr-8"
+              <Calendar className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Viewing Period</span>
+            </div>
+            <div className="flex items-center gap-1">
+              {/* Prev month button */}
+              <button
+                type="button"
+                aria-label="Previous month"
+                onClick={() => {
+                  const opts = getMonthOptions();
+                  const idx = opts.findIndex(o => o.value === period);
+                  if (idx < opts.length - 1) setPeriod(opts[idx + 1].value);
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-30"
+                disabled={getMonthOptions().findIndex(o => o.value === period) >= getMonthOptions().length - 1}
               >
-                {getMonthOptions().map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {/* Styled select */}
+              <div className="relative">
+                <select
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value)}
+                  className="appearance-none pl-3 pr-8 py-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-colors hover:border-indigo-400 dark:hover:border-indigo-500"
+                >
+                  {getMonthOptions().map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+                <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none rotate-90" />
+              </div>
+
+              {/* Next month button */}
+              <button
+                type="button"
+                aria-label="Next month"
+                onClick={() => {
+                  const opts = getMonthOptions();
+                  const idx = opts.findIndex(o => o.value === period);
+                  if (idx > 0) setPeriod(opts[idx - 1].value);
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-30"
+                disabled={getMonthOptions().findIndex(o => o.value === period) <= 0}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
-        </Card>
 
-        {/* Summary Cards — compact 6-col strip */}
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 sm:divide-y-0 sm:divide-x sm:flex overflow-hidden shadow-sm">
+          {/* Summary stat strip */}
+          <div className="divide-y divide-slate-100 dark:divide-slate-800 sm:divide-y-0 sm:divide-x sm:flex overflow-x-auto">
 
           {/* Total Charges */}
-          <div className="flex items-center gap-3 px-5 py-4 flex-1 min-w-0">
+          <div className="flex items-center gap-3 px-5 py-4 flex-1 min-w-[130px]">
             <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-              <DollarSign className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <IndianRupee className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="min-w-0">
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Total Charges</p>
@@ -420,7 +457,7 @@ export default function Maintenance() {
           </div>
 
           {/* Collected */}
-          <div className="flex items-center gap-3 px-5 py-4 flex-1 min-w-0">
+          <div className="flex items-center gap-3 px-5 py-4 flex-1 min-w-[130px]">
             <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
               <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             </div>
@@ -433,7 +470,7 @@ export default function Maintenance() {
           </div>
 
           {/* Bill Outstanding */}
-          <div className="flex items-center gap-3 px-5 py-4 flex-1 min-w-0">
+          <div className="flex items-center gap-3 px-5 py-4 flex-1 min-w-[140px]">
             <div className="w-9 h-9 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
               <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
             </div>
@@ -448,9 +485,9 @@ export default function Maintenance() {
           </div>
 
           {/* Member Opening Dues */}
-          <div className="flex items-center gap-3 px-5 py-4 flex-1 min-w-0">
+          <div className="flex items-center gap-3 px-5 py-4 flex-1 min-w-[150px]">
             <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
-              <DollarSign className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <IndianRupee className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1">
@@ -466,7 +503,7 @@ export default function Maintenance() {
           </div>
 
           {/* Total Member Outstanding */}
-          <div className="flex items-center gap-3 px-5 py-4 flex-1 min-w-0">
+          <div className="flex items-center gap-3 px-5 py-4 flex-1 min-w-[160px]">
             <div className="w-9 h-9 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
               <AlertCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
             </div>
@@ -481,7 +518,7 @@ export default function Maintenance() {
           </div>
 
           {/* Collection % */}
-          <div className="flex items-center gap-3 px-5 py-4 flex-1 min-w-0">
+          <div className="flex items-center gap-3 px-5 py-4 flex-1 min-w-[130px]">
             <div className="w-9 h-9 rounded-lg bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0">
               <TrendingUp className="w-4 h-4 text-teal-600 dark:text-teal-400" />
             </div>
@@ -507,28 +544,21 @@ export default function Maintenance() {
             </div>
           </div>
 
-        </div>
+          </div>{/* end stat strip */}
 
-        {/* No-bills warning */}
-        {!summaryLoading && (summary?.totalCharges || 0) === 0 && (
-          <Card className="border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
-                    No bills generated for this period
-                  </p>
-                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
-                    <strong>Total Charges</strong>, <strong>Pending</strong>, and <strong>Collection Rate</strong> are based on monthly bills.
-                    Go to <strong>Billing → Generate Bills</strong> to create bills for this period.
-                    Payments recorded without bills are shown in the table below but cannot be tracked against charges.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+          {/* No-bills warning inside the card */}
+          {!summaryLoading && (summary?.totalCharges || 0) === 0 && (
+            <div className="flex items-start gap-3 border-t border-amber-100 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/20 px-5 py-3">
+              <AlertCircle className="w-4 h-4 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                <span className="font-semibold">No bills generated for this period.</span>{' '}
+                Charges, pending amounts and collection rate will show once bills are generated.{' '}
+                <Link to="/dashboard" className="font-semibold underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100 transition-colors">Generate Bills &rarr;</Link>
+              </p>
+            </div>
+          )}
+
+        </div>{/* end period+cards section */}
 
         {/* Payment History Table */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
@@ -542,15 +572,36 @@ export default function Maintenance() {
                 </span>
               )}
             </div>
-            <div className="relative max-w-xs w-full sm:w-auto">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search flat, notes…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="input pl-9 py-1.5 text-sm w-full"
-              />
+            <div className="flex items-center gap-3">
+              <div className="relative max-w-xs w-full sm:w-auto">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search flat, notes…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="input pl-9 py-1.5 text-sm w-full"
+                />
+              </div>
+              <Button
+                size="sm"
+                onClick={() => {
+                  setIsEditing(false);
+                  setSelectedPayment(null);
+                  setLastAllocationSummary(null);
+                  reset({
+                    flatPublicId: '',
+                    amount: '',
+                    paymentModeId: '',
+                    paymentDate: new Date().toISOString().split('T')[0],
+                    referenceNumber: '',
+                  });
+                  setShowAddModal(true);
+                }}
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" />
+                Record Payment
+              </Button>
             </div>
           </div>
 
@@ -590,6 +641,7 @@ export default function Maintenance() {
                   <tr className="bg-gradient-to-r from-slate-50 via-slate-50/70 to-slate-50 dark:from-slate-800/50 dark:via-slate-800/30 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Flat</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">Owner</th>
                     <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Amount</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">Payment Mode</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden md:table-cell">Recorded By</th>
@@ -599,15 +651,39 @@ export default function Maintenance() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {filteredPayments.map((payment) => (
+                  {filteredPayments.map((payment) => {
+                    const isToday = !!payment.paymentDate &&
+                      new Date(payment.paymentDate).toDateString() === new Date().toDateString();
+                    const ownerName = flatOwnerMap.get(payment.flatPublicId);
+                    const modeRaw = (payment.paymentModeCode || payment.paymentModeName || '').toLowerCase();
+                    const modeBadgeCls =
+                      modeRaw.includes('cash')
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800'
+                        : modeRaw.includes('upi')
+                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-300 dark:border-indigo-800'
+                        : modeRaw.includes('cheque') || modeRaw.includes('check')
+                        ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800'
+                        : modeRaw.includes('bank') || modeRaw.includes('neft') || modeRaw.includes('transfer')
+                        ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800'
+                        : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+                    return (
                     <tr
                       key={payment.publicId}
-                      className="group hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 dark:hover:from-indigo-950/20 dark:hover:to-purple-950/20 transition-all duration-200"
+                      className={`group transition-all duration-200 ${
+                        isToday
+                          ? 'border-l-2 border-l-indigo-400 bg-indigo-50/30 dark:bg-indigo-950/10 hover:bg-indigo-50/60 dark:hover:bg-indigo-950/20'
+                          : 'hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 dark:hover:from-indigo-950/20 dark:hover:to-purple-950/20'
+                      }`}
                     >
                       <td className="px-6 py-3 whitespace-nowrap">
-                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                          {formatDate(payment.paymentDate)}
-                        </span>
+                        <div>
+                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            {formatDate(payment.paymentDate)}
+                          </span>
+                          {isToday && (
+                            <span className="ml-2 text-[10px] font-bold uppercase tracking-wide text-indigo-500 dark:text-indigo-400">Today</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-3 whitespace-nowrap">
                         <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/50 dark:border-indigo-800/50">
@@ -616,15 +692,22 @@ export default function Maintenance() {
                           </span>
                         </div>
                       </td>
+                      <td className="px-6 py-3 whitespace-nowrap hidden sm:table-cell">
+                        {ownerName ? (
+                          <span className="text-sm text-slate-700 dark:text-slate-300 truncate max-w-[130px] block">{ownerName}</span>
+                        ) : (
+                          <span className="text-sm text-slate-400">-</span>
+                        )}
+                      </td>
                       <td className="px-6 py-3 whitespace-nowrap text-right">
                         <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                           {formatCurrency(payment.amount)}
                         </span>
                       </td>
                       <td className="px-6 py-3 whitespace-nowrap hidden sm:table-cell">
-                        <Badge variant="default">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${modeBadgeCls}`}>
                           {payment.paymentModeName || 'N/A'}
-                        </Badge>
+                        </span>
                       </td>
                       <td className="px-6 py-3 whitespace-nowrap hidden md:table-cell">
                         <span className="text-sm text-slate-600 dark:text-slate-400">
@@ -643,7 +726,6 @@ export default function Maintenance() {
                       </td>
                       <td className="px-6 py-3 whitespace-nowrap">
                         <div className="flex gap-2 justify-center items-center">
-                          {/* Edit button — disabled when allocated or locked */}
                           {(payment.allocations?.length ?? 0) > 0 || isPaymentLocked(payment) ? (
                             <Tooltip
                               content={
@@ -693,7 +775,8 @@ export default function Maintenance() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -705,195 +788,237 @@ export default function Maintenance() {
         isOpen={showAddModal}
         onClose={() => {
           setShowAddModal(false);
-          setShowFinancialBreakdown(false);
           setLastAllocationSummary(null);
           reset();
         }}
         title={isEditing ? "Edit Payment" : "Record Payment"}
-        size="lg"
+        size="xl"
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="form-group space-y-5 p-6 max-h-[75vh] overflow-y-auto">
-          {/* Flat Selection */}
-          <div className="form-field">
-            <Select
-              label="Select Flat"
-              options={[
-                { value: '', label: 'Choose a flat...' },
-                ...safeFlats.map(flat => {
-                  const outstanding = flatOutstandingMap.get(flat.publicId);
-                  const suffix = outstanding != null && outstanding > 0
-                    ? ` (₹${outstanding.toLocaleString('en-IN')} due)`
-                    : outstanding === 0
-                    ? ' (✔ Clear)'
-                    : '';
-                  return {
-                    value: flat.publicId,
-                    label: `${flat.flatNo} - ${flat.ownerName}${suffix}`,
-                  };
-                })
-              ]}
-              error={errors.flatPublicId?.message}
-              disabled={isEditing}
-              {...register('flatPublicId')}
-            />
-            {isEditing && (
-              <p className="text-xs text-muted-foreground mt-1">Flat cannot be changed when editing a payment</p>
-            )}
-          </div>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
 
-          {/* Outstanding / Advance Badge */}
-          {selectedFlatPublicId && flatSummary && (
-            <div className={`flex items-center justify-between p-3 rounded-lg border ${
-              isInCredit
-                ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800'
-                : 'bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800'
-            }`}>
-              <div className="flex items-center gap-2">
-                <AlertCircle className={`w-5 h-5 ${
-                  isInCredit ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-600 dark:text-orange-400'
-                }`} />
-                <div>
-                  <p className={`text-sm font-semibold ${
-                    isInCredit ? 'text-emerald-900 dark:text-emerald-100' : 'text-orange-900 dark:text-orange-100'
-                  }`}>
-                    {isInCredit ? 'Advance Balance (Member in Credit)' : 'Outstanding Amount'}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setShowFinancialBreakdown(!showFinancialBreakdown)}
-                    className={`text-xs hover:underline flex items-center gap-1 ${
-                      isInCredit ? 'text-emerald-700 dark:text-emerald-300' : 'text-orange-700 dark:text-orange-300'
-                    }`}
+          {/* ── No-bills warning banner ───────────────────────────────────── */}
+          {!isEditing && !billingStatus?.isGenerated && (
+            <div className="flex items-start gap-3 mx-6 mt-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                  Bills not yet generated for {billingStatus?.currentMonth
+                    ? (() => { const [y, m] = billingStatus.currentMonth.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); })()
+                    : 'this month'}
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                  Payment will be recorded as advance and automatically allocated once bills are generated.{' '}
+                  <Link
+                    to="/dashboard"
+                    className="font-semibold underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100 transition-colors whitespace-nowrap"
                   >
-                    {showFinancialBreakdown ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                    View breakdown
-                  </button>
-                </div>
+                    Generate Bills &rarr;
+                  </Link>
+                </p>
               </div>
-              <div className="flex items-center gap-3">
-                {!isInCredit && outstandingAmount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setValue('amount', String(outstandingAmount))}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg
-                               bg-orange-600 hover:bg-orange-700 text-white transition-colors"
-                  >
-                    <Zap className="w-3 h-3" />
-                    Pay Full
-                  </button>
+            </div>
+          )}
+
+          {/* ── Two-column body ───────────────────────────────────────────── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0 p-6 pb-0">
+
+            {/* ── LEFT: Flat selector + outstanding breakdown ─────────────── */}
+            <div className="md:pr-6 md:border-r border-slate-200 dark:border-slate-700 space-y-4">
+
+              {/* Section label */}
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Flat Details
+              </p>
+
+              {/* Flat dropdown */}
+              <div className="form-field">
+                <Select
+                  label="Select Flat"
+                  options={[
+                    { value: '', label: 'Choose a flat...' },
+                    ...safeFlats.map(flat => {
+                      const outstanding = flatOutstandingMap.get(flat.publicId);
+                      const suffix = outstanding != null && outstanding > 0
+                        ? ` — ₹${outstanding.toLocaleString('en-IN')} due`
+                        : outstanding === 0
+                        ? ' — ✔ Clear'
+                        : '';
+                      return {
+                        value: flat.publicId,
+                        label: `${flat.flatNo} · ${flat.ownerName}${suffix}`,
+                      };
+                    })
+                  ]}
+                  error={errors.flatPublicId?.message}
+                  disabled={isEditing}
+                  {...register('flatPublicId')}
+                />
+                {isEditing && (
+                  <p className="text-xs text-muted-foreground mt-1">Flat cannot be changed when editing a payment</p>
                 )}
-                <span className={`text-2xl font-bold ${
-                  isInCredit ? 'text-emerald-900 dark:text-emerald-100' : 'text-orange-900 dark:text-orange-100'
-                }`}>
-                  {formatCurrency(isInCredit ? advanceBalance : outstandingAmount)}
-                </span>
               </div>
-            </div>
-          )}
 
-          {/* Financial Breakdown - Collapsible */}
-          {selectedFlatPublicId && flatSummary && showFinancialBreakdown && (
-            <div className="bg-slate-50 dark:bg-slate-900/30 border border-slate-200 dark:border-slate-700 rounded-lg p-4 space-y-2 -mt-2">
-              <div className="text-xs text-slate-500 dark:text-slate-400 italic mb-2">
-                Outstanding = Opening Dues Remaining + Unpaid Bills
-              </div>
-              <div className="flex items-center justify-between py-2 border-t border-slate-200 dark:border-slate-700">
-                <div className="flex flex-col">
-                  <span className="text-sm text-slate-600 dark:text-slate-400">Opening Dues Remaining</span>
-                  <span className="text-xs text-slate-500 dark:text-slate-500">(unpaid from migration)</span>
+              {/* Outstanding breakdown — always visible when flat selected */}
+              {selectedFlatPublicId && flatSummary ? (
+                <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                  {/* Row: Opening dues */}
+                  <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/40">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">Opening Dues</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500">Unpaid from migration</p>
+                    </div>
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      {formatCurrency(openingBalanceAmount)}
+                    </span>
+                  </div>
+                  {/* Row: Unpaid bills */}
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">Unpaid Bills</p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500">Current period dues</p>
+                    </div>
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      {formatCurrency(billOutstandingAmount)}
+                    </span>
+                  </div>
+                  {/* Row: Total + Pay Full */}
+                  <div className={`flex items-center justify-between px-4 py-3 border-t-2 ${
+                    isInCredit
+                      ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30'
+                      : outstandingAmount > 0
+                      ? 'border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/30'
+                      : 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30'
+                  }`}>
+                    <div>
+                      <p className={`text-sm font-bold ${
+                        isInCredit || outstandingAmount === 0
+                          ? 'text-emerald-800 dark:text-emerald-200'
+                          : 'text-orange-800 dark:text-orange-200'
+                      }`}>
+                        {isInCredit ? 'Advance Balance' : 'Total Outstanding'}
+                      </p>
+                      {outstandingAmount === 0 && !isInCredit && (
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400">All clear ✔</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {!isInCredit && outstandingAmount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setValue('amount', String(outstandingAmount))}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-orange-600 hover:bg-orange-700 text-white transition-colors"
+                        >
+                          <Zap className="w-3 h-3" />
+                          Pay Full
+                        </button>
+                      )}
+                      <span className={`text-xl font-bold ${
+                        isInCredit || outstandingAmount === 0
+                          ? 'text-emerald-700 dark:text-emerald-300'
+                          : 'text-orange-700 dark:text-orange-300'
+                      }`}>
+                        {formatCurrency(isInCredit ? advanceBalance : outstandingAmount)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-base font-medium text-slate-700 dark:text-slate-300">
-                  {formatCurrency(openingBalanceAmount)}
-                </span>
-              </div>
-              <div className="flex items-center justify-between py-2 border-t border-slate-200 dark:border-slate-700">
-                <span className="text-sm text-slate-600 dark:text-slate-400">Unpaid Bills</span>
-                <span className="text-base font-medium text-slate-700 dark:text-slate-300">
-                  + {formatCurrency(billOutstandingAmount)}
-                </span>
-              </div>
-              {/* Total outstanding row */}
-              <div className="flex items-center justify-between py-2 border-t-2 border-orange-300 dark:border-orange-700">
-                <span className="text-sm font-semibold text-orange-700 dark:text-orange-300">
-                  Total Outstanding
-                </span>
-                <span className="text-base font-bold text-orange-600 dark:text-orange-400">
-                  {formatCurrency(outstandingAmount)}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Amount Field with Prominent Action Button */}
-          <div className="space-y-3">
-            <div className="form-field">
-              <Input
-                label="Amount (₹)"
-                type="number"
-                step="0.01"
-                placeholder="5000"
-                error={errors.amount?.message}
-                {...register('amount')}
-              />
-            </div>
-            {paymentAmount && Number(paymentAmount) > 0 && selectedFlatPublicId && flatSummary && outstandingAmount > 0 && (
-              <div className="text-sm p-2 bg-slate-50 dark:bg-slate-900/30 rounded border border-slate-200 dark:border-slate-700">
-                <span className="text-slate-600 dark:text-slate-400">Remaining balance: </span>
-                <span className="font-semibold text-orange-600 dark:text-orange-400">
-                  {formatCurrency(Math.max(0, outstandingAmount - paymentAmountNumber))}
-                </span>
-              </div>
-            )}
-
-
-          </div>
-
-          {/* Payment Date & Mode */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="form-field">
-              <Input
-                label="Payment Date"
-                type="date"
-                error={errors.paymentDate?.message}
-                {...register('paymentDate')}
-              />
+              ) : (
+                /* Placeholder when no flat selected */
+                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/20 h-36 gap-2">
+                  <Home className="w-7 h-7 text-slate-300 dark:text-slate-600" />
+                  <p className="text-sm text-slate-400 dark:text-slate-500">Select a flat to see outstanding dues</p>
+                </div>
+              )}
             </div>
 
-            <div className="form-field">
-              <Select
-                label="Payment Mode"
-                options={[
-                  { value: '', label: 'Choose a payment mode...' },
-                  ...safePaymentModes.map(mode => ({
-                    value: mode.code,
-                    label: mode.displayName
-                  }))
-                ]}
-                error={errors.paymentModeId?.message}
-                helperText={paymentModesLoading ? 'Loading payment modes...' : paymentModesError ? 'Unable to load payment modes' : undefined}
-                disabled={paymentModesLoading || !!paymentModesError}
-                {...register('paymentModeId')}
-              />
+            {/* ── RIGHT: Payment fields ────────────────────────────────────── */}
+            <div className="md:pl-6 space-y-4 mt-6 md:mt-0">
+
+              {/* Section label */}
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Payment Details
+              </p>
+
+              {/* Amount — large & prominent */}
+              <div className="space-y-2">
+                <Input
+                  label="Amount (₹)"
+                  type="number"
+                  step="0.01"
+                  placeholder="Enter amount"
+                  error={errors.amount?.message}
+                  {...register('amount')}
+                />
+                {/* Live remaining balance */}
+                {paymentAmountNumber > 0 && selectedFlatPublicId && flatSummary && outstandingAmount > 0 && (
+                  <div className={`flex items-center justify-between text-xs px-3 py-2 rounded-lg ${
+                    paymentAmountNumber >= outstandingAmount
+                      ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800'
+                      : 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700'
+                  }`}>
+                    <span className="text-slate-500 dark:text-slate-400">Balance after payment:</span>
+                    <span className={`font-bold ${
+                      paymentAmountNumber >= outstandingAmount
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-orange-600 dark:text-orange-400'
+                    }`}>
+                      {paymentAmountNumber >= outstandingAmount
+                        ? '✔ Fully cleared'
+                        : formatCurrency(outstandingAmount - paymentAmountNumber)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Date + Mode side by side */}
+              <div className="grid grid-cols-2 gap-3 items-end">
+                <div className="form-field">
+                  <Input
+                    label="Payment Date"
+                    type="date"
+                    error={errors.paymentDate?.message}
+                    {...register('paymentDate')}
+                  />
+                </div>
+                <div className="form-field">
+                  <Select
+                    label="Payment Mode"
+                    options={[
+                      { value: '', label: 'Select mode...' },
+                      ...safePaymentModes.map(mode => ({
+                        value: mode.code,
+                        label: mode.displayName
+                      }))
+                    ]}
+                    error={errors.paymentModeId?.message}
+                    helperText={paymentModesLoading ? 'Loading...' : paymentModesError ? 'Unavailable' : undefined}
+                    disabled={paymentModesLoading || !!paymentModesError}
+                    {...register('paymentModeId')}
+                  />
+                </div>
+              </div>
+
+              {/* Reference */}
+              <div className="form-field">
+                <Input
+                  label="Reference Number"
+                  placeholder="Transaction ID, cheque no., UPI ref…"
+                  error={errors.referenceNumber?.message}
+                  {...register('referenceNumber')}
+                />
+              </div>
+
             </div>
-          </div>
+          </div>{/* end two-column grid */}
 
-          <div className="form-field">
-            <Input
-              label="Reference Number"
-              placeholder="Transaction ID, cheque number, etc."
-              error={errors.referenceNumber?.message}
-              {...register('referenceNumber')}
-            />
-          </div>
-
+          {/* ── Allocation Summary (post-submit) ──────────────────────────── */}
           {lastAllocationSummary && !isEditing && (
-            <div className="rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-3">
+            <div className="mx-6 mt-4 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h4 className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">Allocation Summary</h4>
                 <Badge variant="success">Paid {formatCurrency(lastAllocationSummary.totalPaid)}</Badge>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="p-3 rounded-lg bg-white/80 dark:bg-slate-900/40 border border-emerald-100 dark:border-emerald-900/40">
                   <p className="text-slate-600 dark:text-slate-400">Allocations</p>
                   <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">{lastAllocationSummary.allocations.length}</p>
@@ -903,21 +1028,19 @@ export default function Maintenance() {
                   <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">{formatCurrency(lastAllocationSummary.remainingAdvance || 0)}</p>
                 </div>
               </div>
-
               {lastAllocationSummary.clearedPeriods.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-xs uppercase tracking-wide text-emerald-800 dark:text-emerald-200">Months Cleared</p>
                   <div className="flex flex-wrap gap-2">
-                    {lastAllocationSummary.clearedPeriods.map((period) => (
-                      <Badge key={period} variant="success">{period}</Badge>
+                    {lastAllocationSummary.clearedPeriods.map((p) => (
+                      <Badge key={p} variant="success">{p}</Badge>
                     ))}
                   </div>
                 </div>
               )}
-
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-wide text-emerald-800 dark:text-emerald-200">Allocation Breakdown</p>
-                <div className="max-h-36 overflow-y-auto rounded-lg border border-emerald-100 dark:border-emerald-900/40 bg-white/70 dark:bg-slate-900/30">
+                <div className="max-h-32 overflow-y-auto rounded-lg border border-emerald-100 dark:border-emerald-900/40 bg-white/70 dark:bg-slate-900/30">
                   {lastAllocationSummary.allocations.map((allocation) => (
                     <div key={allocation.billPublicId} className="flex items-center justify-between px-3 py-2 border-b border-emerald-100/70 dark:border-emerald-900/30 last:border-b-0">
                       <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{allocation.billPublicId}</span>
@@ -926,11 +1049,11 @@ export default function Maintenance() {
                   ))}
                 </div>
               </div>
-
               <p className="text-xs text-slate-500 dark:text-slate-400">Idempotency Key: {lastAllocationSummary.idempotencyKey}</p>
             </div>
           )}
 
+          {/* ── Footer ────────────────────────────────────────────────────── */}
           <ModalFooter>
             <Button
               type="button"
@@ -939,15 +1062,14 @@ export default function Maintenance() {
                 setShowAddModal(false);
                 setIsEditing(false);
                 setSelectedPayment(null);
-                setShowFinancialBreakdown(false);
                 setLastAllocationSummary(null);
                 reset();
               }}
             >
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={
                 isSubmitting ||
                 localSubmitting ||

@@ -6,7 +6,11 @@ import Card from '../components/ui/Card';
 import { CheckCircle, Calendar, XCircle, AlertTriangle, Crown } from 'lucide-react';
 import { useSubscription } from '../hooks/useSubscription';
 
-export const SubscriptionSummary: React.FC = () => {
+interface SubscriptionSummaryProps {
+  compact?: boolean;
+}
+
+export const SubscriptionSummary: React.FC<SubscriptionSummaryProps> = ({ compact = false }) => {
   const navigate = useNavigate();
   const { status, trialDaysRemaining, planName, loading, error } = useSubscription();
 
@@ -51,6 +55,12 @@ export const SubscriptionSummary: React.FC = () => {
   };
 
   if (loading) {
+    if (compact) return (
+      <div className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 animate-pulse">
+        <div className="h-3 w-12 rounded bg-slate-300 dark:bg-slate-600" />
+        <div className="h-3 w-16 rounded bg-slate-300 dark:bg-slate-600" />
+      </div>
+    );
     return (
       <Card className="flex items-center justify-center p-4" data-testid="subscription-loading">
         <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-600 border-t-transparent mr-2" />
@@ -60,6 +70,7 @@ export const SubscriptionSummary: React.FC = () => {
   }
 
   if (error) {
+    if (compact) return null;
     return (
       <Card className="p-4" data-testid="subscription-error">
         <div className="flex items-center gap-2 text-error-600">
@@ -71,6 +82,7 @@ export const SubscriptionSummary: React.FC = () => {
   }
 
   if (!status) {
+    if (compact) return null;
     return (
       <Card className="p-4" data-testid="subscription-no-data">
         <div className="flex items-center gap-2 text-slate-500">
@@ -78,6 +90,34 @@ export const SubscriptionSummary: React.FC = () => {
           <span className="text-sm">No subscription data available</span>
         </div>
       </Card>
+    );
+  }
+
+  // ── Compact inline variant (for embedding in header) ─────────────────────
+  if (compact) {
+    const statusColors: Record<string, string> = {
+      active:    'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300',
+      trial:     'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300',
+      expired:   'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300',
+      cancelled: 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300',
+    };
+    const colorClass = statusColors[status] ?? statusColors.trial;
+    return (
+      <div className={`flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium ${colorClass}`}>
+        <span className="[&>svg]:h-3.5 [&>svg]:w-3.5">{getStatusIcon()}</span>
+        <span className="capitalize">{status}</span>
+        {status === 'trial' && trialDaysRemaining !== null && (
+          <span className="opacity-70">· {trialDaysRemaining}d left</span>
+        )}
+        {planName && <span className="opacity-70 hidden sm:inline">· {planName}</span>}
+        <button
+          onClick={() => navigate('/subscription/manage')}
+          className="ml-1 flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-2 py-0.5 text-xs font-semibold transition-colors"
+        >
+          <Crown className="h-3 w-3" />
+          Upgrade
+        </button>
+      </div>
     );
   }
 
