@@ -470,7 +470,7 @@ const LandingPage: React.FC = () => {
           {(() => {
             const tab = previewTabs[activePreviewTab];
             return (
-              <div className={`grid md:grid-cols-2 gap-8 items-center bg-gradient-to-br ${tab.bg} rounded-2xl border ${tab.border} p-8 shadow-lg transition-all duration-300`}>
+              <div className={`grid md:grid-cols-2 gap-8 items-center bg-gradient-to-br ${tab.bg} rounded-2xl border ${tab.border} p-5 sm:p-8 shadow-lg transition-all duration-300`}>
                 <div className="space-y-4">
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white">{tab.label}</h3>
                   <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{tab.description}</p>
@@ -604,7 +604,7 @@ const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8 space-y-8">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-8 space-y-8">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <label htmlFor="flats-slider" className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
@@ -630,21 +630,21 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col items-center p-4 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-800 text-center">
-                <p className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide mb-2">Manual Work</p>
-                <p className="text-3xl font-extrabold text-red-600 dark:text-red-400">{manualHours}h</p>
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+              <div className="flex flex-col items-center p-2 sm:p-4 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-800 text-center">
+                <p className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide mb-1 sm:mb-2">Manual Work</p>
+                <p className="text-2xl sm:text-3xl font-extrabold text-red-600 dark:text-red-400">{manualHours}h</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">per month</p>
               </div>
-              <div className="flex flex-col items-center p-4 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-200 dark:border-green-800 text-center">
-                <p className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide mb-2">With FlatLedger</p>
-                <p className="text-3xl font-extrabold text-green-600 dark:text-green-400">{flatledgerMinutes}m</p>
+              <div className="flex flex-col items-center p-2 sm:p-4 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-200 dark:border-green-800 text-center">
+                <p className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide mb-1 sm:mb-2">FlatLedger</p>
+                <p className="text-2xl sm:text-3xl font-extrabold text-green-600 dark:text-green-400">{flatledgerMinutes}m</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">per month</p>
               </div>
-              <div className="flex flex-col items-center p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl border border-indigo-200 dark:border-indigo-800 text-center">
-                <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-2">Time Saved</p>
-                <p className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">{hoursSaved}h+</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">every month</p>
+              <div className="flex flex-col items-center p-2 sm:p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl border border-indigo-200 dark:border-indigo-800 text-center">
+                <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-1 sm:mb-2">Time Saved</p>
+                <p className="text-2xl sm:text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">{hoursSaved}h+</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">per month</p>
               </div>
             </div>
 
@@ -922,7 +922,7 @@ const LandingPage: React.FC = () => {
 
       {/* ── SCROLL CTA POPUP ─────────────────────────────────────────────── */}
       {showScrollCta && !scrollCtaDismissed && (
-        <div className="fixed bottom-24 right-6 z-50 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-indigo-200 dark:border-indigo-700 p-5 animate-slide-in-up">
+        <div className="fixed bottom-24 right-6 z-50 w-72 max-w-[calc(100vw-3rem)] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-indigo-200 dark:border-indigo-700 p-5 animate-slide-in-up">
           <button
             className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
             onClick={() => { setShowScrollCta(false); setScrollCtaDismissed(true); }}
