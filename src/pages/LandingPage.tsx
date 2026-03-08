@@ -290,36 +290,6 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ─────────────────────────────────────────────────── */}
-      <section className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12 space-y-3">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
-              Set Up Your Society in{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Minutes</span>
-            </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-              No training required. Start managing finances the same day.
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { step: "01", icon: "🏠", title: "Add flats and owners", desc: "Import or manually add every flat and resident in your society." },
-              { step: "02", icon: "📄", title: "Generate monthly bills", desc: "One click generates maintenance bills for every flat automatically." },
-              { step: "03", icon: "✅", title: "Track payments & expenses", desc: "Mark payments, record expenses, and see defaulters in real time." },
-              { step: "04", icon: "📊", title: "View reports & dashboards", desc: "Get financial insights and share transparent reports with residents." },
-            ].map((item) => (
-              <div key={item.step} className="relative flex flex-col gap-3 p-6 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <span className="absolute top-4 right-4 text-xs font-bold text-slate-300 dark:text-slate-700">{item.step}</span>
-                <div className="text-3xl">{item.icon}</div>
-                <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">{item.title}</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ── PROBLEM SECTION ──────────────────────────────────────────────── */}
       <section className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-4xl mx-auto">
@@ -351,6 +321,36 @@ const LandingPage: React.FC = () => {
             <p className="text-lg font-semibold text-slate-900 dark:text-white">
               FlatLedger solves all of these problems in one simple platform.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ─────────────────────────────────────────────────── */}
+      <section className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12 space-y-3">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
+              Set Up Your Society in{" "}
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Minutes</span>
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
+              No training required. Start managing finances the same day.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { step: "01", icon: "🏠", title: "Add flats and owners", desc: "Import or manually add every flat and resident in your society." },
+              { step: "02", icon: "📄", title: "Generate monthly bills", desc: "One click generates maintenance bills for every flat automatically." },
+              { step: "03", icon: "✅", title: "Track payments & expenses", desc: "Mark payments, record expenses, and see defaulters in real time." },
+              { step: "04", icon: "📊", title: "View reports & dashboards", desc: "Get financial insights and share transparent reports with residents." },
+            ].map((item) => (
+              <div key={item.step} className="relative flex flex-col gap-3 p-6 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                <span className="absolute top-4 right-4 text-xs font-bold text-slate-300 dark:text-slate-700">{item.step}</span>
+                <div className="text-3xl">{item.icon}</div>
+                <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">{item.title}</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -507,130 +507,6 @@ const LandingPage: React.FC = () => {
               </div>
             );
           })()}
-        </div>
-      </section>
-
-      {/* ── DEMO VIDEO ───────────────────────────────────────────────────── */}
-      <section className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10 space-y-3">
-            <span className="inline-block px-3 py-1 text-xs font-bold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full uppercase tracking-widest">
-              Product Walkthrough
-            </span>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
-              See How Easy It Is to{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Run Your Society</span>
-            </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400">
-              Monthly billing, payment tracking, expense management — all in one dashboard.
-            </p>
-          </div>
-
-          {/* Video / placeholder */}
-          <div className="relative mx-auto rounded-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 aspect-video bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
-            {/* Actual video — remove 'hidden' once demo.mp4 is placed in /public/ */}
-            <video muted playsInline className="w-full h-full object-cover rounded-2xl hidden" poster="/demo-poster.png">
-              <source src="/demo.mp4" type="video/mp4" />
-            </video>
-
-            {/* Simulated dashboard chrome — mirrors real app layout */}
-            <div className="absolute inset-0 opacity-25 pointer-events-none select-none p-5 flex flex-col gap-3">
-              {/* Nav bar */}
-              <div className="flex items-center gap-3 pb-2 border-b border-white/10">
-                <div className="h-2.5 w-20 bg-indigo-400 rounded-full" />
-                <div className="flex gap-2 ml-auto">
-                  <div className="h-2 w-14 bg-slate-500 rounded-full" />
-                  <div className="h-2 w-10 bg-slate-500 rounded-full" />
-                  <div className="h-2 w-8 bg-indigo-400 rounded-full" />
-                </div>
-              </div>
-              {/* KPI cards — Maintenance Collected · Outstanding Dues · Society Expenses */}
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { color: "bg-indigo-400", val: "bg-white/70", width: "w-16" },
-                  { color: "bg-red-400",    val: "bg-white/70", width: "w-12" },
-                  { color: "bg-amber-400",  val: "bg-white/70", width: "w-14" },
-                ].map(({ color, val, width }, i) => (
-                  <div key={i} className="bg-white/10 rounded-lg p-2 space-y-1.5">
-                    <div className={`h-1.5 ${width} ${color} rounded-full`} />
-                    <div className={`h-3 w-20 ${val} rounded-full`} />
-                    <div className="h-1.5 w-10 bg-white/30 rounded-full" />
-                  </div>
-                ))}
-              </div>
-              {/* 6-month Income vs Expense chart + Top Defaulters */}
-              <div className="grid grid-cols-3 gap-2 flex-1 min-h-0">
-                <div className="col-span-2 bg-white/10 rounded-lg p-2 flex flex-col gap-1.5">
-                  <div className="h-1.5 w-28 bg-white/40 rounded-full" />
-                  <div className="flex items-end gap-1 flex-1">
-                    {[55, 70, 48, 85, 63, 78].map((h, i) => (
-                      <div key={i} className="flex-1 flex flex-col gap-0.5 items-center justify-end h-full">
-                        <div className="w-full bg-indigo-400 rounded-t-sm" style={{ height: `${h}%` }} />
-                        <div className="w-full bg-rose-400 rounded-t-sm" style={{ height: `${Math.round(h * 0.38)}%` }} />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-3">
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-400 inline-block" /><span className="h-1 w-6 bg-white/30 rounded-full inline-block" /></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-400 inline-block" /><span className="h-1 w-6 bg-white/30 rounded-full inline-block" /></span>
-                  </div>
-                </div>
-                {/* Top Defaulters */}
-                <div className="bg-white/10 rounded-lg p-2 flex flex-col gap-2">
-                  <div className="h-1.5 w-14 bg-red-400 rounded-full" />
-                  {[85, 65, 75, 50, 60].map((w, i) => (
-                    <div key={i} className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full bg-white/30 flex-shrink-0" />
-                      <div className="h-1.5 bg-white/35 rounded-full flex-1" style={{ width: `${w}%` }} />
-                      <div className="h-1.5 w-5 bg-red-400/60 rounded-full flex-shrink-0" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Centre play button */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
-              <div className="relative flex items-center justify-center">
-                <span className="absolute w-24 h-24 rounded-full bg-white/10 animate-ping" />
-                <span className="absolute w-20 h-20 rounded-full bg-white/15 animate-pulse" />
-                <div className="relative z-10 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-2xl cursor-pointer hover:scale-110 transition-transform duration-200">
-                  <div className="w-0 h-0 border-y-[10px] border-y-transparent border-l-[18px] border-l-indigo-600 ml-1" />
-                </div>
-              </div>
-              <div className="text-center space-y-1">
-                <p className="text-white font-bold text-lg tracking-tight">FlatLedger in Action</p>
-                <p className="text-white/60 text-sm">~60 sec walkthrough</p>
-              </div>
-              <span className="px-4 py-1.5 bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-semibold rounded-full backdrop-blur-sm">
-                🎬 Recording in progress — available soon
-              </span>
-            </div>
-
-            {/* Bottom step bar — actual app flows */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-6 py-4">
-              <div className="flex items-center justify-center gap-4 sm:gap-8 flex-wrap">
-                {[
-                  "Generate monthly bills",
-                  "Record payments & track dues",
-                  "Manage expenses & download reports",
-                ].map((step, i) => (
-                  <span key={i} className="flex items-center gap-1.5 text-white/80 text-xs font-medium whitespace-nowrap">
-                    <span className="w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">{i + 1}</span>
-                    {step}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* CTA */}
-          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-5">
-            Want a live demo?{" "}
-            <a href="mailto:demo@flatledger.com" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline underline-offset-2">
-              Request a walkthrough →
-            </a>
-          </p>
         </div>
       </section>
 
@@ -794,6 +670,60 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
+      {/* ── TESTIMONIALS ─────────────────────────────────────────────────── */}
+      <section className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10 space-y-2">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white text-balance animate-slide-in-up">
+              What society managers say
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-400 animate-slide-in-up" style={{ animationDelay: '0.1s' }}>Real feedback from early users</p>
+          </div>
+          <div className="relative">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {testimonials.map((testimonial, index) => (
+                <div
+                  key={index}
+                  className={`p-5 rounded-xl border-2 transition-all duration-300 cursor-pointer animate-slide-in-up ${
+                    activeTestimonial === index
+                      ? "bg-white dark:bg-slate-900 border-indigo-600 dark:border-indigo-500 shadow-xl scale-[1.02]"
+                      : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:shadow-md hover:-translate-y-1"
+                  }`}
+                  onClick={() => setActiveTestimonial(index)}
+                  style={{ animationDelay: `${0.1 * (index + 1)}s` }}
+                >
+                  <div className="flex gap-1 mb-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-indigo-400 text-indigo-400" />
+                    ))}
+                  </div>
+                  <p className="text-slate-900 dark:text-white mb-3 leading-relaxed">"{testimonial.text}"</p>
+                  <div className="flex items-center gap-4">
+                    <div className="text-3xl">{testimonial.image}</div>
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-white">{testimonial.name}</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">{testimonial.role} · {testimonial.society}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-center gap-3 animate-fade-in">
+              {testimonials.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveTestimonial(index)}
+                  className={`rounded-full transition-all duration-300 ${
+                    activeTestimonial === index ? "bg-indigo-600 dark:bg-indigo-500 w-8 h-2.5" : "bg-indigo-200 dark:bg-indigo-800 w-2.5 h-2.5 hover:bg-indigo-300 dark:hover:bg-indigo-700"
+                  }`}
+                  aria-label={`View testimonial ${index + 1}`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── PRICING ──────────────────────────────────────────────────────── */}
       <section id="pricing" className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
@@ -939,60 +869,6 @@ const LandingPage: React.FC = () => {
                 )}
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ─────────────────────────────────────────────────── */}
-      <section className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10 space-y-2">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white text-balance animate-slide-in-up">
-              What society managers say
-            </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400 animate-slide-in-up" style={{ animationDelay: '0.1s' }}>Real feedback from early users</p>
-          </div>
-          <div className="relative">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              {testimonials.map((testimonial, index) => (
-                <div
-                  key={index}
-                  className={`p-5 rounded-xl border-2 transition-all duration-300 cursor-pointer animate-slide-in-up ${
-                    activeTestimonial === index
-                      ? "bg-white dark:bg-slate-900 border-indigo-600 dark:border-indigo-500 shadow-xl scale-[1.02]"
-                      : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:shadow-md hover:-translate-y-1"
-                  }`}
-                  onClick={() => setActiveTestimonial(index)}
-                  style={{ animationDelay: `${0.1 * (index + 1)}s` }}
-                >
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-indigo-400 text-indigo-400" />
-                    ))}
-                  </div>
-                  <p className="text-slate-900 dark:text-white mb-3 leading-relaxed">"{testimonial.text}"</p>
-                  <div className="flex items-center gap-4">
-                    <div className="text-3xl">{testimonial.image}</div>
-                    <div>
-                      <p className="font-semibold text-slate-900 dark:text-white">{testimonial.name}</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">{testimonial.role} · {testimonial.society}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-center gap-3 animate-fade-in">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setActiveTestimonial(index)}
-                  className={`rounded-full transition-all duration-300 ${
-                    activeTestimonial === index ? "bg-indigo-600 dark:bg-indigo-500 w-8 h-2.5" : "bg-indigo-200 dark:bg-indigo-800 w-2.5 h-2.5 hover:bg-indigo-300 dark:hover:bg-indigo-700"
-                  }`}
-                  aria-label={`View testimonial ${index + 1}`}
-                />
-              ))}
-            </div>
           </div>
         </div>
       </section>
