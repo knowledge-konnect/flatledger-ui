@@ -4,7 +4,6 @@ import {
   ArrowRight, IndianRupee, BarChart3, Users, Zap, Star,
   Receipt, PieChart, Shield, Cloud, HardDrive, Lock,
   CheckCircle2, Calculator, ChevronRight, AlertTriangle,
-  MessageCircle,
 } from "lucide-react";
 import { Link } from 'react-router-dom';
 import Navbar from "../components/layout/Navbar";
@@ -13,12 +12,12 @@ const ChatBot = lazy(() => import('../components/chatbot/ChatBot'));
 
 // Static data — defined outside component to avoid recreation on every render
 const planFeatures = [
-  { color: "from-green-500 to-green-600",   icon: IndianRupee, title: "Generate Bills for 100 Flats in Seconds",     description: "One-click billing for every flat — stop wasting hours in Excel every month." },
-  { color: "from-blue-500 to-blue-600",     icon: Receipt,     title: "Instantly See Who Paid and Who Hasn't",       description: "Real-time payment status for every flat. No more manual checking." },
-  { color: "from-orange-500 to-orange-600", icon: BarChart3,   title: "Track Society Expenses with Full Transparency", description: "Every rupee accounted for — categorised, searchable, shareable with residents." },
-  { color: "from-indigo-500 to-indigo-600", icon: Zap,         title: "Live Dashboard — Always Know Your Balance",   description: "Collection rate, fund balance, and KPIs updated in real time." },
-  { color: "from-purple-500 to-purple-600", icon: PieChart,    title: "One-Click Financial Reports",                 description: "Income vs expense charts and PDF exports ready for your AGM." },
-  { color: "from-violet-500 to-violet-600", icon: Users,       title: "Roles for Your Entire Committee",             description: "Treasurer, Secretary, and Viewer access — each sees what they need." },
+  { color: "from-green-500 to-green-600",   icon: IndianRupee, title: "Generate Bills for Every Flat in Seconds",    description: "One-click billing for every flat — stop wasting hours in Excel every month." },
+  { color: "from-blue-500 to-blue-600",     icon: Receipt,     title: "See Who Paid and Who Hasn't",                 description: "Real-time payment status for every flat. No more manual checking." },
+  { color: "from-orange-500 to-orange-600", icon: BarChart3,   title: "Transparent Expense Tracking",                description: "Every rupee accounted for — categorised, searchable, shareable with residents." },
+  { color: "from-indigo-500 to-indigo-600", icon: Zap,         title: "Live Financial Dashboard",                    description: "Collection rate, fund balance, and KPIs updated in real time." },
+  { color: "from-purple-500 to-purple-600", icon: PieChart,    title: "Instant Financial Reports",                   description: "Income vs expense charts and PDF exports ready for your AGM." },
+  { color: "from-violet-500 to-violet-600", icon: Users,       title: "Committee Role Access",                       description: "Treasurer, Secretary, and Viewer access — each sees what they need." },
 ];
 
 // ─── Tab definitions for Interactive Product Preview ───────────────────────
@@ -80,6 +79,7 @@ const LandingPage: React.FC = () => {
   const [showScrollCta, setShowScrollCta] = useState(false);
   const [scrollCtaDismissed, setScrollCtaDismissed] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [announcementVisible, setAnnouncementVisible] = useState(true);
   const scrollCtaShown = useRef(false);
 
   const { plans, plansLoading, plansError } = usePlans();
@@ -150,15 +150,26 @@ const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
       {/* ── ANNOUNCEMENT BAR ─────────────────────────────────────────────── */}
-      <div className="w-full bg-indigo-600 text-white text-center text-xs sm:text-sm py-2 px-4 font-medium">
-        🎉 New: Bulk bill generation for 200+ flats — now live &nbsp;·&nbsp;
-        <a href="#pricing" className="underline underline-offset-2 hover:text-indigo-200 transition-colors">See plans →</a>
-      </div>
+      {announcementVisible && (
+        <div className="w-full bg-indigo-600 text-white text-center text-xs sm:text-sm py-2 px-4 font-medium relative">
+          🎉 New: Bulk bill generation for 200+ flats — now live &nbsp;·&nbsp;
+          <a href="#pricing" className="underline underline-offset-2 hover:text-indigo-200 transition-colors">See plans →</a>
+          <button
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors text-base leading-none"
+            onClick={() => setAnnouncementVisible(false)}
+            aria-label="Dismiss announcement"
+          >
+            &#x2715;
+          </button>
+        </div>
+      )}
 
       <Navbar variant="landing" />
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <section className="pt-24 md:pt-32 pb-14 md:pb-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-white dark:bg-slate-950">
+      <section
+        className="pt-24 md:pt-32 pb-14 md:pb-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-white dark:bg-slate-950"
+      >
         {/* Premium gradient glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-purple-100/20 dark:bg-purple-900/10 rounded-full blur-3xl pointer-events-none" />
@@ -167,15 +178,15 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="space-y-6 text-center">
             <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 dark:text-white text-balance animate-slide-in-up leading-tight tracking-tight">
-              Stop Managing Society
+              Stop Managing Apartment Maintenance
               <span className="hidden sm:inline"><br /></span>{" "}
               <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Finances in Excel
+                in Excel
               </span>
             </h1>
 
             <p className="text-base sm:text-xl md:text-2xl text-slate-700 dark:text-slate-200 max-w-2xl mx-auto leading-relaxed animate-slide-in-up font-medium" style={{ animationDelay: '0.1s' }}>
-              Generate maintenance bills, track payments, manage expenses, and see defaulters instantly — all in one simple dashboard.
+              FlatLedger helps apartment societies generate maintenance bills, track payments, manage expenses, and identify defaulters instantly — all in one simple dashboard.
             </p>
 
             <p className="text-sm sm:text-base text-indigo-600 dark:text-indigo-400 font-semibold animate-slide-in-up" style={{ animationDelay: '0.15s' }}>
@@ -188,7 +199,8 @@ const LandingPage: React.FC = () => {
                 aria-label="Start Free Trial"
                 onClick={() => { window.location.href = '/signup'; }}
               >
-                Start Free Trial
+                <span className="sm:hidden">Start Free Trial</span>
+                <span className="hidden sm:inline">Start Free Trial — Set Up Your Society in Minutes</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
               </button>
               <a
@@ -265,27 +277,39 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── SOCIAL PROOF ─────────────────────────────────────────────────── */}
-      <section className="py-14 md:py-16 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 border-y border-slate-100 dark:border-slate-800">
+
+
+      {/* ── PROBLEM SECTION ──────────────────────────────────────────────── */}
+      <section className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-4xl mx-auto">
-          <p className="text-center text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-8">
-            Trusted by Apartment Societies Across India
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
+              Are you still managing apartment maintenance in Excel?
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-400">
+              Most apartment societies face the same challenges every month:
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-6">
             {[
-              { icon: "🏢", stat: "120+", label: "Societies" },
-              { icon: "🏠", stat: "6,500+", label: "Flats Managed" },
-              { icon: "💰", stat: "₹2Cr+", label: "Maintenance Tracked" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex flex-col items-center gap-2 p-6 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-              >
-                <span className="text-3xl">{item.icon}</span>
-                <p className="text-3xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{item.stat}</p>
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{item.label}</p>
+              { icon: "📊", title: "Managing maintenance in Excel", desc: "Updating spreadsheets for every payment takes hours and leads to mistakes." },
+              { icon: "❓", title: "Difficulty tracking dues", desc: "No clear view of who has paid and who still owes maintenance." },
+              { icon: "⏰", title: "Manual billing effort", desc: "Creating bills for 50+ flats manually every month wastes valuable time." },
+              { icon: "🔍", title: "Lack of financial transparency", desc: "Residents often ask where money is spent and reports take time to prepare." },
+            ].map((p) => (
+              <div key={p.title} className="flex gap-4 p-5 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl hover:shadow-md transition-all duration-300">
+                <div className="text-2xl flex-shrink-0">{p.icon}</div>
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-white mb-2">{p.title}</h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{p.desc}</p>
+                </div>
               </div>
             ))}
+          </div>
+          <div className="mt-8 text-center">
+            <p className="text-lg font-semibold text-slate-900 dark:text-white">
+              FlatLedger solves all of these problems in one simple platform.
+            </p>
           </div>
         </div>
       </section>
@@ -304,53 +328,23 @@ const LandingPage: React.FC = () => {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { step: "01", icon: "🏠", title: "Add flats and owners", desc: "Import or manually add every flat and resident in your society." },
-              { step: "02", icon: "📄", title: "Generate monthly bills", desc: "One click generates maintenance bills for every flat automatically." },
-              { step: "03", icon: "✅", title: "Track payments & expenses", desc: "Mark payments, record expenses, and see defaulters in real time." },
-              { step: "04", icon: "📊", title: "View reports & dashboards", desc: "Get financial insights and share transparent reports with residents." },
-            ].map((item) => (
+              { step: "01", icon: "🏠", title: "Add flats and owners", desc: "Add your flats and residents to your society dashboard." },
+              { step: "02", icon: "📄", title: "Generate monthly bills", desc: "Generate maintenance bills for every flat with one click." },
+              { step: "03", icon: "✅", title: "Track payments & expenses", desc: "Track payments and record society expenses in real time." },
+              { step: "04", icon: "📊", title: "View reports & dashboards", desc: "View reports and share transparent financial summaries with residents." },
+            ].map((item, idx) => (
               <div key={item.step} className="relative flex flex-col gap-3 p-6 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                {idx < 3 && (
+                  <div className="absolute -right-3 top-1/2 -translate-y-1/2 hidden lg:flex items-center justify-center z-10 pointer-events-none">
+                    <ArrowRight className="w-5 h-5 text-indigo-300 dark:text-indigo-700" />
+                  </div>
+                )}
                 <span className="absolute top-4 right-4 text-xs font-bold text-slate-300 dark:text-slate-700">{item.step}</span>
                 <div className="text-3xl">{item.icon}</div>
                 <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">{item.title}</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{item.desc}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── PROBLEM SECTION ──────────────────────────────────────────────── */}
-      <section className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
-              Are you still managing your society in Excel?
-            </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400">
-              Most apartment societies face the same challenges every month:
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-6">
-            {[
-              { icon: "📊", title: "Managing maintenance in Excel", desc: "Updating spreadsheets manually for every payment takes hours and is error-prone." },
-              { icon: "❓", title: "Difficulty tracking dues", desc: "No clear view of who has paid and who hasn't — chasing residents wastes time." },
-              { icon: "⏰", title: "Manual billing effort", desc: "Creating and sending bills to 50+ flats manually every month is exhausting." },
-              { icon: "🔍", title: "Lack of financial transparency", desc: "Residents question where money is spent — no easy way to share reports." },
-            ].map((p) => (
-              <div key={p.title} className="flex gap-4 p-5 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl hover:shadow-md transition-all duration-300">
-                <div className="text-2xl flex-shrink-0">{p.icon}</div>
-                <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white mb-2">{p.title}</h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{p.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-8 text-center">
-            <p className="text-lg font-semibold text-slate-900 dark:text-white">
-              FlatLedger solves all of these problems in one simple platform.
-            </p>
           </div>
         </div>
       </section>
@@ -378,7 +372,7 @@ const LandingPage: React.FC = () => {
                 {[
                   ["Bill generation",        "Manual entry, 2–4 hrs/month",  "One-click, under 60 seconds"],
                   ["Payment tracking",       "Separate sheet, error-prone",  "Real-time dashboard"],
-                  ["Defaulter reminders",    "Follow up manually",           "Automated WhatsApp & SMS"],
+                  ["Defaulter reminders",    "Follow up manually",           "Smart defaulter dashboard"],
                   ["Expense management",     "Multiple files, hard to audit","Categorised & GST-ready"],
                   ["Monthly reports",        "Copy-paste nightmare",         "Auto-generated PDF reports"],
                   ["Data backup",            "Depends on your laptop",       "Daily cloud backup"],
@@ -445,10 +439,10 @@ const LandingPage: React.FC = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10 space-y-3">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
-              Explore FlatLedger{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Features</span>
+              See How FlatLedger{" "}
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Works</span>
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400">Click any feature to preview how it works.</p>
+            <p className="text-lg text-slate-600 dark:text-slate-400">Preview how FlatLedger helps apartment societies manage billing, payments, and expenses.</p>
           </div>
 
           <div className="flex flex-wrap justify-center gap-2 mb-8" role="tablist">
@@ -476,7 +470,7 @@ const LandingPage: React.FC = () => {
           {(() => {
             const tab = previewTabs[activePreviewTab];
             return (
-              <div className={`grid md:grid-cols-2 gap-8 items-center bg-gradient-to-br ${tab.bg} rounded-2xl border ${tab.border} p-8 shadow-lg transition-all duration-300`}>
+              <div className={`grid md:grid-cols-2 gap-8 items-center bg-gradient-to-br ${tab.bg} rounded-2xl border ${tab.border} p-5 sm:p-8 shadow-lg transition-all duration-300`}>
                 <div className="space-y-4">
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white">{tab.label}</h3>
                   <p className="text-slate-700 dark:text-slate-300 leading-relaxed">{tab.description}</p>
@@ -510,130 +504,6 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── DEMO VIDEO ───────────────────────────────────────────────────── */}
-      <section className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-10 space-y-3">
-            <span className="inline-block px-3 py-1 text-xs font-bold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full uppercase tracking-widest">
-              Product Walkthrough
-            </span>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
-              See How Easy It Is to{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Run Your Society</span>
-            </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400">
-              Monthly billing, payment tracking, expense management — all in one dashboard.
-            </p>
-          </div>
-
-          {/* Video / placeholder */}
-          <div className="relative mx-auto rounded-2xl overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-700 aspect-video bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
-            {/* Actual video — remove 'hidden' once demo.mp4 is placed in /public/ */}
-            <video muted playsInline className="w-full h-full object-cover rounded-2xl hidden" poster="/demo-poster.png">
-              <source src="/demo.mp4" type="video/mp4" />
-            </video>
-
-            {/* Simulated dashboard chrome — mirrors real app layout */}
-            <div className="absolute inset-0 opacity-25 pointer-events-none select-none p-5 flex flex-col gap-3">
-              {/* Nav bar */}
-              <div className="flex items-center gap-3 pb-2 border-b border-white/10">
-                <div className="h-2.5 w-20 bg-indigo-400 rounded-full" />
-                <div className="flex gap-2 ml-auto">
-                  <div className="h-2 w-14 bg-slate-500 rounded-full" />
-                  <div className="h-2 w-10 bg-slate-500 rounded-full" />
-                  <div className="h-2 w-8 bg-indigo-400 rounded-full" />
-                </div>
-              </div>
-              {/* KPI cards — Maintenance Collected · Outstanding Dues · Society Expenses */}
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { color: "bg-indigo-400", val: "bg-white/70", width: "w-16" },
-                  { color: "bg-red-400",    val: "bg-white/70", width: "w-12" },
-                  { color: "bg-amber-400",  val: "bg-white/70", width: "w-14" },
-                ].map(({ color, val, width }, i) => (
-                  <div key={i} className="bg-white/10 rounded-lg p-2 space-y-1.5">
-                    <div className={`h-1.5 ${width} ${color} rounded-full`} />
-                    <div className={`h-3 w-20 ${val} rounded-full`} />
-                    <div className="h-1.5 w-10 bg-white/30 rounded-full" />
-                  </div>
-                ))}
-              </div>
-              {/* 6-month Income vs Expense chart + Top Defaulters */}
-              <div className="grid grid-cols-3 gap-2 flex-1 min-h-0">
-                <div className="col-span-2 bg-white/10 rounded-lg p-2 flex flex-col gap-1.5">
-                  <div className="h-1.5 w-28 bg-white/40 rounded-full" />
-                  <div className="flex items-end gap-1 flex-1">
-                    {[55, 70, 48, 85, 63, 78].map((h, i) => (
-                      <div key={i} className="flex-1 flex flex-col gap-0.5 items-center justify-end h-full">
-                        <div className="w-full bg-indigo-400 rounded-t-sm" style={{ height: `${h}%` }} />
-                        <div className="w-full bg-rose-400 rounded-t-sm" style={{ height: `${Math.round(h * 0.38)}%` }} />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-3">
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-400 inline-block" /><span className="h-1 w-6 bg-white/30 rounded-full inline-block" /></span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-400 inline-block" /><span className="h-1 w-6 bg-white/30 rounded-full inline-block" /></span>
-                  </div>
-                </div>
-                {/* Top Defaulters */}
-                <div className="bg-white/10 rounded-lg p-2 flex flex-col gap-2">
-                  <div className="h-1.5 w-14 bg-red-400 rounded-full" />
-                  {[85, 65, 75, 50, 60].map((w, i) => (
-                    <div key={i} className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full bg-white/30 flex-shrink-0" />
-                      <div className="h-1.5 bg-white/35 rounded-full flex-1" style={{ width: `${w}%` }} />
-                      <div className="h-1.5 w-5 bg-red-400/60 rounded-full flex-shrink-0" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Centre play button */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-5">
-              <div className="relative flex items-center justify-center">
-                <span className="absolute w-24 h-24 rounded-full bg-white/10 animate-ping" />
-                <span className="absolute w-20 h-20 rounded-full bg-white/15 animate-pulse" />
-                <div className="relative z-10 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-2xl cursor-pointer hover:scale-110 transition-transform duration-200">
-                  <div className="w-0 h-0 border-y-[10px] border-y-transparent border-l-[18px] border-l-indigo-600 ml-1" />
-                </div>
-              </div>
-              <div className="text-center space-y-1">
-                <p className="text-white font-bold text-lg tracking-tight">FlatLedger in Action</p>
-                <p className="text-white/60 text-sm">~60 sec walkthrough</p>
-              </div>
-              <span className="px-4 py-1.5 bg-amber-400/20 border border-amber-400/40 text-amber-300 text-xs font-semibold rounded-full backdrop-blur-sm">
-                🎬 Recording in progress — available soon
-              </span>
-            </div>
-
-            {/* Bottom step bar — actual app flows */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-6 py-4">
-              <div className="flex items-center justify-center gap-4 sm:gap-8 flex-wrap">
-                {[
-                  "Generate monthly bills",
-                  "Record payments & track dues",
-                  "Manage expenses & download reports",
-                ].map((step, i) => (
-                  <span key={i} className="flex items-center gap-1.5 text-white/80 text-xs font-medium whitespace-nowrap">
-                    <span className="w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">{i + 1}</span>
-                    {step}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* CTA */}
-          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-5">
-            Want a live demo?{" "}
-            <a href="mailto:demo@flatledger.com" className="text-indigo-600 dark:text-indigo-400 font-medium hover:underline underline-offset-2">
-              Request a walkthrough →
-            </a>
-          </p>
-        </div>
-      </section>
-
       {/* ── DEFAULTER TRACKING HIGHLIGHT ─────────────────────────────────── */}
       <section className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/40 dark:to-purple-950/40 border-y border-indigo-100 dark:border-indigo-900">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-center">
@@ -642,13 +512,13 @@ const LandingPage: React.FC = () => {
               Defaulter Tracking
             </span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white leading-tight">
-              Never Chase Maintenance{" "}
+              Instantly Identify Maintenance{" "}
               <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Payments Again
+                Defaulters
               </span>
             </h2>
             <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed">
-              FlatLedger automatically shows which flats have unpaid maintenance so treasurers no longer need to check spreadsheets or call residents.
+              FlatLedger automatically highlights flats with unpaid maintenance so treasurers no longer need to manually check spreadsheets or call residents.
             </p>
             <button
               className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 hover:-translate-y-0.5 shadow-md hover:shadow-lg transition-all duration-300"
@@ -696,16 +566,16 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10 space-y-3">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Your Society Data is Safe
+              Enterprise-Grade Security for Your Society Data
             </h2>
             <p className="text-base md:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-              We take security as seriously as you take your society finances.
+              Your society's financial data is protected with secure cloud infrastructure, encryption, and automatic backups.
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { icon: Lock,      iconColor: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-100 dark:bg-indigo-900/30",  title: "Bank-Grade Encryption", desc: "256-bit SSL encryption on all data in transit and at rest." },
-              { icon: Cloud,     iconColor: "text-blue-600 dark:text-blue-400",     bg: "bg-blue-100 dark:bg-blue-900/30",      title: "Secure Cloud Hosting",  desc: "Hosted on enterprise-grade infrastructure with 99.9% uptime." },
+              { icon: Cloud,     iconColor: "text-blue-600 dark:text-blue-400",     bg: "bg-blue-100 dark:bg-blue-900/30",      title: "Secure Cloud Hosting",  desc: "Hosted on reliable cloud infrastructure with automatic scaling and redundancy." },
               { icon: HardDrive, iconColor: "text-green-600 dark:text-green-400",   bg: "bg-green-100 dark:bg-green-900/30",    title: "Daily Backups",         desc: "Automatic backups every day so your data is never lost." },
               { icon: Shield,    iconColor: "text-purple-600 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/30",  title: "Data Privacy",          desc: "Your society data is never shared or sold to third parties." },
             ].map(({ icon: Icon, iconColor, bg, title, desc }) => (
@@ -726,15 +596,15 @@ const LandingPage: React.FC = () => {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10 space-y-3">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
-              How Much Time Can FlatLedger{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Save Your Society?</span>
+              See How Much Time FlatLedger{" "}
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Saves Your Society</span>
             </h2>
             <p className="text-lg text-slate-600 dark:text-slate-400">
-              Drag the slider to match your society size and see the difference.
+              Select the number of flats in your society and see how much time you save every month.
             </p>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8 space-y-8">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 sm:p-8 space-y-8">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <label htmlFor="flats-slider" className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
@@ -760,21 +630,21 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col items-center p-4 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-800 text-center">
-                <p className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide mb-2">Manual Billing</p>
-                <p className="text-3xl font-extrabold text-red-600 dark:text-red-400">{manualHours}h</p>
+            <div className="grid grid-cols-3 gap-2 sm:gap-4">
+              <div className="flex flex-col items-center p-2 sm:p-4 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-800 text-center">
+                <p className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide mb-1 sm:mb-2">Manual Work</p>
+                <p className="text-2xl sm:text-3xl font-extrabold text-red-600 dark:text-red-400">{manualHours}h</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">per month</p>
               </div>
-              <div className="flex flex-col items-center p-4 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-200 dark:border-green-800 text-center">
-                <p className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide mb-2">FlatLedger</p>
-                <p className="text-3xl font-extrabold text-green-600 dark:text-green-400">{flatledgerMinutes}m</p>
+              <div className="flex flex-col items-center p-2 sm:p-4 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-200 dark:border-green-800 text-center">
+                <p className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide mb-1 sm:mb-2">FlatLedger</p>
+                <p className="text-2xl sm:text-3xl font-extrabold text-green-600 dark:text-green-400">{flatledgerMinutes}m</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">per month</p>
               </div>
-              <div className="flex flex-col items-center p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl border border-indigo-200 dark:border-indigo-800 text-center">
-                <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-2">You Save</p>
-                <p className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">{hoursSaved}h+</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">every month</p>
+              <div className="flex flex-col items-center p-2 sm:p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl border border-indigo-200 dark:border-indigo-800 text-center">
+                <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-1 sm:mb-2">Time Saved</p>
+                <p className="text-2xl sm:text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">{hoursSaved}h+</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">per month</p>
               </div>
             </div>
 
@@ -787,8 +657,64 @@ const LandingPage: React.FC = () => {
                 className="inline-flex items-center gap-2 px-8 py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 hover:-translate-y-0.5 shadow-lg hover:shadow-xl transition-all duration-300"
                 onClick={() => { window.location.href = '/signup'; }}
               >
-                Reclaim Your Time — Start Free <ArrowRight className="w-4 h-4" />
+                <span className="sm:hidden">Start Free</span>
+                <span className="hidden sm:inline">Reclaim Your Time — Start Free</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIALS ─────────────────────────────────────────────────── */}
+      <section className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-10 space-y-2">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white text-balance animate-slide-in-up">
+              What society managers say
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-400 animate-slide-in-up" style={{ animationDelay: '0.1s' }}>Trusted by society treasurers across India</p>
+          </div>
+          <div className="relative">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {testimonials.map((testimonial, index) => (
+                <div
+                  key={index}
+                  className={`p-5 rounded-xl border-2 transition-all duration-300 cursor-pointer animate-slide-in-up ${
+                    activeTestimonial === index
+                      ? "bg-white dark:bg-slate-900 border-indigo-600 dark:border-indigo-500 shadow-xl scale-[1.02]"
+                      : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:shadow-md hover:-translate-y-1"
+                  }`}
+                  onClick={() => setActiveTestimonial(index)}
+                  style={{ animationDelay: `${0.1 * (index + 1)}s` }}
+                >
+                  <div className="flex gap-1 mb-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-indigo-400 text-indigo-400" />
+                    ))}
+                  </div>
+                  <p className="text-slate-900 dark:text-white mb-3 leading-relaxed">"{testimonial.text}"</p>
+                  <div className="flex items-center gap-4">
+                    <div className="text-3xl">{testimonial.image}</div>
+                    <div>
+                      <p className="font-semibold text-slate-900 dark:text-white">{testimonial.name}</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">{testimonial.role} · {testimonial.society}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-center gap-3 animate-fade-in">
+              {testimonials.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setActiveTestimonial(index)}
+                  className={`rounded-full transition-all duration-300 ${
+                    activeTestimonial === index ? "bg-indigo-600 dark:bg-indigo-500 w-8 h-2.5" : "bg-indigo-200 dark:bg-indigo-800 w-2.5 h-2.5 hover:bg-indigo-300 dark:hover:bg-indigo-700"
+                  }`}
+                  aria-label={`View testimonial ${index + 1}`}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -799,14 +725,14 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10 space-y-4">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white animate-slide-in-up">
-              Simple, Transparent{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Pricing</span>
+              Simple Pricing —{" "}
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Less Than ₹5 Per Flat Per Month</span>
             </h2>
             <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
-              Start free for 30 days. No credit card required. Cancel anytime.
+              Start with a free 30-day trial. No credit card required.
             </p>
             <p className="text-xl font-semibold text-indigo-600 dark:text-indigo-400">
-              Less than ₹5 per flat per month
+              Most societies pay less than the cost of one cup of tea per flat.
             </p>
           </div>
 
@@ -917,7 +843,7 @@ const LandingPage: React.FC = () => {
               { q: "What happens after the trial?", a: "After 1 month, you'll receive a notification to select a plan if you wish to continue. No charge happens automatically — you decide when you're ready." },
               { q: "Can I cancel anytime?", a: "Yes, you can cancel your subscription at any time, even during the free trial. No questions asked, no hidden charges. Your data remains accessible." },
               { q: "Is my resident data secure?", a: "Absolutely. Bank-grade 256-bit encryption, daily automated backups, and regular security audits. Your data is safer than Excel or physical records." },
-              { q: "Does FlatLedger support UPI payments?", a: "Yes! Residents can pay maintenance dues via UPI payment links. Payments are auto-reconciled and reflected in the dashboard instantly." },
+              { q: "Does FlatLedger support UPI payments?", a: "Yes. Residents can pay maintenance dues using UPI payment links and payments are automatically tracked in the dashboard." },
               { q: "Is FlatLedger compliant with co-op society regulations?", a: "FlatLedger is built with Indian co-operative housing society regulations in mind, including Maharashtra, Karnataka, Gujarat, and other state co-op acts. Reports are GST-ready as well." },
               { q: "How do I get support?", a: "Email support is available at support@flatledger.com. We respond within 24 hours to all support requests and help you get the most out of the app." },
             ].map((item, i) => (
@@ -943,69 +869,15 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── TESTIMONIALS ─────────────────────────────────────────────────── */}
-      <section className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-10 space-y-2">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white text-balance animate-slide-in-up">
-              What society managers say
-            </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400 animate-slide-in-up" style={{ animationDelay: '0.1s' }}>Real feedback from early users</p>
-          </div>
-          <div className="relative">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              {testimonials.map((testimonial, index) => (
-                <div
-                  key={index}
-                  className={`p-5 rounded-xl border-2 transition-all duration-300 cursor-pointer animate-slide-in-up ${
-                    activeTestimonial === index
-                      ? "bg-white dark:bg-slate-900 border-indigo-600 dark:border-indigo-500 shadow-xl scale-[1.02]"
-                      : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:shadow-md hover:-translate-y-1"
-                  }`}
-                  onClick={() => setActiveTestimonial(index)}
-                  style={{ animationDelay: `${0.1 * (index + 1)}s` }}
-                >
-                  <div className="flex gap-1 mb-4">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-indigo-400 text-indigo-400" />
-                    ))}
-                  </div>
-                  <p className="text-slate-900 dark:text-white mb-3 leading-relaxed">"{testimonial.text}"</p>
-                  <div className="flex items-center gap-4">
-                    <div className="text-3xl">{testimonial.image}</div>
-                    <div>
-                      <p className="font-semibold text-slate-900 dark:text-white">{testimonial.name}</p>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">{testimonial.role} · {testimonial.society}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-center gap-3 animate-fade-in">
-              {testimonials.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setActiveTestimonial(index)}
-                  className={`rounded-full transition-all duration-300 ${
-                    activeTestimonial === index ? "bg-indigo-600 dark:bg-indigo-500 w-8 h-2.5" : "bg-indigo-200 dark:bg-indigo-800 w-2.5 h-2.5 hover:bg-indigo-300 dark:hover:bg-indigo-700"
-                  }`}
-                  aria-label={`View testimonial ${index + 1}`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── FINAL CTA ────────────────────────────────────────────────────── */}
       <section className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-white dark:bg-slate-950">
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="p-8 md:p-12 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl shadow-2xl text-center space-y-4">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-white animate-slide-in-up">
-              Start Your 30-Day Free Trial
+              Start Managing Your Society Finances Today
             </h2>
             <p className="text-lg text-white/90 animate-slide-in-up max-w-xl mx-auto" style={{ animationDelay: '0.1s' }}>
-              No credit card required. Set up your society in minutes and see the difference.
+              Create your society in minutes and start generating maintenance bills instantly.
             </p>
             <Link
               to="/signup"
@@ -1028,44 +900,29 @@ const LandingPage: React.FC = () => {
       {/* ── FOOTER ───────────────────────────────────────────────────────── */}
       <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col items-center">
+          <div className="mb-6 text-center">
+            <p className="text-lg font-bold text-slate-900 dark:text-white">FlatLedger</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Apartment finance, simplified.</p>
+          </div>
           <div className="flex flex-wrap justify-center gap-8 mb-6">
             <a href="/" className="text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors duration-300">Home</a>
             <a href="/privacy" className="text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors duration-300">Privacy Policy</a>
             <a href="/terms" className="text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors duration-300">Terms</a>
           </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl text-center mb-4">
+            FlatLedger is apartment management software designed for housing societies in India. It helps apartment associations generate maintenance bills, track payments, manage society expenses, and create financial reports easily. Treasurers and housing society committees can manage their entire society accounting in one simple dashboard without relying on Excel spreadsheets.
+          </p>
           <div className="pt-4 border-t border-slate-200 dark:border-slate-800 w-full text-center text-sm text-slate-600 dark:text-slate-400">
             <p>&copy; 2026 FlatLedger. All rights reserved.</p>
           </div>
         </div>
       </footer>
 
-      {/* ── FLOATING BUTTONS ─────────────────────────────────────────────── */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-center">
-        {/* WhatsApp */}
-        <a
-          href="https://wa.me/919999999999?text=Hi%2C%20I%27m%20interested%20in%20FlatLedger%20for%20my%20society"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-14 h-14 rounded-full shadow-lg bg-green-500 text-white hover:bg-green-600 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center"
-          aria-label="Chat on WhatsApp"
-        >
-          <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.845L.057 23.882a.5.5 0 0 0 .614.614l6.037-1.471A11.943 11.943 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.8 9.8 0 0 1-5.006-1.371l-.36-.213-3.722.907.921-3.619-.234-.372A9.807 9.807 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
-          </svg>
-        </a>
-        {/* Support chat */}
-        <button
-          className="w-14 h-14 rounded-full shadow-lg bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center"
-          aria-label="Open support chat"
-        >
-          <MessageCircle className="w-6 h-6" />
-        </button>
-      </div>
+
 
       {/* ── SCROLL CTA POPUP ─────────────────────────────────────────────── */}
       {showScrollCta && !scrollCtaDismissed && (
-        <div className="fixed bottom-24 right-6 z-50 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-indigo-200 dark:border-indigo-700 p-5 animate-slide-in-up">
+        <div className="fixed bottom-24 right-6 z-50 w-72 max-w-[calc(100vw-3rem)] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-indigo-200 dark:border-indigo-700 p-5 animate-slide-in-up">
           <button
             className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
             onClick={() => { setShowScrollCta(false); setScrollCtaDismissed(true); }}
