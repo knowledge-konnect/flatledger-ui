@@ -279,9 +279,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logger.warn(`[AuthProvider.logout] Server logout failed (local state already cleared)`, error);
     }
     
-    // Redirect to /login
-    navigate('/login');
-    logger.log(`[AuthProvider.logout] Redirected to /login`);
+    // Redirect to landing page
+    navigate('/');
+    logger.log(`[AuthProvider.logout] Redirected to /`);
   };
 
   const updateUser = (updates: Partial<User>) => {
