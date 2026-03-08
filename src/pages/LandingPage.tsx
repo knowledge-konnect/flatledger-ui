@@ -157,7 +157,12 @@ const LandingPage: React.FC = () => {
       <Navbar variant="landing" />
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <section className="pt-24 md:pt-32 pb-14 md:pb-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-white dark:bg-slate-950">
+      <section
+        className="pt-24 md:pt-32 pb-14 md:pb-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-white dark:bg-slate-950"
+        style={{ backgroundImage: "url('/images/apartments-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}
+      >
+        {/* Dark overlay — keeps text readable over the background image */}
+        <div className="absolute inset-0 bg-black/50" />
         {/* Premium gradient glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-purple-100/20 dark:bg-purple-900/10 rounded-full blur-3xl pointer-events-none" />
@@ -177,7 +182,7 @@ const LandingPage: React.FC = () => {
               FlatLedger helps apartment societies generate maintenance bills, track payments, manage expenses, and identify defaulters instantly — all in one simple dashboard.
             </p>
 
-            <p className="text-sm sm:text-base text-indigo-600 dark:text-indigo-400 font-semibold animate-slide-in-up" style={{ animationDelay: '0.15s' }}>
+            <p className="text-sm sm:text-base text-indigo-300 font-semibold animate-slide-in-up" style={{ animationDelay: '0.15s' }}>
               Built for Apartment Treasurers and Housing Society Committees in India.
             </p>
 
@@ -199,10 +204,10 @@ const LandingPage: React.FC = () => {
               </a>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-2 text-sm text-slate-600 dark:text-slate-400 animate-fade-in font-medium" style={{ animationDelay: '0.4s' }}>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> 30-day free trial</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> No credit card required</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> Cancel anytime</span>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-2 text-sm text-white/70 animate-fade-in font-medium" style={{ animationDelay: '0.4s' }}>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-400" /> 30-day free trial</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-400" /> No credit card required</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-400" /> Cancel anytime</span>
             </div>
           </div>
 
