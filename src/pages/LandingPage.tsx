@@ -79,6 +79,7 @@ const LandingPage: React.FC = () => {
   const [showScrollCta, setShowScrollCta] = useState(false);
   const [scrollCtaDismissed, setScrollCtaDismissed] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [announcementVisible, setAnnouncementVisible] = useState(true);
   const scrollCtaShown = useRef(false);
 
   const { plans, plansLoading, plansError } = usePlans();
@@ -149,20 +150,26 @@ const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
       {/* ── ANNOUNCEMENT BAR ─────────────────────────────────────────────── */}
-      <div className="w-full bg-indigo-600 text-white text-center text-xs sm:text-sm py-2 px-4 font-medium">
-        🎉 New: Bulk bill generation for 200+ flats — now live &nbsp;·&nbsp;
-        <a href="#pricing" className="underline underline-offset-2 hover:text-indigo-200 transition-colors">See plans →</a>
-      </div>
+      {announcementVisible && (
+        <div className="w-full bg-indigo-600 text-white text-center text-xs sm:text-sm py-2 px-4 font-medium relative">
+          🎉 New: Bulk bill generation for 200+ flats — now live &nbsp;·&nbsp;
+          <a href="#pricing" className="underline underline-offset-2 hover:text-indigo-200 transition-colors">See plans →</a>
+          <button
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors text-base leading-none"
+            onClick={() => setAnnouncementVisible(false)}
+            aria-label="Dismiss announcement"
+          >
+            &#x2715;
+          </button>
+        </div>
+      )}
 
       <Navbar variant="landing" />
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section
         className="pt-24 md:pt-32 pb-14 md:pb-24 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-white dark:bg-slate-950"
-        style={{ backgroundImage: "url('/images/apartments-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}
       >
-        {/* Dark overlay — keeps text readable over the background image */}
-        <div className="absolute inset-0 bg-black/50" />
         {/* Premium gradient glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-purple-100/20 dark:bg-purple-900/10 rounded-full blur-3xl pointer-events-none" />
@@ -182,7 +189,7 @@ const LandingPage: React.FC = () => {
               FlatLedger helps apartment societies generate maintenance bills, track payments, manage expenses, and identify defaulters instantly — all in one simple dashboard.
             </p>
 
-            <p className="text-sm sm:text-base text-indigo-300 font-semibold animate-slide-in-up" style={{ animationDelay: '0.15s' }}>
+            <p className="text-sm sm:text-base text-indigo-600 dark:text-indigo-400 font-semibold animate-slide-in-up" style={{ animationDelay: '0.15s' }}>
               Built for Apartment Treasurers and Housing Society Committees in India.
             </p>
 
@@ -192,7 +199,8 @@ const LandingPage: React.FC = () => {
                 aria-label="Start Free Trial"
                 onClick={() => { window.location.href = '/signup'; }}
               >
-                Start Free Trial — Set Up Your Society in Minutes
+                <span className="sm:hidden">Start Free Trial</span>
+                <span className="hidden sm:inline">Start Free Trial — Set Up Your Society in Minutes</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
               </button>
               <a
@@ -204,10 +212,10 @@ const LandingPage: React.FC = () => {
               </a>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-2 text-sm text-white/70 animate-fade-in font-medium" style={{ animationDelay: '0.4s' }}>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-400" /> 30-day free trial</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-400" /> No credit card required</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-400" /> Cancel anytime</span>
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-2 text-sm text-slate-600 dark:text-slate-400 animate-fade-in font-medium" style={{ animationDelay: '0.4s' }}>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> 30-day free trial</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> No credit card required</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> Cancel anytime</span>
             </div>
           </div>
 
@@ -324,8 +332,13 @@ const LandingPage: React.FC = () => {
               { step: "02", icon: "📄", title: "Generate monthly bills", desc: "Generate maintenance bills for every flat with one click." },
               { step: "03", icon: "✅", title: "Track payments & expenses", desc: "Track payments and record society expenses in real time." },
               { step: "04", icon: "📊", title: "View reports & dashboards", desc: "View reports and share transparent financial summaries with residents." },
-            ].map((item) => (
+            ].map((item, idx) => (
               <div key={item.step} className="relative flex flex-col gap-3 p-6 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+                {idx < 3 && (
+                  <div className="absolute -right-3 top-1/2 -translate-y-1/2 hidden lg:flex items-center justify-center z-10 pointer-events-none">
+                    <ArrowRight className="w-5 h-5 text-indigo-300 dark:text-indigo-700" />
+                  </div>
+                )}
                 <span className="absolute top-4 right-4 text-xs font-bold text-slate-300 dark:text-slate-700">{item.step}</span>
                 <div className="text-3xl">{item.icon}</div>
                 <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">{item.title}</h3>
@@ -583,11 +596,11 @@ const LandingPage: React.FC = () => {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10 space-y-3">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
-              How Much Time Can FlatLedger{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Save Your Society?</span>
+              See How Much Time FlatLedger{" "}
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Saves Your Society</span>
             </h2>
             <p className="text-lg text-slate-600 dark:text-slate-400">
-              Drag the slider to match your society size and see the difference.
+              Select the number of flats in your society and see how much time you save every month.
             </p>
           </div>
 
@@ -619,17 +632,17 @@ const LandingPage: React.FC = () => {
 
             <div className="grid grid-cols-3 gap-4">
               <div className="flex flex-col items-center p-4 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-800 text-center">
-                <p className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide mb-2">Manual Billing</p>
+                <p className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide mb-2">Manual Work</p>
                 <p className="text-3xl font-extrabold text-red-600 dark:text-red-400">{manualHours}h</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">per month</p>
               </div>
               <div className="flex flex-col items-center p-4 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-200 dark:border-green-800 text-center">
-                <p className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide mb-2">FlatLedger</p>
+                <p className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide mb-2">With FlatLedger</p>
                 <p className="text-3xl font-extrabold text-green-600 dark:text-green-400">{flatledgerMinutes}m</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">per month</p>
               </div>
               <div className="flex flex-col items-center p-4 bg-indigo-50 dark:bg-indigo-900/10 rounded-xl border border-indigo-200 dark:border-indigo-800 text-center">
-                <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-2">You Save</p>
+                <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide mb-2">Time Saved</p>
                 <p className="text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">{hoursSaved}h+</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">every month</p>
               </div>
@@ -644,7 +657,9 @@ const LandingPage: React.FC = () => {
                 className="inline-flex items-center gap-2 px-8 py-3 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 hover:-translate-y-0.5 shadow-lg hover:shadow-xl transition-all duration-300"
                 onClick={() => { window.location.href = '/signup'; }}
               >
-                Reclaim Your Time — Start Free <ArrowRight className="w-4 h-4" />
+                <span className="sm:hidden">Start Free</span>
+                <span className="hidden sm:inline">Reclaim Your Time — Start Free</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -658,7 +673,7 @@ const LandingPage: React.FC = () => {
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white text-balance animate-slide-in-up">
               What society managers say
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400 animate-slide-in-up" style={{ animationDelay: '0.1s' }}>Real feedback from early users</p>
+            <p className="text-lg text-slate-600 dark:text-slate-400 animate-slide-in-up" style={{ animationDelay: '0.1s' }}>Trusted by society treasurers across India</p>
           </div>
           <div className="relative">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -710,14 +725,14 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10 space-y-4">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white animate-slide-in-up">
-              Simple Pricing for Every{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Society</span>
+              Simple Pricing —{" "}
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Less Than ₹5 Per Flat Per Month</span>
             </h2>
             <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
               Start with a free 30-day trial. No credit card required.
             </p>
             <p className="text-xl font-semibold text-indigo-600 dark:text-indigo-400">
-              Most societies pay less than ₹5 per flat per month.
+              Most societies pay less than the cost of one cup of tea per flat.
             </p>
           </div>
 
@@ -885,6 +900,10 @@ const LandingPage: React.FC = () => {
       {/* ── FOOTER ───────────────────────────────────────────────────────── */}
       <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col items-center">
+          <div className="mb-6 text-center">
+            <p className="text-lg font-bold text-slate-900 dark:text-white">FlatLedger</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Apartment finance, simplified.</p>
+          </div>
           <div className="flex flex-wrap justify-center gap-8 mb-6">
             <a href="/" className="text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors duration-300">Home</a>
             <a href="/privacy" className="text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors duration-300">Privacy Policy</a>
