@@ -1,4 +1,4 @@
-﻿import { BRAND_NAME, SUPPORT_EMAIL } from '../../config/branding';
+﻿import { BRAND_NAME } from '../../config/branding';
 
 export interface FAQItem {
   question: string;

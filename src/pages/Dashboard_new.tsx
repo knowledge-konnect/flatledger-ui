@@ -26,10 +26,7 @@ export default function Dashboard() {
   const [endDate, setEndDate] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   
-  const societyId = user?.societyId ? Number(user.societyId) : undefined;
-  
   const { data: dashboardData, isLoading } = useDashboard(
-    societyId,
     startDate && endDate ? { startDate, endDate } : undefined
   );
 
@@ -55,47 +52,47 @@ export default function Dashboard() {
   };
 
   const stats = useMemo(() => {
-    if (!dashboardData?.stats) return [];
+    if (!dashboardData?.snapshot) return [];
     
-    const { stats } = dashboardData;
+    const s = dashboardData.snapshot;
     return [
       { 
         title: 'Total Flats', 
-        value: `${stats.total_flats}`, 
-        subtitle: `${stats.paid_flats_count} paid this month`, 
+        value: `${s.total_flats}`, 
+        subtitle: `${s.total_flats} total flats`, 
         icon: Home,
-        trend: stats.total_flats > 0 ? '+' : '0',
+        trend: s.total_flats > 0 ? '+' : '0',
         color: 'blue'
       },
       { 
         title: 'Total Collected', 
-        value: `₹${stats.total_collection.toLocaleString()}`, 
-        subtitle: `${stats.collection_rate.toFixed(1)}% collection rate`,
+        value: `₹${s.total_collected.toLocaleString()}`, 
+        subtitle: `${s.collection_rate.toFixed(1)}% collection rate`,
         icon: DollarSign,
-        trend: stats.total_collection > 0 ? '+' : '0',
+        trend: s.total_collected > 0 ? '+' : '0',
         color: 'green'
       },
       { 
         title: 'Outstanding', 
-        value: `₹${stats.outstanding_amount.toLocaleString()}`, 
-        subtitle: `${stats.total_flats - stats.paid_flats_count} pending payments`,
+        value: `₹${s.bill_outstanding.toLocaleString()}`, 
+        subtitle: `₹${s.total_member_outstanding.toLocaleString()} member dues`,
         icon: AlertCircle,
-        trend: stats.outstanding_amount > 0 ? '−' : '0',
+        trend: s.bill_outstanding > 0 ? '−' : '0',
         color: 'orange'
       },
       { 
         title: 'Collection Rate', 
-        value: `${stats.collection_rate.toFixed(1)}%`, 
-        subtitle: `Expected: ₹${stats.expected_collection.toLocaleString()}`,
+        value: `${s.collection_rate.toFixed(1)}%`, 
+        subtitle: `Expected: ₹${s.total_billed.toLocaleString()}`,
         icon: TrendingUp,
-        trend: stats.collection_rate >= 70 ? 'Good' : 'Improve',
-        color: stats.collection_rate >= 70 ? 'emerald' : 'red'
+        trend: s.collection_rate >= 70 ? 'Good' : 'Improve',
+        color: s.collection_rate >= 70 ? 'emerald' : 'red'
       },
     ];
   }, [dashboardData]);
 
   const chartData = useMemo(() => {
-    return dashboardData?.monthly || [];
+    return dashboardData?.trends || [];
   }, [dashboardData]);
 
   const recentActivity = useMemo(() => {
@@ -290,7 +287,7 @@ export default function Dashboard() {
                       borderRadius: '8px',
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
                     }}
-                    formatter={(value: number | undefined) => value !== undefined ? `₹${value.toLocaleString()}` : '₹0'}
+                    formatter={(value: any) => value !== undefined ? `₹${Number(value).toLocaleString()}` : '₹0'}
                   />
                   <Legend 
                     wrapperStyle={{ paddingTop: '20px' }}

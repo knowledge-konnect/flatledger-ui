@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import Navbar from '../components/layout/Navbar'
 import { ArrowLeft, CheckCircle, AlertCircle, Loader } from 'lucide-react'
-import { paymentApi } from '@/api/paymentApi'
+import { paymentApi, PaymentPlan } from '@/api/paymentApi'
 import { useToast } from '../components/ui/Toast'
 import { useApiErrorToast } from '../hooks/useApiErrorHandler'
 
@@ -21,10 +21,15 @@ export default function Payment() {
   const { showErrorToast } = useApiErrorToast()
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [plan, setPlan] = useState<PaymentPlan | null>(null)
 
-  const planId = searchParams.get('plan') as 'basic' | 'standard' | 'pro' || 'standard'
+  const planId = searchParams.get('plan') || 'standard'
 
-  const plan = paymentApi.getPlanById(planId) || paymentApi.getPlanById('standard')!
+  useEffect(() => {
+    paymentApi.getPlanById(planId)
+      .then(setPlan)
+      .catch(() => paymentApi.getPlanById('standard').then(setPlan))
+  }, [planId])
 
   // Load Razorpay script
   useEffect(() => {
@@ -49,29 +54,23 @@ export default function Payment() {
 
     try {
       // Call backend to create order using paymentApi
-      const orderData = await paymentApi.createOrder({
-        planId,
-        amount: plan.price * 100, // Convert to paise
-        currency: 'INR',
-      })
+      const orderData = await paymentApi.createOrder({ planId })
+      const { orderId, amount, currency, keyId } = orderData
 
-      if ('data' in orderData && orderData.data) {
-        const { amount, currency, orderId } = orderData.data
-        const options = {
-          key: process.env.REACT_APP_RAZORPAY_KEY_ID || '',
-          amount,
-          currency,
-          order_id: orderId,
+      const options = {
+        key: keyId,
+        amount,
+        currency,
+        order_id: orderId,
         name: 'FlatLedger',
-        description: `${plan.name} Plan Subscription`,
+        description: `${plan?.name ?? planId} Plan Subscription`,
         handler: async (response: any) => {
           try {
             // Verify payment on backend using paymentApi
             await paymentApi.verifyPayment({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              planId,
+              orderId: response.razorpay_order_id,
+              paymentId: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
             })
 
             // Payment successful
@@ -98,7 +97,7 @@ export default function Payment() {
           contact: localStorage.getItem('userPhone') || '',
         },
         theme: {
-          color: '#3b82f6', // Primary color
+          color: '#3b82f6',
         },
       }
 
@@ -109,13 +108,7 @@ export default function Payment() {
         showToast(response.error.description, 'error')
       })
       rzp1.open()
-      } else {
-        const errorMessage = 'error' in orderData ? orderData.error : 'Failed to create payment order'
-        setError(errorMessage)
-        setIsProcessing(false)
-        showToast(errorMessage, 'error')
-      }
-      } catch (err: any) {
+    } catch (err: any) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred'
       const errData = err?.response?.data;
       setError(errorMessage)
@@ -173,9 +166,9 @@ export default function Payment() {
                 <div className="bg-background rounded-xl border border-border p-6">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-2xl font-bold text-foreground">{plan.name} Plan</h3>
+                      <h3 className="text-2xl font-bold text-foreground">{plan?.name} Plan</h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {plan.features.slice(0, 2).join(' • ')}
+                        {plan?.features.slice(0, 2).join(' • ')}
                       </p>
                     </div>
                   </div>
@@ -183,7 +176,7 @@ export default function Payment() {
                   <div className="border-t border-border pt-4 mt-4">
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-muted-foreground">Monthly subscription</span>
-                      <span className="font-semibold text-foreground">₹{plan.price}</span>
+                      <span className="font-semibold text-foreground">₹{plan?.monthlyAmount}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm text-muted-foreground">
                       <span>Tax & fees</span>
@@ -195,7 +188,7 @@ export default function Payment() {
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-foreground">Total due today</span>
                       <span className="text-3xl font-bold text-primary-600 dark:text-primary-400">
-                        ₹{plan.price}
+                        ₹{plan?.monthlyAmount}
                       </span>
                     </div>
                   </div>
@@ -256,7 +249,7 @@ export default function Payment() {
                   ) : (
                     <>
                       <CheckCircle className="w-5 h-5" />
-                      Pay ₹{plan.price} & Activate Subscription
+                      Pay ₹{plan?.monthlyAmount} & Activate Subscription
                     </>
                   )}
                 </button>

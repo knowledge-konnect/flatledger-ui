@@ -36,10 +36,7 @@ export const nameSchema = z
 
 // Amount validation (currency)
 export const amountSchema = z
-  .number({
-    required_error: 'Amount is required',
-    invalid_type_error: 'Amount must be a number',
-  })
+  .number({ error: 'Amount must be a number' })
   .positive('Amount must be positive')
   .finite('Amount must be a valid number');
 
@@ -134,7 +131,7 @@ export const expenseSchema = z.object({
 export function formatZodError(error: z.ZodError): Record<string, string> {
   const formatted: Record<string, string> = {};
   
-  error.errors.forEach((err) => {
+  error.issues.forEach((err) => {
     const path = err.path.join('.');
     formatted[path] = err.message;
   });

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff, Check, X } from 'lucide-react';
+import { Eye, EyeOff, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { calculatePasswordStrength } from '../../lib/validation';
 

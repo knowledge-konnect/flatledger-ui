@@ -131,8 +131,8 @@ export function useSubscription(): UseSubscriptionReturn {
    */
   const subscribe = useCallback(async (
     planId: string,
-    amount: number,
-    paymentMethod: string,
+    _amount: number,
+    _paymentMethod: string,
     paymentReference: string
   ): Promise<SubscribeResponse | null> => {
     setState(prev => ({ ...prev, loading: true, error: null }));
@@ -221,7 +221,7 @@ export interface UserSubscription {
  * Legacy hook for backward compatibility
  * @deprecated Use useSubscription instead
  */
-export const useSubscriptionCheck = (userId?: string) => {
+export const useSubscriptionCheck = (_userId?: string) => {
   const subscription = useSubscription();
 
   // Map new state to legacy interface

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronUp, ChevronDown, ChevronsUpDown, Download, Filter } from 'lucide-react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, Download } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useIsMobile } from '../../hooks/useMediaQuery';
 import Button from './Button';

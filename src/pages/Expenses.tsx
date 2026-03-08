@@ -4,8 +4,6 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import PageHeader from '../components/ui/PageHeader';
-import EmptyState from '../components/ui/EmptyState';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
@@ -153,7 +151,7 @@ export default function Expenses() {
       // Search filter
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
-        if (!expense.vendor.toLowerCase().includes(search) &&
+        if (!expense.vendor?.toLowerCase().includes(search) &&
             !expense.description?.toLowerCase().includes(search)) {
           return false;
         }
@@ -254,8 +252,8 @@ export default function Expenses() {
     setSelectedExpense(expense);
     setValue('date', expense.dateIncurred);
     setValue('categoryCode', expense.categoryCode);
-    setValue('vendor', expense.vendor);
-    setValue('description', expense.description);
+    setValue('vendor', expense.vendor ?? '');
+    setValue('description', expense.description ?? '');
     setValue('amount', String(expense.amount));
     setShowAddModal(true);
   };
@@ -308,17 +306,6 @@ export default function Expenses() {
       <td className="px-6 py-3 hidden sm:table-cell"><div className="h-6 bg-slate-200 dark:bg-slate-700 rounded-full w-20 animate-pulse"></div></td>
       <td className="px-6 py-3"><div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-16 ml-auto animate-pulse"></div></td>
     </tr>
-  );
-
-  const StatsCardSkeleton = () => (
-    <Card className="bg-gradient-to-br from-gray-100 dark:from-gray-800 to-gray-100 dark:to-gray-800">
-      <CardContent className="p-6">
-        <div className="w-14 h-14 bg-gray-200 dark:bg-gray-700 rounded-2xl mb-4 animate-pulse"></div>
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-3 animate-pulse"></div>
-        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-40 mb-3 animate-pulse"></div>
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-28 animate-pulse"></div>
-      </CardContent>
-    </Card>
   );
 
   /* =====================================================
@@ -461,7 +448,7 @@ export default function Expenses() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                        label={(props: any) => `${props.name} ${((props.percent ?? 0) * 100).toFixed(0)}%`}
                         outerRadius={110}
                         fill="#8884d8"
                         dataKey="value"

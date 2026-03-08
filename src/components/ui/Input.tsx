@@ -7,6 +7,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   helperText?: string;
   icon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  'data-testid'?: string;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(

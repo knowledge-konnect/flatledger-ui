@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useSubscription } from '../hooks/useSubscription';
 import Button from '../components/ui/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import Badge from '../components/ui/Badge';
 import { Loader2, CheckCircle, XCircle, AlertTriangle, CreditCard, Calendar } from 'lucide-react';
 import { usePlans } from '../hooks/usePlans';
-import { Alert, AlertDescription } from '../components/ui/Alert';
+import { Alert } from '../components/ui/Alert';
 import { useToast } from '../components/ui/Toast';
 
 export const SubscriptionManager: React.FC = () => {
@@ -15,11 +15,9 @@ export const SubscriptionManager: React.FC = () => {
     status,
     trialDaysRemaining,
     planName,
-    monthlyAmount,
     trialEnd,
     loading,
     error,
-    createTrial,
     subscribe,
     cancelSubscription,
     refreshStatus,

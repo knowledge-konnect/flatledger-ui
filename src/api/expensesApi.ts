@@ -172,4 +172,15 @@ export const expensesApi = {
   async deleteExpense(publicId: string): Promise<void> {
     await apiClient.delete<ApiResponse<{}>>(`/expenses/${publicId}`);
   },
+
+  /**
+   * Restore a soft-deleted expense
+   * PATCH /expenses/{publicId}/restore
+   * @param publicId UUID of the expense
+   * @returns Promise<ExpenseResponse>
+   */
+  async restoreExpense(publicId: string): Promise<ExpenseResponse> {
+    const response = await apiClient.patch<ApiResponse<ExpenseResponse>>(`/expenses/${publicId}/restore`);
+    return response.data.data;
+  },
 };

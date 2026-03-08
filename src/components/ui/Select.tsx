@@ -6,6 +6,7 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   error?: string;
   helperText?: string;
   options: { value: string; label: string }[];
+  'data-testid'?: string;
 }
 
 const Select = forwardRef<HTMLSelectElement, SelectProps>(

@@ -136,10 +136,10 @@ export function useUpdateExpense() {
           let action: 'updated' | 'approved' | 'rejected' = 'updated';
           let details = `Updated expense details`;
           
-          if (variables.payload.status === 'APPROVED') {
+          if ((variables.payload as any).status === 'APPROVED') {
             action = 'approved';
             details = `Approved expense of ₹${data.amount}`;
-          } else if (variables.payload.status === 'REJECTED') {
+          } else if ((variables.payload as any).status === 'REJECTED') {
             action = 'rejected';
             details = `Rejected expense of ₹${data.amount}`;
           }

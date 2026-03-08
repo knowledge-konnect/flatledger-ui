@@ -1,7 +1,6 @@
-import React from 'react';
 import Badge from './Badge';
 
-type BadgeVariant = 'default' | 'success' | 'warning' | 'danger' | 'info';
+type BadgeVariant = 'default' | 'success' | 'warning' | 'error' | 'info';
 
 interface Props {
   code?: string;
@@ -44,15 +43,15 @@ export default function StatusBadge({ code, id, label, className, kind = 'flat',
     payment: {
       paid: { variant: 'success', text: 'Paid' },
       pending: { variant: 'info', text: 'Pending' },
-      failed: { variant: 'danger', text: 'Failed' },
-      overdue: { variant: 'danger', text: 'Overdue' },
+      failed: { variant: 'error', text: 'Failed' },
+      overdue: { variant: 'error', text: 'Overdue' },
       refunded: { variant: 'info', text: 'Refunded' },
     },
     billing: {
       draft: { variant: 'default', text: 'Draft' },
       sent: { variant: 'info', text: 'Sent' },
       paid: { variant: 'success', text: 'Paid' },
-      overdue: { variant: 'danger', text: 'Overdue' },
+      overdue: { variant: 'error', text: 'Overdue' },
     },
   };
 
@@ -66,7 +65,7 @@ export default function StatusBadge({ code, id, label, className, kind = 'flat',
 
     if (key === 'active' || key === 'paid' || key === 'owner_occupied') return { variant: 'success' as BadgeVariant, text: label ?? String(c) };
     if (key === 'rented' || key === 'pending') return { variant: 'warning' as BadgeVariant, text: label ?? String(c) };
-    if (key === 'failed' || key === 'overdue') return { variant: 'danger' as BadgeVariant, text: label ?? String(c) };
+    if (key === 'failed' || key === 'overdue') return { variant: 'error' as BadgeVariant, text: label ?? String(c) };
     return { variant: 'default' as BadgeVariant, text: label ?? String(c) };
   };
 
@@ -79,7 +78,7 @@ export default function StatusBadge({ code, id, label, className, kind = 'flat',
     default: 'bg-gray-600 text-white',
     success: 'bg-green-600 text-white',
     warning: 'bg-yellow-500 text-white',
-    danger: 'bg-red-600 text-white',
+    error: 'bg-red-600 text-white',
     info: 'bg-blue-600 text-white',
   };
 

@@ -99,8 +99,7 @@ export const paymentApi = {
    * @returns Promise<RazorpayOrderResponse>
    */
   async createOrder(request: CreateOrderRequest): Promise<RazorpayOrderResponse> {
-    // Updated endpoint and request body
-    const response = await apiClient.post<ApiResponse<{ data: RazorpayOrderResponse }>>('/payments/create-order', request);
+    const response = await apiClient.post<ApiResponse<RazorpayOrderResponse>>('/payments/create-order', request);
     if (!response.data || !response.data.data) {
       throw new Error('Failed to create payment order');
     }
@@ -115,8 +114,7 @@ export const paymentApi = {
    * @returns Promise<VerifyPaymentResponse>
    */
   async verifyPayment(request: VerifyPaymentRequest): Promise<VerifyPaymentResponse> {
-    // Updated endpoint and request body
-    const response = await apiClient.post<ApiResponse<{ data: VerifyPaymentResponse }>>('/payments/verify-payment', request);
+    const response = await apiClient.post<ApiResponse<VerifyPaymentResponse>>('/payments/verify-payment', request);
     if (!response.data || !response.data.data) {
       throw new Error('Payment verification failed');
     }

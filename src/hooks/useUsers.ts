@@ -5,7 +5,7 @@ import { PaginationParams } from '../types/api';
 export const useUsers = (params?: PaginationParams) => {
   return useQuery<User[]>({
     queryKey: ['users', params],
-    queryFn: () => usersApi.getUsers(params)
+    queryFn: () => usersApi.getUsers()
   });
 };
 

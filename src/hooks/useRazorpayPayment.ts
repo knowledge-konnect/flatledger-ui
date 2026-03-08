@@ -1,6 +1,6 @@
 ﻿import { useState, useCallback } from 'react';
 import { useToast } from '../components/ui/Toast';
-import { paymentApi, CreateOrderRequest } from '../api/paymentApi';
+import { paymentApi } from '../api/paymentApi';
 import { openRazorpayCheckout, RazorpayPaymentResponse } from '../lib/razorpay';
 
 interface UseRazorpayPaymentState {
