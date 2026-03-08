@@ -12,12 +12,12 @@ const ChatBot = lazy(() => import('../components/chatbot/ChatBot'));
 
 // Static data — defined outside component to avoid recreation on every render
 const planFeatures = [
-  { color: "from-green-500 to-green-600",   icon: IndianRupee, title: "Generate Bills for 100 Flats in Seconds",     description: "One-click billing for every flat — stop wasting hours in Excel every month." },
-  { color: "from-blue-500 to-blue-600",     icon: Receipt,     title: "Instantly See Who Paid and Who Hasn't",       description: "Real-time payment status for every flat. No more manual checking." },
-  { color: "from-orange-500 to-orange-600", icon: BarChart3,   title: "Track Society Expenses with Full Transparency", description: "Every rupee accounted for — categorised, searchable, shareable with residents." },
-  { color: "from-indigo-500 to-indigo-600", icon: Zap,         title: "Live Dashboard — Always Know Your Balance",   description: "Collection rate, fund balance, and KPIs updated in real time." },
-  { color: "from-purple-500 to-purple-600", icon: PieChart,    title: "One-Click Financial Reports",                 description: "Income vs expense charts and PDF exports ready for your AGM." },
-  { color: "from-violet-500 to-violet-600", icon: Users,       title: "Roles for Your Entire Committee",             description: "Treasurer, Secretary, and Viewer access — each sees what they need." },
+  { color: "from-green-500 to-green-600",   icon: IndianRupee, title: "Generate Bills for Every Flat in Seconds",    description: "One-click billing for every flat — stop wasting hours in Excel every month." },
+  { color: "from-blue-500 to-blue-600",     icon: Receipt,     title: "See Who Paid and Who Hasn't",                 description: "Real-time payment status for every flat. No more manual checking." },
+  { color: "from-orange-500 to-orange-600", icon: BarChart3,   title: "Transparent Expense Tracking",                description: "Every rupee accounted for — categorised, searchable, shareable with residents." },
+  { color: "from-indigo-500 to-indigo-600", icon: Zap,         title: "Live Financial Dashboard",                    description: "Collection rate, fund balance, and KPIs updated in real time." },
+  { color: "from-purple-500 to-purple-600", icon: PieChart,    title: "Instant Financial Reports",                   description: "Income vs expense charts and PDF exports ready for your AGM." },
+  { color: "from-violet-500 to-violet-600", icon: Users,       title: "Committee Role Access",                       description: "Treasurer, Secretary, and Viewer access — each sees what they need." },
 ];
 
 // ─── Tab definitions for Interactive Product Preview ───────────────────────
@@ -166,15 +166,15 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="space-y-6 text-center">
             <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 dark:text-white text-balance animate-slide-in-up leading-tight tracking-tight">
-              Stop Managing Society
+              Stop Managing Apartment Maintenance
               <span className="hidden sm:inline"><br /></span>{" "}
               <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Finances in Excel
+                in Excel
               </span>
             </h1>
 
             <p className="text-base sm:text-xl md:text-2xl text-slate-700 dark:text-slate-200 max-w-2xl mx-auto leading-relaxed animate-slide-in-up font-medium" style={{ animationDelay: '0.1s' }}>
-              Generate maintenance bills, track payments, manage expenses, and see defaulters instantly — all in one simple dashboard.
+              FlatLedger helps apartment societies generate maintenance bills, track payments, manage expenses, and identify defaulters instantly — all in one simple dashboard.
             </p>
 
             <p className="text-sm sm:text-base text-indigo-600 dark:text-indigo-400 font-semibold animate-slide-in-up" style={{ animationDelay: '0.15s' }}>
@@ -187,7 +187,7 @@ const LandingPage: React.FC = () => {
                 aria-label="Start Free Trial"
                 onClick={() => { window.location.href = '/signup'; }}
               >
-                Start Free Trial
+                Start Free Trial — Set Up Your Society in Minutes
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
               </button>
               <a
@@ -271,7 +271,7 @@ const LandingPage: React.FC = () => {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
-              Are you still managing your society in Excel?
+              Are you still managing apartment maintenance in Excel?
             </h2>
             <p className="text-lg text-slate-600 dark:text-slate-400">
               Most apartment societies face the same challenges every month:
@@ -279,10 +279,10 @@ const LandingPage: React.FC = () => {
           </div>
           <div className="grid sm:grid-cols-2 gap-6">
             {[
-              { icon: "📊", title: "Managing maintenance in Excel", desc: "Updating spreadsheets manually for every payment takes hours and is error-prone." },
-              { icon: "❓", title: "Difficulty tracking dues", desc: "No clear view of who has paid and who hasn't — chasing residents wastes time." },
-              { icon: "⏰", title: "Manual billing effort", desc: "Creating and sending bills to 50+ flats manually every month is exhausting." },
-              { icon: "🔍", title: "Lack of financial transparency", desc: "Residents question where money is spent — no easy way to share reports." },
+              { icon: "📊", title: "Managing maintenance in Excel", desc: "Updating spreadsheets for every payment takes hours and leads to mistakes." },
+              { icon: "❓", title: "Difficulty tracking dues", desc: "No clear view of who has paid and who still owes maintenance." },
+              { icon: "⏰", title: "Manual billing effort", desc: "Creating bills for 50+ flats manually every month wastes valuable time." },
+              { icon: "🔍", title: "Lack of financial transparency", desc: "Residents often ask where money is spent and reports take time to prepare." },
             ].map((p) => (
               <div key={p.title} className="flex gap-4 p-5 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl hover:shadow-md transition-all duration-300">
                 <div className="text-2xl flex-shrink-0">{p.icon}</div>
@@ -315,10 +315,10 @@ const LandingPage: React.FC = () => {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { step: "01", icon: "🏠", title: "Add flats and owners", desc: "Import or manually add every flat and resident in your society." },
-              { step: "02", icon: "📄", title: "Generate monthly bills", desc: "One click generates maintenance bills for every flat automatically." },
-              { step: "03", icon: "✅", title: "Track payments & expenses", desc: "Mark payments, record expenses, and see defaulters in real time." },
-              { step: "04", icon: "📊", title: "View reports & dashboards", desc: "Get financial insights and share transparent reports with residents." },
+              { step: "01", icon: "🏠", title: "Add flats and owners", desc: "Add your flats and residents to your society dashboard." },
+              { step: "02", icon: "📄", title: "Generate monthly bills", desc: "Generate maintenance bills for every flat with one click." },
+              { step: "03", icon: "✅", title: "Track payments & expenses", desc: "Track payments and record society expenses in real time." },
+              { step: "04", icon: "📊", title: "View reports & dashboards", desc: "View reports and share transparent financial summaries with residents." },
             ].map((item) => (
               <div key={item.step} className="relative flex flex-col gap-3 p-6 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                 <span className="absolute top-4 right-4 text-xs font-bold text-slate-300 dark:text-slate-700">{item.step}</span>
@@ -421,10 +421,10 @@ const LandingPage: React.FC = () => {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-10 space-y-3">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
-              Explore FlatLedger{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Features</span>
+              See How FlatLedger{" "}
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Works</span>
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-400">Click any feature to preview how it works.</p>
+            <p className="text-lg text-slate-600 dark:text-slate-400">Preview how FlatLedger helps apartment societies manage billing, payments, and expenses.</p>
           </div>
 
           <div className="flex flex-wrap justify-center gap-2 mb-8" role="tablist">
@@ -494,13 +494,13 @@ const LandingPage: React.FC = () => {
               Defaulter Tracking
             </span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white leading-tight">
-              Never Chase Maintenance{" "}
+              Instantly Identify Maintenance{" "}
               <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Payments Again
+                Defaulters
               </span>
             </h2>
             <p className="text-lg text-slate-700 dark:text-slate-300 leading-relaxed">
-              FlatLedger automatically shows which flats have unpaid maintenance so treasurers no longer need to check spreadsheets or call residents.
+              FlatLedger automatically highlights flats with unpaid maintenance so treasurers no longer need to manually check spreadsheets or call residents.
             </p>
             <button
               className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 hover:-translate-y-0.5 shadow-md hover:shadow-lg transition-all duration-300"
@@ -548,10 +548,10 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10 space-y-3">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Your Society Data is Safe
+              Enterprise-Grade Security for Your Society Data
             </h2>
             <p className="text-base md:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-              We take security as seriously as you take your society finances.
+              Your society's financial data is protected with secure cloud infrastructure, encryption, and automatic backups.
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -705,14 +705,14 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10 space-y-4">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white animate-slide-in-up">
-              Simple, Transparent{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Pricing</span>
+              Simple Pricing for Every{" "}
+              <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Society</span>
             </h2>
             <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
-              Start free for 30 days. No credit card required. Cancel anytime.
+              Start with a free 30-day trial. No credit card required.
             </p>
             <p className="text-xl font-semibold text-indigo-600 dark:text-indigo-400">
-              Less than ₹5 per flat per month
+              Most societies pay less than ₹5 per flat per month.
             </p>
           </div>
 
@@ -823,7 +823,7 @@ const LandingPage: React.FC = () => {
               { q: "What happens after the trial?", a: "After 1 month, you'll receive a notification to select a plan if you wish to continue. No charge happens automatically — you decide when you're ready." },
               { q: "Can I cancel anytime?", a: "Yes, you can cancel your subscription at any time, even during the free trial. No questions asked, no hidden charges. Your data remains accessible." },
               { q: "Is my resident data secure?", a: "Absolutely. Bank-grade 256-bit encryption, daily automated backups, and regular security audits. Your data is safer than Excel or physical records." },
-              { q: "Does FlatLedger support UPI payments?", a: "Yes! Residents can pay maintenance dues via UPI payment links. Payments are auto-reconciled and reflected in the dashboard instantly." },
+              { q: "Does FlatLedger support UPI payments?", a: "Yes. Residents can pay maintenance dues using UPI payment links and payments are automatically tracked in the dashboard." },
               { q: "Is FlatLedger compliant with co-op society regulations?", a: "FlatLedger is built with Indian co-operative housing society regulations in mind, including Maharashtra, Karnataka, Gujarat, and other state co-op acts. Reports are GST-ready as well." },
               { q: "How do I get support?", a: "Email support is available at support@flatledger.com. We respond within 24 hours to all support requests and help you get the most out of the app." },
             ].map((item, i) => (
@@ -854,10 +854,10 @@ const LandingPage: React.FC = () => {
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="p-8 md:p-12 bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl shadow-2xl text-center space-y-4">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-white animate-slide-in-up">
-              Start Your 30-Day Free Trial
+              Start Managing Your Society Finances Today
             </h2>
             <p className="text-lg text-white/90 animate-slide-in-up max-w-xl mx-auto" style={{ animationDelay: '0.1s' }}>
-              No credit card required. Set up your society in minutes and see the difference.
+              Create your society in minutes and start generating maintenance bills instantly.
             </p>
             <Link
               to="/signup"
@@ -885,6 +885,9 @@ const LandingPage: React.FC = () => {
             <a href="/privacy" className="text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors duration-300">Privacy Policy</a>
             <a href="/terms" className="text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors duration-300">Terms</a>
           </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl text-center mb-4">
+            FlatLedger is apartment management software designed for housing societies in India. It helps apartment associations generate maintenance bills, track payments, manage society expenses, and create financial reports easily. Treasurers and housing society committees can manage their entire society accounting in one simple dashboard without relying on Excel spreadsheets.
+          </p>
           <div className="pt-4 border-t border-slate-200 dark:border-slate-800 w-full text-center text-sm text-slate-600 dark:text-slate-400">
             <p>&copy; 2026 FlatLedger. All rights reserved.</p>
           </div>
