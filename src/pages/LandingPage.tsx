@@ -4,7 +4,6 @@ import {
   ArrowRight, IndianRupee, BarChart3, Users, Zap, Star,
   Receipt, PieChart, Shield, Cloud, HardDrive, Lock,
   CheckCircle2, Calculator, ChevronRight, AlertTriangle,
-  MessageCircle,
 } from "lucide-react";
 import { Link } from 'react-router-dom';
 import Navbar from "../components/layout/Navbar";
@@ -265,30 +264,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── SOCIAL PROOF ─────────────────────────────────────────────────── */}
-      <section className="py-14 md:py-16 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 border-y border-slate-100 dark:border-slate-800">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-center text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-8">
-            Trusted by Apartment Societies Across India
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {[
-              { icon: "🏢", stat: "120+", label: "Societies" },
-              { icon: "🏠", stat: "6,500+", label: "Flats Managed" },
-              { icon: "💰", stat: "₹2Cr+", label: "Maintenance Tracked" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex flex-col items-center gap-2 p-6 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-              >
-                <span className="text-3xl">{item.icon}</span>
-                <p className="text-3xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{item.stat}</p>
-                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{item.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+
 
       {/* ── PROBLEM SECTION ──────────────────────────────────────────────── */}
       <section className="py-20 md:py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
@@ -378,7 +354,7 @@ const LandingPage: React.FC = () => {
                 {[
                   ["Bill generation",        "Manual entry, 2–4 hrs/month",  "One-click, under 60 seconds"],
                   ["Payment tracking",       "Separate sheet, error-prone",  "Real-time dashboard"],
-                  ["Defaulter reminders",    "Follow up manually",           "Automated WhatsApp & SMS"],
+                  ["Defaulter reminders",    "Follow up manually",           "Smart defaulter dashboard"],
                   ["Expense management",     "Multiple files, hard to audit","Categorised & GST-ready"],
                   ["Monthly reports",        "Copy-paste nightmare",         "Auto-generated PDF reports"],
                   ["Data backup",            "Depends on your laptop",       "Daily cloud backup"],
@@ -581,7 +557,7 @@ const LandingPage: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { icon: Lock,      iconColor: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-100 dark:bg-indigo-900/30",  title: "Bank-Grade Encryption", desc: "256-bit SSL encryption on all data in transit and at rest." },
-              { icon: Cloud,     iconColor: "text-blue-600 dark:text-blue-400",     bg: "bg-blue-100 dark:bg-blue-900/30",      title: "Secure Cloud Hosting",  desc: "Hosted on enterprise-grade infrastructure with 99.9% uptime." },
+              { icon: Cloud,     iconColor: "text-blue-600 dark:text-blue-400",     bg: "bg-blue-100 dark:bg-blue-900/30",      title: "Secure Cloud Hosting",  desc: "Hosted on reliable cloud infrastructure with automatic scaling and redundancy." },
               { icon: HardDrive, iconColor: "text-green-600 dark:text-green-400",   bg: "bg-green-100 dark:bg-green-900/30",    title: "Daily Backups",         desc: "Automatic backups every day so your data is never lost." },
               { icon: Shield,    iconColor: "text-purple-600 dark:text-purple-400", bg: "bg-purple-100 dark:bg-purple-900/30",  title: "Data Privacy",          desc: "Your society data is never shared or sold to third parties." },
             ].map(({ icon: Icon, iconColor, bg, title, desc }) => (
@@ -915,29 +891,7 @@ const LandingPage: React.FC = () => {
         </div>
       </footer>
 
-      {/* ── FLOATING BUTTONS ─────────────────────────────────────────────── */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-center">
-        {/* WhatsApp */}
-        <a
-          href="https://wa.me/919999999999?text=Hi%2C%20I%27m%20interested%20in%20FlatLedger%20for%20my%20society"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-14 h-14 rounded-full shadow-lg bg-green-500 text-white hover:bg-green-600 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center"
-          aria-label="Chat on WhatsApp"
-        >
-          <svg viewBox="0 0 24 24" className="w-7 h-7 fill-white" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.845L.057 23.882a.5.5 0 0 0 .614.614l6.037-1.471A11.943 11.943 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.8 9.8 0 0 1-5.006-1.371l-.36-.213-3.722.907.921-3.619-.234-.372A9.807 9.807 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
-          </svg>
-        </a>
-        {/* Support chat */}
-        <button
-          className="w-14 h-14 rounded-full shadow-lg bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center"
-          aria-label="Open support chat"
-        >
-          <MessageCircle className="w-6 h-6" />
-        </button>
-      </div>
+
 
       {/* ── SCROLL CTA POPUP ─────────────────────────────────────────────── */}
       {showScrollCta && !scrollCtaDismissed && (
