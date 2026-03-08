@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Edit, Trash, AlertCircle, Users as UsersIcon, Search } from 'lucide-react';
+import { Plus, Edit, Trash, AlertCircle, Users as UsersIcon, Search, Copy, Check, KeyRound } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Button from '../components/ui/Button';
@@ -34,6 +34,9 @@ const ROLE_OPTIONS = (Object.values(RoleCode) as RoleCode[]).map(code => ({
 export default function Users() {
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [createdCredentials, setCreatedCredentials] = useState<{ loginId: string; password: string; name: string } | null>(null);
+  const [copiedField, setCopiedField] = useState<'login' | 'password' | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
@@ -43,6 +46,7 @@ export default function Users() {
   // form state
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [mobile, setMobile] = useState('');
   const [password, setPassword] = useState('');
   const [selectedRoleCode, setSelectedRoleCode] = useState<RoleCode>(RoleCode.VIEWER); // default role
@@ -84,28 +88,47 @@ export default function Users() {
   ===================================================== */
 
   async function createUser() {
-    if (!name.trim() || !password.trim()) {
-      showToast(AlertMessages.error.fillAllFields, 'error');
+    if (!name.trim()) {
+      showToast('Full name is required.', 'error');
+      return;
+    }
+    if (!email.trim() && !username.trim()) {
+      showToast('Provide an email or username — the user needs one to log in.', 'error');
+      return;
+    }
+    if (!password.trim()) {
+      showToast('Password is required.', 'error');
       return;
     }
 
+    const enteredPassword = password.trim();
+    const enteredUsername = username.trim();
     try {
-      await createUserMutation.mutateAsync({
+      const result = await createUserMutation.mutateAsync({
         name,
         email: email.trim() || undefined,
+        username: enteredUsername || undefined,
         mobile: mobile || undefined,
         roleCode: selectedRoleCode,
-        password: password.trim(),
+        password: enteredPassword,
       });
 
-      showToast(AlertMessages.success.userCreated, 'success');
       setShowModal(false);
       setName('');
       setEmail('');
+      setUsername('');
       setMobile('');
       setPassword('');
       setSelectedRoleCode(RoleCode.VIEWER);
       setSelectedFlatPublicId('');
+      // Show generated credentials so admin can share them with the new user
+      // Priority: returned email > entered username > entered email
+      setCreatedCredentials({
+        loginId: result.email || enteredUsername || email.trim(),
+        password: enteredPassword,
+        name,
+      });
+      setShowCredentialsModal(true);
     } catch (error: any) {
       if (error?.response?.data) {
         showErrorToast({
@@ -286,7 +309,7 @@ export default function Users() {
   return (
     <DashboardLayout title="Users & Access">
       <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950">
-        <div className="space-y-6">
+<div className="space-y-4 sm:space-y-6">
 
           {/* ── Header ── */}
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-2">
@@ -295,7 +318,7 @@ export default function Users() {
                 <UsersIcon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
                   Users
                 </h1>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
@@ -339,7 +362,7 @@ export default function Users() {
               <div key={label} className={`relative overflow-hidden bg-gradient-to-br ${color} rounded-2xl p-4 shadow-lg ${shadow}`}>
                 <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)' }} />
                 <p className="relative text-white/80 text-xs font-semibold uppercase tracking-wider">{label}</p>
-                <p className="relative text-white text-3xl font-bold mt-0.5">{value}</p>
+                <p className="relative text-white text-2xl sm:text-3xl font-bold mt-0.5">{value}</p>
               </div>
             ))}
           </div>
@@ -484,15 +507,14 @@ export default function Users() {
           setIsEditing(false);
           setSelectedUser(null);
           setName('');
-          setEmail('');
-          setMobile('');
+          setEmail('');          setUsername('');          setMobile('');
           setPassword('');
           setSelectedRoleCode(RoleCode.VIEWER);
           setSelectedFlatPublicId('');
         }}
         title={isEditing ? 'Edit User' : 'Add User'}
       >
-        <div className="space-y-4 p-6">
+        <div className="p-4 sm:p-6 space-y-4">
           {!isEditing && (
             <Select
               label="Select Flat Owner"
@@ -502,46 +524,71 @@ export default function Users() {
             />
           )}
 
-          <Input
-            label="Full Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            readOnly={!isEditing && selectedFlatPublicId !== ''}
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              readOnly={!isEditing && selectedFlatPublicId !== ''}
+            />
 
-          <Input
-            label="Email Address (Optional)"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            readOnly={!isEditing && selectedFlatPublicId !== ''}
-          />
+            <Input
+              label="Email Address"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              readOnly={!isEditing && selectedFlatPublicId !== ''}
+              placeholder={!isEditing ? 'user@example.com' : ''}
+            />
 
-          <Input
-            label="Mobile Number (Optional)"
-            type="tel"
-            value={mobile}
-            onChange={(e) => setMobile(e.target.value)}
-            placeholder="+91 XXXXX XXXXX"
-            readOnly={!isEditing && selectedFlatPublicId !== ''}
-          />
+            <Input
+              label="Mobile Number (Optional)"
+              type="tel"
+              value={mobile}
+              onChange={(e) => setMobile(e.target.value)}
+              placeholder="+91 XXXXX XXXXX"
+              readOnly={!isEditing && selectedFlatPublicId !== ''}
+            />
+
+            <Select
+              label="Role"
+              value={selectedRoleCode}
+              onChange={(e) => setSelectedRoleCode(e.target.value as RoleCode)}
+              options={ROLE_OPTIONS}
+            />
+          </div>
 
           {!isEditing && (
-            <Input
-              label="Password"
-              type="text"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Set a password for this user"
-            />
+            <>
+              {!email.trim() && !username.trim() && (
+                <p className="text-[11px] text-rose-500 dark:text-rose-400 -mt-2">
+                  Email or username is required for login.
+                </p>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Input
+                    label="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.replace(/\s/g, ''))}
+                    placeholder="e.g. john_doe"
+                  />
+                  <p className="text-[11px] text-slate-400 leading-snug">
+                    {username.trim()
+                      ? <>Login: <span className="font-medium text-slate-600 dark:text-slate-300">{username.trim()}</span></>
+                      : 'Required if no email provided.'}
+                  </p>
+                </div>
+                <Input
+                  label="Password"
+                  type="text"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Set a password for this user"
+                />
+              </div>
+            </>
           )}
-
-          <Select
-            label="Role"
-            value={selectedRoleCode}
-            onChange={(e) => setSelectedRoleCode(e.target.value as RoleCode)}
-            options={ROLE_OPTIONS}
-          />
         </div>
 
         <ModalFooter>
@@ -553,6 +600,7 @@ export default function Users() {
               setSelectedUser(null);
               setName('');
               setEmail('');
+              setUsername('');
               setMobile('');
               setPassword('');
               setSelectedRoleCode(RoleCode.VIEWER);
@@ -582,7 +630,7 @@ export default function Users() {
         title="Delete User"
         size="sm"
       >
-        <div className="space-y-4 p-6">
+        <div className="space-y-4 p-4 sm:p-6">
           {deleteTarget && (
             <>
               <p className="text-sm text-foreground">
@@ -621,6 +669,84 @@ export default function Users() {
             className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white focus:ring-red-500/50"
           >
             {isDeleting ? 'Deleting...' : 'Delete User'}
+          </Button>
+        </ModalFooter>
+      </Modal>
+
+      {/* Created User Credentials Modal */}
+      <Modal
+        isOpen={showCredentialsModal}
+        onClose={() => { setShowCredentialsModal(false); setCreatedCredentials(null); setCopiedField(null); }}
+        title="User Created Successfully"
+        size="sm"
+      >
+        <div className="p-4 sm:p-6 space-y-4">
+          {createdCredentials && (
+            <>
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                <KeyRound className="w-5 h-5 flex-shrink-0" />
+                <p className="text-sm font-medium">
+                  Share these login credentials with <span className="font-bold">{createdCredentials.name}</span>
+                </p>
+              </div>
+
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 divide-y divide-slate-200 dark:divide-slate-700">
+                {/* Login Email / Username */}
+                <div className="flex items-center justify-between px-4 py-3 gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-0.5">Login (Email / Username)</p>
+                    {createdCredentials.loginId ? (
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">{createdCredentials.loginId}</p>
+                    ) : (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 italic">No email provided — ask backend for auto-generated username</p>
+                    )}
+                  </div>
+                  {createdCredentials.loginId && (
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdCredentials.loginId);
+                        setCopiedField('login');
+                        setTimeout(() => setCopiedField(null), 2000);
+                      }}
+                      className="flex-shrink-0 p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                      title="Copy login"
+                    >
+                      {copiedField === 'login' ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
+                    </button>
+                  )}
+                </div>
+
+                {/* Password */}
+                <div className="flex items-center justify-between px-4 py-3 gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-0.5">Password</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 font-mono">{createdCredentials.password || <span className="text-slate-400 italic font-sans font-normal">Auto-generated — check with backend</span>}</p>
+                  </div>
+                  {createdCredentials.password && (
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(createdCredentials.password);
+                        setCopiedField('password');
+                        setTimeout(() => setCopiedField(null), 2000);
+                      }}
+                      className="flex-shrink-0 p-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                      title="Copy password"
+                    >
+                      {copiedField === 'password' ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-slate-400" />}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md px-3 py-2">
+                The user will be prompted to change their password on first login.
+              </p>
+            </>
+          )}
+        </div>
+        <ModalFooter>
+          <Button onClick={() => { setShowCredentialsModal(false); setCreatedCredentials(null); setCopiedField(null); }}>
+            Done
           </Button>
         </ModalFooter>
       </Modal>

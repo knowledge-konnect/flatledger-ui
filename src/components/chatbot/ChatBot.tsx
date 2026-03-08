@@ -1,7 +1,25 @@
-import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, ChevronLeft, Search } from 'lucide-react';
-import { FAQ_CATEGORIES, WELCOME_MESSAGE, FAQCategory, FAQItem } from './chatbotData';
+﻿import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import DOMPurify from 'dompurify';
+import { FAQ_CATEGORIES, WELCOME_MESSAGE, LANDING_FAQ_CATEGORIES, LANDING_WELCOME_MESSAGE, FAQCategory, FAQItem } from './chatbotData';
 import { cn } from '../../lib/utils';
+
+const MessageCircle = (props: any) => (
+  <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+);
+const X = (props: any) => (
+  <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+);
+const ChevronLeft = (props: any) => (
+  <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>
+);
+const Search = (props: any) => (
+  <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+);
+
+interface ChatBotProps {
+  variant?: 'dashboard' | 'landing';
+}
 
 type View = 'home' | 'category' | 'answer';
 
@@ -12,20 +30,37 @@ interface Message {
 }
 
 function renderMarkdown(text: string): string {
-  return text
+  const html = text
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n/g, '<br/>');
+  return DOMPurify.sanitize(html);
 }
 
-export default function ChatBot() {
+// #10 — Online/Offline: Mon–Fri 9am–6pm IST
+function getIsOnline(): boolean {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const ist = new Date(utc + 330 * 60000); // UTC+5:30
+  const day = ist.getDay();   // 0=Sun, 6=Sat
+  const hour = ist.getHours();
+  return day >= 1 && day <= 5 && hour >= 9 && hour < 18;
+}
+
+export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
+  const isLanding = variant === 'landing';
+  const ACTIVE_CATEGORIES = isLanding ? LANDING_FAQ_CATEGORIES : FAQ_CATEGORIES;
+  const ACTIVE_WELCOME = isLanding ? LANDING_WELCOME_MESSAGE : WELCOME_MESSAGE;
+
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<View>('home');
   const [selectedCategory, setSelectedCategory] = useState<FAQCategory | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [messages, setMessages] = useState<Message[]>([
-    { id: 'welcome', type: 'bot', text: WELCOME_MESSAGE },
+    { id: 'welcome', type: 'bot', text: ACTIVE_WELCOME },
   ]);
   const [hasUnread, setHasUnread] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);  // #7
+  const isOnline = getIsOnline();                    // #10
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -47,18 +82,22 @@ export default function ChatBot() {
     setSelectedCategory(cat);
     setSearchQuery('');
     addMessage('user', `${cat.icon} ${cat.label}`);
+    setIsTyping(true);
     setTimeout(() => {
+      setIsTyping(false);
       addMessage('bot', `Here are common questions about **${cat.label}**. Tap one to see the answer:`);
       setView('category');
-    }, 300);
+    }, 700);
   };
 
   const handleFAQSelect = (faq: FAQItem) => {
     addMessage('user', faq.question);
+    setIsTyping(true);
     setTimeout(() => {
+      setIsTyping(false);
       addMessage('bot', faq.answer);
       setView('answer');
-    }, 300);
+    }, 900);
   };
 
   const handleBack = () => {
@@ -75,12 +114,12 @@ export default function ChatBot() {
     setView('home');
     setSelectedCategory(null);
     setSearchQuery('');
-    setMessages([{ id: 'welcome', type: 'bot', text: WELCOME_MESSAGE }]);
+    setMessages([{ id: 'welcome', type: 'bot', text: ACTIVE_WELCOME }]);
   };
 
   // Filtered FAQs for search
   const searchResults = searchQuery.trim().length > 1
-    ? FAQ_CATEGORIES.flatMap((cat) =>
+    ? ACTIVE_CATEGORIES.flatMap((cat) =>
         cat.faqs
           .filter(
             (faq) =>
@@ -151,9 +190,10 @@ export default function ChatBot() {
                   🤖
                 </div>
                 <div>
-                  <p className="text-white font-semibold text-sm leading-none">SocietyLedger Guide</p>
-                  <p className="text-indigo-200 text-[11px] mt-0.5">
-                    {view === 'home' ? 'Ask me anything!' : view === 'category' ? selectedCategory?.label : 'Answer'}
+                  <p className="text-white font-semibold text-sm leading-none">FlatLedger Guide</p>
+                  <p className="text-indigo-200 text-[11px] mt-0.5 flex items-center gap-1">
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isOnline ? 'bg-emerald-400' : 'bg-slate-400'}`} />
+                    {isOnline ? 'Online · replies in minutes' : 'Offline · replies in 24h'}
                   </p>
                 </div>
               </div>
@@ -202,6 +242,21 @@ export default function ChatBot() {
                 />
               </div>
             ))}
+
+            {/* #7 — Typing indicator */}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-sm flex-shrink-0 mr-2 mt-0.5">
+                  🤖
+                </div>
+                <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
+              </div>
+            )}
+
             <div ref={messagesEndRef} />
           </div>
 
@@ -248,7 +303,7 @@ export default function ChatBot() {
                 ) : (
                   /* Category grid */
                   <div className="grid grid-cols-3 gap-1.5">
-                    {FAQ_CATEGORIES.map((cat) => (
+                    {ACTIVE_CATEGORIES.map((cat) => (
                       <button
                         key={cat.id}
                         onClick={() => handleCategorySelect(cat)}
@@ -314,6 +369,25 @@ export default function ChatBot() {
                     Ask another
                   </button>
                 </div>
+                {isLanding && (
+                  <Link
+                    to="/signup"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-center w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 text-white text-xs font-semibold hover:from-indigo-700 hover:to-indigo-800 transition-all shadow-sm gap-1.5"
+                  >
+                    Start Free Trial — 30 days free, no card needed →
+                  </Link>
+                )}
+                {/* #3 — Email fallback for all variants */}
+                <p className="text-center text-[11px] text-slate-400 dark:text-slate-500 pt-0.5">
+                  Still confused?{' '}
+                  <a
+                    href="mailto:support@FlatLedger.com"
+                    className="text-indigo-500 hover:text-indigo-600 underline underline-offset-2"
+                  >
+                    Email us →
+                  </a>
+                </p>
               </div>
             )}
           </div>

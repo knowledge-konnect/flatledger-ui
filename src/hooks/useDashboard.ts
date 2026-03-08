@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import apiClient from '../api/client';
+import apiClient, { getInMemoryAccessToken } from '../api/client';
 
 // ─── Domain Types ─────────────────────────────────────────────────────────────
 
@@ -72,9 +72,9 @@ export function useDashboard(params?: DashboardParams) {
         params?.startDate && params?.endDate
           ? { startDate: params.startDate, endDate: params.endDate }
           : {};
-      const response = await apiClient.get('/api/dashboard', { params: queryParams });
+      const response = await apiClient.get('/dashboard', { params: queryParams });
       return response.data.data;
     },
-    enabled: !!localStorage.getItem('accessToken'),
+    enabled: !!getInMemoryAccessToken(),
   });
 }

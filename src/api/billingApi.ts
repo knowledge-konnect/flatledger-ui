@@ -23,7 +23,7 @@ export const billingApi = {
   },
 
   async generate(payload: GenerateBillingRequest): Promise<GenerateBillingResponse> {
-    const response = await apiClient.post<ApiResponse<GenerateBillingResponse>>('/billing/generate', payload);
+    const response = await apiClient.post<ApiResponse<GenerateBillingResponse>>('/billing/generate-monthly', payload);
     return response.data.data;
   },
 };

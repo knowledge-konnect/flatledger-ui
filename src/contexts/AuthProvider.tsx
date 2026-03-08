@@ -5,7 +5,7 @@ import { jwtDecode } from 'jwt-decode';
 import { authApi } from '../api/authApi';
 import { subscriptionApi } from '../api/subscriptionApi';
 import { AuthState, LoginCredentials, RegisterCredentials, User, AuthResponse } from '../types/auth';
-import { handleApiError, setRefreshTokenCallback } from '../api/client';
+import { handleApiError, setRefreshTokenCallback, setInMemoryAccessToken } from '../api/client';
 import { logger } from '../lib/logger';
 
 // JWT payload structure
@@ -70,71 +70,66 @@ function decodeJwtToken(token: string, authResponse?: AuthResponse): User | null
   }
 }
 
-// Initialize auth state from refreshToken (try to get new accessToken)
-function getInitialAuthState(): AuthState {
-  // Clean up legacy keys from localStorage
-  const legacyKeys = ['user', 'userTimestamp', 'societyId', 'societyPublicId', 'auth_token'];
-  legacyKeys.forEach(key => {
-    if (localStorage.getItem(key)) {
-      localStorage.removeItem(key);
+// sessionStorage keys — survives F5/page-refresh but is cleared when the tab closes
+const SS_TOKEN_KEY = '__sl_at';
+const SS_USER_KEY  = '__sl_u';
+
+// Try to synchronously restore auth state from sessionStorage.
+// Returns a valid AuthState if a non-expired token is found, otherwise null.
+function tryRestoreFromSession(): AuthState | null {
+  try {
+    const token = sessionStorage.getItem(SS_TOKEN_KEY);
+    const userJson = sessionStorage.getItem(SS_USER_KEY);
+    if (!token || !userJson) return null;
+
+    // Validate expiry (with a 30-second safety buffer)
+    const decoded = jwtDecode<JwtPayload>(token);
+    if (!decoded.exp || decoded.exp * 1000 < Date.now() + 30_000) {
+      sessionStorage.removeItem(SS_TOKEN_KEY);
+      sessionStorage.removeItem(SS_USER_KEY);
+      return null;
     }
-  });
-  
-  // Check if there's an accessToken in localStorage (could have been set by axios interceptor during refresh)
-  const accessToken = localStorage.getItem('accessToken');
-  if (accessToken) {
-    // Try to restore authResponse data from localStorage for complete user info
-    let authResponse: AuthResponse | undefined;
-    const storedAuthResponse = localStorage.getItem('authResponse');
-    if (storedAuthResponse) {
-      try {
-        authResponse = JSON.parse(storedAuthResponse);
-      } catch (e) {
-        logger.warn('[AuthProvider.getInitialAuthState] Failed to parse stored authResponse');
-      }
-    }
-    
-    // Decode JWT to get user info, merged with stored authResponse
-    const user = decodeJwtToken(accessToken, authResponse);
-    if (user) {
-      // Valid accessToken found - use it immediately (no loading state needed)
-      return {
-        user,
-        accessToken,
-        isAuthenticated: true,
-        isLoading: false,
-      };
-    } else {
-      // Failed to decode - remove invalid token
-      localStorage.removeItem('accessToken');
-    }
+
+    const user: User = JSON.parse(userJson);
+    // Immediately set the in-memory token so axios interceptors are ready
+    setInMemoryAccessToken(token);
+    logger.log('[AuthProvider] Session restored from sessionStorage for:', user.email);
+    return { user, accessToken: token, isAuthenticated: true, isLoading: false };
+  } catch {
+    return null;
   }
-  
-  const refreshToken = localStorage.getItem('refreshToken');
-  
+}
+
+// Initialize auth state — no tokens are stored in localStorage.
+// On page refresh we first try sessionStorage; if that fails we fall back to
+// a silent httpOnly-cookie refresh from the server.
+function getInitialAuthState(): AuthState {
+  // Clean up any legacy localStorage keys from before the httpOnly cookie migration
+  const legacyKeys = ['accessToken', 'refreshToken', 'authResponse', 'user', 'userTimestamp', 'societyId', 'societyPublicId', 'auth_token'];
+  legacyKeys.forEach(key => localStorage.removeItem(key));
+
+  // Fast path: restore from sessionStorage (survives F5 within the same tab)
+  const sessionState = tryRestoreFromSession();
+  if (sessionState) return sessionState;
+
   return {
     user: null,
     accessToken: null,
     isAuthenticated: false,
-    isLoading: !!refreshToken, // If refreshToken exists, try to get new accessToken
+    isLoading: true, // Will attempt to restore session via the httpOnly cookie refresh
   };
 }
 
 // Helper to clear all auth-related data
 function clearAllAuthData() {
-  // Remove both accessToken and refreshToken from localStorage
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
-  
-  // Clean up authResponse data
-  localStorage.removeItem('authResponse');
-  
-  // Clean up any legacy keys
-  localStorage.removeItem('user');
-  localStorage.removeItem('userTimestamp');
-  localStorage.removeItem('societyId');
-  localStorage.removeItem('societyPublicId');
-  localStorage.removeItem('auth_token');
+  // Clear the in-memory access token (refreshToken cookie is cleared by the backend on /auth/revoke)
+  setInMemoryAccessToken(null);
+  // Clear sessionStorage session
+  sessionStorage.removeItem(SS_TOKEN_KEY);
+  sessionStorage.removeItem(SS_USER_KEY);
+  // Purge any legacy localStorage / sessionStorage keys from older app versions
+  const legacyKeys = ['accessToken', 'refreshToken', 'authResponse', 'user', 'userTimestamp', 'societyId', 'societyPublicId', 'auth_token', '__rt'];
+  legacyKeys.forEach(key => { localStorage.removeItem(key); sessionStorage.removeItem(key); });
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -150,37 +145,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshAttempts = useRef(0);
   const MAX_REFRESH_ATTEMPTS = 3;
 
-  const setAuthState = (token: string | null, refreshToken?: string | null, authResponse?: AuthResponse) => {
+  const setAuthState = (token: string | null, authResponse?: AuthResponse) => {
     logger.log(`[AuthProvider] Setting auth state - token present: ${!!token}`);
     
     if (token) {
-      // Decode JWT and merge with authResponse if available
       const user = decodeJwtToken(token, authResponse);
       
       if (user) {
-        // Store tokens in localStorage for axios interceptor to use
-        localStorage.setItem('accessToken', token);
-        if (refreshToken) {
-          localStorage.setItem('refreshToken', refreshToken);
-        }
+        // Store access token in memory only — never in localStorage
+        setInMemoryAccessToken(token);
+        // Persist token + user to sessionStorage so F5 page-refresh restores state instantly
+        try {
+          sessionStorage.setItem(SS_TOKEN_KEY, token);
+          sessionStorage.setItem(SS_USER_KEY, JSON.stringify(user));
+        } catch { /* sessionStorage unavailable — silently skip */ }
+        // refreshToken is managed exclusively by the backend as an httpOnly cookie
         
-        // Store authResponse data in localStorage for persistence across page refreshes
-        // This ensures userName, societyName, and role persists when page reloads
-        if (authResponse) {
-          localStorage.setItem('authResponse', JSON.stringify({
-            userName: authResponse.userName,
-            role: authResponse.role,
-            societyName: authResponse.societyName,
-            userPublicId: authResponse.userPublicId,
-            societyPublicId: authResponse.societyPublicId,
-          }));
-        }
-        
-        // Update state with accessToken in memory and decoded user
         const newState: AuthState = {
           user,
           accessToken: token,
-          isAuthenticated: true, // Based on accessToken presence
+          isAuthenticated: true,
           isLoading: false,
         };
         
@@ -232,14 +216,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       skipInitialFetch.current = true;
       
       // Decode JWT and set auth state with full auth response data
-      setAuthState(auth.accessToken, auth.refreshToken, auth);
+      setAuthState(auth.accessToken, auth);
       logger.log(`[AuthProvider.login] Login successful with user data`);
       
       // Return auth response for caller to check forcePasswordChange
       return auth;
     } catch (error) {
       logger.error(`[AuthProvider.login] Login failed`, error);
-      setAuthState(null, null);
+      setAuthState(null);
       throw handleApiError(error);
     }
   };
@@ -253,7 +237,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       skipInitialFetch.current = true;
       
       // Decode JWT and set auth state with full auth response data
-      setAuthState(auth.accessToken, auth.refreshToken, auth);
+      setAuthState(auth.accessToken, auth);
       logger.log(`[AuthProvider.register] Registration successful with user data`);
 
       // Automatically create trial subscription for new users
@@ -271,39 +255,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return auth;
     } catch (error) {
       logger.error(`[AuthProvider.register] Registration failed`, error);
-      setAuthState(null, null);
+      setAuthState(null);
       throw handleApiError(error);
     }
   };
 
   const logout = async () => {
-    // Capture refreshToken before clearing state
-    const refreshToken = localStorage.getItem('refreshToken');
-    
     logger.log(`[AuthProvider.logout] Starting logout`);
     
-    // 1. Clear accessToken state
-    // 2. Remove refreshToken from localStorage
-    // 3. Clear user state
-    // This is done via setAuthState(null, null) which calls clearAllAuthData()
-    setAuthState(null, null);
+    // Clear in-memory access token and React state immediately
+    setAuthState(null);
     
-    // 4. Clear React Query cache - ensure no stale data remains
+    // Clear React Query cache
     queryClient.clear();
     logger.log(`[AuthProvider.logout] React Query cache cleared`);
     
     try {
-      // Attempt to notify server of logout (this may fail if token is invalid)
-      if (refreshToken) {
-        await authApi.logout(refreshToken);
-      }
+      // Notify server to revoke the refreshToken httpOnly cookie
+      await authApi.logout();
       logger.log(`[AuthProvider.logout] Server logout successful`);
     } catch (error) {
       // Logout failed on server, but local state is already cleared
       logger.warn(`[AuthProvider.logout] Server logout failed (local state already cleared)`, error);
     }
     
-    // 5. Redirect to /login
+    // Redirect to /login
     navigate('/login');
     logger.log(`[AuthProvider.logout] Redirected to /login`);
   };
@@ -334,15 +310,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Check for max refresh attempts
     if (refreshAttempts.current >= MAX_REFRESH_ATTEMPTS) {
       logger.error(`[AuthProvider.refreshAccessToken] Max refresh attempts (${MAX_REFRESH_ATTEMPTS}) exceeded`);
-      refreshAttempts.current = 0; // Reset counter
+      refreshAttempts.current = 0;
       await logout();
-      return null;
-    }
-
-    // Read refreshToken from localStorage
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (!refreshToken) {
-      logger.log(`[AuthProvider.refreshAccessToken] No refreshToken found in localStorage`);
       return null;
     }
 
@@ -352,67 +321,68 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       logger.log(`[AuthProvider.refreshAccessToken] Attempting to refresh token (attempt ${refreshAttempts.current}/${MAX_REFRESH_ATTEMPTS})`);
       
-      // Call POST /api/auth/refresh
-      const authResponse = await authApi.refresh(refreshToken);
+      // POST /auth/refresh — no body, refreshToken sent automatically via httpOnly cookie
+      const authResponse = await authApi.refresh();
       
-      // Success - update accessToken state and refreshToken in localStorage
-      setAuthState(authResponse.accessToken, authResponse.refreshToken);
+      // Update in-memory state with new access token + rotate refresh token
+      setAuthState(authResponse.accessToken, authResponse);
       
-      // Reset refresh attempts counter on success
       refreshAttempts.current = 0;
-      
       logger.log(`[AuthProvider.refreshAccessToken] Token refresh successful`);
-      
       return authResponse.accessToken;
     } catch (error) {
       logger.error(`[AuthProvider.refreshAccessToken] Token refresh failed`, error);
-      
-      // Refresh failed - logout user
       await logout();
-      
       return null;
     } finally {
       isRefreshing.current = false;
     }
-  }, []); // Empty deps - function uses refs and stable functions
+  }, []);
+
+  // Public routes where we skip the silent refresh attempt (no cookie exists yet)
+  const PUBLIC_ROUTES = ['/', '/login', '/signup', '/forgot-password', '/reset-password'];
 
   // Use useLayoutEffect for synchronous initialization to prevent flickering
   useLayoutEffect(() => {
     const initAuth = async () => {
-      // Check if we just logged in/registered - skip refresh if so
+      // Skip if we just logged in/registered — we already have a fresh token in memory
       if (skipInitialFetch.current) {
         logger.log(`[AuthProvider.initAuth] Skipping init - just logged in/registered`);
         skipInitialFetch.current = false;
         return;
       }
 
-      const refreshToken = localStorage.getItem('refreshToken');
-      logger.log(`[AuthProvider.initAuth] Initializing auth - refreshToken present: ${!!refreshToken}`);
-      
-      if (!refreshToken) {
-        logger.log(`[AuthProvider.initAuth] No refreshToken found, clearing auth state`);
-        // Ensure state is fully cleared
-        setState({
-          user: null,
-          accessToken: null,
-          isAuthenticated: false,
-          isLoading: false,
-        });
+      // Skip on public routes — no session cookie exists yet, refresh will always 401
+      const currentPath = window.location.pathname;
+      const isPublicRoute = PUBLIC_ROUTES.some(route =>
+        route === currentPath || currentPath.startsWith(route + '/')
+      );
+      if (isPublicRoute) {
+        logger.log(`[AuthProvider.initAuth] Skipping init on public route: ${currentPath}`);
+        setAuthState(null); // isLoading → false
         return;
       }
 
+      logger.log(`[AuthProvider.initAuth] Attempting silent session restore via httpOnly cookie`);
+
       try {
-        // Try to get a new accessToken using the refreshToken
-        logger.log(`[AuthProvider.initAuth] Attempting to refresh accessToken`);
-        const authResponse = await authApi.refresh(refreshToken);
-        
-        // Set auth state with new accessToken (will decode JWT and store new refreshToken)
-        setAuthState(authResponse.accessToken, authResponse.refreshToken);
-        logger.log(`[AuthProvider.initAuth] Successfully refreshed accessToken`);
+        // POST /auth/refresh — browser sends the httpOnly refreshToken cookie automatically
+        const authResponse = await authApi.refresh();
+        // Pass full authResponse so societyName, userName, role are populated on page reload
+        setAuthState(authResponse.accessToken, authResponse);
+        logger.log(`[AuthProvider.initAuth] Session restored successfully`);
       } catch (error) {
-        logger.warn(`[AuthProvider.initAuth] Token refresh failed, clearing auth state`, error);
-        // Refresh failed - clear everything
-        setAuthState(null, null);
+        logger.log(`[AuthProvider.initAuth] Cookie refresh failed, checking sessionStorage fallback`);
+        // If sessionStorage still has a valid (non-expired) token, keep the user logged in.
+        // The silent refresh failing doesn't necessarily mean the session is invalid —
+        // it could be a temporary network issue or a missing cookie in dev environments.
+        const sessionFallback = tryRestoreFromSession();
+        if (!sessionFallback) {
+          // No valid fallback — the session is truly gone
+          setAuthState(null);
+        } else {
+          logger.log(`[AuthProvider.initAuth] Kept session from sessionStorage fallback`);
+        }
       }
     };
 

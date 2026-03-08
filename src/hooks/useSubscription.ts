@@ -61,12 +61,18 @@ export function useSubscription(): UseSubscriptionReturn {
   }, []);
 
   /**
-   * Handle API errors with retry logic for 500 errors
+   * Handle API errors with retry logic for 500 errors.
+   * NOTE: 401 errors are intentionally NOT handled here.
+   * The axios interceptor in client.ts already handles 401 by refreshing the
+   * access token and retrying the request. If the refresh fails, AuthProvider
+   * calls logout() and navigates to /login via React Router. A second hard
+   * redirect here would race with that and cause full page reloads on every
+   * page navigation.
    */
   const handleApiError = useCallback(async (error: any, retryFn?: () => Promise<any>, maxRetries = 3): Promise<any> => {
+    // 401 — silently clear loading state; the auth interceptor handles redirect
     if (error.response?.status === 401) {
-      // Redirect to login on auth errors
-      window.location.href = '/login?reason=session_expired';
+      setState(prev => ({ ...prev, loading: false }));
       return null;
     }
 
@@ -89,13 +95,9 @@ export function useSubscription(): UseSubscriptionReturn {
     setState(prev => ({ ...prev, loading: true, error: null }));
 
     try {
-      console.log('🔍 [useSubscription] Fetching subscription status...');
       const data = await subscriptionApi.getStatus();
-      console.log('🔍 [useSubscription] Subscription data:', data);
-      
       updateSubscriptionState(data);
     } catch (error: any) {
-      console.error('🔍 [useSubscription] Error:', error);
       await handleApiError(error, refreshStatus);
     }
   }, [updateSubscriptionState, handleApiError]);

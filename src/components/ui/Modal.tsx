@@ -89,7 +89,7 @@ export default function Modal({
         )}
         
         {/* Body - scrollable in the middle */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
+        <div className="flex-1 overflow-y-auto">
           {bodyContent}
         </div>
         

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+﻿import { useState, useCallback } from 'react';
 import { useToast } from '../components/ui/Toast';
 import { paymentApi, CreateOrderRequest } from '../api/paymentApi';
 import { openRazorpayCheckout, RazorpayPaymentResponse } from '../lib/razorpay';
@@ -10,7 +10,7 @@ interface UseRazorpayPaymentState {
 }
 
 interface UseRazorpayPaymentReturn extends UseRazorpayPaymentState {
-  initiatePayment: (request: CreateOrderRequest) => Promise<void>;
+  initiatePayment: (planId: string) => Promise<void>;
   clearError: () => void;
 }
 
@@ -19,7 +19,7 @@ interface UseRazorpayPaymentReturn extends UseRazorpayPaymentState {
  * Handles order creation, payment modal, and verification
  */
 export const useRazorpayPayment = (
-  onPaymentSuccess: (subscriptionId: string) => void,
+  onPaymentSuccess: () => void,
   onPaymentError?: (error: string) => void
 ): UseRazorpayPaymentReturn => {
   const { showToast } = useToast();
@@ -34,69 +34,47 @@ export const useRazorpayPayment = (
   }, []);
 
   const initiatePayment = useCallback(
-    async (request: CreateOrderRequest) => {
+    async (planId: string) => {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
-
       try {
-        // Step 1: Create Razorpay order from backend
-        const orderResponse = await paymentApi.createOrder(request);
-
-        if (!orderResponse.succeeded) {
-          const errorMsg = `Failed to create payment order: ${orderResponse.error}`;
-          setState(prev => ({ ...prev, isLoading: false, error: errorMsg }));
-          showToast(errorMsg, 'error');
-          onPaymentError?.(errorMsg);
-          return;
-        }
-
-        // Step 2: Open Razorpay Checkout Modal
+        // Step 1: Create Razorpay order from backend (send only planId)
+        const orderResponse = await paymentApi.createOrder({ planId });
         setState(prev => ({ ...prev, isLoading: false, isProcessing: true }));
 
+        // Step 2: Open Razorpay Checkout Modal
         await openRazorpayCheckout(
           {
-            key: orderResponse.data.keyId,
-            order_id: orderResponse.data.orderId,
-            amount: orderResponse.data.amount,
-            currency: orderResponse.data.currency,
-            name: 'SocietyLedger',
-            description: `Subscription Payment - ${request.planId}`,
-            prefill: {
-              email: '', // Will be populated from user context if available
-              contact: '',
-              name: '',
-            },
-            notes: {
-              planId: request.planId,
-            },
+            key: orderResponse.keyId,
+            order_id: orderResponse.orderId,
+            amount: orderResponse.amount * 100, // Razorpay expects paise
+            currency: orderResponse.currency,
+            name: 'Society Ledger',
+            description: 'Subscription Payment',
+            notes: { planId },
           },
           // Step 3: Handle successful payment
-          async (response: RazorpayPaymentResponse) => {
+          async (paymentResult: RazorpayPaymentResponse) => {
             try {
               setState(prev => ({ ...prev, isProcessing: false, isLoading: true }));
-
               // Step 4: Verify payment with backend
               const verifyResponse = await paymentApi.verifyPayment({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                planId: request.planId,
+                orderId: paymentResult.razorpay_order_id,
+                paymentId: paymentResult.razorpay_payment_id,
+                signature: paymentResult.razorpay_signature,
               });
-
-              if (verifyResponse.succeeded) {
-                setState(prev => ({ ...prev, isLoading: false, error: null }));
+              setState(prev => ({ ...prev, isLoading: false }));
+              if (verifyResponse.isValid) {
                 showToast('Payment successful! Subscription activated.', 'success');
-                onPaymentSuccess(verifyResponse.data.subscriptionId);
+                onPaymentSuccess();
               } else {
-                const errorMsg = `Payment verification failed: ${verifyResponse.error}`;
-                setState(prev => ({ ...prev, isLoading: false, error: errorMsg }));
-                showToast(errorMsg, 'error');
-                onPaymentError?.(errorMsg);
+                setState(prev => ({ ...prev, error: 'Payment failed. Please try again.' }));
+                showToast('Payment failed. Please try again.', 'error');
+                onPaymentError?.('Payment failed. Please try again.');
               }
             } catch (error) {
-              const errorMsg = `Payment verification error: ${error instanceof Error ? error.message : 'Unknown error'}`;
-              setState(prev => ({ ...prev, isLoading: false, error: errorMsg }));
-              showToast(errorMsg, 'error');
-              onPaymentError?.(errorMsg);
+              setState(prev => ({ ...prev, isLoading: false, error: 'Something went wrong. Please contact support.' }));
+              showToast('Something went wrong. Please contact support.', 'error');
+              onPaymentError?.('Something went wrong. Please contact support.');
             }
           },
           // Step 5: Handle payment failure or cancellation
@@ -108,13 +86,12 @@ export const useRazorpayPayment = (
           }
         );
       } catch (error) {
-        const errorMsg = error instanceof Error ? error.message : 'An error occurred';
-        setState(prev => ({ ...prev, isLoading: false, error: errorMsg }));
-        showToast(errorMsg, 'error');
-        onPaymentError?.(errorMsg);
+        setState(prev => ({ ...prev, isLoading: false, error: 'Something went wrong. Please contact support.' }));
+        showToast('Something went wrong. Please contact support.', 'error');
+        onPaymentError?.('Something went wrong. Please contact support.');
       }
     },
-    [onPaymentSuccess, onPaymentError]
+    [onPaymentSuccess, onPaymentError, showToast]
   );
 
   return {

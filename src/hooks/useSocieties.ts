@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { societiesApi, CreateSocietyDto, UpdateSocietyDto, Society } from '../api/societiesApi';
+import { societiesApi, CreateSocietyDto, UpdateSocietyDto, Society, MaintenanceConfig, MaintenanceConfigDto } from '../api/societiesApi';
 import { PaginatedResponse, PaginationParams } from '../types/api';
 
 export const useSocieties = (params?: PaginationParams) => {
@@ -39,3 +39,23 @@ export const useUpdateSociety = (id: string) => {
     }
   });
 };
+
+export const useMaintenanceConfig = (societyId: string) => {
+  return useQuery<MaintenanceConfig>({
+    queryKey: ['maintenance-config', societyId],
+    queryFn: () => societiesApi.getMaintenanceConfig(societyId),
+    enabled: !!societyId,
+  });
+};
+
+export const useUpdateMaintenanceConfig = (societyId: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation<MaintenanceConfig, Error, MaintenanceConfigDto>({
+    mutationFn: (payload) => societiesApi.updateMaintenanceConfig(societyId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['maintenance-config', societyId] });
+    }
+  });
+};
+

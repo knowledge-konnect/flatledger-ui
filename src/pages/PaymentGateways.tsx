@@ -1,4 +1,4 @@
-import Navbar from '../components/layout/Navbar'
+﻿import Navbar from '../components/layout/Navbar'
 import { Mail, Info } from 'lucide-react'
 
 export default function PaymentGateways() {
@@ -33,7 +33,7 @@ export default function PaymentGateways() {
                 If you have questions about payment collection or need further assistance, please contact our support team.
               </p>
               <a
-                href="mailto:support@societyledger.com?subject=Payment Collection Inquiry"
+                href="mailto:support@FlatLedger.com?subject=Payment Collection Inquiry"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-[#2563EB] dark:bg-[#3B82F6] text-white rounded-lg hover:bg-[#1D4ED8] dark:hover:bg-[#2563EB] transition-colors font-medium"
               >
                 <Mail className="w-4 h-4" />

@@ -13,10 +13,10 @@ export interface RegisterCredentials {
 
 export interface AuthResponse {
   accessToken: string;
-  refreshToken: string;
   roles: string[];
   accessTokenExpiresAt?: string;
-  refreshTokenExpiresAt?: string;
+  // refreshToken and refreshTokenExpiresAt are no longer in the response body.
+  // The backend sets refreshToken as an httpOnly cookie automatically.
   userPublicId?: string; // UUID format - primary identifier
   societyPublicId?: string; // UUID format
   societyId?: number; // Internal ID (not exposed in API)

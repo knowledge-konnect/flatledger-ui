@@ -28,6 +28,7 @@ export interface User {
 export interface CreateUserDto {
   name: string; // Required
   email?: string; // Optional, must be unique if provided
+  username?: string; // Optional, custom login username; auto-generated if omitted
   mobile?: string; // Optional
   roleCode: string; // Required: use RoleCode enum — 'society_admin' | 'admin' | 'treasurer' | 'secretary' | 'manager' | 'viewer'
   password?: string; // Optional: if provided, used as initial password; otherwise backend auto-generates one
@@ -35,12 +36,10 @@ export interface CreateUserDto {
 
 /**
  * Create User Response
- * Returns temporary password for new user
  */
 export interface CreateUserResponse {
   publicId: string; // UUID
   email: string;
-  temporaryPassword: string; 
   message: string;
 }
 
@@ -91,7 +90,6 @@ export const usersApi = {
    * Create new user in the society
    * POST /users
    * Requires: Admin role + Active subscription
-   * Returns temporary password that user must change on first login
    * @param payload CreateUserDto
    * @returns Promise<CreateUserResponse>
    */

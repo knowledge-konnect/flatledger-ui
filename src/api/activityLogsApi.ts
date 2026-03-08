@@ -38,7 +38,7 @@ export interface CreateActivityLogRequest {
  * Get activity logs with optional filtering
  */
 export const getActivityLogs = async (params: GetActivityLogsParams = {}): Promise<ActivityLog[]> => {
-  const response = await apiClient.get<ApiResponse<ActivityLog[]>>('/api/activity-logs', {
+  const response = await apiClient.get<ApiResponse<ActivityLog[]>>('/activity-logs', {
     params: {
       societyId: params.societyId,
       entityType: params.entityType,
@@ -64,7 +64,7 @@ export const getRecentActivityLogs = async (societyId: string, limit: number = 1
  * Create a new activity log entry
  */
 export const createActivityLog = async (data: CreateActivityLogRequest): Promise<ActivityLog> => {
-  const response = await apiClient.post<ApiResponse<ActivityLog>>('/api/activity-logs', data);
+  const response = await apiClient.post<ApiResponse<ActivityLog>>('/activity-logs', data);
   return response.data.data;
 };
 

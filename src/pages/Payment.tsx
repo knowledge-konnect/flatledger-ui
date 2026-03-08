@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
@@ -62,7 +62,7 @@ export default function Payment() {
           amount,
           currency,
           order_id: orderId,
-        name: 'SocietyLedger',
+        name: 'FlatLedger',
         description: `${plan.name} Plan Subscription`,
         handler: async (response: any) => {
           try {

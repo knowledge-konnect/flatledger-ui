@@ -33,7 +33,7 @@ export interface MaintenancePaymentDto {
   updatedAt?: string;
   // Allocation info (returned inline with list)
   totalPaid?: number;
-  allocations?: { billPublicId: string; allocatedAmount: number }[];
+  allocations?: { billPublicId: string; allocatedAmount: number; period?: string | null }[];
   remainingAdvance?: number;
 }
 
@@ -53,6 +53,7 @@ export interface CreateMaintenancePaymentDto {
 export interface PaymentAllocationDto {
   billPublicId: string;
   allocatedAmount: number;
+  period?: string | null;
 }
 
 export interface CreateMaintenancePaymentResponse {

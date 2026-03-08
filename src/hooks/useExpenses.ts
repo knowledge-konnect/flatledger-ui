@@ -7,17 +7,8 @@ import {
   ExpenseCategory,
 } from '../api/expensesApi';
 import { createActivityLog } from '../api/activityLogsApi';
+import { useAuth } from '../contexts/AuthProvider';
 import { logger } from '../lib/logger';
-
-// Helper to get current user from localStorage
-const getCurrentUser = () => {
-  try {
-    const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
-  } catch {
-    return null;
-  }
-};
 
 /* =====================================================
    QUERIES
@@ -95,6 +86,7 @@ export function useExpenseCategories() {
 
 export function useCreateExpense() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async (payload: CreateExpenseRequest) => {
       logger.log('[useCreateExpense] Creating expense');
@@ -105,7 +97,6 @@ export function useCreateExpense() {
       qc.invalidateQueries({ queryKey: ['expenses'] });
       
       // Log activity
-      const user = getCurrentUser();
       if (user) {
         try {
           await createActivityLog({
@@ -129,6 +120,7 @@ export function useCreateExpense() {
 
 export function useUpdateExpense() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async ({ publicId, payload }: { publicId: string; payload: UpdateExpenseRequest }) => {
       logger.log(`[useUpdateExpense] Updating expense: ${publicId}`);
@@ -139,7 +131,6 @@ export function useUpdateExpense() {
       qc.invalidateQueries({ queryKey: ['expenses'] });
       
       // Log activity based on status change
-      const user = getCurrentUser();
       if (user) {
         try {
           let action: 'updated' | 'approved' | 'rejected' = 'updated';
@@ -174,6 +165,7 @@ export function useUpdateExpense() {
 
 export function useDeleteExpense() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async (publicId: string) => {
       logger.log(`[useDeleteExpense] Deleting expense: ${publicId}`);
@@ -184,7 +176,6 @@ export function useDeleteExpense() {
       qc.invalidateQueries({ queryKey: ['expenses'] });
       
       // Log activity
-      const user = getCurrentUser();
       if (user) {
         try {
           await createActivityLog({
@@ -206,6 +197,7 @@ export function useDeleteExpense() {
 
 export function useRestoreExpense() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async (publicId: string) => {
       logger.log(`[useRestoreExpense] Restoring expense: ${publicId}`);
@@ -216,7 +208,6 @@ export function useRestoreExpense() {
       qc.invalidateQueries({ queryKey: ['expenses'] });
       
       // Log activity
-      const user = getCurrentUser();
       if (user) {
         try {
           await createActivityLog({

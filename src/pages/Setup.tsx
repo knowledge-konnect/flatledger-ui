@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CheckCircle,
@@ -70,7 +70,7 @@ export default function Setup() {
   return (
     <DashboardLayout title="Setup">
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-10">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 space-y-8">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 space-y-6 sm:space-y-8">
 
           {/* ── Header ───────────────────────────────────────────────────── */}
           <div className="text-center space-y-3">
@@ -81,8 +81,8 @@ export default function Setup() {
                 <span className="text-3xl leading-none">🏢</span>
               )}
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-              {isComplete ? 'Setup Complete!' : 'Get Started with SocietyLedger'}
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">
+              {isComplete ? 'Setup Complete!' : 'Get Started with FlatLedger'}
             </h1>
             <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto text-sm">
               {isComplete

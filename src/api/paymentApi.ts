@@ -26,7 +26,7 @@ export interface PaymentPlan {
  * POST /payments/create-order
  */
 export interface CreateOrderRequest {
-  amount: number; // Amount in paise (e.g., 49900 = ₹499.00)
+  planId: string; // UUID of selected plan
 }
 
 /**
@@ -35,9 +35,9 @@ export interface CreateOrderRequest {
  */
 export interface RazorpayOrderResponse {
   orderId: string; // Razorpay order ID
-  amount: number; // Amount in paise
+  amount: number; // Amount in rupees (float)
   currency: string; // 'INR'
-  key: string; // Razorpay key ID for checkout
+  keyId: string; // Razorpay key ID for checkout
 }
 
 /**
@@ -45,9 +45,9 @@ export interface RazorpayOrderResponse {
  * POST /payments/verify-payment
  */
 export interface VerifyPaymentRequest {
-  razorpayOrderId: string; // Razorpay order ID
-  razorpayPaymentId: string; // Razorpay payment ID
-  razorpaySignature: string; // Razorpay signature for verification
+  orderId: string; // Razorpay order ID
+  paymentId: string; // Razorpay payment ID
+  signature: string; // Razorpay signature for verification
 }
 
 /**
@@ -55,9 +55,8 @@ export interface VerifyPaymentRequest {
  * POST /payments/verify-payment
  */
 export interface VerifyPaymentResponse {
-  verified: boolean;
-  subscriptionStatus: 'active' | 'expired' | 'trial' | 'cancelled';
-  subscriptionEndDate?: string; // ISO 8601 date
+  isValid: boolean;
+  message: string;
 }
 
 /* =====================================================
@@ -100,12 +99,11 @@ export const paymentApi = {
    * @returns Promise<RazorpayOrderResponse>
    */
   async createOrder(request: CreateOrderRequest): Promise<RazorpayOrderResponse> {
-    const response = await apiClient.post<ApiResponse<RazorpayOrderResponse>>('/payments/create-order', request);
-    
-    if (!response.data.succeeded) {
-      throw new Error(response.data.message || 'Failed to create payment order');
+    // Updated endpoint and request body
+    const response = await apiClient.post<ApiResponse<{ data: RazorpayOrderResponse }>>('/payments/create-order', request);
+    if (!response.data || !response.data.data) {
+      throw new Error('Failed to create payment order');
     }
-    
     return response.data.data;
   },
 
@@ -117,12 +115,11 @@ export const paymentApi = {
    * @returns Promise<VerifyPaymentResponse>
    */
   async verifyPayment(request: VerifyPaymentRequest): Promise<VerifyPaymentResponse> {
-    const response = await apiClient.post<ApiResponse<VerifyPaymentResponse>>('/payments/verify-payment', request);
-    
-    if (!response.data.succeeded) {
-      throw new Error(response.data.message || 'Payment verification failed');
+    // Updated endpoint and request body
+    const response = await apiClient.post<ApiResponse<{ data: VerifyPaymentResponse }>>('/payments/verify-payment', request);
+    if (!response.data || !response.data.data) {
+      throw new Error('Payment verification failed');
     }
-    
     return response.data.data;
   }
 };

@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Lock, Building2, Info } from 'lucide-react';
-import Input from '../components/ui/Input';
+import { Eye, EyeOff, Lock } from 'lucide-react';
 import { useChangePassword } from '../hooks/useChangePassword';
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
@@ -9,7 +7,6 @@ import { useAuth } from '../contexts/AuthProvider';
 import { AlertMessages } from '../lib/alertMessages';
 
 export default function ChangePassword() {
-  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { showToast } = useToast();
   const { showErrorToast } = useApiErrorToast();
@@ -48,6 +45,12 @@ export default function ChangePassword() {
       newErrors.newPassword = 'New password is required';
     } else if (formData.newPassword.length < 6) {
       newErrors.newPassword = 'Password must be at least 6 characters';
+    } else if (!/[A-Z]/.test(formData.newPassword)) {
+      newErrors.newPassword = 'Password must contain at least one uppercase letter';
+    } else if (!/[a-z]/.test(formData.newPassword)) {
+      newErrors.newPassword = 'Password must contain at least one lowercase letter';
+    } else if (!/[0-9]/.test(formData.newPassword)) {
+      newErrors.newPassword = 'Password must contain at least one number';
     }
 
     if (!formData.confirmPassword) {
@@ -85,11 +88,10 @@ export default function ChangePassword() {
       onSuccess: async () => {
         showToast(AlertMessages.success.passwordChangeSuccess, 'success');
         await logout();
-        setTimeout(() => {
-          navigate('/login');
-        }, 1500);
       },
       onError: (error: any) => {
+        // Log full error so we can see the backend's exact 400 message
+        console.error('[ChangePassword] API error:', error?.response?.status, error?.response?.data);
         const errorData = error?.response?.data;
         if (errorData) {
           showErrorToast({
@@ -106,7 +108,7 @@ export default function ChangePassword() {
             traceId: errorData.traceId,
           });
         } else {
-          showToast(AlertMessages.error.passwordChangeFailed, 'error');
+          showToast(error?.message || AlertMessages.error.passwordChangeFailed, 'error');
         }
       },
     });
@@ -121,15 +123,13 @@ export default function ChangePassword() {
             <Lock className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl font-bold text-[#0F172A] dark:text-[#F8FAFC] mb-2">
-            {user?.forcePasswordChange ? 'Set Your Password' : 'Change Password'}
+            Change Password
           </h1>
           <p className="text-[#64748B] dark:text-[#94A3B8]">
             {user?.name && `Welcome, ${user.name}`}
           </p>
           <p className="text-sm text-[#64748B] dark:text-[#94A3B8] mt-2 max-w-sm mx-auto">
-            {user?.forcePasswordChange
-              ? 'Your admin created your account with a temporary password. Please set a new password to continue.'
-              : 'You are required to change your password before accessing the dashboard.'}
+            Please set a new password to secure your account.
           </p>
         </div>
 
@@ -139,7 +139,7 @@ export default function ChangePassword() {
             {/* Current Password */}
             <div>
               <label className="label">
-                {user?.forcePasswordChange ? 'Temporary Password' : 'Current Password'}
+                Current Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#64748B] dark:text-[#94A3B8] pointer-events-none" />
@@ -205,7 +205,7 @@ export default function ChangePassword() {
                 </p>
               )}
               <p className="mt-2 text-xs text-[#64748B] dark:text-[#94A3B8]">
-                Must be at least 6 characters long
+                Min 6 characters with at least one uppercase letter, lowercase letter, and number
               </p>
             </div>
 
@@ -275,14 +275,6 @@ export default function ChangePassword() {
             </button>
           </form>
 
-          {/* Info Box */}
-          <div className="mt-6 p-4 bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 border border-[#2563EB]/20 dark:border-[#3B82F6]/20 rounded-xl flex gap-3">
-            <Info className="w-5 h-5 text-[#2563EB] dark:text-[#3B82F6] flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-[#0F172A] dark:text-[#F8FAFC]">
-              <span className="font-semibold">Security Tip:</span> Choose a strong password with a mix of
-              uppercase, lowercase, numbers, and special characters.
-            </p>
-          </div>
         </div>
       </div>
     </div>

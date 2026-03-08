@@ -77,7 +77,7 @@ export function KpiCard({ label, value, icon: Icon, color, sub, progress, progre
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide truncate mb-2">
             {label}
           </p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white truncate transition-all duration-500">
+          <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white truncate transition-all duration-500">
             {value}
           </p>
           {sub && (

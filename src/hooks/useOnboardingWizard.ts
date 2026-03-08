@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 
 export interface WizardStep {
   id: number;
@@ -25,7 +25,7 @@ export function useOnboardingWizard() {
   const steps: WizardStep[] = [
     {
       id: 1,
-      title: 'Welcome to SocietyLedger',
+      title: 'Welcome to FlatLedger',
       description: 'Let\'s set up your society management system in a few simple steps',
     },
     {

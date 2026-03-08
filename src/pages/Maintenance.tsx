@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import { Plus, CreditCard, Search, Edit, Trash, IndianRupee, AlertCircle, TrendingUp, Info, Zap, Lock, Home, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -21,6 +21,7 @@ import { useToast } from '../components/ui/Toast';
 import { useMaintenancePayments, useMaintenanceSummary, useCreateMaintenancePayment, useUpdateMaintenancePayment, useDeleteMaintenancePayment, usePaymentModes } from '../hooks/useBilling';
 import { useBillingStatus } from '../hooks/useBillingStatus';
 import { useFlats, useFlatFinancialSummary } from '../hooks/useFlats';
+import { useMaintenanceConfig } from '../hooks/useSocieties';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { flatsApi } from '../api/flatsApi';
 import { CreateMaintenancePaymentResponse } from '../api/maintenanceApi';
@@ -116,6 +117,7 @@ export default function Maintenance() {
   const { data: summary, isLoading: summaryLoading } = useMaintenanceSummary(period);
   const { data: billingStatus } = useBillingStatus();
   const { data: flats = [] } = useFlats();
+  const { data: maintenanceConfig } = useMaintenanceConfig(user?.societyId || '');
   const {
     data: paymentModes = [],
     isLoading: paymentModesLoading,
@@ -146,6 +148,13 @@ export default function Maintenance() {
       referenceNumber: '',
     },
   });
+
+  // Pre-fill amount from maintenance config when modal opens
+  useEffect(() => {
+    if (showAddModal && !isEditing && maintenanceConfig?.defaultMonthlyCharge) {
+      setValue('amount', String(maintenanceConfig.defaultMonthlyCharge));
+    }
+  }, [showAddModal, isEditing, maintenanceConfig?.defaultMonthlyCharge]);
 
   // Watch flatPublicId to fetch financial summary
   const selectedFlatPublicId = watch('flatPublicId');
@@ -354,7 +363,7 @@ export default function Maintenance() {
     : periodFilteredPayments;
 
   return (
-    <DashboardLayout title="Maintenance Payments">    <div className="space-y-6">
+    <DashboardLayout title="Maintenance Payments">    <div className="space-y-4 sm:space-y-6">
         {/* Page Header */}
         <PageHeader
           title="Maintenance Payments"
@@ -645,6 +654,7 @@ export default function Maintenance() {
                     <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Amount</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">Payment Mode</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden md:table-cell">Recorded By</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden md:table-cell">Paid For</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden lg:table-cell">Notes</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden lg:table-cell">Reference</th>
                     <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Actions</th>
@@ -713,6 +723,52 @@ export default function Maintenance() {
                         <span className="text-sm text-slate-600 dark:text-slate-400">
                           {payment.recordedByName || '-'}
                         </span>
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap hidden md:table-cell">
+                        {(() => {
+                          const allocs = payment.allocations || [];
+                          const periods = allocs
+                            .map(a => a.period)
+                            .filter((p): p is string => !!p);
+                          const uniquePeriods = [...new Set(periods)];
+                          if (uniquePeriods.length === 0) {
+                            // No allocation period info — derive from paymentDate
+                            const d = new Date(payment.paymentDate);
+                            const monthLabel = d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+                            return (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                {monthLabel}
+                              </span>
+                            );
+                          }
+                          const currentPeriod = new Date().toISOString().slice(0, 7);
+                          return (
+                            <div className="flex flex-wrap gap-1">
+                              {uniquePeriods.map(p => {
+                                const [yr, mo] = p.split('-');
+                                const label = new Date(Number(yr), Number(mo) - 1, 1)
+                                  .toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+                                const isArrear = p < currentPeriod;
+                                const isCurrent = p === currentPeriod;
+                                return (
+                                  <span
+                                    key={p}
+                                    title={isArrear ? `Cleared outstanding dues for ${label}` : undefined}
+                                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${
+                                      isArrear
+                                        ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800'
+                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800'
+                                    }`}
+                                  >
+                                    {isArrear && <span className="mr-1 text-[9px] uppercase tracking-wide font-bold">Arrear</span>}
+                                    {isCurrent && <span className="mr-1 text-[9px] uppercase tracking-wide font-bold">Current</span>}
+                                    {label}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-3 hidden lg:table-cell">
                         <span className="text-sm text-slate-500 dark:text-slate-400 truncate max-w-[180px] block">
@@ -820,7 +876,7 @@ export default function Maintenance() {
           )}
 
           {/* ── Two-column body ───────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-0 p-6 pb-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0 p-4 sm:p-6 pb-0">
 
             {/* ── LEFT: Flat selector + outstanding breakdown ─────────────── */}
             <div className="md:pr-6 md:border-r border-slate-200 dark:border-slate-700 space-y-4">
@@ -1041,12 +1097,32 @@ export default function Maintenance() {
               <div className="space-y-2">
                 <p className="text-xs uppercase tracking-wide text-emerald-800 dark:text-emerald-200">Allocation Breakdown</p>
                 <div className="max-h-32 overflow-y-auto rounded-lg border border-emerald-100 dark:border-emerald-900/40 bg-white/70 dark:bg-slate-900/30">
-                  {lastAllocationSummary.allocations.map((allocation) => (
-                    <div key={allocation.billPublicId} className="flex items-center justify-between px-3 py-2 border-b border-emerald-100/70 dark:border-emerald-900/30 last:border-b-0">
-                      <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{allocation.billPublicId}</span>
-                      <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{formatCurrency(allocation.allocatedAmount)}</span>
-                    </div>
-                  ))}
+                  {lastAllocationSummary.allocations.map((allocation) => {
+                    const currentPeriod = new Date().toISOString().slice(0, 7);
+                    const isArrear = !!allocation.period && allocation.period < currentPeriod;
+                    const isCurrent = !!allocation.period && allocation.period === currentPeriod;
+                    return (
+                      <div key={allocation.billPublicId} className="flex items-center justify-between px-3 py-2 border-b border-emerald-100/70 dark:border-emerald-900/30 last:border-b-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{allocation.billPublicId}</span>
+                          {isCurrent && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                              Current
+                            </span>
+                          )}
+                          {isArrear && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                              Arrear
+                            </span>
+                          )}
+                          {!allocation.period && (
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Advance / OB</span>
+                          )}
+                        </div>
+                        <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{formatCurrency(allocation.allocatedAmount)}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">Idempotency Key: {lastAllocationSummary.idempotencyKey}</p>
@@ -1099,7 +1175,7 @@ export default function Maintenance() {
         title="Delete Payment"
         size="sm"
       >
-        <div className="space-y-4 p-6">
+        <div className="space-y-4 p-4 sm:p-6">
           <p className="text-foreground">
             Are you sure you want to delete the payment for <strong>Flat {deleteTarget?.flatNumber}</strong> of <strong>{formatCurrency(deleteTarget?.amount)}</strong>?
           </p>

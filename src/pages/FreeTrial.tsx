@@ -1,4 +1,4 @@
-import Navbar from '../components/layout/Navbar'
+﻿import Navbar from '../components/layout/Navbar'
 import { Link } from 'react-router-dom'
 
 export default function FreeTrial() {
@@ -9,7 +9,7 @@ export default function FreeTrial() {
       <main className="py-24">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">Try SocietyLedger free for 14 days</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground">Try FlatLedger free for 14 days</h1>
             <p className="text-muted-foreground max-w-2xl mx-auto mt-3">No credit card required. Set up your society, send the first bill, and see payments come in.</p>
           </div>
 

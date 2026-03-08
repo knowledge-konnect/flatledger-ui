@@ -57,8 +57,8 @@ export default function Signup() {
       });
       showToast(AlertMessages.success.signupSuccess, 'success');
       
-      // 2. If backend returns tokens, navigate to /dashboard, else navigate to /login
-      if (authResponse?.accessToken && authResponse?.refreshToken) {
+      // 2. If backend returns an accessToken, navigate to /dashboard, else navigate to /login
+      if (authResponse?.accessToken) {
         navigate('/dashboard');
       } else {
         navigate('/login');

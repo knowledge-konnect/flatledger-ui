@@ -1,11 +1,12 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { lazy, Suspense, memo } from 'react';
 import MobileFAB from './components/ui/MobileFAB';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth } from './contexts/AuthProvider';
 
+import LandingPage from './pages/LandingPage';
+
 // Lazy load all pages for better performance
-const LandingPage = lazy(() => import('./pages/LandingPage'));
 const Subscription = lazy(() => import('./pages/Subscription'));
 const FreeTrial = lazy(() => import('./pages/FreeTrial'));
 const Login = lazy(() => import('./pages/Login'));
@@ -39,10 +40,11 @@ const PageLoader = memo(function PageLoader() {
 
 export default function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const { pathname } = useLocation();
 
-  // Always show loader while auth state is being determined
-  // This prevents flashing between pages during rapid refreshes
-  if (isLoading) {
+  // Skip the auth gate on the public landing page so it renders immediately.
+  // ProtectedRoute handles its own isLoading guard for all private routes.
+  if (isLoading && pathname !== '/') {
     return <PageLoader />;
   }
 
@@ -76,7 +78,14 @@ export default function Router() {
             element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Signup />} 
           />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/change-password" element={<ChangePassword />} />
+          <Route
+            path="/change-password"
+            element={
+              <ProtectedRoute>
+                <ChangePassword />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Public SaaS pages */}

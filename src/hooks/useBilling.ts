@@ -9,17 +9,8 @@ import {
   MaintenanceSummaryDto
 } from '../api/maintenanceApi';
 import { createActivityLog } from '../api/activityLogsApi';
+import { useAuth } from '../contexts/AuthProvider';
 import { logger } from '../lib/logger';
-
-// Helper to get current user from localStorage
-const getCurrentUser = () => {
-  try {
-    const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
-  } catch {
-    return null;
-  }
-};
 
 export function useMaintenancePayments() {
   return useQuery({
@@ -51,6 +42,7 @@ export function useMaintenanceSummary(period?: string) {
 
 export function useCreateMaintenancePayment() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async ({
       payload,
@@ -68,7 +60,6 @@ export function useCreateMaintenancePayment() {
       qc.invalidateQueries({ queryKey: ['flat-financial-summary', variables.payload.flatPublicId] });
       
       // Log activity
-      const user = getCurrentUser();
       if (user) {
         try {
           await createActivityLog({
@@ -94,6 +85,7 @@ export function useCreateMaintenancePayment() {
 
 export function useUpdateMaintenancePayment() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async ({ publicId, payload }: { publicId: string; payload: UpdateMaintenancePaymentDto }) => {
       return maintenanceApi.updatePayment(publicId, payload);
@@ -105,7 +97,6 @@ export function useUpdateMaintenancePayment() {
       qc.invalidateQueries({ queryKey: ['flat-ledger', data.flatPublicId] });
       
       // Log activity
-      const user = getCurrentUser();
       if (user) {
         try {
           await createActivityLog({
@@ -129,6 +120,7 @@ export function useUpdateMaintenancePayment() {
 
 export function useDeleteMaintenancePayment() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async (publicId: string) => {
       return maintenanceApi.deletePayment(publicId);
@@ -140,7 +132,6 @@ export function useDeleteMaintenancePayment() {
       qc.invalidateQueries({ queryKey: ['flat-ledger'] });
       
       // Log activity
-      const user = getCurrentUser();
       if (user) {
         try {
           await createActivityLog({
@@ -174,6 +165,7 @@ export function usePaymentModes() {
 
 export function useRestorePayment() {
   const qc = useQueryClient();
+  const { user } = useAuth();
   return useMutation({
     mutationFn: async (publicId: string) => {
       logger.log(`[useRestorePayment] Restoring payment: ${publicId}`);
@@ -184,7 +176,6 @@ export function useRestorePayment() {
       qc.invalidateQueries({ queryKey: ['maintenance-payments'] });
       
       // Log activity
-      const user = getCurrentUser();
       if (user) {
         try {
           await createActivityLog({

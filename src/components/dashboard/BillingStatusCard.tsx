@@ -1,10 +1,12 @@
 import Card, { CardContent } from '../ui/Card';
 import Badge from '../ui/Badge';
+import { formatCurrency } from '../../lib/utils';
 
 interface BillingStatusCardProps {
   monthLabel: string;
   isGenerated: boolean;
   generatedCount: number;
+  monthlyCharge?: number;
   isLoading?: boolean;
 }
 
@@ -12,6 +14,7 @@ export default function BillingStatusCard({
   monthLabel,
   isGenerated,
   generatedCount,
+  monthlyCharge,
   isLoading,
 }: BillingStatusCardProps) {
   return (
@@ -37,6 +40,18 @@ export default function BillingStatusCard({
               <span className="text-sm text-slate-600 dark:text-slate-400">Bills Created:</span>
               <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{generatedCount}</span>
             </div>
+            {isGenerated && monthlyCharge !== undefined && monthlyCharge > 0 && (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-slate-600 dark:text-slate-400">Charge/Flat:</span>
+                <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">{formatCurrency(monthlyCharge)}</span>
+              </div>
+            )}
+            {isGenerated && monthlyCharge !== undefined && monthlyCharge > 0 && generatedCount > 0 && (
+              <div className="flex items-center justify-between gap-3 pt-1 border-t border-slate-100 dark:border-slate-800">
+                <span className="text-sm text-slate-600 dark:text-slate-400">Total Billed:</span>
+                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">{formatCurrency(monthlyCharge * generatedCount)}</span>
+              </div>
+            )}
           </>
         )}
       </CardContent>

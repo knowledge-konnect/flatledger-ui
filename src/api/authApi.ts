@@ -6,7 +6,8 @@ import { logger } from '../lib/logger';
 /**
  * Converts AuthResponse to User object
  * Maps the API response to User type following the actual backend response structure
- * API returns: accessToken, refreshToken, roles, userPublicId, societyPublicId, societyName, userName, role, forcePasswordChange
+ * API returns: accessToken, roles, userPublicId, societyPublicId, societyName, userName, role, forcePasswordChange
+ * refreshToken is set as an httpOnly cookie by the backend.
  */
 const authResponseToUser = (response: any): User => {
   const forcePasswordChange = 
@@ -42,7 +43,8 @@ export const authApi = {
   /**
    * Login with username/email and password
    * POST /auth/login
-   * Returns: accessToken, refreshToken, roles, userPublicId, societyPublicId, societyName, userName, role, forcePasswordChange
+   * Returns: accessToken, roles, userPublicId, societyPublicId, userName, role, forcePasswordChange
+   * refreshToken is set as an httpOnly cookie by the backend.
    */
   async login(credentials: LoginCredentials): Promise<{ auth: AuthResponse; user: User }> {
     logger.log(`[authApi.login] Attempting login for user: ${credentials.usernameOrEmail}`);
@@ -70,26 +72,20 @@ export const authApi = {
   /**
    * Register new user and society
    * POST /auth/register
-   * Returns: accessToken, refreshToken, roles, societyPublicId, userName, role, forcePasswordChange
+   * Returns: accessToken, roles, societyPublicId, userName, role, forcePasswordChange
+   * refreshToken is set as an httpOnly cookie by the backend.
    */
   async register(credentials: RegisterCredentials): Promise<{ auth: AuthResponse; user: User }> {
-    logger.log(`[authApi.register] REQUEST PAYLOAD:`, JSON.stringify(credentials, null, 2));
-    console.log('🔍 REGISTER REQUEST:', credentials);
+    logger.log(`[authApi.register] Attempting registration`);
     
     const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/register', credentials);
-    
-    logger.log(`[authApi.register] RESPONSE DATA:`, JSON.stringify(response.data, null, 2));
-    console.log('🔍 REGISTER RESPONSE:', response.data);
     
     if (!response.data.succeeded) {
       throw new Error(response.data.message || 'Registration failed');
     }
     
     const authResponse = response.data.data;
-    console.log('🔍 AUTH RESPONSE DATA:', authResponse);
-    
     const user = authResponseToUser(authResponse);
-    console.log('🔍 USER AFTER authResponseToUser:', user);
     
     // Enrich user with data from credentials since they were just created
     user.name = credentials.name;
@@ -97,12 +93,6 @@ export const authApi = {
     
     // IMPORTANT: Always use the societyName from credentials since we just created it
     user.societyName = credentials.societyName;
-    console.log('🔍 USER AFTER ENRICHMENT (societyName should be from credentials):', {
-      name: user.name,
-      email: user.email,
-      societyName: user.societyName,
-      societyPublicId: user.societyPublicId
-    });
     
     logger.log(`[authApi.register] Registration successful - user: ${user.name}, society: ${user.societyName} (${user.societyPublicId})`);
     return {
@@ -114,31 +104,27 @@ export const authApi = {
   /**
    * Logout and revoke refresh token
    * POST /auth/revoke
-   * Requires: Authorization header with access token
-   * Body: { refreshToken: string }
+   * No body — backend reads and clears the refreshToken httpOnly cookie.
    */
-  async logout(refreshToken: string): Promise<void> {
+  async logout(): Promise<void> {
     try {
       logger.log(`[authApi.logout] Attempting logout`);
-      await apiClient.post('/auth/revoke', { refreshToken });
+      await apiClient.post('/auth/revoke');
       logger.log(`[authApi.logout] Logout successful`);
     } catch (error) {
-      // Even if logout endpoint fails, we still want to clear local state
       logger.error(`[authApi.logout] Logout endpoint failed`, error);
       throw error;
     }
   },
 
   /**
-   * Refresh access token using refresh token
+   * Refresh access token
    * POST /auth/refresh
-   * Body: { refreshToken: string }
-   * Returns: new accessToken and refreshToken (refresh token is single-use)
+   * No body — backend reads the refreshToken from the httpOnly cookie,
+   * rotates it, sets a new cookie, and returns a new accessToken.
    */
-  async refresh(refreshToken: string): Promise<AuthResponse> {
-    const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/refresh', {
-      refreshToken
-    });
+  async refresh(): Promise<AuthResponse> {
+    const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/refresh');
     
     if (!response.data.succeeded) {
       throw new Error(response.data.message || 'Token refresh failed');
@@ -193,17 +179,39 @@ export const authApi = {
   },
 
   /**
+   * Update own profile (self-service)
+   * PATCH /auth/profile
+   * Requires: Authorization header (any authenticated user)
+   * Body: { mobile?: string }
+   */
+  async updateProfile(payload: { mobile?: string }): Promise<User> {
+    try {
+      logger.log(`[authApi.updateProfile] Updating profile`);
+      const response = await apiClient.patch<ApiResponse<User>>('/auth/profile', payload);
+      if (!response.data.succeeded) {
+        throw new Error(response.data.message || 'Failed to update profile');
+      }
+      logger.log(`[authApi.updateProfile] Profile updated successfully`);
+      return response.data.data;
+    } catch (error: any) {
+      logger.error(`[authApi.updateProfile] Failed to update profile`, error);
+      throw error;
+    }
+  },
+
+  /**
    * Change password for authenticated user
    * POST /auth/change-password
    * Requires: Authorization header with access token
    * Body: { currentPassword: string, newPassword: string }
    */
-  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  async changePassword(currentPassword: string, newPassword: string, confirmPassword?: string): Promise<void> {
     try {
       logger.log(`[authApi.changePassword] Attempting to change password`);
       const response = await apiClient.post<ApiResponse<any>>('/auth/change-password', {
         currentPassword,
-        newPassword
+        newPassword,
+        confirmPassword: confirmPassword ?? newPassword,
       });
       
       if (!response.data.succeeded) {

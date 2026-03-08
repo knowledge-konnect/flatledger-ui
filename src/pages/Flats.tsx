@@ -10,6 +10,7 @@ import { useDebounce } from '../hooks/useDebounce';
 import { exportCsv as exportCsvLib } from '../lib/exportCsv';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
 import { useFlatStatuses, useFlatFinancialSummary } from '../hooks/useFlats';
+import { useMaintenanceConfig } from '../hooks/useSocieties';
 import Modal, { ModalFooter } from '../components/ui/Modal';
 import { formatCurrency } from '../lib/utils';
 import { useForm } from 'react-hook-form';
@@ -48,7 +49,7 @@ function FlatOutstandingBalance({ publicId }: { publicId: string }) {
     );
   }
 
-  const outstanding = summary?.outstandingAmount || 0;
+  const outstanding = summary?.totalOutstanding || 0;
   const colorClass = outstanding > 0 
     ? 'text-[#DC2626] dark:text-[#EF4444] font-bold' 
     : 'text-[#16A34A] dark:text-[#22C55E] font-bold';
@@ -98,6 +99,7 @@ export default function Flats() {
   const updateFlat = useUpdateFlat();
   const deleteFlat = useDeleteFlat();
   const { data: statuses } = useFlatStatuses();
+  const { data: maintenanceConfig } = useMaintenanceConfig(user?.societyPublicId || '');
   const { showToast } = useToast();
   const { showErrorToast } = useApiErrorToast();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -131,7 +133,12 @@ export default function Flats() {
   const openAddModal = () => {
     setIsEditing(false);
     setSelectedFlat(null);
-    reset(emptyForm);
+    reset({
+      ...emptyForm,
+      maintenanceAmount: maintenanceConfig?.defaultMonthlyCharge
+        ? String(maintenanceConfig.defaultMonthlyCharge)
+        : '',
+    });
     setShowAddModal(true);
   };
 
@@ -287,7 +294,7 @@ export default function Flats() {
   return (
     <DashboardLayout title="Flats Management">
       <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950">
-        <div className="space-y-6 relative">{/* Modern Premium Header */}
+        <div className="space-y-4 sm:space-y-6 relative">{/* Modern Premium Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-2">
           <div>
             <div className="flex items-center gap-3">
@@ -295,7 +302,7 @@ export default function Flats() {
                 <Home className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
                   Flats
                 </h1>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
@@ -510,7 +517,7 @@ export default function Flats() {
         title={isEditing ? 'Edit Flat' : 'Add New Flat'}
         size="lg"
       >
-        <form onSubmit={handleSubmit(onSubmit)} className="form-group space-y-4 md:space-y-6 p-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="form-group space-y-4 md:space-y-6 p-4 sm:p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <div className="form-field">
               <label className="block text-sm font-semibold text-foreground mb-2">
@@ -661,7 +668,7 @@ export default function Flats() {
         title="Delete Flat"
         size="sm"
       >
-        <div className="py-4 px-6">
+        <div className="py-4 px-4 sm:px-6">
           <p className="text-sm text-gray-700 dark:text-gray-300">Are you sure you want to delete <strong>{deleteTarget?.flatNumber}</strong>? This action cannot be undone.</p>
         </div>
         <ModalFooter>

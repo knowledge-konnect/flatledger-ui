@@ -148,6 +148,11 @@ export default function Dashboard() {
   } = useBillingStatus();
   const generateBilling = useGenerateBilling();
 
+  const zeroAmountFlatsCount = useMemo(
+    () => !billingStatus?.isGenerated ? (flats as any[]).filter(f => !f.maintenanceAmount || f.maintenanceAmount === 0).length : 0,
+    [flats, billingStatus?.isGenerated]
+  );
+
   const billingMonthLabel = useMemo(() => {
     const period = billingStatus?.currentMonth;
     if (!period) return 'Current Month';
@@ -194,7 +199,7 @@ export default function Dashboard() {
             {/* Top row: greeting + subscription + period tabs */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                   Welcome back, {user?.name || 'User'}
                 </h2>
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Society's financial overview</p>
@@ -257,6 +262,7 @@ export default function Dashboard() {
             isGenerated={!!billingStatus?.isGenerated}
             isLoading={billingStatusLoading}
             isGenerating={generateBilling.isPending}
+            zeroAmountFlatsCount={zeroAmountFlatsCount}
             onGenerate={handleGenerateBilling}
           />
 
@@ -276,11 +282,11 @@ export default function Dashboard() {
                   progressLabel={`of ₹${((snap?.total_billed ?? 0) / 100000).toFixed(1)}L`}
                 />
                 <KpiCard
-                  label="Total Pending Dues"
+                  label="Total Outstanding Dues"
                   value={formatCurrency(snap?.total_member_outstanding ?? 0)}
                   icon={AlertCircle}
                   color={(snap?.total_member_outstanding ?? 0) > 0 ? 'red' : 'emerald'}
-                  sub="Bills + opening balance dues"
+                  sub="Current unpaid dues across all flats"
                 />
                 <KpiCard
                   label="Society Expenses"
@@ -369,7 +375,7 @@ export default function Dashboard() {
                   <ResponsiveContainer width="100%" height={200}>
                     <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                       <Pie
-                        data={expBreakdown}
+                        data={expBreakdown as any}
                         dataKey="amount"
                         nameKey="category"
                         cx="50%"

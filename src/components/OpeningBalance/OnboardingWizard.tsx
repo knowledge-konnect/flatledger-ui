@@ -1,4 +1,4 @@
-import { X, ArrowLeft, ArrowRight, CheckCircle, Building2, Home, Calculator } from 'lucide-react';
+﻿import { X, ArrowLeft, ArrowRight, CheckCircle, Building2, Home, Calculator } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingWizard } from '../../hooks/useOnboardingWizard';
 import Card from '../ui/Card';
@@ -41,7 +41,7 @@ export default function OnboardingWizard() {
       id: 1,
       icon: Building2,
       title: 'Welcome to Migration Setup',
-      description: 'This is a one-time setup to migrate your existing financial data into SocietyLedger.',
+      description: 'This is a one-time setup to migrate your existing financial data into FlatLedger.',
       content: (
         <div className="space-y-4">
           <p className="text-slate-600 dark:text-slate-400">

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+﻿import { useState } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Building2, Wrench, IndianRupee, BarChart3, Users, Settings, LogOut, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthProvider';
 import { isFinancialRole, collectUserRoles, RoleDisplayName } from '../../types/roles';
@@ -38,7 +38,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
   const isMobileOpen = controlled ? mobileOpen : internalMobileOpen;
   const setIsMobileOpen = controlled ? setMobileOpen! : setInternalMobileOpen;
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const currentPath = window.location.pathname;
+  const { pathname: currentPath } = useLocation();
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -58,7 +58,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
     <>
       {isMobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/50 animate-fade-in"
+          className="lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm animate-fade-in transition-all duration-200"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
@@ -85,7 +85,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[#0F172A] dark:text-[#F8FAFC] truncate">
-                  {user?.societyName || 'SocietyLedger'}
+                  {user?.societyName || 'FlatLedger'}
                 </p>
                 <p className="text-xs text-[#64748B] dark:text-[#94A3B8] truncate">
                   Management
@@ -118,9 +118,9 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                     {visibleItems.map((item) => {
                       const isActive = currentPath === item.href;
                       return (
-                        <a
+                        <Link
                           key={item.name}
-                          href={item.href}
+                          to={item.href}
                           className={cn(
                             'flex items-center gap-3 pl-3 pr-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 relative group',
                             isActive
@@ -136,7 +136,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                             <item.icon className={cn('w-4 h-4', item.iconColor)} />
                           </span>
                           <span className="flex-1">{item.name}</span>
-                        </a>
+                        </Link>
                       );
                     })}
                   </div>

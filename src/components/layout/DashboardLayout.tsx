@@ -52,7 +52,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
 
       <div className={cn('transition-all duration-200', isSidebarOpen ? 'lg:pl-64' : 'lg:pl-0')}>
         {/* Header - Premium SaaS Style */}
-        <header className="sticky top-0 z-30 h-16 border-b border-[#E2E8F0] dark:border-[#1E293B] bg-white/95 dark:bg-[#020617]/95 backdrop-blur-xl px-4 lg:px-6 flex items-center justify-between shadow-sm">
+        <header className="sticky top-0 z-30 min-h-16 border-b border-[#E2E8F0] dark:border-[#1E293B] bg-white/95 dark:bg-[#020617]/95 backdrop-blur-xl px-4 sm:px-6 flex flex-wrap items-center justify-between gap-2 shadow-sm">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -67,7 +67,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
             </button>
 
             {title && (
-              <h1 className="text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC] hidden md:block">
+              <h1 className="text-base sm:text-lg font-semibold text-[#0F172A] dark:text-[#F8FAFC] hidden md:block truncate min-w-0">
                 {title}
               </h1>
             )}
@@ -155,8 +155,8 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         </header>
 
         {/* Main Content - Premium SaaS Layout */}
-        <main className="p-4 md:p-6 lg:p-8 pb-20 lg:pb-8">
-          <div className="max-w-[1400px] mx-auto">
+        <main className="p-4 sm:p-6 pb-20 lg:pb-8">
+          <div className="max-w-7xl mx-auto">
             {children}
           </div>
         </main>

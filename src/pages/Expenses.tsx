@@ -305,7 +305,7 @@ export default function Expenses() {
       <td className="px-6 py-3"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24 animate-pulse"></div></td>
       <td className="px-6 py-3"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-32 animate-pulse"></div></td>
       <td className="px-6 py-3"><div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-16 animate-pulse"></div></td>
-      <td className="px-6 py-3"><div className="h-6 bg-slate-200 dark:bg-slate-700 rounded-full w-20 animate-pulse"></div></td>
+      <td className="px-6 py-3 hidden sm:table-cell"><div className="h-6 bg-slate-200 dark:bg-slate-700 rounded-full w-20 animate-pulse"></div></td>
       <td className="px-6 py-3"><div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-16 ml-auto animate-pulse"></div></td>
     </tr>
   );
@@ -371,7 +371,7 @@ export default function Expenses() {
 
   return (
     <DashboardLayout title="Expenses">
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Page Header */}
         <PageHeader
           title="Expenses"
@@ -402,7 +402,7 @@ export default function Expenses() {
               <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
               <div className="relative">
                 <p className="text-sm font-medium text-white/80 mb-1">Total Expenses (MTD)</p>
-                <p className="text-3xl font-bold text-white">{formatCurrency(totalExpenses)}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white">{formatCurrency(totalExpenses)}</p>
                 <p className="text-xs text-white/60 mt-1">{filteredAndSortedExpenses.length} transaction{filteredAndSortedExpenses.length !== 1 ? 's' : ''}</p>
               </div>
             </div>
@@ -410,7 +410,7 @@ export default function Expenses() {
               <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
               <div className="relative">
                 <p className="text-sm font-medium text-white/80 mb-1">Active Categories</p>
-                <p className="text-3xl font-bold text-white">{categoryData.length}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white">{categoryData.length}</p>
                 <p className="text-xs text-white/60 mt-1">{categoriesData.length} total categories</p>
               </div>
             </div>
@@ -418,7 +418,7 @@ export default function Expenses() {
               <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
               <div className="relative">
                 <p className="text-sm font-medium text-white/80 mb-1">Avg Per Transaction</p>
-                <p className="text-3xl font-bold text-white">{filteredAndSortedExpenses.length > 0 ? formatCurrency(totalExpenses / filteredAndSortedExpenses.length) : formatCurrency(0)}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-white">{filteredAndSortedExpenses.length > 0 ? formatCurrency(totalExpenses / filteredAndSortedExpenses.length) : formatCurrency(0)}</p>
                 <p className="text-xs text-white/60 mt-1">Based on {filteredAndSortedExpenses.length} expenses</p>
               </div>
             </div>
@@ -650,7 +650,7 @@ export default function Expenses() {
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Category</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Vendor</th>
                       <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Added By</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">Added By</th>
                       <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
@@ -672,7 +672,7 @@ export default function Expenses() {
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Category</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Vendor</th>
                       <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Added By</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">Added By</th>
                       <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
@@ -694,7 +694,7 @@ export default function Expenses() {
                         <td className="px-6 py-3 whitespace-nowrap text-right">
                           <span className="text-sm font-bold text-rose-600 dark:text-rose-400">{formatCurrency(expense.amount)}</span>
                         </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
+                        <td className="px-6 py-3 whitespace-nowrap hidden sm:table-cell">
                           <span className="text-sm text-slate-600 dark:text-slate-400">{expense.createdByName || '—'}</span>
                         </td>
                         <td className="px-6 py-3 whitespace-nowrap">
@@ -732,7 +732,7 @@ export default function Expenses() {
                       <td className="px-6 py-3 text-right">
                         <span className="text-sm font-bold text-rose-600 dark:text-rose-400">{formatCurrency(totalExpenses)}</span>
                       </td>
-                      <td className="px-6 py-3 text-xs text-slate-400 dark:text-slate-500">
+                      <td className="px-6 py-3 text-xs text-slate-400 dark:text-slate-500 hidden sm:table-cell">
                         Avg: {filteredAndSortedExpenses.length > 0 ? formatCurrency(totalExpenses / filteredAndSortedExpenses.length) : formatCurrency(0)}
                       </td>
                       <td className="px-6 py-3"></td>
@@ -834,7 +834,7 @@ export default function Expenses() {
         title="🗑️ Delete Expense"
         size="sm"
       >
-        <div className="space-y-4 p-6 pb-20">
+        <div className="space-y-4 p-4 sm:p-6 pb-20">
           {deleteTarget && (
             <>
               <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700">

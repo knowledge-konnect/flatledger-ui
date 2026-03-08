@@ -1,3 +1,5 @@
+﻿import { BRAND_NAME, SUPPORT_EMAIL } from '../../config/branding';
+
 export interface FAQItem {
   question: string;
   answer: string;
@@ -89,7 +91,7 @@ export const FAQ_CATEGORIES: FAQCategory[] = [
       {
         question: 'What happens if I record payment before bills are generated?',
         answer:
-          'SocietyLedger will show a notice: **"Bills not yet generated for this month"**. The payment will be recorded as an **advance** and automatically allocated to dues once bills are generated via the Dashboard.',
+          'FlatLedger will show a notice: **"Bills not yet generated for this month"**. The payment will be recorded as an **advance** and automatically allocated to dues once bills are generated via the Dashboard.',
       },
     ],
   },
@@ -143,7 +145,7 @@ export const FAQ_CATEGORIES: FAQCategory[] = [
           'In the **"Record Payment"** modal (Maintenance page), there is an optional **Reference Number** field. Use this to enter the UPI transaction ID, cheque number, or bank transfer reference for easy reconciliation.',
       },
       {
-        question: 'How do I pay for my SocietyLedger subscription?',
+        question: 'How do I pay for my FlatLedger subscription?',
         answer:
           'Go to **Settings → Billing → Subscription** → click **"Upgrade Plan"** → select a plan → you will be taken to the **Razorpay** checkout to complete payment. The subscription activates immediately after successful payment.',
       },
@@ -262,7 +264,7 @@ export const FAQ_CATEGORIES: FAQCategory[] = [
       {
         question: 'What is Opening Balance and when do I need it?',
         answer:
-          'Opening Balance is the starting financial position when you first set up SocietyLedger. Enter existing outstanding dues (positive) or advance amounts (negative) per flat so that reports are accurate from day one.',
+          'Opening Balance is the starting financial position when you first set up FlatLedger. Enter existing outstanding dues (positive) or advance amounts (negative) per flat so that reports are accurate from day one.',
       },
       {
         question: 'How do I enter the opening balance?',
@@ -277,7 +279,7 @@ export const FAQ_CATEGORIES: FAQCategory[] = [
       {
         question: 'What happens if I skip entering opening balances?',
         answer:
-          'If you skip it, all flats start with a zero balance. This is fine for new societies. For existing societies migrating to SocietyLedger, skipping opening balances will cause inaccurate outstanding reports.',
+          'If you skip it, all flats start with a zero balance. This is fine for new societies. For existing societies migrating to FlatLedger, skipping opening balances will cause inaccurate outstanding reports.',
       },
     ],
   },
@@ -295,7 +297,7 @@ export const FAQ_CATEGORIES: FAQCategory[] = [
       {
         question: 'How long is the free trial?',
         answer:
-          'SocietyLedger offers a **14-day free trial** with full access to all features. No credit card is required to start. A trial countdown is shown in the sidebar during the trial period.',
+          'FlatLedger offers a **14-day free trial** with full access to all features. No credit card is required to start. A trial countdown is shown in the sidebar during the trial period.',
       },
       {
         question: 'What happens when my trial expires?',
@@ -312,4 +314,155 @@ export const FAQ_CATEGORIES: FAQCategory[] = [
 ];
 
 export const WELCOME_MESSAGE =
-  'Hi! 👋 I\'m the SocietyLedger Guide. I can help you with step-by-step guidance for any feature.\n\nSelect a topic below to get started:';
+  `Hi! 👋 I'm the ${BRAND_NAME} Guide. I can help you with step-by-step guidance for any feature.\n\nSelect a topic below to get started:`;
+
+export const LANDING_WELCOME_MESSAGE =
+  `Hi! 👋 Welcome to ${BRAND_NAME}!\n\nI can answer your questions about pricing, features, and getting started. What would you like to know?`;
+
+export const LANDING_FAQ_CATEGORIES: FAQCategory[] = [
+  {
+    id: 'pricing',
+    label: 'Pricing & Trial',
+    icon: '💰',
+    description: 'Plans, billing, and free trial',
+    faqs: [
+      {
+        question: 'Is there a free trial?',
+        answer:
+          'Yes! You get **30 days free** — no credit card required. Just sign up and start using the app immediately. Your trial includes all features with no restrictions.',
+      },
+      {
+        question: 'How much does it cost after the trial?',
+        answer:
+          '**₹199/month** (billed monthly) or **₹1,999/year** (billed once a year — saves you ₹389, roughly 2 months free). Both plans include all features.',
+      },
+      {
+        question: 'Can I cancel anytime?',
+        answer:
+          'Yes, absolutely. You can cancel your subscription at any time from **Settings → Subscription**. There are no cancellation fees and no long-term contracts.',
+      },
+      {
+        question: 'What payment methods do you accept?',
+        answer:
+          'We support all major Indian payment methods via **Razorpay** — UPI, debit/credit cards, net banking, and wallets.',
+      },
+      {
+        question: 'Is there a discount for yearly billing?',
+        answer:
+          'Yes! The yearly plan at **₹1,999** saves you ₹389 compared to monthly billing (₹199 × 12 = ₹2,388). That is effectively 2 months free.',
+      },
+    ],
+  },
+  {
+    id: 'features',
+    label: 'App Features',
+    icon: '🏢',
+    description: 'What the app can do',
+    faqs: [
+      {
+        question: 'What can FlatLedger do?',
+        answer:
+          'FlatLedger covers the full lifecycle of society management:\n- **Flats & Residents** — manage all unit records\n- **Maintenance Billing** — auto-generate monthly bills\n- **Payment Tracking** — record cash/UPI/cheque payments\n- **Expense Management** — track society expenses by category\n- **Financial Reports** — income vs expense charts, defaulter lists\n- **Role-Based Access** — treasurer, secretary, manager, viewer roles\n- **CSV Exports** — download any data',
+      },
+      {
+        question: 'How many flats can I manage?',
+        answer:
+          'There is **no flat limit** on any plan. You can add as many flats and residents as your housing society has.',
+      },
+      {
+        question: 'Can members pay online?',
+        answer:
+          'Currently the app supports **offline payment recording** — the admin records payments made via UPI, cash, or cheque. Online payment links for residents are on our roadmap.',
+      },
+      {
+        question: 'Does it support multiple users / roles?',
+        answer:
+          'Yes. You can add team members with specific roles — **Treasurer**, **Secretary**, **Manager**, or **Viewer** — each with appropriate access levels. The society admin has full control.',
+      },
+      {
+        question: 'Can I generate maintenance bills automatically?',
+        answer:
+          'Yes. Go to **Maintenance → Generate Bills** and select the month. The app creates bills for all active flats based on the individual maintenance amount set per flat. You can also set a custom due date.',
+      },
+      {
+        question: 'Can I track defaulters?',
+        answer:
+          'Yes. The **Dashboard** and **Reports** section show outstanding dues and defaulter lists in real time. You can also export the defaulter list as a CSV.',
+      },
+    ],
+  },
+  {
+    id: 'getstarted',
+    label: 'Getting Started',
+    icon: '🚀',
+    description: 'Setup and onboarding',
+    faqs: [
+      {
+        question: 'How long does setup take?',
+        answer:
+          'Most societies are fully set up in **under 30 minutes**. The onboarding wizard walks you through 3 steps: (1) Society profile, (2) Add flats, (3) Set opening balance. After that you are ready to generate bills.',
+      },
+      {
+        question: 'Do I need technical knowledge?',
+        answer:
+          'None at all. FlatLedger is designed for society secretaries and treasurers — not IT professionals. If you can use a smartphone, you can use this app.',
+      },
+      {
+        question: 'Can I import my existing data?',
+        answer:
+          'You can manually add your flats and set an opening balance for each flat to carry forward existing dues. Bulk CSV import is on our roadmap. For large societies, contact support and we will help you migrate.',
+      },
+      {
+        question: 'What do I need to sign up?',
+        answer:
+          'Just an email address and your society details (name, address). No credit card, no contracts. Click **Start Free Trial** and you are up in minutes.',
+      },
+    ],
+  },
+  {
+    id: 'security',
+    label: 'Security & Data',
+    icon: '🔒',
+    description: 'Privacy, safety, and data',
+    faqs: [
+      {
+        question: 'Is my society\'s data safe?',
+        answer:
+          'Yes. All data is stored on secured cloud servers with **encrypted backups**. We use HTTPS for all communication. Your data is never shared with third parties.',
+      },
+      {
+        question: 'Who can see my society\'s data?',
+        answer:
+          'Only the users you explicitly add to your society account. FlatLedger staff cannot access your financial data — we only see anonymised usage metrics for support purposes.',
+      },
+      {
+        question: 'What happens if I cancel my subscription?',
+        answer:
+          'Your data is retained for **30 days** after cancellation. You can export all your data as CSV before that window closes. After 30 days inactive accounts are permanently deleted.',
+      },
+    ],
+  },
+  {
+    id: 'support',
+    label: 'Support',
+    icon: '📞',
+    description: 'Help and contact',
+    faqs: [
+      {
+        question: 'How do I contact support?',
+        answer:
+          'Email us at **support@FlatLedger.com** — we respond within 24 hours on business days. You can also use the **Suggestions** page inside the app to report issues or request features.',
+      },
+      {
+        question: 'Is the app available in regional languages?',
+        answer:
+          'Currently the app is in **English only**. Hindi and Marathi support are planned for a future release.',
+      },
+      {
+        question: 'Is there phone or WhatsApp support?',
+        answer:
+          'Currently we offer email support only. Phone and WhatsApp support are planned for higher-tier plans in the future.',
+      },
+    ],
+  },
+];

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { Clock, AlertTriangle } from 'lucide-react'
 
 interface TrialCountdownProps {
@@ -58,7 +58,7 @@ export default function TrialCountdown({
           </span>
           <span className="text-red-600 dark:text-red-400 block">
             {status === 'expired'
-              ? 'Subscribe now to continue using SocietyLedger'
+              ? 'Subscribe now to continue using FlatLedger'
               : 'Please update your payment method'
             }
           </span>
@@ -73,7 +73,7 @@ export default function TrialCountdown({
         {showIcon && <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" />}
         <div className="text-sm">
           <span className="font-semibold text-red-800 dark:text-red-200">Trial Expired</span>
-          <span className="text-red-600 dark:text-red-400 block">Subscribe now to continue using SocietyLedger</span>
+          <span className="text-red-600 dark:text-red-400 block">Subscribe now to continue using FlatLedger</span>
         </div>
       </div>
     )

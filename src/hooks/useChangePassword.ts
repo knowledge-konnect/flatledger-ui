@@ -1,15 +1,15 @@
 import { useMutation } from '@tanstack/react-query';
-import { usersApi, ChangePasswordDto } from '../api/usersApi';
-import { handleApiError } from '../api/client';
+import { authApi } from '../api/authApi';
+
+export interface ChangePasswordDto {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword?: string;
+}
 
 export const useChangePassword = () => {
   return useMutation<void, Error, ChangePasswordDto>({
-    mutationFn: async (payload) => {
-      try {
-        await usersApi.changePassword(payload);
-      } catch (error) {
-        throw handleApiError(error);
-      }
-    },
+    mutationFn: (payload) =>
+      authApi.changePassword(payload.currentPassword, payload.newPassword, payload.confirmPassword),
   });
 };

@@ -1,4 +1,4 @@
-import Navbar from '../components/layout/Navbar'
+﻿import Navbar from '../components/layout/Navbar'
 import { Mail, ArrowRight } from 'lucide-react'
 
 export default function Suggestions() {
@@ -21,10 +21,10 @@ export default function Suggestions() {
                   Send us your feedback, suggestions, or report any issues directly to our support team.
                 </p>
                 <a
-                  href="mailto:support@societyledger.com?subject=Feedback for SocietyLedger"
+                  href="mailto:support@FlatLedger.com?subject=Feedback for FlatLedger"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-[#2563EB] dark:bg-[#3B82F6] text-white rounded-lg hover:bg-[#1D4ED8] dark:hover:bg-[#2563EB] transition-colors font-medium group"
                 >
-                  Send Email to support@societyledger.com
+                  Send Email to support@FlatLedger.com
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </a>
               </div>

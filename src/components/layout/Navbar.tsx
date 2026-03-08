@@ -1,4 +1,5 @@
-import React from 'react';
+﻿import React from 'react';
+import { BRAND_NAME } from '../../config/branding';
 import { Building2, Moon, Sun } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -41,8 +42,8 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
                   <Building2 className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-lg font-bold text-[#0F172A] dark:text-[#F8FAFC] group-hover:text-[#2563EB] dark:group-hover:text-[#3B82F6] transition-colors duration-300">SocietyLedger</span>
-                  <span className="text-xs text-[#64748B] dark:text-[#94A3B8] font-medium">Smart Management</span>
+                  <span className="text-lg font-bold text-[#0F172A] dark:text-[#F8FAFC] group-hover:text-[#2563EB] dark:group-hover:text-[#3B82F6] transition-colors duration-300">{BRAND_NAME}</span>
+                  <span className="text-xs text-[#64748B] dark:text-[#94A3B8] font-medium hidden sm:block">Smart Management</span>
                 </div>
               </Link>
             </div>
@@ -59,7 +60,7 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
               </a>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg hover:bg-[#F8FAFC] dark:hover:bg-[#020617] transition-colors duration-300"

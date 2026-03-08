@@ -1,10 +1,10 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import React from "react"
 import {
   Save, User, Building2, Settings, CreditCard, AlertCircle, Loader, Eye, EyeOff,
-  Lock, Bell, Wrench, Moon, Sun, Shield, ChevronRight, CheckCircle2, IndianRupee, Calculator
+  Lock, Bell, Wrench, Moon, Sun, Shield, ChevronRight, CheckCircle2, IndianRupee, Calculator, Crown
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import DashboardLayout from "../components/layout/DashboardLayout"
@@ -12,9 +12,11 @@ import Input from "../components/ui/Input"
 import Button from "../components/ui/Button"
 import Card, { CardContent } from "../components/ui/Card"
 import { useAuth } from "../contexts/AuthProvider"
-import { useSociety, useUpdateSociety } from "../hooks/useSocieties"
+import { useSociety, useUpdateSociety, useMaintenanceConfig, useUpdateMaintenanceConfig } from "../hooks/useSocieties"
 import { useChangePassword } from "../hooks/useChangePassword"
+import { useUpdateProfile } from "../hooks/useUpdateProfile"
 import { useSubscription } from "../hooks/useSubscription"
+import { useNotifications, useUpdateNotifications } from "../hooks/useNotifications"
 import { useToast } from "../components/ui/Toast"
 import { cn } from "../lib/utils"
 import { useOpeningBalanceStatus } from "../hooks/useOpeningBalance"
@@ -54,7 +56,7 @@ const NAV_SECTIONS: { label: string; items: { id: string; label: string; icon: R
 export default function SettingsPageRedesigned() {
   const [activeSection, setActiveSection] = useState("profile")
   const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'))
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
   const obStatus = useOpeningBalanceStatus()
   const { showToast } = useToast()
@@ -67,18 +69,39 @@ export default function SettingsPageRedesigned() {
   const [displayEmail, setDisplayEmail] = useState("")
   const [isSaving, setIsSaving] = useState(false)
 
-  // Notification prefs (UI only for now)
-  const [notifPrefs, setNotifPrefs] = useState({
-    maintenanceDue: true,
-    paymentReceived: true,
-    announcements: true,
-    expenseAdded: false,
+  const [maintenanceForm, setMaintenanceForm] = useState({
+    defaultMonthlyCharge: 0,
+    dueDayOfMonth: 5,
+    lateFeePerMonth: 0,
+    gracePeriodDays: 0,
   })
 
   const society = useSociety(user?.societyId || "")
   const updateSociety = useUpdateSociety(user?.societyId || "")
   const changePassword = useChangePassword()
+  const updateProfile = useUpdateProfile()
+  const maintenanceConfig = useMaintenanceConfig(user?.societyPublicId || "")
+  const updateMaintenanceConfig = useUpdateMaintenanceConfig(user?.societyPublicId || "")
+  const notifications = useNotifications()
+  const updateNotifications = useUpdateNotifications()
   const subscription = useSubscription()
+  const { cancelSubscription: cancelSub, refreshStatus } = useSubscription()
+
+  const [isCancelling, setIsCancelling] = useState(false)
+
+  const handleCancelSubscription = async () => {
+    if (!window.confirm('Are you sure you want to cancel your subscription?')) return
+    setIsCancelling(true)
+    try {
+      await cancelSub('User requested cancellation')
+      showToast('Subscription cancelled.', 'info')
+      refreshStatus()
+    } catch {
+      showToast('Failed to cancel subscription.', 'error')
+    } finally {
+      setIsCancelling(false)
+    }
+  }
 
   const allRoles = collectUserRoles(user)
   const isAdmin = isAdminRole(allRoles)
@@ -93,6 +116,17 @@ export default function SettingsPageRedesigned() {
   }, [society.data, user])
 
   useEffect(() => {
+    if (maintenanceConfig.data) {
+      setMaintenanceForm({
+        defaultMonthlyCharge: maintenanceConfig.data.defaultMonthlyCharge ?? 0,
+        dueDayOfMonth: maintenanceConfig.data.dueDayOfMonth ?? 5,
+        lateFeePerMonth: maintenanceConfig.data.lateFeePerMonth ?? 0,
+        gracePeriodDays: maintenanceConfig.data.gracePeriodDays ?? 0,
+      })
+    }
+  }, [maintenanceConfig.data])
+
+  useEffect(() => {
     if (user) {
       setProfileFormData({ name: user.userName || user.name || "", email: user.email || "", mobile: user.mobile || "" })
       setDisplayName(user.userName || user.name || "User")
@@ -103,11 +137,43 @@ export default function SettingsPageRedesigned() {
   const handleSaveProfile = async () => {
     try {
       setIsSaving(true)
-      showToast("Mobile number saved", "success")
-    } catch {
-      showToast("Failed to update profile", "error")
+      await updateProfile.mutateAsync({ mobile: profileFormData.mobile })
+      showToast("Mobile number updated successfully", "success")
+    } catch (error: any) {
+      const data = error?.response?.data
+      const message = data?.errors?.[0]?.messages?.[0] || data?.message || error?.message || "Failed to update profile"
+      showToast(message, "error")
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleSaveMaintenanceConfig = async () => {
+    try {
+      setIsSaving(true)
+      await updateMaintenanceConfig.mutateAsync(maintenanceForm)
+      showToast("Maintenance configuration saved", "success")
+    } catch (error: any) {
+      const data = error?.response?.data
+      const message = data?.errors?.[0]?.messages?.[0] || data?.message || error?.message || "Failed to save configuration"
+      showToast(message, "error")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleToggleNotif = async (key: string, value: boolean) => {
+    // Map UI keys to API keys
+    const keyMap: Record<string, string> = {
+      maintenanceDue: 'paymentReminders',
+      paymentReceived: 'billGenerated',
+      announcements: 'monthlyReports',
+      expenseAdded: 'expenseUpdates',
+    }
+    try {
+      await updateNotifications.mutateAsync({ [keyMap[key]]: value })
+    } catch {
+      showToast("Failed to update notification preference", "error")
     }
   }
 
@@ -125,10 +191,16 @@ export default function SettingsPageRedesigned() {
         newPassword: passwordFormData.newPassword,
         confirmPassword: passwordFormData.confirmPassword
       })
-      showToast("Password changed successfully", "success")
+      showToast("Password changed successfully. Please log in again.", "success")
       setPasswordFormData({ currentPassword: "", newPassword: "", confirmPassword: "" })
+      setTimeout(async () => {
+        await logout()
+        navigate('/login')
+      }, 1500)
     } catch (error: any) {
-      showToast(error?.message || "Failed to change password", "error")
+      const data = error?.response?.data
+      const message = data?.errors?.[0]?.messages?.[0] || data?.message || error?.message || "Failed to change password"
+      showToast(message, "error")
     } finally {
       setIsSaving(false)
     }
@@ -390,34 +462,60 @@ export default function SettingsPageRedesigned() {
                     </div>
                     <span className="text-xs px-2 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300 font-medium">Treasurer / Admin</span>
                   </div>
-                  <div className="grid sm:grid-cols-2 gap-4 max-w-lg">
-                    <div>
-                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Default Monthly Charge</label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><IndianRupee className="w-4 h-4" /></span>
-                        <input className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. 2000" disabled />
+                  {maintenanceConfig.isLoading ? (
+                    <div className="flex items-center justify-center py-10"><Loader className="w-5 h-5 animate-spin text-slate-400" /></div>
+                  ) : (
+                    <>
+                      <div className="grid sm:grid-cols-2 gap-4 max-w-lg">
+                        <div>
+                          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Default Monthly Charge</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><IndianRupee className="w-4 h-4" /></span>
+                            <input
+                              className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="e.g. 2000" type="number" min={0}
+                              value={maintenanceForm.defaultMonthlyCharge}
+                              onChange={e => setMaintenanceForm(p => ({ ...p, defaultMonthlyCharge: Number(e.target.value) }))}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Due Day of Month</label>
+                          <input
+                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g. 5" type="number" min={1} max={28}
+                            value={maintenanceForm.dueDayOfMonth}
+                            onChange={e => setMaintenanceForm(p => ({ ...p, dueDayOfMonth: Number(e.target.value) }))}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Late Fee (per month)</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><IndianRupee className="w-4 h-4" /></span>
+                            <input
+                              className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              placeholder="e.g. 100" type="number" min={0}
+                              value={maintenanceForm.lateFeePerMonth}
+                              onChange={e => setMaintenanceForm(p => ({ ...p, lateFeePerMonth: Number(e.target.value) }))}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Grace Period (days)</label>
+                          <input
+                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="e.g. 5" type="number" min={0}
+                            value={maintenanceForm.gracePeriodDays}
+                            onChange={e => setMaintenanceForm(p => ({ ...p, gracePeriodDays: Number(e.target.value) }))}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Due Day of Month</label>
-                      <input className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. 5" type="number" min={1} max={28} disabled />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Late Fee (per month)</label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><IndianRupee className="w-4 h-4" /></span>
-                        <input className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. 100" disabled />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Grace Period (days)</label>
-                      <input className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g. 5" type="number" min={0} disabled />
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                    <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                    <p className="text-xs text-amber-700 dark:text-amber-300">Configuration fields coming soon — will be enabled once the API is ready.</p>
-                  </div>
+                      <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveMaintenanceConfig} disabled={isSaving}>
+                        {isSaving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {isSaving ? 'Saving...' : 'Save Configuration'}
+                      </Button>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -430,37 +528,41 @@ export default function SettingsPageRedesigned() {
                     <h3 className="font-semibold text-slate-800 dark:text-slate-200">Notification Preferences</h3>
                     <p className="text-xs text-slate-400 mt-0.5">Choose which events you want to be notified about</p>
                   </div>
-                  <div className="space-y-1">
-                    {[
-                      { key: 'maintenanceDue', label: 'Maintenance Due Reminder', desc: 'Receive alerts when monthly maintenance is due' },
-                      { key: 'paymentReceived', label: 'Payment Received', desc: 'Notify when a payment is recorded for your flat' },
-                      { key: 'announcements', label: 'Society Announcements', desc: 'Get notified about new announcements' },
-                      { key: 'expenseAdded', label: 'New Expense Added', desc: 'Alert when a new society expense is logged' },
-                    ].map(({ key, label, desc }) => (
-                      <div key={key} className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
-                        <div>
-                          <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{label}</p>
-                          <p className="text-xs text-slate-400">{desc}</p>
-                        </div>
-                        <button
-                          onClick={() => setNotifPrefs(p => ({ ...p, [key]: !p[key as keyof typeof p] }))}
-                          className={cn(
-                            'relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0',
-                            notifPrefs[key as keyof typeof notifPrefs] ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'
-                          )}
-                        >
-                          <span className={cn(
-                            'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
-                            notifPrefs[key as keyof typeof notifPrefs] ? 'translate-x-5' : 'translate-x-0'
-                          )} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                    <AlertCircle className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                    <p className="text-xs text-blue-700 dark:text-blue-300">Preferences are saved locally — server sync coming soon.</p>
-                  </div>
+                  {notifications.isLoading ? (
+                    <div className="flex items-center justify-center py-8"><Loader className="w-5 h-5 animate-spin text-slate-400" /></div>
+                  ) : (
+                    <div className="space-y-1">
+                      {[
+                        { key: 'maintenanceDue', apiKey: 'paymentReminders', label: 'Maintenance Due Reminder', desc: 'Receive alerts when monthly maintenance is due' },
+                        { key: 'paymentReceived', apiKey: 'billGenerated', label: 'Payment Received', desc: 'Notify when a payment is recorded for your flat' },
+                        { key: 'announcements', apiKey: 'monthlyReports', label: 'Society Announcements', desc: 'Get notified about new announcements' },
+                        { key: 'expenseAdded', apiKey: 'expenseUpdates', label: 'New Expense Added', desc: 'Alert when a new society expense is logged' },
+                      ].map(({ key, apiKey, label, desc }) => {
+                        const isOn = notifications.data ? (notifications.data as any)[apiKey] ?? false : false
+                        return (
+                          <div key={key} className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                            <div>
+                              <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{label}</p>
+                              <p className="text-xs text-slate-400">{desc}</p>
+                            </div>
+                            <button
+                              onClick={() => handleToggleNotif(key, !isOn)}
+                              disabled={updateNotifications.isPending}
+                              className={cn(
+                                'relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0 disabled:opacity-60',
+                                isOn ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'
+                              )}
+                            >
+                              <span className={cn(
+                                'absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200',
+                                isOn ? 'translate-x-5' : 'translate-x-0'
+                              )} />
+                            </button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -471,7 +573,7 @@ export default function SettingsPageRedesigned() {
                 <CardContent className="p-6 space-y-5">
                   <div>
                     <h3 className="font-semibold text-slate-800 dark:text-slate-200">Appearance</h3>
-                    <p className="text-xs text-slate-400 mt-0.5">Customize how SocietyLedger looks for you</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Customize how FlatLedger looks for you</p>
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Theme</p>
@@ -564,10 +666,27 @@ export default function SettingsPageRedesigned() {
 
                     {/* Actions */}
                     <div className="flex flex-wrap gap-3 pt-2">
-                      <Button variant="primary">Upgrade Plan</Button>
-                      <Button variant="outline">View All Plans</Button>
+                      {(subscription.status === 'trial' || subscription.status === 'expired' || subscription.status === 'cancelled') && (
+                        <Button
+                          variant="primary"
+                          className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700"
+                          onClick={() => navigate('/subscription/manage')}
+                        >
+                          <Crown className="w-4 h-4" />
+                          Upgrade Plan
+                        </Button>
+                      )}
+                      <Button variant="outline" onClick={() => navigate('/subscription/manage')}>View All Plans</Button>
                       {subscription.status === 'active' && (
-                        <Button variant="outline" className="text-red-600 dark:text-red-400 ml-auto">Cancel Subscription</Button>
+                        <Button
+                          variant="outline"
+                          className="text-red-600 dark:text-red-400 ml-auto"
+                          onClick={handleCancelSubscription}
+                          disabled={isCancelling}
+                        >
+                          {isCancelling ? <Loader className="w-4 h-4 animate-spin mr-1" /> : null}
+                          {isCancelling ? 'Cancelling...' : 'Cancel Subscription'}
+                        </Button>
                       )}
                     </div>
                   </>

@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Badge from '../components/ui/Badge';
-import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import { CheckCircle, Calendar, XCircle, AlertTriangle, Crown } from 'lucide-react';
 import { useSubscription } from '../hooks/useSubscription';
@@ -44,13 +43,16 @@ export const SubscriptionSummary: React.FC<SubscriptionSummaryProps> = ({ compac
     }
   };
 
-  // Always show Upgrade button for testing, but restore previous navigation
   const getActionButton = () => {
     return (
-      <Button size="sm" onClick={() => navigate('/subscription/manage')} data-testid="upgrade-btn">
+      <button
+        onClick={() => navigate('/subscription/manage')}
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-sm font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all duration-200"
+        data-testid="upgrade-btn"
+      >
         <Crown className="h-4 w-4" />
-        Upgrade
-      </Button>
+        Upgrade Plan
+      </button>
     );
   };
 
@@ -112,9 +114,9 @@ export const SubscriptionSummary: React.FC<SubscriptionSummaryProps> = ({ compac
         {planName && <span className="opacity-70 hidden sm:inline">· {planName}</span>}
         <button
           onClick={() => navigate('/subscription/manage')}
-          className="ml-1 flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md px-2 py-0.5 text-xs font-semibold transition-colors"
+          className="ml-1 flex items-center gap-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-lg px-3 py-1 text-xs font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all duration-200"
         >
-          <Crown className="h-3 w-3" />
+          <Crown className="h-3.5 w-3.5" />
           Upgrade
         </button>
       </div>

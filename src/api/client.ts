@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'ax
 import { ApiError } from '../types/api';
 
 // Get API base URL from environment variables
-const BASE_API_URL: string = 
+const _rawApiUrl: string = 
   (import.meta as any).env?.VITE_APP_API_URL ||
   (import.meta as any).env?.REACT_APP_API_URL ||
   (() => {
@@ -13,6 +13,22 @@ const BASE_API_URL: string =
     );
     throw new Error('API URL not configured. Please set VITE_APP_API_URL in your .env file.');
   })();
+
+// All backend routes are mounted under /api — append it once here so every
+// relative path (e.g. '/users', '/flats') resolves to '<host>/api/users'.
+const BASE_API_URL: string = _rawApiUrl.replace(/\/+$/, '') + '/api';
+
+// ---------------------------------------------------------------------------
+// In-memory access token — never written to localStorage or any browser storage.
+// The refreshToken is managed entirely by the backend as an httpOnly cookie.
+// ---------------------------------------------------------------------------
+let inMemoryAccessToken: string | null = null;
+
+export const setInMemoryAccessToken = (token: string | null): void => {
+  inMemoryAccessToken = token;
+};
+
+export const getInMemoryAccessToken = (): string | null => inMemoryAccessToken;
 
 // Callback for refreshing access token (set by AuthProvider)
 let refreshAccessTokenCallback: (() => Promise<string | null>) | null = null;
@@ -41,17 +57,24 @@ export const apiClient: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 30000, // 30 seconds timeout
+  withCredentials: true, // Send httpOnly cookies (refreshToken) on every request
 });
+
+// Endpoints that must NOT carry an Authorization header
+const UNAUTHENTICATED_PATHS = ['/api/auth/refresh', '/api/auth/login', '/api/auth/register'];
 
 // Request interceptor - attach Authorization header with accessToken
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get accessToken from localStorage
-    const accessToken = localStorage.getItem('accessToken');
-    
-    // Skip if no token available
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    // Skip auth header for unauthenticated endpoints (login, register, token refresh)
+    const url = config.url || '';
+    const isUnauthenticated = UNAUTHENTICATED_PATHS.some(path => url.includes(path));
+
+    if (!isUnauthenticated) {
+      // Read access token from memory only — never from localStorage
+      if (inMemoryAccessToken) {
+        config.headers.Authorization = `Bearer ${inMemoryAccessToken}`;
+      }
     }
     
     return config;
@@ -73,6 +96,14 @@ apiClient.interceptors.response.use(
 
     // If response status is 401, attempt token refresh
     if (error.response?.status === 401) {
+      // Never retry token-refresh or login requests — avoids infinite loops
+      const requestUrl = originalRequest.url || '';
+      const isAuthEndpoint = UNAUTHENTICATED_PATHS.some(path => requestUrl.includes(path));
+      if (isAuthEndpoint) {
+        console.log('[API Client] Auth endpoint returned 401, not retrying');
+        return Promise.reject(error);
+      }
+
       // Flag to prevent infinite retry loops - only retry once
       if ((originalRequest as any)._retry) {
         console.log('[API Client] Request already retried, rejecting');
@@ -98,8 +129,9 @@ apiClient.interceptors.response.use(
           const newAccessToken = await refreshAccessTokenCallback();
           
           if (newAccessToken) {
-            // Refresh succeeded
+            // Refresh succeeded — update in-memory token
             console.log('[API Client] Token refreshed successfully');
+            setInMemoryAccessToken(newAccessToken);
             
             // Notify all waiting requests
             onRefreshed(newAccessToken);
@@ -109,7 +141,8 @@ apiClient.interceptors.response.use(
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
             return apiClient(originalRequest);
           } else {
-            // Refresh failed - AuthProvider.logout() was called
+            // Refresh failed — clear in-memory token, AuthProvider.logout() was called
+            setInMemoryAccessToken(null);
             isRefreshing = false;
             refreshSubscribers = [];
             
@@ -118,8 +151,8 @@ apiClient.interceptors.response.use(
             // Redirect to /login if not already there
             if (!isRedirecting && !window.location.pathname.includes('/login')) {
               isRedirecting = true;
-              console.log('[API Client] Redirecting to /login due to auth failure');
               setTimeout(() => {
+                isRedirecting = false;
                 window.location.href = '/login?reason=session_expired';
               }, 100);
             }
@@ -137,6 +170,7 @@ apiClient.interceptors.response.use(
           if (!isRedirecting && !window.location.pathname.includes('/login')) {
             isRedirecting = true;
             setTimeout(() => {
+              isRedirecting = false;
               window.location.href = '/login?reason=session_expired';
             }, 100);
           }
