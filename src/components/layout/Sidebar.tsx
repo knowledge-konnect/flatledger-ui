@@ -1,5 +1,5 @@
 ﻿import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Building2, Wrench, IndianRupee, BarChart3, Users, Settings, LogOut, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthProvider';
 import { isFinancialRole, collectUserRoles, RoleDisplayName } from '../../types/roles';
@@ -40,7 +40,6 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { pathname: currentPath } = useLocation();
   const { logout, user } = useAuth();
-  const navigate = useNavigate();
   const { showToast } = useToast();
 
   // Check if user holds a financial-level role (Society Admin, Admin or Treasurer)
@@ -163,9 +162,6 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                   try {
                     await logout();
                     showToast(AlertMessages.success.logoutSuccess, 'success');
-                    setTimeout(() => {
-                      navigate('/login');
-                    }, 100);
                   } catch {
                     showToast(AlertMessages.error.logoutFailed, 'error');
                     setIsLoggingOut(false);

@@ -22,8 +22,9 @@ export interface OpeningBalanceFlatItem {
 }
 
 export interface OpeningBalanceRequest {
+  transactionDate: string; // YYYY-MM-DD
   society_opening_amount: number;
-  flat_items: OpeningBalanceFlatItem[];
+  items: OpeningBalanceFlatItem[];
 }
 
 export interface OpeningBalanceSubmitResponse {

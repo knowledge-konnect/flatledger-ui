@@ -6,6 +6,7 @@ import {
   Building2,
   Home,
   Calculator,
+  Wrench,
   LayoutDashboard,
   Sparkles,
 } from 'lucide-react';
@@ -25,6 +26,16 @@ const STEP_CONFIG = [
     completedText: 'Your society profile is active and configured.',
     route: '/settings',
     color: 'indigo',
+  },
+  {
+    id: 'maintenance-config',
+    icon: Wrench,
+    label: 'Maintenance Config',
+    pendingText:
+      'Set your default monthly maintenance charge, due date, late fee, and grace period.',
+    completedText: 'Maintenance charges and billing rules are configured.',
+    route: '/settings?section=maintenance-config',
+    color: 'orange',
   },
   {
     id: 'flats',
@@ -55,7 +66,7 @@ export default function Setup() {
   // Mark that the user has visited the setup page so Dashboard won't auto-redirect again
   useEffect(() => {
     try {
-      localStorage.setItem(SETUP_REDIRECTED_KEY, 'true');
+      sessionStorage.setItem(SETUP_REDIRECTED_KEY, 'true');
     } catch {
       // ignore
     }
@@ -87,7 +98,7 @@ export default function Setup() {
             <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto text-sm">
               {isComplete
                 ? 'Your society is fully configured. Head to your dashboard to get started.'
-                : 'Complete these 3 steps to get your society fully up and running.'}
+                : 'Complete these 4 steps to get your society fully up and running.'}
             </p>
           </div>
 

@@ -197,8 +197,9 @@ export default function OpeningBalanceEntry() {
       }));
 
     const payload = {
+      transactionDate: new Date().toISOString().split('T')[0],
       society_opening_amount: parseFloat(societyAmount) || 0,
-      flat_items: flatItems,
+      items: flatItems,
     };
 
     try {
@@ -237,7 +238,7 @@ export default function OpeningBalanceEntry() {
       } else {
         setBackendError('An unexpected error occurred. Please try again.');
       }
-      console.error('Failed to submit opening balance:', error);
+      console.error('Failed to submit opening balance:', axiosError?.response?.data ?? error);
     }
   };
 

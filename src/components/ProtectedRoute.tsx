@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthProvider';
 
 interface ProtectedRouteProps {
@@ -9,7 +9,6 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
-  const location = useLocation();
 
   // 1. If authLoading is true: show loading spinner
   if (isLoading) {
@@ -23,10 +22,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles 
     );
   }
 
-  // 2. If not authenticated: redirect to /login
+  // 2. If not authenticated: redirect to landing page
   if (!isAuthenticated) {
-    // Preserve the intended destination
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/" replace />;
   }
 
   // 3. Support optional roles prop: If user.role not in allowed roles, redirect to /unauthorized

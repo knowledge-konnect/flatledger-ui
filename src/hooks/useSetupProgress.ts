@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { useOpeningBalanceStatus } from './useOpeningBalance';
 import { useFlats } from './useFlats';
+import { useMaintenanceConfig } from './useSocieties';
+import { useAuth } from '../contexts/AuthProvider';
 
 export interface SetupStep {
   id: string;
@@ -13,6 +15,7 @@ export interface SetupProgress {
   steps: SetupStep[];
   progress: number;
   isComplete: boolean;
+  isLoading: boolean;
   nextStep: SetupStep | null;
 }
 
@@ -20,21 +23,26 @@ export interface SetupProgress {
  * Hook to calculate setup progress for the onboarding flow
  */
 export function useSetupProgress(): SetupProgress {
+  const { user } = useAuth();
+  const societyId = user?.societyPublicId || '';
   const { data: obStatus, isLoading: obLoading } = useOpeningBalanceStatus();
   const { data: flats, isLoading: flatsLoading } = useFlats();
+  const { data: maintenanceConfig, isLoading: maintenanceConfigLoading } = useMaintenanceConfig(societyId);
 
   const progress = useMemo(() => {
-    if (obLoading || flatsLoading) {
+    if (obLoading || flatsLoading || maintenanceConfigLoading) {
       return {
         steps: [],
         progress: 0,
         isComplete: false,
+        isLoading: true,
         nextStep: null,
       };
     }
 
     const flatsCount = Array.isArray(flats) ? flats.length : 0;
     const obApplied = obStatus?.isApplied || false;
+    const maintenanceConfigured = (maintenanceConfig?.defaultMonthlyCharge ?? 0) > 0;
 
     const steps: SetupStep[] = [
       {
@@ -42,6 +50,12 @@ export function useSetupProgress(): SetupProgress {
         label: 'Society Created',
         completed: true, // Always true if user is logged in
         description: 'Your society account is active',
+      },
+      {
+        id: 'maintenance-config',
+        label: 'Maintenance Config',
+        completed: maintenanceConfigured,
+        description: maintenanceConfigured ? 'Monthly charges configured' : 'Set default monthly charge',
       },
       {
         id: 'flats',
@@ -65,9 +79,10 @@ export function useSetupProgress(): SetupProgress {
       steps,
       progress: progressPercentage,
       isComplete: completedCount === steps.length,
+      isLoading: false,
       nextStep: nextIncompleteStep,
     };
-  }, [obStatus, flats, obLoading, flatsLoading]);
+  }, [obStatus, flats, obLoading, flatsLoading, maintenanceConfig, maintenanceConfigLoading]);
 
   return progress;
 }

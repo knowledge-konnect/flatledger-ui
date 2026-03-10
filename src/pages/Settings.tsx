@@ -6,7 +6,7 @@ import {
   Save, User, Building2, Settings, CreditCard, AlertCircle, Loader, Eye, EyeOff,
   Lock, Bell, Wrench, Moon, Sun, Shield, ChevronRight, CheckCircle2, IndianRupee, Calculator, Crown
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import DashboardLayout from "../components/layout/DashboardLayout"
 import Input from "../components/ui/Input"
 import Button from "../components/ui/Button"
@@ -34,7 +34,7 @@ const NAV_SECTIONS: { label: string; items: { id: string; label: string; icon: R
     label: 'Society',
     items: [
       { id: 'society', label: 'Society Details', icon: Building2, description: 'Name & address', adminOnly: true },
-      { id: 'maintenance-config', label: 'Maintenance Config', icon: Wrench, description: 'Charges & due dates', adminOnly: true },
+      { id: 'maintenance-config', label: 'Maintenance Charges', icon: Wrench, description: 'Monthly fee per flat, due dates & late fees', adminOnly: true },
       { id: 'opening-balance', label: 'Opening Balance', icon: Calculator, description: 'Initial society balances', adminOnly: true, href: '/settings/opening-balance' },
     ],
   },
@@ -54,7 +54,8 @@ const NAV_SECTIONS: { label: string; items: { id: string; label: string; icon: R
 ]
 
 export default function SettingsPageRedesigned() {
-  const [activeSection, setActiveSection] = useState("profile")
+  const [searchParams] = useSearchParams();
+  const [activeSection, setActiveSection] = useState(() => searchParams.get('section') || 'profile')
   const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'))
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -153,6 +154,10 @@ export default function SettingsPageRedesigned() {
       setIsSaving(true)
       await updateMaintenanceConfig.mutateAsync(maintenanceForm)
       showToast("Maintenance configuration saved", "success")
+      // If opened from the setup flow, return to setup to continue
+      if (searchParams.get('section') === 'maintenance-config') {
+        navigate('/setup')
+      }
     } catch (error: any) {
       const data = error?.response?.data
       const message = data?.errors?.[0]?.messages?.[0] || data?.message || error?.message || "Failed to save configuration"
@@ -261,7 +266,7 @@ export default function SettingsPageRedesigned() {
 
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Left sidebar nav */}
-          <aside className="lg:w-56 flex-shrink-0">
+          <aside className="lg:w-64 flex-shrink-0">
             <nav className="space-y-4">
               {visibleSections.map(section => (
                 <div key={section.label}>
@@ -457,8 +462,8 @@ export default function SettingsPageRedesigned() {
                 <CardContent className="p-6 space-y-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-semibold text-slate-800 dark:text-slate-200">Maintenance Configuration</h3>
-                      <p className="text-xs text-slate-400 mt-0.5">Default charges applied when generating bills</p>
+                      <h3 className="font-semibold text-slate-800 dark:text-slate-200">Maintenance Charges</h3>
+                      <p className="text-xs text-slate-400 mt-0.5">Set the monthly maintenance fee per flat and billing rules applied when generating bills</p>
                     </div>
                     <span className="text-xs px-2 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300 font-medium">Treasurer / Admin</span>
                   </div>
@@ -478,6 +483,7 @@ export default function SettingsPageRedesigned() {
                               onChange={e => setMaintenanceForm(p => ({ ...p, defaultMonthlyCharge: Number(e.target.value) }))}
                             />
                           </div>
+                          <p className="text-xs text-slate-400 mt-1">Standard amount charged to each flat per month</p>
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Due Day of Month</label>
@@ -487,6 +493,7 @@ export default function SettingsPageRedesigned() {
                             value={maintenanceForm.dueDayOfMonth}
                             onChange={e => setMaintenanceForm(p => ({ ...p, dueDayOfMonth: Number(e.target.value) }))}
                           />
+                          <p className="text-xs text-slate-400 mt-1">Bills become due on this day each month (e.g. 5 = 5th)</p>
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Late Fee (per month)</label>
@@ -499,6 +506,7 @@ export default function SettingsPageRedesigned() {
                               onChange={e => setMaintenanceForm(p => ({ ...p, lateFeePerMonth: Number(e.target.value) }))}
                             />
                           </div>
+                          <p className="text-xs text-slate-400 mt-1">Extra charge added each month after the grace period if unpaid</p>
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Grace Period (days)</label>
@@ -508,6 +516,7 @@ export default function SettingsPageRedesigned() {
                             value={maintenanceForm.gracePeriodDays}
                             onChange={e => setMaintenanceForm(p => ({ ...p, gracePeriodDays: Number(e.target.value) }))}
                           />
+                          <p className="text-xs text-slate-400 mt-1">Days after the due date before late fees start applying</p>
                         </div>
                       </div>
                       <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveMaintenanceConfig} disabled={isSaving}>

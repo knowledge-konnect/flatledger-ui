@@ -72,15 +72,21 @@ export default function BillingReminderBanner({
       <div className="rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/80 dark:bg-red-950/20 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-          <p className="text-sm font-medium text-red-900 dark:text-red-100">
-            Bills for {monthLabel} not generated yet.
-          </p>
+          <div>
+            <p className="text-sm font-medium text-red-900 dark:text-red-100">
+              Maintenance bills for {monthLabel} not generated yet.
+            </p>
+            <p className="text-xs text-red-700 dark:text-red-300 mt-0.5">
+              Generate bills to create monthly maintenance charges for all flats. Residents can then be notified and tracked for payment.
+            </p>
+          </div>
         </div>
         <Button
           size="sm"
           onClick={onGenerate}
           isLoading={isGenerating}
           disabled={isGenerating}
+          className="flex-shrink-0"
         >
           Generate Now
         </Button>
