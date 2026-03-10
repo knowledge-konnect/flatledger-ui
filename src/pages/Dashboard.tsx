@@ -27,6 +27,7 @@ import { SubscriptionSummary } from '../components/SubscriptionSummary';
 import SetupBanner from '../components/dashboard/SetupBanner';
 import { useSetupProgress } from '../hooks/useSetupProgress';
 import { SETUP_REDIRECTED_KEY } from './Setup';
+import WelcomeModal, { WELCOME_MODAL_SEEN_KEY } from '../components/setup/WelcomeModal';
 import Card from '../components/ui/Card';
 import { KpiCard } from '../components/dashboard/KpiCard';
 import { OccupancyCard } from '../components/dashboard/OccupancyCard';
@@ -106,17 +107,29 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
-  const { isComplete: setupComplete, steps: setupSteps } = useSetupProgress();
+  const { isComplete: setupComplete, isLoading: setupLoading, steps: setupSteps } = useSetupProgress();
 
-  // Auto-redirect brand-new users to the dedicated setup page (once only)
+  // Show welcome modal on first visit when setup is not yet complete
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try {
+      return localStorage.getItem(WELCOME_MODAL_SEEN_KEY) !== 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  // Auto-redirect brand-new users to the dedicated setup page (once only),
+  // but wait until the welcome modal has been dismissed first.
   useEffect(() => {
+    if (setupLoading) return; // wait for data before deciding
+    if (showWelcome && !setupComplete) return; // show welcome modal first
     const alreadyRedirected = (() => {
-      try { return localStorage.getItem(SETUP_REDIRECTED_KEY) === 'true'; } catch { return false; }
+      try { return sessionStorage.getItem(SETUP_REDIRECTED_KEY) === 'true'; } catch { return false; }
     })();
     if (!alreadyRedirected && !setupComplete && setupSteps.length > 0) {
       navigate('/setup', { replace: true });
     }
-  }, [setupComplete, setupSteps, navigate]);
+  }, [setupComplete, setupLoading, setupSteps, navigate, showWelcome]);
 
   const [periodTab, setPeriodTab] = useState<PeriodTab>('this-month');
   const [startDate, setStartDate] = useState(() => getThisMonthRange().start);
@@ -191,6 +204,7 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout title="Dashboard">
+      {showWelcome && !setupComplete && <WelcomeModal onClose={() => setShowWelcome(false)} />}
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-6" data-testid="dashboard-content">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 

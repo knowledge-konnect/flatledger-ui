@@ -12,7 +12,7 @@ const BANNER_DISMISSED_KEY = 'setupBanner_dismissed';
  */
 export default function SetupBanner() {
   const navigate = useNavigate();
-  const { progress, isComplete, nextStep, steps } = useSetupProgress();
+  const { progress, isComplete, isLoading, nextStep, steps } = useSetupProgress();
 
   const [dismissed, setDismissed] = useState(() => {
     try {
@@ -22,8 +22,8 @@ export default function SetupBanner() {
     }
   });
 
-  // Hide when complete or explicitly dismissed
-  if (isComplete || dismissed) return null;
+  // Hide while loading (prevents flash), when complete, or explicitly dismissed
+  if (isLoading || isComplete || dismissed) return null;
 
   const completedCount = steps.filter((s) => s.completed).length;
 

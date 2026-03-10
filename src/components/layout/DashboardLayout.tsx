@@ -39,7 +39,6 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
     try {
       await logout();
       showToast(AlertMessages.success.logoutSuccess, 'success');
-      navigate('/login');
     } catch {
       showToast(AlertMessages.error.logoutFailed, 'error');
       setIsLoggingOut(false);

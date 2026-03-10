@@ -8,6 +8,14 @@ import { AuthState, LoginCredentials, RegisterCredentials, User, AuthResponse } 
 import { handleApiError, setRefreshTokenCallback, setInMemoryAccessToken } from '../api/client';
 import { logger } from '../lib/logger';
 
+// AuthContext is created at module scope. Prevent Vite HMR from partially replacing
+// this module — doing so would create a new AuthContext whilst lazy-loaded consumers
+// (Login, Dashboard…) still hold a reference to the old one, causing the
+// "useAuth must be used within an AuthProvider" error. A full page reload is safer.
+if (import.meta.hot) {
+  import.meta.hot.invalidate();
+}
+
 // JWT payload structure
 interface JwtPayload {
   sub?: string; // userId
@@ -262,14 +270,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     logger.log(`[AuthProvider.logout] Starting logout`);
-    
-    // Clear in-memory access token and React state immediately
+
+    // Navigate FIRST — before clearing auth state. This ensures the URL is already
+    // on a public route (/) when isAuthenticated becomes false, so ProtectedRoute
+    // never sees the unauthenticated state on a protected path and cannot redirect to /login.
+    navigate('/');
+    logger.log(`[AuthProvider.logout] Redirected to /`);
+
+    // Clear in-memory access token and React state
     setAuthState(null);
-    
+
     // Clear React Query cache
     queryClient.clear();
     logger.log(`[AuthProvider.logout] React Query cache cleared`);
-    
+
     try {
       // Notify server to revoke the refreshToken httpOnly cookie
       await authApi.logout();
@@ -278,10 +292,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Logout failed on server, but local state is already cleared
       logger.warn(`[AuthProvider.logout] Server logout failed (local state already cleared)`, error);
     }
-    
-    // Redirect to landing page
-    navigate('/');
-    logger.log(`[AuthProvider.logout] Redirected to /`);
   };
 
   const updateUser = (updates: Partial<User>) => {

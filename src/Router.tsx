@@ -193,7 +193,7 @@ export default function Router() {
           {/* Fallback - redirect based on auth state */}
           <Route 
             path="*" 
-            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} 
+            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />} 
           />
         </Routes>
       </Suspense>
