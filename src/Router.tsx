@@ -18,7 +18,12 @@ const Flats = lazy(() => import('./pages/Flats'));
 const Maintenance = lazy(() => import('./pages/Maintenance'));
 const MaintenanceLedger = lazy(() => import('./pages/MaintenanceLedger'));
 const Expenses = lazy(() => import('./pages/Expenses'));
-const Reports = lazy(() => import('./pages/Reports'));
+const CollectionSummary = lazy(() => import('./pages/reports/CollectionSummary'));
+const Defaulters = lazy(() => import('./pages/reports/Defaulters'));
+const IncomeVsExpense = lazy(() => import('./pages/reports/IncomeVsExpense'));
+const FundLedger = lazy(() => import('./pages/reports/FundLedger'));
+const PaymentRegister = lazy(() => import('./pages/reports/PaymentRegister'));
+const ExpenseByCategory = lazy(() => import('./pages/reports/ExpenseByCategory'));
 const Users = lazy(() => import('./pages/Users'));
 const Settings = lazy(() => import('./pages/Settings'));
 const SubscriptionManagement = lazy(() => import('./pages/SubscriptionManagement'));
@@ -133,13 +138,30 @@ export default function Router() {
               </ProtectedRoute>
             }
           />
+          <Route path="/reports" element={<Navigate to="/reports/collection-summary" replace />} />
           <Route
-            path="/reports"
-            element={
-              <ProtectedRoute>
-                <Reports />
-              </ProtectedRoute>
-            }
+            path="/reports/collection-summary"
+            element={<ProtectedRoute><CollectionSummary /></ProtectedRoute>}
+          />
+          <Route
+            path="/reports/defaulters"
+            element={<ProtectedRoute><Defaulters /></ProtectedRoute>}
+          />
+          <Route
+            path="/reports/income-vs-expense"
+            element={<ProtectedRoute><IncomeVsExpense /></ProtectedRoute>}
+          />
+          <Route
+            path="/reports/fund-ledger"
+            element={<ProtectedRoute><FundLedger /></ProtectedRoute>}
+          />
+          <Route
+            path="/reports/payment-register"
+            element={<ProtectedRoute><PaymentRegister /></ProtectedRoute>}
+          />
+          <Route
+            path="/reports/expense-by-category"
+            element={<ProtectedRoute><ExpenseByCategory /></ProtectedRoute>}
           />
           <Route
             path="/users"

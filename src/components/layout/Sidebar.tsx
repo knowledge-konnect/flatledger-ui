@@ -1,11 +1,20 @@
 ﻿import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Wrench, IndianRupee, BarChart3, Users, Settings, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, Building2, Wrench, IndianRupee, BarChart3, Users, Settings, LogOut, X, ChevronDown, BarChart2, AlertTriangle, TrendingUp, BookOpen, CreditCard, PieChart } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthProvider';
 import { isFinancialRole, collectUserRoles, RoleDisplayName } from '../../types/roles';
 import { useToast } from '../ui/Toast';
 import { cn } from '../../lib/utils';
 import { AlertMessages } from '../../lib/alertMessages';
+
+const reportsSubItems = [
+  { name: 'Billing Summary',      href: '/reports/collection-summary', icon: BarChart2 },
+  { name: 'Outstanding Dues',     href: '/reports/defaulters',          icon: AlertTriangle },
+  { name: 'Income & Expenses',    href: '/reports/income-vs-expense',  icon: TrendingUp },
+  { name: 'Fund Transactions',    href: '/reports/fund-ledger',         icon: BookOpen },
+  { name: 'Payments Received',    href: '/reports/payment-register',   icon: CreditCard },
+  { name: 'Expenses by Category', href: '/reports/expense-by-category', icon: PieChart },
+];
 
 const navGroups = [
   {
@@ -39,6 +48,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
   const setIsMobileOpen = controlled ? setMobileOpen! : setInternalMobileOpen;
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { pathname: currentPath } = useLocation();
+  const [reportsOpen, setReportsOpen] = useState(() => currentPath.startsWith('/reports'));
   const { logout, user } = useAuth();
   const { showToast } = useToast();
 
@@ -115,6 +125,70 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                   </p>
                   <div className="space-y-0.5">
                     {visibleItems.map((item) => {
+                      // Reports: render as collapsible parent with submenu
+                      if (item.name === 'Reports') {
+                        const isParentActive = currentPath.startsWith('/reports');
+                        return (
+                          <div key="Reports">
+                            <button
+                              onClick={() => setReportsOpen(v => !v)}
+                              className={cn(
+                                'w-full flex items-center gap-3 pl-3 pr-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 relative group',
+                                isParentActive
+                                  ? 'bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 text-[#2563EB] dark:text-[#3B82F6] border-l-2 border-[#2563EB] dark:border-[#3B82F6] pl-[10px]'
+                                  : 'text-[#64748B] dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:text-[#0F172A] dark:hover:text-[#F8FAFC] border-l-2 border-transparent hover:translate-x-0.5'
+                              )}
+                              data-testid="nav-reports"
+                            >
+                              <span className={cn(
+                                'flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0 transition-colors duration-150',
+                                item.iconBg
+                              )}>
+                                <item.icon className={cn('w-4 h-4', item.iconColor)} />
+                              </span>
+                              <span className="flex-1 text-left">{item.name}</span>
+                              <ChevronDown className={cn(
+                                'w-4 h-4 transition-transform duration-200 flex-shrink-0',
+                                reportsOpen ? 'rotate-180' : ''
+                              )} />
+                            </button>
+                            <div className={cn(
+                              'overflow-hidden transition-all duration-200 ease-in-out',
+                              reportsOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                            )}>
+                              <div className={cn(
+                                'ml-4 mt-0.5 mb-1 space-y-0.5 border-l-2 pl-3 transition-colors duration-200',
+                                isParentActive
+                                  ? 'border-[#2563EB]/50 dark:border-[#3B82F6]/50'
+                                  : 'border-slate-200 dark:border-slate-700'
+                              )}>
+                                {reportsSubItems.map(child => {
+                                  const isChildActive = currentPath === child.href || currentPath.startsWith(child.href + '/');
+                                  return (
+                                    <Link
+                                      key={child.name}
+                                      to={child.href}
+                                      onClick={() => setIsMobileOpen(false)}
+                                      className={cn(
+                                        'flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-150 border-l-2',
+                                        isChildActive
+                                          ? 'bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 text-[#2563EB] dark:text-[#3B82F6] font-semibold border-[#2563EB] dark:border-[#3B82F6]'
+                                          : 'text-[#64748B] dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:text-[#0F172A] dark:hover:text-[#F8FAFC] border-transparent hover:translate-x-0.5'
+                                      )}
+                                      data-testid={`nav-${child.name.toLowerCase().replace(/\s+/g, '-')}`}
+                                    >
+                                      <child.icon className={cn('w-3.5 h-3.5 flex-shrink-0', isChildActive ? 'text-[#2563EB] dark:text-[#3B82F6]' : '')} />
+                                      <span className="flex-1">{child.name}</span>
+                                    </Link>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      // Regular link item
                       const isActive = currentPath === item.href;
                       return (
                         <Link

@@ -216,7 +216,7 @@ export default function Dashboard() {
                 <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
                   Welcome back, {user?.name || 'User'}
                 </h2>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Society's financial overview</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Society's financial overview</p>
               </div>
               <div className="flex items-center gap-3 flex-wrap">
                 {/* Subscription compact badge */}
@@ -248,7 +248,7 @@ export default function Dashboard() {
             {periodTab === 'custom' && (
               <div className="flex flex-col sm:flex-row gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2 flex-1">
-                  <label className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">From</label>
+                  <label className="text-sm font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">From</label>
                   <input
                     type="date"
                     value={startDate}
@@ -257,7 +257,7 @@ export default function Dashboard() {
                   />
                 </div>
                 <div className="flex items-center gap-2 flex-1">
-                  <label className="text-xs font-medium text-slate-500 dark:text-slate-400 whitespace-nowrap">To</label>
+                  <label className="text-sm font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">To</label>
                   <input
                     type="date"
                     value={endDate}
