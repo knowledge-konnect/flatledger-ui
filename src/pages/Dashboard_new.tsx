@@ -235,13 +235,13 @@ export default function Dashboard() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400 opacity-70 mb-2">
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                       {stat.title}
                     </p>
                     <p className="text-4xl font-semibold tracking-tight text-slate-900 dark:text-white mb-1">
                       {stat.value}
                     </p>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 opacity-60">
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
                       {stat.subtitle}
                     </p>
                   </div>
@@ -260,7 +260,7 @@ export default function Dashboard() {
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                 Income vs Expense
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 opacity-80 mt-1">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                 Monthly financial performance overview
               </p>
             </div>
@@ -309,7 +309,7 @@ export default function Dashboard() {
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
                 Recent Activity
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 opacity-80 mt-1">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                 Latest transactions
               </p>
             </div>
@@ -344,7 +344,7 @@ export default function Dashboard() {
                         <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
                           {activity.description}
                         </p>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 opacity-70 mt-0.5">
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
                           {'userName' in activity && activity.userName ? `${activity.userName} • ` : ''}{formatDate(activity.date)}
                         </p>
                       </div>
@@ -362,7 +362,7 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-[200px] text-slate-600 dark:text-slate-400 opacity-70">
+              <div className="flex items-center justify-center h-[200px] text-slate-600 dark:text-slate-400">
                 No recent activity
               </div>
             )}
