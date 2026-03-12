@@ -1,8 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-} from 'recharts';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
+import ReactApexChart from 'react-apexcharts';
 import {
   FileText, TrendingUp, TrendingDown, Wallet, Users,
   Receipt, BarChart2, RefreshCw, AlertCircle, Loader2,
@@ -93,8 +90,8 @@ function initialState<T>(): ReportState<T> {
 }
 
 const CHART_COLORS = [
-  '#6366F1', '#22C55E', '#F59E0B', '#EF4444',
-  '#14B8A6', '#8B5CF6', '#EC4899', '#F97316',
+  '#10B981', '#F59E0B', '#6366F1', '#EF4444',
+  '#14B8A6', '#EC4899', '#3B82F6',
 ];
 
 /* ─────────────────────────────────────────────────── */
@@ -104,7 +101,7 @@ const CHART_COLORS = [
 function ReportLoading({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400 dark:text-slate-500">
-      <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
       <p className="text-sm">Loading {label}…</p>
     </div>
   );
@@ -128,8 +125,8 @@ function ReportError({ message, onRetry }: { message: string; onRetry: () => voi
 
 function StatCard({
   label, value, icon: Icon,
-  colorClass = 'bg-indigo-50 dark:bg-indigo-950/30',
-  iconColorClass = 'text-indigo-600 dark:text-indigo-400',
+  colorClass = 'bg-emerald-50 dark:bg-emerald-950/30',
+  iconColorClass = 'text-emerald-600 dark:text-emerald-400',
 }: {
   label: string;
   value: string | number;
@@ -185,9 +182,9 @@ function QuickDatePresets({
           type="button"
           onClick={() => { const r = presetDate(p.key); onSelect(r.start, r.end); }}
           className="px-2 py-0.5 text-[11px] rounded-full border border-slate-300 dark:border-slate-600
-                     text-slate-600 dark:text-slate-300 hover:bg-indigo-50 hover:border-indigo-300
-                     hover:text-indigo-600 dark:hover:bg-indigo-950/40 dark:hover:border-indigo-700
-                     dark:hover:text-indigo-400 transition-colors"
+                     text-slate-600 dark:text-slate-300 hover:bg-emerald-50 hover:border-emerald-300
+                     hover:text-emerald-600 dark:hover:bg-emerald-950/40 dark:hover:border-emerald-700
+                     dark:hover:text-emerald-400 transition-colors"
         >
           {p.label}
         </button>
@@ -210,9 +207,9 @@ function QuickPeriodPresets({
           type="button"
           onClick={() => { const r = presetPeriod(p.key); onSelect(r.startPeriod, r.endPeriod); }}
           className="px-2 py-0.5 text-[11px] rounded-full border border-slate-300 dark:border-slate-600
-                     text-slate-600 dark:text-slate-300 hover:bg-indigo-50 hover:border-indigo-300
-                     hover:text-indigo-600 dark:hover:bg-indigo-950/40 dark:hover:border-indigo-700
-                     dark:hover:text-indigo-400 transition-colors"
+                     text-slate-600 dark:text-slate-300 hover:bg-emerald-50 hover:border-emerald-300
+                     hover:text-emerald-600 dark:hover:bg-emerald-950/40 dark:hover:border-emerald-700
+                     dark:hover:text-emerald-400 transition-colors"
         >
           {p.label}
         </button>
@@ -238,7 +235,7 @@ function DateInput({
         onChange={e => onChange(e.target.value)}
         className="px-2.5 py-1.5 text-xs rounded-md border border-slate-300 dark:border-slate-600
                    bg-white dark:bg-slate-900 text-slate-900 dark:text-white
-                   focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500
+                   focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
                    h-[34px]"
       />
     </div>
@@ -262,7 +259,7 @@ function NumberInput({
         onChange={e => onChange(Number(e.target.value))}
         className="px-2.5 py-1.5 text-xs rounded-md border border-slate-300 dark:border-slate-600
                    bg-white dark:bg-slate-900 text-slate-900 dark:text-white
-                   focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 w-36
+                   focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 w-36
                    h-[34px]"
       />
     </div>
@@ -307,8 +304,8 @@ function CollectionSummaryReport({
   return (
     <div className="space-y-3">
       {/* Combined Filter & Description Block */}
-      <div className="bg-white dark:bg-slate-900 rounded-lg border-2 border-indigo-200 dark:border-indigo-800 shadow-sm">
-        <div className="px-4 py-2.5 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/40 dark:to-blue-950/40 border-b border-indigo-200 dark:border-indigo-800">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border-2 border-emerald-200 dark:border-emerald-800 shadow-sm">
+        <div className="px-4 py-2.5 bg-gradient-to-r from-emerald-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800">
           <div className="flex items-center gap-2">
             <span className="text-lg">📊</span>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Billing & Collections Overview</h3>
@@ -333,7 +330,7 @@ function CollectionSummaryReport({
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard label="Total Billed" value={formatCurrency(d.total_billed)} icon={Wallet}
-          colorClass="bg-blue-50 dark:bg-blue-950/30" iconColorClass="text-blue-600 dark:text-blue-400" />
+          colorClass="bg-emerald-50 dark:bg-emerald-950/30" iconColorClass="text-emerald-600 dark:text-emerald-400" />
         <StatCard label="Total Collected" value={formatCurrency(d.total_collected)} icon={TrendingUp}
           colorClass="bg-green-50 dark:bg-green-950/30" iconColorClass="text-green-600 dark:text-green-400" />
         <StatCard label="Total Outstanding" value={formatCurrency(d.total_outstanding)} icon={TrendingDown}
@@ -347,18 +344,26 @@ function CollectionSummaryReport({
           <CardTitle className="text-sm font-semibold">Monthly Trends</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => formatCurrency(v)} />
-              <Legend />
-              <Bar dataKey="Billed" fill="#6366F1" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Collected" fill="#22C55E" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Outstanding" fill="#EF4444" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <ReactApexChart
+            type="bar"
+            height={240}
+            series={[
+              { name: 'Billed', data: chartData.map((d: any) => d.Billed ?? 0) },
+              { name: 'Collected', data: chartData.map((d: any) => d.Collected ?? 0) },
+              { name: 'Outstanding', data: chartData.map((d: any) => d.Outstanding ?? 0) },
+            ]}
+            options={{
+              chart: { toolbar: { show: false }, background: 'transparent' },
+              colors: ['#10B981', '#F59E0B', '#EF4444'],
+              plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
+              dataLabels: { enabled: false },
+              xaxis: { categories: chartData.map((d: any) => d.name), labels: { style: { fontSize: '11px' } } },
+              yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px' } } },
+              tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+              legend: { position: 'top', fontSize: '12px' },
+              grid: { borderColor: '#E2E8F0' },
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -624,17 +629,25 @@ function IncomeVsExpenseReport({
           <CardTitle className="text-sm font-semibold">Monthly Comparison</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => formatCurrency(v)} />
-              <Legend />
-              <Bar dataKey="Income" fill="#22C55E" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Expense" fill="#EF4444" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <ReactApexChart
+            type="bar"
+            height={240}
+            series={[
+              { name: 'Income', data: chartData.map((d: any) => d.Income ?? 0) },
+              { name: 'Expense', data: chartData.map((d: any) => d.Expense ?? 0) },
+            ]}
+            options={{
+              chart: { toolbar: { show: false }, background: 'transparent' },
+              colors: ['#10B981', '#EF4444'],
+              plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
+              dataLabels: { enabled: false },
+              xaxis: { categories: chartData.map((d: any) => d.name), labels: { style: { fontSize: '11px' } } },
+              yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px' } } },
+              tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+              legend: { position: 'top', fontSize: '12px' },
+              grid: { borderColor: '#E2E8F0' },
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -643,15 +656,23 @@ function IncomeVsExpenseReport({
           <CardTitle className="text-sm font-semibold">Net Balance Trend</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => formatCurrency(v)} />
-              <Line type="monotone" dataKey="Net" stroke="#6366F1" strokeWidth={2} dot={{ r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <ReactApexChart
+            type="line"
+            height={180}
+            series={[{ name: 'Net', data: chartData.map((d: any) => d.Net ?? 0) }]}
+            options={{
+              chart: { toolbar: { show: false }, background: 'transparent' },
+              colors: ['#10B981'],
+              stroke: { width: 2, curve: 'smooth' },
+              markers: { size: 3 },
+              dataLabels: { enabled: false },
+              xaxis: { categories: chartData.map((d: any) => d.name), labels: { style: { fontSize: '11px' } } },
+              yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px' } } },
+              tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+              legend: { show: false },
+              grid: { borderColor: '#E2E8F0' },
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -743,8 +764,8 @@ function FundLedgerReport({
   return (
     <div className="space-y-3">
       {/* Combined Filter & Description Block */}
-      <div className="bg-white dark:bg-slate-900 rounded-lg border-2 border-blue-200 dark:border-blue-800 shadow-sm">
-        <div className="px-4 py-2.5 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/40 border-b border-blue-200 dark:border-blue-800">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border-2 border-emerald-200 dark:border-emerald-800 shadow-sm">
+        <div className="px-4 py-2.5 bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-950/40 dark:to-cyan-950/40 border-b border-emerald-200 dark:border-emerald-800">
           <div className="flex items-center gap-2">
             <span className="text-lg">📖</span>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Fund Transaction History</h3>
@@ -772,7 +793,7 @@ function FundLedgerReport({
         <StatCard label="Opening Balance" value={formatCurrency(openingBalance)} icon={Wallet}
           colorClass="bg-slate-50 dark:bg-slate-800/40" iconColorClass="text-slate-500 dark:text-slate-400" />
         <StatCard label="Opening Fund" value={formatCurrency(totalOpeningFund)} icon={BookOpen}
-          colorClass="bg-indigo-50 dark:bg-indigo-950/30" iconColorClass="text-indigo-600 dark:text-indigo-400" />
+          colorClass="bg-emerald-50 dark:bg-emerald-950/30" iconColorClass="text-emerald-600 dark:text-emerald-400" />
         <StatCard label="Total Collections" value={formatCurrency(totalCollections)} icon={TrendingUp}
           colorClass="bg-green-50 dark:bg-green-950/30" iconColorClass="text-green-600 dark:text-green-400" />
         <StatCard label="Total Expenses" value={formatCurrency(totalExpenses)} icon={TrendingDown}
@@ -786,15 +807,23 @@ function FundLedgerReport({
           <CardTitle className="text-base">Running Balance</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={balanceChartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => formatCurrency(v)} />
-              <Line type="monotone" dataKey="Balance" stroke="#6366F1" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+          <ReactApexChart
+            type="area"
+            height={220}
+            series={[{ name: 'Balance', data: balanceChartData.map((d: any) => d.Balance ?? 0) }]}
+            options={{
+              chart: { toolbar: { show: false }, background: 'transparent' },
+              colors: ['#10B981'],
+              stroke: { width: 2, curve: 'smooth' },
+              fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05 } },
+              dataLabels: { enabled: false },
+              xaxis: { categories: balanceChartData.map((d: any) => d.name), labels: { style: { fontSize: '10px' }, rotate: 0 }, tickAmount: 6 },
+              yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px' } } },
+              tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+              legend: { show: false },
+              grid: { borderColor: '#E2E8F0' },
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -833,7 +862,7 @@ function FundLedgerReport({
                     key={idx}
                     className={cn(
                       'border-b border-slate-100 dark:border-slate-700/60 transition-colors duration-100',
-                      'hover:bg-indigo-50 dark:hover:bg-indigo-950/30',
+                      'hover:bg-emerald-50 dark:hover:bg-emerald-950/30',
                       isEven
                         ? 'bg-white dark:bg-slate-900'
                         : 'bg-slate-50/70 dark:bg-slate-800/40'
@@ -855,7 +884,7 @@ function FundLedgerReport({
                         </span>
                       )}
                       {isOpeningFund && (
-                        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 whitespace-nowrap">
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 whitespace-nowrap">
                           Opening Fund
                         </span>
                       )}
@@ -1111,8 +1140,8 @@ function PaymentRegisterReport({
             onClick={() => setLabelFilter(opt)}
             className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors duration-200 ${
               labelFilter === opt
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-indigo-400'
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-emerald-400'
             }`}
           >
             {opt}
@@ -1130,16 +1159,22 @@ function PaymentRegisterReport({
             </CardHeader>
             <CardContent className="pb-4">
               <div className="flex flex-col items-center gap-3">
-                <ResponsiveContainer width="100%" height={180}>
-                  <PieChart>
-                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value">
-                      {pieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                  </PieChart>
-                </ResponsiveContainer>
+                <ReactApexChart
+                  type="donut"
+                  height={180}
+                  series={pieData.map((d: any) => d.value)}
+                  options={{
+                    chart: { background: 'transparent' },
+                    labels: pieData.map((d: any) => d.name),
+                    colors: CHART_COLORS,
+                    legend: { show: false },
+                    dataLabels: { enabled: false },
+                    plotOptions: { pie: { donut: { size: '55%' } } },
+                    tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                  }}
+                />
                 <div className="flex flex-col gap-1.5 w-full">
-                  {pieData.map((entry, i) => (
+                  {pieData.map((entry: any, i: number) => (
                     <div key={entry.name} className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                       <span className="text-xs text-slate-700 dark:text-slate-300">{entry.name}</span>
@@ -1158,8 +1193,8 @@ function PaymentRegisterReport({
             <CardContent className="p-3">
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-indigo-50 dark:bg-indigo-950/30">
-                    <TrendingUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-emerald-50 dark:bg-emerald-950/30">
+                    <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Collected</p>
                 </div>
@@ -1200,8 +1235,8 @@ function PaymentRegisterReport({
             <CardContent className="p-3">
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-blue-50 dark:bg-blue-950/30">
-                    <Receipt className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-emerald-50 dark:bg-emerald-950/30">
+                    <Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Advance</p>
                 </div>
@@ -1245,7 +1280,7 @@ function PaymentRegisterReport({
                     key={idx}
                     className={cn(
                       'border-b border-slate-100 dark:border-slate-700/60 transition-colors duration-100',
-                      'hover:bg-indigo-50 dark:hover:bg-indigo-950/30',
+                      'hover:bg-emerald-50 dark:hover:bg-emerald-950/30',
                       isEven
                         ? 'bg-white dark:bg-slate-900'
                         : 'bg-slate-50/70 dark:bg-slate-800/40'
@@ -1261,7 +1296,7 @@ function PaymentRegisterReport({
                       {formatCurrency(Number(p.amount) || 0)}
                     </td>
                     <td className="px-3 py-2.5 whitespace-nowrap">
-                      <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                         {p.payment_mode}
                       </span>
                     </td>
@@ -1292,7 +1327,7 @@ function PaymentRegisterReport({
                         </span>
                       )}
                       {lbl === null && (
-                        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 whitespace-nowrap">
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 whitespace-nowrap">
                           Opening
                         </span>
                       )}
@@ -1330,8 +1365,8 @@ function PaymentRegisterReport({
                 onClick={() => changePageSize(ps)}
                 className={`px-2.5 py-1 rounded text-xs font-semibold border transition-colors duration-150 ${
                   currentPageSize === ps
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-indigo-400'
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-emerald-400'
                 }`}
               >
                 {ps}
@@ -1345,14 +1380,14 @@ function PaymentRegisterReport({
             <button
               disabled={currentPage <= 1}
               onClick={() => goToPage(currentPage - 1)}
-              className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-semibold hover:border-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-semibold hover:border-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               ← Prev
             </button>
             <button
               disabled={currentPage >= totalPages}
               onClick={() => goToPage(currentPage + 1)}
-              className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-semibold hover:border-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-semibold hover:border-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Next →
             </button>
@@ -1434,28 +1469,25 @@ function ExpenseByCategoryReport({
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row items-center gap-6">
-              <ResponsiveContainer width={220} height={220}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={90}
-                    paddingAngle={3}
-                    dataKey="value"
-                    label={((props: any) => `${((props.percent ?? 0) * 100).toFixed(0)}%`) as any}
-                    labelLine={false}
-                  >
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="flex-shrink-0 w-[220px]">
+                <ReactApexChart
+                  type="donut"
+                  width={220}
+                  height={220}
+                  series={pieData.map((d: any) => d.value)}
+                  options={{
+                    chart: { background: 'transparent' },
+                    labels: pieData.map((d: any) => d.name),
+                    colors: CHART_COLORS,
+                    legend: { show: false },
+                    dataLabels: { formatter: (_: any, opts: any) => `${opts.w.globals.series[opts.seriesIndex] > 0 ? ((opts.w.globals.series[opts.seriesIndex] / opts.w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0)) * 100).toFixed(0) : 0}%` },
+                    plotOptions: { pie: { donut: { size: '60%' } } },
+                    tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                  }}
+                />
+              </div>
               <div className="flex flex-col gap-2 flex-1">
-                {d.categories.map((c, i) => (
+                {d.categories.map((c: any, i: number) => (
                   <div key={c.category_code} className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
@@ -1621,7 +1653,7 @@ export default function Reports() {
 
   function tabIndicator(key: keyof AllReports) {
     if (reports[key].loading)
-      return <span className="ml-1.5 w-2 h-2 rounded-full bg-indigo-400 animate-pulse inline-block" />;
+      return <span className="ml-1.5 w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />;
     if (reports[key].error)
       return <span className="ml-1.5 w-2 h-2 rounded-full bg-red-400 inline-block" />;
     return null;
@@ -1649,7 +1681,7 @@ export default function Reports() {
                   className={cn(
                     'flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap',
                     isActive
-                      ? 'border-indigo-600 text-indigo-600 bg-indigo-50 dark:border-indigo-400 dark:text-indigo-400 dark:bg-indigo-950/30'
+                      ? 'border-emerald-600 text-emerald-600 bg-emerald-50 dark:border-emerald-400 dark:text-emerald-400 dark:bg-emerald-950/30'
                       : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/50'
                   )}
                 >

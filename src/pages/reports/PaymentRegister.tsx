@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
+import ReactApexChart from 'react-apexcharts';
 import { CreditCard, TrendingUp, Receipt, Loader2, RefreshCw } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
@@ -184,8 +184,8 @@ export default function PaymentRegisterPage() {
                   onClick={() => setLabelFilter(opt)}
                   className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors duration-200 ${
                     labelFilter === opt
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-indigo-400'
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-emerald-400'
                   }`}
                 >
                   {opt}
@@ -202,15 +202,23 @@ export default function PaymentRegisterPage() {
                   </CardHeader>
                   <CardContent className="pb-4">
                     <div className="flex flex-col items-center gap-3">
-                      <ResponsiveContainer width="100%" height={180}>
-                        <PieChart>
-                          <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value"
-                            label={((({ percent }: any) => percent && percent > 0.04 ? `${(percent * 100).toFixed(0)}%` : '') as any)} labelLine={false}>
-                            {pieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                          </Pie>
-                          <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                        </PieChart>
-                      </ResponsiveContainer>
+                      <ReactApexChart
+                        type="donut"
+                        height={180}
+                        series={pieData.map((d) => d.value)}
+                        options={{
+                          chart: { background: 'transparent' },
+                          labels: pieData.map((d) => d.name),
+                          colors: CHART_COLORS,
+                          legend: { show: false },
+                          dataLabels: {
+                            enabled: true,
+                            formatter: (val: number) => (val > 4 ? `${val.toFixed(0)}%` : ''),
+                          },
+                          plotOptions: { pie: { donut: { size: '55%' } } },
+                          tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                        }}
+                      />
                       <div className="flex flex-col gap-1.5 w-full">
                         {pieData.map((entry, i) => (
                           <div key={entry.name} className="flex items-center gap-2">
@@ -226,10 +234,10 @@ export default function PaymentRegisterPage() {
               )}
               <div className="grid grid-cols-2 gap-2.5">
                 {[
-                  { label: 'Total Collected', value: totalAmount, icon: TrendingUp, bg: 'bg-indigo-50 dark:bg-indigo-950/30', ic: 'text-indigo-600 dark:text-indigo-400' },
+                  { label: 'Total Collected', value: totalAmount, icon: TrendingUp, bg: 'bg-emerald-50 dark:bg-emerald-950/30', ic: 'text-emerald-600 dark:text-emerald-400' },
                   { label: 'Current', value: totalCurrent, icon: Receipt, bg: 'bg-green-50 dark:bg-green-950/30', ic: 'text-green-600 dark:text-green-400' },
                   { label: 'Arrear', value: totalArrear, icon: Receipt, bg: 'bg-amber-50 dark:bg-amber-950/30', ic: 'text-amber-600 dark:text-amber-400' },
-                  { label: 'Advance', value: totalAdvance, icon: Receipt, bg: 'bg-blue-50 dark:bg-blue-950/30', ic: 'text-blue-600 dark:text-blue-400' },
+                  { label: 'Advance', value: totalAdvance, icon: Receipt, bg: 'bg-emerald-50 dark:bg-emerald-950/30', ic: 'text-emerald-600 dark:text-emerald-400' },
                 ].map(({ label, value, icon: Icon, bg, ic }) => (
                   <Card key={label} className="hover:shadow-md transition-all duration-200">
                     <CardContent className="p-3">
@@ -281,7 +289,7 @@ export default function PaymentRegisterPage() {
                           key={idx}
                           className={cn(
                             'border-b border-slate-100 dark:border-slate-700/60 transition-colors duration-100',
-                            'hover:bg-indigo-50 dark:hover:bg-indigo-950/30',
+                            'hover:bg-emerald-50 dark:hover:bg-emerald-950/30',
                             isEven ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/70 dark:bg-slate-800/40'
                           )}
                         >
@@ -295,7 +303,7 @@ export default function PaymentRegisterPage() {
                             {formatCurrency(Number(p.amount) || 0)}
                           </td>
                           <td className="px-3 py-2.5 whitespace-nowrap">
-                            <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                            <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                               {p.payment_mode}
                             </span>
                           </td>
@@ -309,7 +317,7 @@ export default function PaymentRegisterPage() {
                             {lbl === 'Current' && <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 whitespace-nowrap">Current</span>}
                             {lbl === 'Arrear'  && <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 whitespace-nowrap">Arrear</span>}
                             {lbl === 'Advance' && <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 whitespace-nowrap">Advance</span>}
-                            {lbl === null      && <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 whitespace-nowrap">Opening</span>}
+                            {lbl === null      && <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 whitespace-nowrap">Opening</span>}
                           </td>
                           <td className="px-3 py-2.5 text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">{p.recorded_by}</td>
                         </tr>
@@ -344,8 +352,8 @@ export default function PaymentRegisterPage() {
                       onClick={() => changePageSize(ps)}
                       className={`px-2.5 py-1 rounded text-xs font-semibold border transition-colors duration-150 ${
                         currentPageSize === ps
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-indigo-400'
+                          ? 'bg-emerald-600 text-white border-emerald-600'
+                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-emerald-400'
                       }`}
                     >
                       {ps}
@@ -359,12 +367,12 @@ export default function PaymentRegisterPage() {
                   <button
                     disabled={currentPage <= 1}
                     onClick={() => goToPage(currentPage - 1)}
-                    className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-semibold hover:border-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-semibold hover:border-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >← Prev</button>
                   <button
                     disabled={currentPage >= totalPages}
                     onClick={() => goToPage(currentPage + 1)}
-                    className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-semibold hover:border-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-semibold hover:border-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >Next →</button>
                 </div>
               </div>

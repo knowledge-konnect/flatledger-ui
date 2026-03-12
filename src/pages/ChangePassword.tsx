@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import { useChangePassword } from '../hooks/useChangePassword';
 import { useToast } from '../components/ui/Toast';
@@ -119,7 +119,7 @@ export default function ChangePassword() {
       <div className="w-full max-w-md animate-slide-in-up">
         {/* Brand Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#2563EB] rounded-2xl shadow-sm mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl shadow-sm mb-4">
             <Lock className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl font-bold text-[#0F172A] dark:text-[#F8FAFC] mb-2">

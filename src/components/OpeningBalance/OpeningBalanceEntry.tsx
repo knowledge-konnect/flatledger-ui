@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, AlertCircle, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { useFlats } from '../../hooks/useFlats';
@@ -429,7 +429,7 @@ export default function OpeningBalanceEntry() {
                       <div className="relative">
                         <div className="absolute inset-0 bg-slate-900/20 dark:bg-slate-100/10 -m-6 rounded-lg z-10" 
                              onClick={() => setShowFlatSelector(false)} />
-                        <div className="relative z-20 bg-white dark:bg-slate-800 border-2 border-blue-500 rounded-lg p-3">
+                        <div className="relative z-20 bg-white dark:bg-slate-800 border-2 border-emerald-500 rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                               Select Flat to Add
@@ -617,7 +617,7 @@ export default function OpeningBalanceEntry() {
                       type="checkbox"
                       checked={confirmed}
                       onChange={(e) => setConfirmed(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                     />
                     <span className="text-xs text-slate-700 dark:text-slate-300 leading-snug">
                       I confirm these balances are accurate and final.

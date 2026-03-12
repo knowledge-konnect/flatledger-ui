@@ -1,4 +1,4 @@
-import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
+﻿import { AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 import { cn, formatCurrency } from '../../lib/utils';
 import Card, { CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -74,8 +74,8 @@ export function initialState<T>(): ReportState<T> {
 }
 
 export const CHART_COLORS = [
-  '#6366F1', '#22C55E', '#F59E0B', '#EF4444',
-  '#14B8A6', '#8B5CF6', '#EC4899', '#F97316',
+  '#10B981', '#F59E0B', '#6366F1', '#EF4444',
+  '#14B8A6', '#EC4899', '#3B82F6',
 ];
 
 /* ─────────────────── UI Components ─────────────────── */
@@ -83,7 +83,7 @@ export const CHART_COLORS = [
 export function ReportLoading({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400 dark:text-slate-500">
-      <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      <Loader2 className="w-8 h-8 animate-spin text-primary" />
       <p className="text-sm">Loading {label}…</p>
     </div>
   );
@@ -103,8 +103,8 @@ export function ReportError({ message, onRetry }: { message: string; onRetry: ()
 
 export function StatCard({
   label, value, icon: Icon,
-  colorClass = 'bg-indigo-50 dark:bg-indigo-950/30',
-  iconColorClass = 'text-indigo-600 dark:text-indigo-400',
+  colorClass = 'bg-primary/10 dark:bg-primary/20',
+  iconColorClass = 'text-primary dark:text-primary-300',
 }: {
   label: string;
   value: string | number;
@@ -152,9 +152,9 @@ export function QuickDatePresets({ onSelect }: { onSelect: (start: string, end: 
           type="button"
           onClick={() => { const r = presetDate(p.key); onSelect(r.start, r.end); }}
           className="px-2 py-0.5 text-[11px] rounded-full border border-slate-300 dark:border-slate-600
-                     text-slate-600 dark:text-slate-300 hover:bg-indigo-50 hover:border-indigo-300
-                     hover:text-indigo-600 dark:hover:bg-indigo-950/40 dark:hover:border-indigo-700
-                     dark:hover:text-indigo-400 transition-colors"
+                     text-slate-600 dark:text-slate-300 hover:bg-primary/10 hover:border-primary/40
+                     hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/50
+                     dark:hover:text-primary-300 transition-colors"
         >
           {p.label}
         </button>
@@ -173,9 +173,9 @@ export function QuickPeriodPresets({ onSelect }: { onSelect: (startPeriod: strin
           type="button"
           onClick={() => { const r = presetPeriod(p.key); onSelect(r.startPeriod, r.endPeriod); }}
           className="px-2 py-0.5 text-[11px] rounded-full border border-slate-300 dark:border-slate-600
-                     text-slate-600 dark:text-slate-300 hover:bg-indigo-50 hover:border-indigo-300
-                     hover:text-indigo-600 dark:hover:bg-indigo-950/40 dark:hover:border-indigo-700
-                     dark:hover:text-indigo-400 transition-colors"
+                     text-slate-600 dark:text-slate-300 hover:bg-primary/10 hover:border-primary/40
+                     hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/50
+                     dark:hover:text-primary-300 transition-colors"
         >
           {p.label}
         </button>
@@ -201,7 +201,7 @@ export function DateInput({
         onChange={e => onChange(e.target.value)}
         className="px-2.5 py-1.5 text-xs rounded-md border border-slate-300 dark:border-slate-600
                    bg-white dark:bg-slate-900 text-slate-900 dark:text-white
-                   focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500
+                   focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
                    h-[34px]"
       />
     </div>
@@ -225,7 +225,7 @@ export function NumberInput({
         onChange={e => onChange(Number(e.target.value))}
         className="px-2.5 py-1.5 text-xs rounded-md border border-slate-300 dark:border-slate-600
                    bg-white dark:bg-slate-900 text-slate-900 dark:text-white
-                   focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 w-36
+                   focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 w-36
                    h-[34px]"
       />
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import ReactApexChart from 'react-apexcharts';
 import { PieChart as PieChartIcon, TrendingDown, Loader2, RefreshCw } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
@@ -89,26 +89,23 @@ export default function ExpenseByCategoryPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col sm:flex-row items-center gap-6">
-                    <ResponsiveContainer width={220} height={220}>
-                      <PieChart>
-                        <Pie
-                          data={pieData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={55}
-                          outerRadius={90}
-                          paddingAngle={3}
-                          dataKey="value"
-                          label={((props: any) => `${((props.percent ?? 0) * 100).toFixed(0)}%`) as any}
-                          labelLine={false}
-                        >
-                          {pieData.map((_, i) => (
-                            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <div className="flex-shrink-0 w-[220px]">
+                      <ReactApexChart
+                        type="donut"
+                        width={220}
+                        height={220}
+                        series={pieData.map((d) => d.value)}
+                        options={{
+                          chart: { background: 'transparent' },
+                          labels: pieData.map((d) => d.name),
+                          colors: CHART_COLORS,
+                          legend: { show: false },
+                          dataLabels: { enabled: true, formatter: (val: number) => `${val.toFixed(0)}%` },
+                          plotOptions: { pie: { donut: { size: '60%' } } },
+                          tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                        }}
+                      />
+                    </div>
                     <div className="flex flex-col gap-2 flex-1">
                       {state.data.categories.map((c, i) => (
                         <div key={c.category_code} className="flex items-center gap-2">
@@ -136,23 +133,26 @@ export default function ExpenseByCategoryPage() {
                     <CardTitle className="text-sm font-semibold">Category Ranking</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={Math.max(120, sorted.length * 38)}>
-                      <BarChart
-                        data={sorted}
-                        layout="vertical"
-                        margin={{ top: 5, right: 20, left: 8, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} className="stroke-slate-200 dark:stroke-slate-700" />
-                        <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
-                        <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={110} />
-                        <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                        <Bar dataKey="Amount" radius={[0, 4, 4, 0]}>
-                          {sorted.map((entry) => (
-                            <Cell key={entry.name} fill={CHART_COLORS[entry._i % CHART_COLORS.length]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <ReactApexChart
+                      type="bar"
+                      height={Math.max(120, sorted.length * 38)}
+                      series={[{ name: 'Amount', data: sorted.map((s) => s.Amount) }]}
+                      options={{
+                        chart: { toolbar: { show: false }, background: 'transparent' },
+                        colors: ['#10B981'],
+                        plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true } },
+                        dataLabels: { enabled: false },
+                        xaxis: {
+                          categories: sorted.map((s) => s.name),
+                          labels: { formatter: (v: string) => `₹${(Number(v) / 1000).toFixed(0)}k`, style: { fontSize: '11px' } },
+                        },
+                        yaxis: { labels: { style: { fontSize: '11px' } } },
+                        tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                        legend: { show: false },
+                        grid: { borderColor: '#E2E8F0', xaxis: { lines: { show: true } }, yaxis: { lines: { show: false } } },
+                        fill: { colors: sorted.map((s) => CHART_COLORS[s._i % CHART_COLORS.length]) },
+                      }}
+                    />
                   </CardContent>
                 </Card>
               );

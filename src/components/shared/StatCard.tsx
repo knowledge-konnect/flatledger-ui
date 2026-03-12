@@ -1,4 +1,4 @@
-import { LucideIcon, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+﻿import { LucideIcon, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import Card from '../ui/Card';
 
 interface StatCardProps {
@@ -13,8 +13,8 @@ export function StatCard({ title, value, change, positive = true, icon: Icon }: 
   return (
     <Card className="hover:shadow-lg transition-all duration-200">
       <div className="flex items-start justify-between mb-3">
-        <div className="w-10 h-10 rounded-lg bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 flex items-center justify-center">
-          <Icon className="w-5 h-5 text-[#2563EB] dark:text-[#3B82F6]" />
+        <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary-500/10 flex items-center justify-center">
+          <Icon className="w-5 h-5 text-primary dark:text-primary-500" />
         </div>
         {change && (
           <div

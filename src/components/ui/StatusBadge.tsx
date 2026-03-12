@@ -1,4 +1,4 @@
-import Badge from './Badge';
+﻿import Badge from './Badge';
 
 type BadgeVariant = 'default' | 'success' | 'warning' | 'error' | 'info';
 
@@ -79,7 +79,7 @@ export default function StatusBadge({ code, id, label, className, kind = 'flat',
     success: 'bg-green-600 text-white',
     warning: 'bg-yellow-500 text-white',
     error: 'bg-red-600 text-white',
-    info: 'bg-blue-600 text-white',
+    info: 'bg-emerald-600 text-white',
   };
 
   const extra = `${variantOverride[variant]} px-3 py-1 text-sm font-semibold rounded-full ${className ?? ''}`.trim();

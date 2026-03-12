@@ -112,10 +112,10 @@ export default function SubscriptionManagement() {
     },
     trial: {
       label: 'Free Trial',
-      gradient: 'from-indigo-500 to-violet-600',
+      gradient: 'from-emerald-500 to-violet-600',
       icon: Calendar,
-      iconColor: 'text-indigo-400',
-      badge: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
+      iconColor: 'text-emerald-400',
+      badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
     },
     expired: {
       label: 'Expired',
@@ -250,7 +250,7 @@ export default function SubscriptionManagement() {
                   <button
                     onClick={handleCreateTrial}
                     disabled={loading}
-                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-white text-indigo-700 text-xs font-semibold hover:bg-white/90 transition-colors disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-white text-emerald-700 text-xs font-semibold hover:bg-white/90 transition-colors disabled:opacity-60"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     Start Free Trial
@@ -294,16 +294,16 @@ export default function SubscriptionManagement() {
 
           {/* ── Upgrade CTA — show for trial / expired / cancelled ─────────── */}
           {(status === 'trial' || status === 'expired' || status === 'cancelled' || status === null) && (
-            <div className="rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+            <div className="rounded-2xl border-2 border-emerald-200 dark:border-emerald-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wide">Upgrade now</p>
+                  <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Upgrade now</p>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                     {status === 'trial' ? `Lock in your plan before trial ends` : 'Reactivate your subscription'}
                   </h3>
                   <p className="text-sm text-slate-500 dark:text-slate-400">All features, no restrictions. Cancel anytime.</p>
                 </div>
-                <Crown className="w-10 h-10 text-indigo-400 flex-shrink-0" />
+                <Crown className="w-10 h-10 text-emerald-400 flex-shrink-0" />
               </div>
 
               {/* Plan selector cards */}
@@ -321,10 +321,10 @@ export default function SubscriptionManagement() {
                       type="button"
                       onClick={() => setSelectedPlanId(plan.id)}
                       className={cn(
-                        'relative rounded-xl border-2 p-4 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500',
+                        'relative rounded-xl border-2 p-4 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500',
                         isSelected
-                          ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30 shadow-md'
-                          : 'border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 bg-white dark:bg-slate-900'
+                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 shadow-md'
+                          : 'border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700 bg-white dark:bg-slate-900'
                       )}
                     >
                       {/* Plan name + badge + radio */}
@@ -332,7 +332,7 @@ export default function SubscriptionManagement() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{plan.name}</p>
                           {isYearly && (
-                            <span className="px-2 py-0.5 bg-indigo-600 text-white text-[10px] font-bold rounded-full whitespace-nowrap">
+                            <span className="px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full whitespace-nowrap">
                               BEST VALUE · 2 MONTHS FREE
                             </span>
                           )}
@@ -340,7 +340,7 @@ export default function SubscriptionManagement() {
                         <span className={cn(
                           'w-4 h-4 rounded-full border-2 flex-shrink-0 transition-all',
                           isSelected
-                            ? 'border-indigo-600 bg-indigo-600'
+                            ? 'border-emerald-600 bg-emerald-600'
                             : 'border-slate-300 dark:border-slate-600'
                         )}>
                           {isSelected && <span className="block w-full h-full rounded-full scale-50 bg-white" />}
@@ -369,7 +369,7 @@ export default function SubscriptionManagement() {
               <button
                 onClick={handleSubscribe}
                 disabled={loading || isPaymentLoading || isProcessing || !resolvedSelectedPlan}
-                className="mt-4 w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="mt-4 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-violet-600 hover:from-emerald-700 hover:to-violet-700 text-white font-semibold shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Lock className="w-4 h-4" />
                 {isPaymentLoading || isProcessing
@@ -388,14 +388,14 @@ export default function SubscriptionManagement() {
           {/* ── Included features ─────────────────────────────────────────── */}
           <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <ShieldCheck className="w-5 h-5 text-indigo-500" />
+              <ShieldCheck className="w-5 h-5 text-emerald-500" />
               <h3 className="font-semibold text-slate-900 dark:text-white">Everything included in your plan</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {PLAN_FEATURES.map(({ icon: Icon, label }) => (
                 <div key={label} className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <span className="text-sm text-slate-700 dark:text-slate-300">{label}</span>
                 </div>
@@ -418,7 +418,7 @@ export default function SubscriptionManagement() {
                 'You can cancel anytime from this page — no lock-in',
               ].map((step, i) => (
                 <li key={i} className="flex items-start gap-3">
-                  <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
                     {i + 1}
                   </span>
                   <span className="text-sm text-slate-600 dark:text-slate-400">{step}</span>
@@ -437,7 +437,7 @@ export default function SubscriptionManagement() {
             </p>
             <a
               href="mailto:support@FlatLedger.com"
-              className="inline-flex items-center gap-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+              className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
             >
               <Mail className="w-4 h-4" />
               support@FlatLedger.com

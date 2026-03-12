@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+﻿import { createContext, useContext, useState, ReactNode } from 'react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -55,7 +55,7 @@ export function EnhancedToastProvider({ children }: { children: ReactNode }) {
   const styles = {
     success: 'bg-green-600 border-green-700 text-white',
     error: 'bg-red-600 border-red-700 text-white',
-    info: 'bg-blue-600 border-blue-700 text-white',
+    info: 'bg-sky-600 border-sky-700 text-white',
     warning: 'bg-amber-600 border-amber-700 text-white',
   };
 

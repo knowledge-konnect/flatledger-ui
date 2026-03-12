@@ -1,4 +1,4 @@
-import { forwardRef, InputHTMLAttributes, useState } from 'react';
+﻿import { forwardRef, InputHTMLAttributes, useState } from 'react';
 import { cn } from '../../lib/utils';
 
 interface FloatingLabelInputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -26,8 +26,8 @@ export const FloatingLabelInput = forwardRef<HTMLInputElement, FloatingLabelInpu
             'text-slate-900 dark:text-white',
             error
               ? 'border-red-500 focus:border-red-500'
-              : 'border-slate-200 dark:border-slate-700 focus:border-indigo-500 dark:focus:border-indigo-500',
-            'focus:outline-none focus:ring-2 focus:ring-indigo-500/20',
+              : 'border-slate-200 dark:border-slate-700 focus:border-emerald-500 dark:focus:border-emerald-500',
+            'focus:outline-none focus:ring-2 focus:ring-emerald-500/20',
             'disabled:bg-slate-50 dark:disabled:bg-slate-800/30 disabled:cursor-not-allowed',
             className
           )}
@@ -40,7 +40,7 @@ export const FloatingLabelInput = forwardRef<HTMLInputElement, FloatingLabelInpu
           className={cn(
             'absolute left-4 transition-all duration-200 pointer-events-none',
             isFloating
-              ? 'top-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400'
+              ? 'top-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400'
               : 'top-1/2 -translate-y-1/2 text-base text-slate-500 dark:text-slate-400'
           )}
         >

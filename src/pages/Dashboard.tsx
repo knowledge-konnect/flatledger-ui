@@ -9,19 +9,7 @@ import {
   ReceiptText,
   ChevronRight,
 } from 'lucide-react';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
+import ReactApexChart from 'react-apexcharts';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { SubscriptionSummary } from '../components/SubscriptionSummary';
 import SetupBanner from '../components/dashboard/SetupBanner';
@@ -40,8 +28,8 @@ import BillingReminderBanner from '../components/dashboard/BillingReminderBanner
 import { useToast } from '../components/ui/Toast';
 import { formatCurrency, cn } from '../lib/utils';
 
-// ─── Pie chart palette ────────────────────────────────────────────────────────
-const PIE_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#3b82f6', '#ec4899', '#14b8a6'];
+// ─── Chart color palette ──────────────────────────────────────────────────────
+const CHART_COLORS = ['#10B981', '#F59E0B', '#6366F1', '#EF4444', '#14B8A6', '#EC4899', '#3B82F6'];
 
 // ─── Skeleton helpers ─────────────────────────────────────────────────────────
 function KpiSkeleton() {
@@ -205,80 +193,78 @@ export default function Dashboard() {
   return (
     <DashboardLayout title="Dashboard">
       {showWelcome && !setupComplete && <WelcomeModal onClose={() => setShowWelcome(false)} />}
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-6" data-testid="dashboard-content">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+      <div className="space-y-6" data-testid="dashboard-content">
 
-          {/* ── Header ─────────────────────────────────────────────────────── */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl px-5 py-4 shadow-sm border border-slate-200 dark:border-slate-800">
-            {/* Top row: greeting + subscription + period tabs */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-                  Welcome back, {user?.name || 'User'}
-                </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Society's financial overview</p>
-              </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                {/* Subscription compact badge */}
-                <SubscriptionSummary compact />
-                {/* Period Tabs */}
-                <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
-                  {([
-                    { key: 'this-month', label: 'This Month' },
-                    { key: 'last-month', label: 'Last Month' },
-                    { key: 'custom',     label: 'Custom' },
-                  ] as { key: PeriodTab; label: string }[]).map(({ key, label }) => (
-                    <button
-                      key={key}
-                      onClick={() => handlePeriodTab(key)}
-                      className={cn(
-                        'px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 whitespace-nowrap',
-                        periodTab === key
-                          ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+        {/* ── Page Header ─────────────────────────────────────────────────── */}
+        <div className="bg-white dark:bg-slate-900 rounded-xl px-5 py-4 border border-[#E2E8F0] dark:border-slate-800" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-semibold text-[#0F172A] dark:text-white">
+                Welcome back, {user?.name?.split(' ')[0] || 'User'} 👋
+              </h2>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-0.5">
+                Here's your society's financial overview
+              </p>
+            </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <SubscriptionSummary compact />
+              {/* Period Tabs */}
+              <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
+                {([
+                  { key: 'this-month', label: 'This Month' },
+                  { key: 'last-month', label: 'Last Month' },
+                  { key: 'custom',     label: 'Custom' },
+                ] as { key: PeriodTab; label: string }[]).map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => handlePeriodTab(key)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 whitespace-nowrap',
+                      periodTab === key
+                        ? 'bg-white dark:bg-slate-700 text-[#0F172A] dark:text-white shadow-sm'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
-            {/* Custom date range — inline below, only when needed */}
-            {periodTab === 'custom' && (
-              <div className="flex flex-col sm:flex-row gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2 flex-1">
-                  <label className="text-sm font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">From</label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <div className="flex items-center gap-2 flex-1">
-                  <label className="text-sm font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">To</label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
-            )}
           </div>
+          {periodTab === 'custom' && (
+            <div className="flex flex-col sm:flex-row gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2 flex-1">
+                <label className="text-xs font-medium text-slate-500 whitespace-nowrap">From</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="input input-sm flex-1"
+                />
+              </div>
+              <div className="flex items-center gap-2 flex-1">
+                <label className="text-xs font-medium text-slate-500 whitespace-nowrap">To</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="input input-sm flex-1"
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
-          {/* ── Contextual Banners ────────────────────────────────────────── */}
-          <SetupBanner />
-          <BillingReminderBanner
-            monthLabel={billingMonthLabel}
-            isGenerated={!!billingStatus?.isGenerated}
-            isLoading={billingStatusLoading}
-            isGenerating={generateBilling.isPending}
-            zeroAmountFlatsCount={zeroAmountFlatsCount}
-            onGenerate={handleGenerateBilling}
-          />
+        {/* ── Contextual Banners ────────────────────────────────────────── */}
+        <SetupBanner />
+        <BillingReminderBanner
+          monthLabel={billingMonthLabel}
+          isGenerated={!!billingStatus?.isGenerated}
+          isLoading={billingStatusLoading}
+          isGenerating={generateBilling.isPending}
+          zeroAmountFlatsCount={zeroAmountFlatsCount}
+          onGenerate={handleGenerateBilling}
+        />
 
           {/* ── 4 KPI Cards ───────────────────────────────────────────────── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -313,7 +299,7 @@ export default function Dashboard() {
                   label="Society Fund Balance"
                   value={formatCurrency(snap?.bank_balance ?? 0)}
                   icon={Landmark}
-                  color={(snap?.bank_balance ?? 0) >= 0 ? 'indigo' : 'red'}
+                  color={(snap?.bank_balance ?? 0) >= 0 ? 'emerald' : 'red'}
                   sub={
                     (snap?.net_cash_flow ?? 0) >= 0
                       ? `+${formatCurrency(snap?.net_cash_flow ?? 0)} net this period`
@@ -330,38 +316,54 @@ export default function Dashboard() {
             {/* Bar Chart — Income vs Expense */}
             <Card className="lg:col-span-2 p-6 rounded-2xl shadow-sm" data-testid="income-expense-chart">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">6-Month Income vs Expense</h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mb-5">Monthly collection &amp; spending trend</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-5">Monthly collection &amp; spending trend</p>
               {isLoading ? (
                 <ChartSkeleton height={260} />
               ) : trends.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-[260px] gap-2 text-center">
-                  <TrendingUp className="w-8 h-8 text-slate-300 dark:text-slate-600" />
-                  <p className="text-sm text-slate-400 dark:text-slate-500">No trend data yet</p>
-                  <p className="text-xs text-slate-400 dark:text-slate-500">Appears once billing is generated</p>
+                <div className="flex flex-col items-center justify-center h-[260px] gap-3 text-center">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No trend data yet</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Appears once billing is generated</p>
+                  </div>
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={trends.slice(-6)} barGap={3} barCategoryGap="30%">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-slate-700" vertical={false} />
-                    <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} />
-                    <YAxis
-                      stroke="#94a3b8"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
-                      width={52}
-                    />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: '0 4px 12px rgb(0 0 0 / 0.08)', padding: '10px 14px' }}
-                      formatter={(value: any) => [formatCurrency(Number(value ?? 0)), '']}
-                      cursor={{ fill: 'rgba(99,102,241,0.05)' }}
-                    />
-                    <Legend wrapperStyle={{ paddingTop: '12px', fontSize: '12px' }} iconType="circle" iconSize={8} />
-                    <Bar dataKey="income" fill="#22c55e" radius={[5, 5, 0, 0]} name="Income" />
-                    <Bar dataKey="expense" fill="#f43f5e" radius={[5, 5, 0, 0]} name="Expense" />
-                  </BarChart>
-                </ResponsiveContainer>
+                <ReactApexChart
+                  type="bar"
+                  height={260}
+                  options={{
+                    chart: { toolbar: { show: false }, background: 'transparent', fontFamily: 'var(--font-sans)', animations: { enabled: true, speed: 400 } },
+                    plotOptions: { bar: { borderRadius: 5, columnWidth: '55%', borderRadiusApplication: 'end' } },
+                    dataLabels: { enabled: false },
+                    stroke: { show: true, width: 2, colors: ['transparent'] },
+                    xaxis: {
+                      categories: trends.slice(-6).map((t: any) => t.label),
+                      axisBorder: { show: false },
+                      axisTicks: { show: false },
+                      labels: { style: { colors: '#94a3b8', fontSize: '11px' } },
+                    },
+                    yaxis: {
+                      labels: {
+                        style: { colors: '#94a3b8', fontSize: '11px' },
+                        formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`,
+                      },
+                    },
+                    grid: { borderColor: '#F1F5F9', strokeDashArray: 4, xaxis: { lines: { show: false } } },
+                    fill: { opacity: 1 },
+                    tooltip: {
+                      y: { formatter: (v: number) => formatCurrency(v) },
+                      theme: 'light',
+                    },
+                    legend: { position: 'top', horizontalAlign: 'right', fontSize: '12px', labels: { colors: '#64748b' } },
+                    colors: ['#10B981', '#EF4444'],
+                  }}
+                  series={[
+                    { name: 'Income', data: trends.slice(-6).map((t: any) => t.income ?? 0) },
+                    { name: 'Expense', data: trends.slice(-6).map((t: any) => t.expense ?? 0) },
+                  ]}
+                />
               )}
             </Card>
 
@@ -372,47 +374,44 @@ export default function Dashboard() {
           {/* ── Bottom Row: Pie + Dues + Activity ─────────────────────────── */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-            {/* Expense Breakdown Pie */}
+            {/* Expense Breakdown Donut */}
             <Card className="p-6 rounded-2xl shadow-sm" data-testid="expense-pie-chart">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Where Money Was Spent</h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Expense breakdown by category</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-4">Expense breakdown by category</p>
               {isLoading ? (
                 <ChartSkeleton height={220} />
               ) : expBreakdown.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-[220px] gap-2 text-center">
-                  <ArrowDownCircle className="w-8 h-8 text-slate-300 dark:text-slate-600" />
-                  <p className="text-sm text-slate-400 dark:text-slate-500">No expenses yet</p>
-                  <p className="text-xs text-slate-400 dark:text-slate-500">Add expenses to see the breakdown</p>
+                <div className="flex flex-col items-center justify-center h-[220px] gap-3 text-center">
+                  <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                    <ArrowDownCircle className="w-6 h-6 text-slate-400 dark:text-slate-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No expenses yet</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Add expenses to see the breakdown</p>
+                  </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center">
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
-                      <Pie
-                        data={expBreakdown as any}
-                        dataKey="amount"
-                        nameKey="category"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={48}
-                        outerRadius={72}
-                        paddingAngle={2}
-                      >
-                        {expBreakdown.map((_, i) => (
-                          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: any, name: any) => [formatCurrency(Number(value ?? 0)), name ?? '']}
-                        contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: '0 4px 12px rgb(0 0 0 / 0.08)' }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                <div>
+                  <ReactApexChart
+                    type="donut"
+                    height={200}
+                    options={{
+                      chart: { background: 'transparent', fontFamily: 'var(--font-sans)', animations: { speed: 400 } },
+                      labels: expBreakdown.map((e: any) => e.category),
+                      colors: CHART_COLORS,
+                      plotOptions: { pie: { donut: { size: '65%', labels: { show: true, total: { show: true, label: 'Total', formatter: () => formatCurrency(expBreakdown.reduce((s: number, e: any) => s + e.amount, 0)) } } } } },
+                      dataLabels: { enabled: false },
+                      legend: { show: false },
+                      stroke: { width: 2 },
+                      tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                    }}
+                    series={expBreakdown.map((e: any) => e.amount)}
+                  />
                   <ul className="w-full mt-3 space-y-2">
-                    {expBreakdown.slice(0, 5).map((item, i) => (
+                    {expBreakdown.slice(0, 5).map((item: any, i: number) => (
                       <li key={i} className="flex items-center justify-between text-xs">
                         <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400 truncate">
-                          <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                          <span className="inline-block w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                           {item.category}
                         </span>
                         <span className="font-semibold text-slate-700 dark:text-slate-300 pl-2 tabular-nums">{item.percentage.toFixed(1)}%</span>
@@ -426,7 +425,7 @@ export default function Dashboard() {
             {/* Highest Pending Dues */}
             <Card className="p-6 rounded-2xl shadow-sm" data-testid="top-defaulters">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Highest Pending Dues</h3>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Flats with large outstanding balances</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-4">Flats with large outstanding balances</p>
               {isLoading ? (
                 <ListSkeleton rows={5} />
               ) : topDefaulters.length === 0 ? (
@@ -470,7 +469,7 @@ export default function Dashboard() {
                   </ul>
                   <button
                     onClick={() => navigate('/maintenance')}
-                    className="mt-4 w-full text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center justify-center gap-1 py-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-colors"
+                    className="mt-4 w-full text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 flex items-center justify-center gap-1 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
                   >
                     View all outstanding dues <ChevronRight className="w-3.5 h-3.5" />
                   </button>
@@ -483,7 +482,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-1">
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Recent Transactions</h3>
               </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Latest payments &amp; expenses</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-4">Latest payments &amp; expenses</p>
               {isLoading ? (
                 <ListSkeleton rows={6} />
               ) : recentActivity.length === 0 ? (
@@ -506,13 +505,13 @@ export default function Dashboard() {
                   <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
                     <button
                       onClick={() => navigate('/maintenance')}
-                      className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 flex items-center gap-0.5"
+                      className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 flex items-center gap-0.5"
                     >
                       Payments <ChevronRight className="w-3 h-3" />
                     </button>
                     <button
                       onClick={() => navigate('/expenses')}
-                      className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 flex items-center gap-0.5"
+                      className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 flex items-center gap-0.5"
                     >
                       Expenses <ChevronRight className="w-3 h-3" />
                     </button>
@@ -522,7 +521,6 @@ export default function Dashboard() {
             </Card>
           </div>
 
-        </div>
       </div>
     </DashboardLayout>
   );

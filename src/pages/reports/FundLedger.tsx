@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
+import ReactApexChart from 'react-apexcharts';
 import { BookOpen, TrendingUp, TrendingDown, Wallet, Loader2, RefreshCw } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
@@ -66,8 +66,8 @@ export default function FundLedgerPage() {
         />
 
         {/* Filter Block */}
-        <div className="bg-white dark:bg-slate-900 rounded-lg border-2 border-blue-200 dark:border-blue-800 shadow-sm">
-          <div className="px-4 py-2.5 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/40 border-b border-blue-200 dark:border-blue-800">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border-2 border-emerald-200 dark:border-emerald-800 shadow-sm">
+          <div className="px-4 py-2.5 bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-950/40 dark:to-cyan-950/40 border-b border-emerald-200 dark:border-emerald-800">
             <div className="flex items-center gap-2">
               <span className="text-lg">📖</span>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Fund Transactions</h3>
@@ -98,7 +98,7 @@ export default function FundLedgerPage() {
               <StatCard label="Opening Balance" value={formatCurrency(openingBalance)} icon={Wallet}
                 colorClass="bg-slate-50 dark:bg-slate-800/40" iconColorClass="text-slate-500 dark:text-slate-400" />
               <StatCard label="Opening Fund" value={formatCurrency(totalOpeningFund)} icon={BookOpen}
-                colorClass="bg-indigo-50 dark:bg-indigo-950/30" iconColorClass="text-indigo-600 dark:text-indigo-400" />
+                colorClass="bg-emerald-50 dark:bg-emerald-950/30" iconColorClass="text-emerald-600 dark:text-emerald-400" />
               <StatCard label="Total Collections" value={formatCurrency(totalCollections)} icon={TrendingUp}
                 colorClass="bg-green-50 dark:bg-green-950/30" iconColorClass="text-green-600 dark:text-green-400" />
               <StatCard label="Total Expenses" value={formatCurrency(totalExpenses)} icon={TrendingDown}
@@ -112,28 +112,23 @@ export default function FundLedgerPage() {
                 <CardTitle className="text-base">Running Balance</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={240}>
-                  <AreaChart data={balanceChartData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
-                    <defs>
-                      <linearGradient id="balanceGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366F1" stopOpacity={0.4} />
-                        <stop offset="95%" stopColor="#6366F1" stopOpacity={0.02} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fontSize: 10 }}
-                      interval={Math.max(0, Math.floor(balanceChartData.length / 8) - 1)}
-                      angle={-30}
-                      textAnchor="end"
-                      height={40}
-                    />
-                    <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                    <Area type="monotone" dataKey="Balance" stroke="#6366F1" strokeWidth={2.5} fill="url(#balanceGradient)" dot={false} activeDot={{ r: 5 }} />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <ReactApexChart
+                  type="area"
+                  height={240}
+                  series={[{ name: 'Balance', data: balanceChartData.map((d: any) => d.Balance ?? 0) }]}
+                  options={{
+                    chart: { toolbar: { show: false }, background: 'transparent' },
+                    colors: ['#10B981'],
+                    stroke: { width: 2.5, curve: 'smooth' },
+                    dataLabels: { enabled: false },
+                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.02 } },
+                    xaxis: { categories: balanceChartData.map((d: any) => d.name), labels: { style: { fontSize: '10px' }, rotate: -30 }, tickAmount: 8 },
+                    yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px' } } },
+                    tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                    legend: { show: false },
+                    grid: { borderColor: '#E2E8F0' },
+                  }}
+                />
               </CardContent>
             </Card>
 
@@ -171,7 +166,7 @@ export default function FundLedgerPage() {
                           key={idx}
                           className={cn(
                             'border-b border-slate-100 dark:border-slate-700/60 transition-colors duration-100',
-                            'hover:bg-indigo-50 dark:hover:bg-indigo-950/30',
+                            'hover:bg-emerald-50 dark:hover:bg-emerald-950/30',
                             isEven ? 'bg-white dark:bg-slate-900' : 'bg-slate-50/70 dark:bg-slate-800/40'
                           )}
                         >
@@ -187,7 +182,7 @@ export default function FundLedgerPage() {
                               <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 whitespace-nowrap">Debit</span>
                             )}
                             {isOpeningFund && (
-                              <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 whitespace-nowrap">Opening Fund</span>
+                              <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 whitespace-nowrap">Opening Fund</span>
                             )}
                             {!isCredit && !isDebit && !isOpeningFund && (
                               <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 whitespace-nowrap">{type}</span>

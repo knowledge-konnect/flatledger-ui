@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Eye, EyeOff, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { calculatePasswordStrength } from '../../lib/validation';
@@ -50,8 +50,8 @@ export function PasswordInput({
             'text-slate-900 dark:text-white',
             error
               ? 'border-red-500 focus:border-red-500'
-              : 'border-slate-200 dark:border-slate-700 focus:border-indigo-500',
-            'focus:outline-none focus:ring-2 focus:ring-indigo-500/20'
+              : 'border-slate-200 dark:border-slate-700 focus:border-emerald-500',
+            'focus:outline-none focus:ring-2 focus:ring-emerald-500/20'
           )}
         />
         <button

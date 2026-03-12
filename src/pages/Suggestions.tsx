@@ -12,8 +12,8 @@ export default function Suggestions() {
 
           <div className="bg-white dark:bg-[#020617] border border-[#E2E8F0] dark:border-[#1E293B] rounded-lg p-8 space-y-6">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Mail className="w-6 h-6 text-[#2563EB] dark:text-[#3B82F6]" />
+              <div className="w-12 h-12 bg-primary/10 dark:bg-primary-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Mail className="w-6 h-6 text-primary dark:text-primary-500" />
               </div>
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-foreground mb-2">Email Support</h2>
@@ -22,7 +22,7 @@ export default function Suggestions() {
                 </p>
                 <a
                   href="mailto:support@FlatLedger.com?subject=Feedback for FlatLedger"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#2563EB] dark:bg-[#3B82F6] text-white rounded-lg hover:bg-[#1D4ED8] dark:hover:bg-[#2563EB] transition-colors font-medium group"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary dark:bg-primary-500 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary transition-colors font-medium group"
                 >
                   Send Email to support@FlatLedger.com
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

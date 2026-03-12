@@ -61,8 +61,8 @@ export default function Subscription() {
       {/* Hero Section - Dynamic by selected plan */}
       <section className="pt-12 md:pt-20 pb-6 md:pb-10 px-2 sm:px-4 lg:px-6 relative overflow-hidden bg-white dark:bg-slate-950">
         <div className="max-w-4xl mx-auto text-center space-y-6">
-          <div className="inline-block px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-full border border-indigo-200 dark:border-indigo-700 animate-fade-in">
-            <p className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">✨ 30-Day Free Trial • No Credit Card Required</p>
+          <div className="inline-block px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-full border border-emerald-200 dark:border-emerald-700 animate-fade-in">
+            <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">✨ 30-Day Free Trial • No Credit Card Required</p>
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold text-slate-900 dark:text-white text-balance animate-slide-in-up leading-tight tracking-tight">
             {selectedPlanId && plans.length > 0 ? `Choose the ${plans.find(p => p.id === selectedPlanId)?.name} Plan` : 'Start Your Free Trial Today'}
@@ -74,7 +74,7 @@ export default function Subscription() {
           </p>
           {selectedPlanId && plans.length > 0 && (
             <div className="flex justify-center items-center gap-2 pt-2">
-              <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">₹{plans.find(p => p.id === selectedPlanId)?.monthlyAmount}</span>
+              <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">₹{plans.find(p => p.id === selectedPlanId)?.monthlyAmount}</span>
               <span className="text-lg text-slate-600 dark:text-slate-400">/month</span>
             </div>
           )}
@@ -91,24 +91,24 @@ export default function Subscription() {
           ) : (
             <div className="grid md:grid-cols-2 gap-4">
               {plans.map(plan => (
-                <div key={plan.id} className={`rounded-2xl border-2 transition-all duration-300 shadow-xl overflow-hidden bg-white dark:bg-slate-900 ${selectedPlanId === plan.id ? 'border-indigo-600 dark:border-indigo-500' : 'border-slate-200 dark:border-slate-800'}`}>
+                <div key={plan.id} className={`rounded-2xl border-2 transition-all duration-300 shadow-xl overflow-hidden bg-white dark:bg-slate-900 ${selectedPlanId === plan.id ? 'border-emerald-600 dark:border-emerald-500' : 'border-slate-200 dark:border-slate-800'}`}>
                   <div className="p-6 md:p-8 space-y-6">
                     <div className="space-y-2">
                       <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">{plan.name}</h3>
-                      <p className="text-base font-medium text-indigo-600 dark:text-indigo-400">{plan.description}</p>
+                      <p className="text-base font-medium text-emerald-600 dark:text-emerald-400">{plan.description}</p>
                     </div>
                     <div className="space-y-1 border-t border-b border-slate-200 dark:border-slate-800 py-4">
                       <div className="flex items-baseline gap-2">
                         <span className="text-4xl font-bold text-slate-900 dark:text-white">₹{plan.monthlyAmount}</span>
                         <span className="text-lg text-slate-600 dark:text-slate-400">/month</span>
                       </div>
-                      <p className="text-sm text-indigo-600 dark:text-indigo-400 font-semibold">30-Day Free Trial • No Credit Card Required</p>
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold">30-Day Free Trial • No Credit Card Required</p>
                       <p className="text-xs text-slate-600 dark:text-slate-400 pt-1">Then cancel anytime, no lock-in.</p>
                     </div>
                     <ul className="space-y-2">
                       {['Unlimited Flats & Residents', 'Secure Data Storage', 'Team Collaboration', 'Advanced Reports', 'Payment Recording', 'Email Support'].map((feature: string, i: number) => (
                         <li key={i} className="flex items-start gap-2">
-                          <CheckCircle className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
+                          <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
                           <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{feature}</span>
                         </li>
                       ))}
@@ -116,7 +116,7 @@ export default function Subscription() {
                     <button
                       onClick={() => { setSelectedPlanId(plan.id); handleStartTrial(); }}
                       disabled={isActivating}
-                      className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white hover:shadow-lg hover:-translate-y-1 shadow-lg disabled:opacity-70 hover:from-indigo-700 hover:to-indigo-600 dark:from-indigo-600 dark:to-indigo-500 ${selectedPlanId === plan.id ? '' : 'opacity-70'}`}
+                      className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:shadow-lg hover:-translate-y-1 shadow-lg disabled:opacity-70 hover:from-emerald-700 hover:to-emerald-600 dark:from-emerald-600 dark:to-emerald-500 ${selectedPlanId === plan.id ? '' : 'opacity-70'}`}
                       aria-label={`Start Free Trial for ${plan.name}`}
                     >
                       {isActivating && selectedPlanId === plan.id ? (
@@ -152,7 +152,7 @@ export default function Subscription() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {['Unlimited Flats & Residents', 'Secure Data Storage', 'Team Collaboration', 'Advanced Reports', 'Payment Recording', 'Email Support'].map((feature: string, i: number) => (
-              <div key={i} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md transition-colors">
+              <div key={i} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:border-emerald-300 dark:hover:border-emerald-600 hover:shadow-md transition-colors">
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{feature}</h3>
               </div>
             ))}
@@ -197,7 +197,7 @@ export default function Subscription() {
             ].map((item, i) => (
               <div key={i} className="flex gap-4">
                 <div className="flex-shrink-0">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-indigo-600 dark:bg-indigo-500 text-white font-bold text-lg">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-emerald-600 dark:bg-emerald-500 text-white font-bold text-lg">
                     {item.step}
                   </div>
                 </div>
@@ -243,7 +243,7 @@ export default function Subscription() {
                 q: 'How do I get support?',
                 a: 'Email support is available at support@FlatLedger.com. We respond to all support requests within 24 hours.',
               }].map((faq: any, i: number) => (
-              <div key={i} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors">
+              <div key={i} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:border-emerald-300 dark:hover:border-emerald-600 transition-colors">
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{faq.q}</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">{faq.a}</p>
               </div>
@@ -253,7 +253,7 @@ export default function Subscription() {
       </section>
 
       {/* CTA Footer */}
-      <section className="py-8 px-2 sm:px-4 lg:px-6 bg-gradient-to-br from-indigo-600 to-indigo-700 dark:from-indigo-600 dark:to-indigo-700">
+      <section className="py-8 px-2 sm:px-4 lg:px-6 bg-gradient-to-br from-emerald-600 to-emerald-700 dark:from-emerald-600 dark:to-emerald-700">
         <div className="max-w-4xl mx-auto text-center space-y-3">
           <h2 className="text-3xl md:text-4xl font-bold text-white">Ready to get started with {selectedPlanId && plans.length > 0 ? plans.find(p => p.id === selectedPlanId)?.name : 'your plan'}?</h2>
           <p className="text-lg text-white/90 max-w-2xl mx-auto">
@@ -264,7 +264,7 @@ export default function Subscription() {
           <button
             onClick={handleStartTrial}
             disabled={isActivating}
-            className="inline-block px-8 py-4 bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 rounded-xl font-semibold shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border border-indigo-200 dark:border-indigo-700 disabled:opacity-70"
+            className="inline-block px-8 py-4 bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 rounded-xl font-semibold shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border border-emerald-200 dark:border-emerald-700 disabled:opacity-70"
           >
             {isActivating ? 'Redirecting...' : `Start Free Trial for ${selectedPlanId && plans.length > 0 ? plans.find(p => p.id === selectedPlanId)?.name : 'Plan'}`}
           </button>
@@ -275,13 +275,13 @@ export default function Subscription() {
       <footer className="border-t border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white dark:from-slate-950 to-slate-50 dark:to-slate-900">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col items-center">
           <div className="flex flex-wrap justify-center gap-8 mb-6">
-            <a href="/" className="text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors duration-300">
+            <a href="/" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">
               Home
             </a>
-            <a href="/privacy" className="text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors duration-300">
+            <a href="/privacy" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">
               Privacy Policy
             </a>
-            <a href="/terms" className="text-sm text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition-colors duration-300">
+            <a href="/terms" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">
               Terms
             </a>
           </div>

@@ -1,4 +1,4 @@
-import { Lock, Calendar, User, Building2, ArrowLeft, CheckCircle2, TrendingDown, TrendingUp, ShieldCheck, FileBarChart2, AlertCircle } from 'lucide-react';
+﻿import { Lock, Calendar, User, Building2, ArrowLeft, CheckCircle2, TrendingDown, TrendingUp, ShieldCheck, FileBarChart2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { OpeningBalanceStatus } from '../../types/openingBalance.types';
 import Button from '../ui/Button';
@@ -106,8 +106,8 @@ export default function OpeningBalanceAlreadyApplied({ status }: OpeningBalanceA
           <Card className="p-5 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Society Fund</span>
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center">
-                <Building2 className="w-4 h-4 text-indigo-500" />
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-emerald-500" />
               </div>
             </div>
             <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">

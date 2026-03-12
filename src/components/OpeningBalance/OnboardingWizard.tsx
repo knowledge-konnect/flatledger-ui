@@ -106,8 +106,8 @@ export default function OnboardingWizard() {
               </div>
             </div>
           </div>
-          <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800 rounded-lg p-4">
-            <p className="text-sm text-indigo-900 dark:text-indigo-100">
+          <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
+            <p className="text-sm text-emerald-900 dark:text-emerald-100">
               💡 <strong>Tip:</strong> Have your previous system's reports or Excel sheets ready for reference.
             </p>
           </div>
@@ -157,7 +157,7 @@ export default function OnboardingWizard() {
         <div className="p-6 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-start justify-between">
             <div className="flex items-start gap-4">
-              <div className="bg-gradient-to-br from-indigo-500 to-purple-500 rounded-lg p-3">
+              <div className="bg-gradient-to-br from-emerald-500 to-purple-500 rounded-lg p-3">
                 <Icon className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -184,13 +184,13 @@ export default function OnboardingWizard() {
             <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
               Step {currentStep} of {totalSteps}
             </span>
-            <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
               {Math.round((currentStep / totalSteps) * 100)}%
             </span>
           </div>
           <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-300"
+              className="h-full bg-gradient-to-r from-emerald-500 via-purple-500 to-pink-500 transition-all duration-300"
               style={{ width: `${(currentStep / totalSteps) * 100}%` }}
             />
           </div>

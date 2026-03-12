@@ -1,10 +1,14 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+﻿import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { lazy, Suspense, memo } from 'react';
 import MobileFAB from './components/ui/MobileFAB';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth } from './contexts/AuthProvider';
+import { FlatLedgerIcon } from './components/ui/FlatLedgerIcon';
 
 import LandingPage from './pages/LandingPage';
+import NotFound from './pages/NotFound';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
 
 // Lazy load all pages for better performance
 const Subscription = lazy(() => import('./pages/Subscription'));
@@ -34,11 +38,9 @@ const Unauthorized = lazy(() => import('./pages/Unauthorized'));
 // Loading fallback component
 const PageLoader = memo(function PageLoader() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-        <p className="text-slate-600 dark:text-slate-300">Loading...</p>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-white dark:bg-slate-950">
+      <FlatLedgerIcon size={48} className="rounded-xl animate-pulse" />
+      <div className="animate-spin rounded-full h-6 w-6 border-2 border-emerald-200 border-t-emerald-600"></div>
     </div>
   );
 });
@@ -47,9 +49,10 @@ export default function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const { pathname } = useLocation();
 
-  // Skip the auth gate on the public landing page so it renders immediately.
+  // Skip the auth gate on fully-public pages so they render immediately.
   // ProtectedRoute handles its own isLoading guard for all private routes.
-  if (isLoading && pathname !== '/') {
+  const publicPaths = ['/', '/privacy', '/terms', '/subscription', '/free-trial', '/login', '/signup', '/forgot-password'];
+  if (isLoading && !publicPaths.includes(pathname)) {
     return <PageLoader />;
   }
 
@@ -83,6 +86,8 @@ export default function Router() {
             element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Signup />} 
           />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
           <Route
             path="/change-password"
             element={
@@ -212,10 +217,10 @@ export default function Router() {
             }
           />
 
-          {/* Fallback - redirect based on auth state */}
-          <Route 
-            path="*" 
-            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/" replace />} 
+          {/* Fallback - 404 for unknown routes */}
+          <Route
+            path="*"
+            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <NotFound />}
           />
         </Routes>
       </Suspense>

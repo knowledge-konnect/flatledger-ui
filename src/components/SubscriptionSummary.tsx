@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Badge from '../components/ui/Badge';
 import Card from '../components/ui/Card';
@@ -47,7 +47,7 @@ export const SubscriptionSummary: React.FC<SubscriptionSummaryProps> = ({ compac
     return (
       <button
         onClick={() => navigate('/subscription/manage')}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-sm font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all duration-200"
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-violet-600 hover:from-emerald-700 hover:to-violet-700 text-white text-sm font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all duration-200"
         data-testid="upgrade-btn"
       >
         <Crown className="h-4 w-4" />
@@ -99,7 +99,7 @@ export const SubscriptionSummary: React.FC<SubscriptionSummaryProps> = ({ compac
   if (compact) {
     const statusColors: Record<string, string> = {
       active:    'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300',
-      trial:     'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300',
+      trial:     'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300',
       expired:   'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300',
       cancelled: 'bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300',
     };
@@ -114,7 +114,7 @@ export const SubscriptionSummary: React.FC<SubscriptionSummaryProps> = ({ compac
         {planName && <span className="opacity-70 hidden sm:inline">· {planName}</span>}
         <button
           onClick={() => navigate('/subscription/manage')}
-          className="ml-1 flex items-center gap-1.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-lg px-3 py-1 text-xs font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all duration-200"
+          className="ml-1 flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-violet-600 hover:from-emerald-700 hover:to-violet-700 text-white rounded-lg px-3 py-1 text-xs font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all duration-200"
         >
           <Crown className="h-3.5 w-3.5" />
           Upgrade

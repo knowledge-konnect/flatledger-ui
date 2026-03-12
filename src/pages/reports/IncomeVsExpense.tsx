@@ -1,8 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  BarChart, Bar, AreaChart, Area, ReferenceLine,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-} from 'recharts';
+import ReactApexChart from 'react-apexcharts';
 import { TrendingUp, TrendingDown, Loader2, RefreshCw } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
@@ -103,17 +100,25 @@ export default function IncomeVsExpensePage() {
                 <CardTitle className="text-sm font-semibold">Monthly Comparison</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                    <Legend />
-                    <Bar dataKey="Income" fill="#22C55E" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Expense" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <ReactApexChart
+                  type="bar"
+                  height={240}
+                  series={[
+                    { name: 'Income', data: chartData.map((d: any) => d.Income ?? 0) },
+                    { name: 'Expense', data: chartData.map((d: any) => d.Expense ?? 0) },
+                  ]}
+                  options={{
+                    chart: { toolbar: { show: false }, background: 'transparent' },
+                    colors: ['#10B981', '#EF4444'],
+                    plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
+                    dataLabels: { enabled: false },
+                    xaxis: { categories: chartData.map((d: any) => d.name), labels: { style: { fontSize: '11px' } } },
+                    yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px' } } },
+                    tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                    legend: { position: 'top', fontSize: '12px' },
+                    grid: { borderColor: '#E2E8F0' },
+                  }}
+                />
               </CardContent>
             </Card>
 
@@ -122,22 +127,24 @@ export default function IncomeVsExpensePage() {
                 <CardTitle className="text-sm font-semibold">Net Balance Trend</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <AreaChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
-                    <defs>
-                      <linearGradient id="netGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366F1" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                    <ReferenceLine y={0} stroke="#94A3B8" strokeDasharray="4 2" label={{ value: 'Break-even', position: 'insideTopRight', fontSize: 10, fill: '#94A3B8' }} />
-                    <Area type="monotone" dataKey="Net" stroke="#6366F1" strokeWidth={2.5} fill="url(#netGradient)" dot={{ r: 3, fill: '#6366F1', strokeWidth: 0 }} activeDot={{ r: 5 }} />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <ReactApexChart
+                  type="area"
+                  height={200}
+                  series={[{ name: 'Net', data: chartData.map((d: any) => d.Net ?? 0) }]}
+                  options={{
+                    chart: { toolbar: { show: false }, background: 'transparent' },
+                    colors: ['#10B981'],
+                    stroke: { width: 2.5, curve: 'smooth' },
+                    dataLabels: { enabled: false },
+                    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.02 } },
+                    annotations: { yaxis: [{ y: 0, borderColor: '#94A3B8', strokeDashArray: 4, label: { text: 'Break-even', style: { color: '#94A3B8', background: 'transparent' } } }] },
+                    xaxis: { categories: chartData.map((d: any) => d.name), labels: { style: { fontSize: '11px' } } },
+                    yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px' } } },
+                    tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                    legend: { show: false },
+                    grid: { borderColor: '#E2E8F0' },
+                  }}
+                />
               </CardContent>
             </Card>
 

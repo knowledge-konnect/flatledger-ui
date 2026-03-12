@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
+import ReactApexChart from 'react-apexcharts';
 import { BarChart2, Loader2, RefreshCw, TrendingUp, TrendingDown, Wallet, Users } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
@@ -52,8 +52,8 @@ export default function CollectionSummaryPage() {
         />
 
         {/* Filter Block */}
-        <div className="bg-white dark:bg-slate-900 rounded-lg border-2 border-indigo-200 dark:border-indigo-800 shadow-sm">
-          <div className="px-4 py-2.5 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/40 dark:to-blue-950/40 border-b border-indigo-200 dark:border-indigo-800">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border-2 border-emerald-200 dark:border-emerald-800 shadow-sm">
+          <div className="px-4 py-2.5 bg-gradient-to-r from-emerald-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800">
             <div className="flex items-center gap-2">
               <span className="text-lg">📊</span>
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Billing Summary</h3>
@@ -82,7 +82,7 @@ export default function CollectionSummaryPage() {
           <div className="space-y-3">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <StatCard label="Total Billed" value={formatCurrency(state.data.total_billed)} icon={Wallet}
-                colorClass="bg-blue-50 dark:bg-blue-950/30" iconColorClass="text-blue-600 dark:text-blue-400" />
+                colorClass="bg-emerald-50 dark:bg-emerald-950/30" iconColorClass="text-emerald-600 dark:text-emerald-400" />
               <StatCard label="Total Collected" value={formatCurrency(state.data.total_collected)} icon={TrendingUp}
                 colorClass="bg-green-50 dark:bg-green-950/30" iconColorClass="text-green-600 dark:text-green-400" />
               <StatCard label="Total Outstanding" value={formatCurrency(state.data.total_outstanding)} icon={TrendingDown}
@@ -96,25 +96,28 @@ export default function CollectionSummaryPage() {
                 <CardTitle className="text-sm font-semibold">Monthly Trends</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={260}>
-                  <ComposedChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
-                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                    <Legend />
-                    <Bar dataKey="Billed" fill="#6366F1" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Collected" fill="#22C55E" radius={[4, 4, 0, 0]} />
-                    <Line
-                      type="monotone"
-                      dataKey="Outstanding"
-                      stroke="#EF4444"
-                      strokeWidth={2.5}
-                      dot={{ r: 4, fill: '#EF4444', strokeWidth: 0 }}
-                      activeDot={{ r: 6 }}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
+                <ReactApexChart
+                  type="line"
+                  height={260}
+                  series={[
+                    { name: 'Billed', type: 'column', data: chartData.map((d: any) => d.Billed ?? 0) },
+                    { name: 'Collected', type: 'column', data: chartData.map((d: any) => d.Collected ?? 0) },
+                    { name: 'Outstanding', type: 'line', data: chartData.map((d: any) => d.Outstanding ?? 0) },
+                  ] as any}
+                  options={{
+                    chart: { toolbar: { show: false }, background: 'transparent' },
+                    colors: ['#10B981', '#F59E0B', '#EF4444'],
+                    stroke: { width: [0, 0, 2.5], curve: 'smooth' },
+                    markers: { size: [0, 0, 4] },
+                    dataLabels: { enabled: false },
+                    xaxis: { categories: chartData.map((d: any) => d.name), labels: { style: { fontSize: '11px' } } },
+                    yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px' } } },
+                    legend: { position: 'top', fontSize: '12px' },
+                    tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                    plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
+                    grid: { borderColor: '#E2E8F0' },
+                  }}
+                />
               </CardContent>
             </Card>
 
