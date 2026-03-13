@@ -27,6 +27,12 @@ import { useBillingStatus, useGenerateBilling } from '../hooks/useBillingStatus'
 import BillingReminderBanner from '../components/dashboard/BillingReminderBanner';
 import { useToast } from '../components/ui/Toast';
 import { formatCurrency, cn } from '../lib/utils';
+import { axisLabelStyle, baseChartOptions, baseGrid, currencyK, currencyTooltip } from '../lib/chartOptions';
+
+const dashboardAxisLabelStyle = {
+  ...axisLabelStyle,
+  colors: '#0F172A',
+};
 
 // ─── Chart color palette ──────────────────────────────────────────────────────
 const CHART_COLORS = ['#10B981', '#F59E0B', '#6366F1', '#EF4444', '#14B8A6', '#EC4899', '#3B82F6'];
@@ -186,9 +192,41 @@ export default function Dashboard() {
   const expBreakdown = dashboardData?.expense_breakdown ?? [];
   const topDefaulters = dashboardData?.top_defaulters ?? [];
   const recentActivity = dashboardData?.recent_activity ?? [];
+  const trendMeta = dashboardData?.trend_meta;
 
-  const collectionRate = snap?.collection_rate ?? 0;
-  const collectionColor = collectionRate >= 80 ? 'green' : collectionRate >= 50 ? 'amber' : 'red' as any;
+  const trendWindow = trendMeta?.window_months ?? 6;
+  const visibleTrends = trends.slice(-trendWindow);
+
+  const totalBilled = snap?.total_billed ?? 0;
+  const totalCollected = snap?.total_collected ?? 0;
+  const cashToBillRatio = totalBilled > 0 ? (totalCollected / totalBilled) * 100 : 0;
+  const currentBillCoverage = totalBilled > 0 ? (Math.min(totalCollected, totalBilled) / totalBilled) * 100 : 0;
+  const extraCollections = Math.max(0, totalCollected - totalBilled);
+  const periodShortfall = Math.max(0, totalBilled - totalCollected);
+
+  const periodOutstanding = snap?.period_bill_outstanding ?? snap?.bill_outstanding ?? 0;
+  const allTimeOutstanding = snap?.all_time_member_outstanding ?? snap?.total_member_outstanding ?? 0;
+  const presentBalance = snap?.present_balance ?? snap?.closing_fund_balance ?? snap?.bank_balance ?? 0;
+  const openingBalance = snap?.opening_fund_balance ?? Math.max(0, presentBalance - (snap?.net_cash_flow ?? 0));
+  const periodFundInflow = snap?.period_fund_inflow ?? Math.max(0, snap?.net_cash_flow ?? 0);
+  const periodFundOutflow = snap?.period_fund_outflow ?? Math.max(0, -(snap?.net_cash_flow ?? 0));
+  const netCashFlow = snap?.net_cash_flow ?? (periodFundInflow - periodFundOutflow);
+  const topDefaulter = topDefaulters[0];
+  const lastUpdated = new Date().toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const collectionColor = currentBillCoverage >= 80 ? 'green' : currentBillCoverage >= 50 ? 'amber' : 'red' as any;
+  const collectionSub =
+    extraCollections > 0
+      ? `Billed ${formatCurrency(totalBilled)} | Extra arrears/advance ${formatCurrency(extraCollections)}`
+      : periodShortfall > 0
+        ? `Billed ${formatCurrency(totalBilled)} | Pending for period ${formatCurrency(periodShortfall)}`
+        : `Billed ${formatCurrency(totalBilled)} | Fully covered`;
 
   return (
     <DashboardLayout title="Dashboard">
@@ -231,6 +269,9 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+          <div className="mt-2 text-[11px] font-medium text-slate-700 dark:text-slate-200">
+            Last updated: <span className="text-emerald-600 dark:text-emerald-400">{lastUpdated}</span>
+          </div>
           {periodTab === 'custom' && (
             <div className="flex flex-col sm:flex-row gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2 flex-1">
@@ -267,56 +308,92 @@ export default function Dashboard() {
         />
 
           {/* ── 4 KPI Cards ───────────────────────────────────────────────── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {isLoading ? (
               Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)
             ) : (
               <>
                 <KpiCard
-                  label="Maintenance Collected"
-                  value={formatCurrency(snap?.total_collected ?? 0)}
+                  label="Cash Received (This Period)"
+                  value={formatCurrency(totalCollected)}
                   icon={IndianRupee}
                   color={collectionColor}
-                  sub={`${collectionRate.toFixed(1)}% collection rate`}
-                  progress={collectionRate}
-                  progressLabel={`of ₹${((snap?.total_billed ?? 0) / 100000).toFixed(1)}L`}
+                  progress={currentBillCoverage}
+                  progressLabel={`${currentBillCoverage.toFixed(1)}% of current bills`}
+                  onClick={() => navigate('/maintenance')}
                 />
                 <KpiCard
-                  label="Total Outstanding Dues"
-                  value={formatCurrency(snap?.total_member_outstanding ?? 0)}
+                  label="Pending Dues"
+                  value={formatCurrency(allTimeOutstanding)}
                   icon={AlertCircle}
-                  color={(snap?.total_member_outstanding ?? 0) > 0 ? 'red' : 'emerald'}
-                  sub="Current unpaid dues across all flats"
+                  color={allTimeOutstanding > 0 ? 'red' : 'emerald'}
+                  onClick={() => navigate('/maintenance')}
                 />
                 <KpiCard
                   label="Society Expenses"
                   value={formatCurrency(snap?.total_expense ?? 0)}
                   icon={ReceiptText}
                   color="orange"
-                  sub="Total spending this period"
+                  onClick={() => navigate('/expenses')}
                 />
                 <KpiCard
-                  label="Society Fund Balance"
-                  value={formatCurrency(snap?.bank_balance ?? 0)}
+                  label="Present Fund Balance"
+                  value={formatCurrency(presentBalance)}
                   icon={Landmark}
-                  color={(snap?.bank_balance ?? 0) >= 0 ? 'emerald' : 'red'}
-                  sub={
-                    (snap?.net_cash_flow ?? 0) >= 0
-                      ? `+${formatCurrency(snap?.net_cash_flow ?? 0)} net this period`
-                      : `${formatCurrency(snap?.net_cash_flow ?? 0)} net this period`
-                  }
+                  color={presentBalance >= 0 ? 'emerald' : 'red'}
+                  onClick={() => navigate('/reports/fund-ledger')}
                 />
               </>
             )}
           </div>
 
+          {!isLoading && (
+            <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 px-1">
+              Note: Cash received can be above 100% of this month&apos;s bills when arrears or advance payments are collected.
+              {cashToBillRatio > 100 ? ` Current cash vs billed: ${cashToBillRatio.toFixed(1)}%.` : ''}
+            </div>
+          )}
+
+          {!isLoading && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 border-l-4 border-l-emerald-400">
+                <p className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400">Total Billed</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white mt-1">{formatCurrency(totalBilled)}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 border-l-4 border-l-green-400">
+                <p className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400">Current Collected</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white mt-1">{formatCurrency(Math.min(totalCollected, totalBilled))}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 border-l-4 border-l-amber-400">
+                <p className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400">Arrear / Advance</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white mt-1">{formatCurrency(extraCollections)}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 border-l-4 border-l-red-400">
+                <p className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400">Uncollected Bills</p>
+                <p className="text-sm font-bold text-red-600 dark:text-red-400 mt-1">{formatCurrency(periodShortfall)}</p>
+              </div>
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 border-l-4 border-l-blue-400">
+                <p className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400">Net Cash Flow</p>
+                <p className={cn('text-sm font-bold mt-1', netCashFlow >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400')}>
+                  {netCashFlow >= 0 ? '+' : ''}{formatCurrency(netCashFlow)}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2.5 border-l-4 border-l-purple-400">
+                <p className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400">Top Pending Flat</p>
+                <p className="text-sm font-bold text-slate-900 dark:text-white mt-1 truncate">
+                  {topDefaulter ? `Flat ${topDefaulter.flat_no} (${formatCurrency(topDefaulter.outstanding)})` : '—'}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* ── Charts + Occupancy ────────────────────────────────────────── */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
             {/* Bar Chart — Income vs Expense */}
-            <Card className="lg:col-span-2 p-6 rounded-2xl shadow-sm" data-testid="income-expense-chart">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">6-Month Income vs Expense</h3>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-5">Monthly collection &amp; spending trend</p>
+            <Card className="lg:col-span-2 p-5 rounded-2xl shadow-sm" data-testid="income-expense-chart">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">{trendWindow}-Month Income vs Expense</h3>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-4">Monthly collection &amp; spending trend (Apex bar chart)</p>
               {isLoading ? (
                 <ChartSkeleton height={260} />
               ) : trends.length === 0 ? (
@@ -334,34 +411,33 @@ export default function Dashboard() {
                   type="bar"
                   height={260}
                   options={{
-                    chart: { toolbar: { show: false }, background: 'transparent', fontFamily: 'var(--font-sans)', animations: { enabled: true, speed: 400 } },
+                    ...baseChartOptions,
                     plotOptions: { bar: { borderRadius: 5, columnWidth: '55%', borderRadiusApplication: 'end' } },
-                    dataLabels: { enabled: false },
                     stroke: { show: true, width: 2, colors: ['transparent'] },
                     xaxis: {
-                      categories: trends.slice(-6).map((t: any) => t.label),
+                      categories: visibleTrends.map((t: any) => t.label),
                       axisBorder: { show: false },
                       axisTicks: { show: false },
-                      labels: { style: { colors: '#94a3b8', fontSize: '11px' } },
+                      labels: { style: dashboardAxisLabelStyle },
                     },
                     yaxis: {
                       labels: {
-                        style: { colors: '#94a3b8', fontSize: '11px' },
-                        formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`,
+                        style: dashboardAxisLabelStyle,
+                        formatter: (v: number) => currencyK(v),
                       },
                     },
-                    grid: { borderColor: '#F1F5F9', strokeDashArray: 4, xaxis: { lines: { show: false } } },
+                    grid: { ...baseGrid, strokeDashArray: 4, xaxis: { lines: { show: false } } },
                     fill: { opacity: 1 },
                     tooltip: {
-                      y: { formatter: (v: number) => formatCurrency(v) },
+                      y: { formatter: (v: number) => currencyTooltip(v) },
                       theme: 'light',
                     },
                     legend: { position: 'top', horizontalAlign: 'right', fontSize: '12px', labels: { colors: '#64748b' } },
                     colors: ['#10B981', '#EF4444'],
                   }}
                   series={[
-                    { name: 'Income', data: trends.slice(-6).map((t: any) => t.income ?? 0) },
-                    { name: 'Expense', data: trends.slice(-6).map((t: any) => t.expense ?? 0) },
+                    { name: 'Income', data: visibleTrends.map((t: any) => t.income ?? 0) },
+                    { name: 'Expense', data: visibleTrends.map((t: any) => t.expense ?? 0) },
                   ]}
                 />
               )}
@@ -375,9 +451,9 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
             {/* Expense Breakdown Donut */}
-            <Card className="p-6 rounded-2xl shadow-sm" data-testid="expense-pie-chart">
+            <Card className="p-5 rounded-2xl shadow-sm" data-testid="expense-pie-chart">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Where Money Was Spent</h3>
-              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-4">Expense breakdown by category</p>
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-4">Expense breakdown by category (Apex donut chart)</p>
               {isLoading ? (
                 <ChartSkeleton height={220} />
               ) : expBreakdown.length === 0 ? (
@@ -396,14 +472,14 @@ export default function Dashboard() {
                     type="donut"
                     height={200}
                     options={{
-                      chart: { background: 'transparent', fontFamily: 'var(--font-sans)', animations: { speed: 400 } },
+                      ...baseChartOptions,
+                      chart: { ...baseChartOptions.chart, animations: { speed: 400 } },
                       labels: expBreakdown.map((e: any) => e.category),
                       colors: CHART_COLORS,
-                      plotOptions: { pie: { donut: { size: '65%', labels: { show: true, total: { show: true, label: 'Total', formatter: () => formatCurrency(expBreakdown.reduce((s: number, e: any) => s + e.amount, 0)) } } } } },
-                      dataLabels: { enabled: false },
+                      plotOptions: { pie: { donut: { size: '65%', labels: { show: true, total: { show: true, label: 'Total', formatter: () => formatCurrency(snap?.total_expense ?? expBreakdown.reduce((s: number, e: any) => s + e.amount, 0)) } } } } },
                       legend: { show: false },
                       stroke: { width: 2 },
-                      tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                      tooltip: { y: { formatter: (v: number) => currencyTooltip(v) }, theme: 'light' },
                     }}
                     series={expBreakdown.map((e: any) => e.amount)}
                   />
@@ -423,7 +499,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Highest Pending Dues */}
-            <Card className="p-6 rounded-2xl shadow-sm" data-testid="top-defaulters">
+            <Card className="p-5 rounded-2xl shadow-sm" data-testid="top-defaulters">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-1">Highest Pending Dues</h3>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-4">Flats with large outstanding balances</p>
               {isLoading ? (
@@ -478,7 +554,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Recent Transactions */}
-            <Card className="p-6 rounded-2xl shadow-sm" data-testid="recent-activity">
+            <Card className="p-5 rounded-2xl shadow-sm" data-testid="recent-activity">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Recent Transactions</h3>
               </div>

@@ -5,9 +5,17 @@ import Button from '../../components/ui/Button';
 
 /* ─────────────────── Date helpers ─────────────────── */
 
-export const today = () => new Date().toISOString().split('T')[0];
-export const startOfYear = () => new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0];
-export const currentYearMonth = () => new Date().toISOString().slice(0, 7);
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const formatLocalDate = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const formatLocalYearMonth = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+
+export const today = () => formatLocalDate(new Date());
+export const startOfMonth = () => {
+  const now = new Date();
+  return formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1));
+};
+export const startOfYear = () => formatLocalDate(new Date(new Date().getFullYear(), 0, 1));
+export const currentYearMonth = () => formatLocalYearMonth(new Date());
 export const startYearMonth = () => `${new Date().getFullYear()}-01`;
 
 export const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -30,28 +38,33 @@ export function presetDate(preset: 'thisMonth' | 'lastMonth' | 'last3Months' | '
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
-  const tod = now.toISOString().split('T')[0];
+  const tod = formatLocalDate(now);
   if (preset === 'thisMonth') {
-    return { start: new Date(y, m, 1).toISOString().split('T')[0], end: tod };
+    return { start: formatLocalDate(new Date(y, m, 1)), end: tod };
   }
   if (preset === 'lastMonth') {
     const s = new Date(y, m - 1, 1);
     const e = new Date(y, m, 0);
-    return { start: s.toISOString().split('T')[0], end: e.toISOString().split('T')[0] };
+    return { start: formatLocalDate(s), end: formatLocalDate(e) };
   }
   if (preset === 'last3Months') {
-    return { start: new Date(y, m - 2, 1).toISOString().split('T')[0], end: tod };
+    return { start: formatLocalDate(new Date(y, m - 2, 1)), end: tod };
   }
-  return { start: new Date(y, 0, 1).toISOString().split('T')[0], end: tod };
+  return { start: formatLocalDate(new Date(y, 0, 1)), end: tod };
 }
 
-export function presetPeriod(preset: 'thisMonth' | 'thisQuarter' | 'thisYear'): { startPeriod: string; endPeriod: string } {
+export function presetPeriod(preset: 'thisMonth' | 'last3Months' | 'thisQuarter' | 'thisYear'): { startPeriod: string; endPeriod: string } {
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
-  const cur = now.toISOString().slice(0, 7);
+  const cur = formatLocalYearMonth(now);
   if (preset === 'thisMonth') {
     return { startPeriod: cur, endPeriod: cur };
+  }
+  if (preset === 'last3Months') {
+    const d = new Date(y, m - 2, 1);
+    const s = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return { startPeriod: s, endPeriod: cur };
   }
   if (preset === 'thisQuarter') {
     const qStart = Math.floor(m / 3) * 3;
@@ -136,25 +149,32 @@ const PRESET_DATE_LABELS = [
   { key: 'thisYear',    label: 'This Year' },
 ] as const;
 
+export type DatePresetKey = typeof PRESET_DATE_LABELS[number]['key'];
+
 const PRESET_PERIOD_LABELS = [
   { key: 'thisMonth',   label: 'This Month' },
+  { key: 'last3Months', label: 'Last 3 Months' },
   { key: 'thisQuarter', label: 'This Quarter' },
   { key: 'thisYear',    label: 'This Year' },
 ] as const;
 
-export function QuickDatePresets({ onSelect }: { onSelect: (start: string, end: string) => void }) {
+export type PeriodPresetKey = typeof PRESET_PERIOD_LABELS[number]['key'];
+
+export function QuickDatePresets({ onSelect, activeKey }: { onSelect: (preset: DatePresetKey, start: string, end: string) => void; activeKey: DatePresetKey | null }) {
   return (
     <div className="flex flex-wrap gap-1 items-center">
-      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mr-0.5">Quick:</span>
+      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mr-0.5">Quick range:</span>
       {PRESET_DATE_LABELS.map(p => (
         <button
           key={p.key}
           type="button"
-          onClick={() => { const r = presetDate(p.key); onSelect(r.start, r.end); }}
-          className="px-2 py-0.5 text-[11px] rounded-full border border-slate-300 dark:border-slate-600
-                     text-slate-600 dark:text-slate-300 hover:bg-primary/10 hover:border-primary/40
-                     hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/50
-                     dark:hover:text-primary-300 transition-colors"
+          onClick={() => { const r = presetDate(p.key); onSelect(p.key, r.start, r.end); }}
+          className={cn(
+            'px-2 py-0.5 text-[11px] rounded-full border transition-colors',
+            activeKey === p.key
+              ? 'bg-primary text-white border-primary dark:bg-primary dark:border-primary'
+              : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-primary/10 hover:border-primary/40 hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/50 dark:hover:text-primary-300'
+          )}
         >
           {p.label}
         </button>
@@ -163,19 +183,21 @@ export function QuickDatePresets({ onSelect }: { onSelect: (start: string, end: 
   );
 }
 
-export function QuickPeriodPresets({ onSelect }: { onSelect: (startPeriod: string, endPeriod: string) => void }) {
+export function QuickPeriodPresets({ onSelect, activeKey }: { onSelect: (preset: PeriodPresetKey, startPeriod: string, endPeriod: string) => void; activeKey: PeriodPresetKey | null }) {
   return (
     <div className="flex flex-wrap gap-1 items-center">
-      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mr-0.5">Quick:</span>
+      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mr-0.5">Quick range:</span>
       {PRESET_PERIOD_LABELS.map(p => (
         <button
           key={p.key}
           type="button"
-          onClick={() => { const r = presetPeriod(p.key); onSelect(r.startPeriod, r.endPeriod); }}
-          className="px-2 py-0.5 text-[11px] rounded-full border border-slate-300 dark:border-slate-600
-                     text-slate-600 dark:text-slate-300 hover:bg-primary/10 hover:border-primary/40
-                     hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/50
-                     dark:hover:text-primary-300 transition-colors"
+          onClick={() => { const r = presetPeriod(p.key); onSelect(p.key, r.startPeriod, r.endPeriod); }}
+          className={cn(
+            'px-2 py-0.5 text-[11px] rounded-full border transition-colors',
+            activeKey === p.key
+              ? 'bg-primary text-white border-primary dark:bg-primary dark:border-primary'
+              : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-primary/10 hover:border-primary/40 hover:text-primary dark:hover:bg-primary/20 dark:hover:border-primary/50 dark:hover:text-primary-300'
+          )}
         >
           {p.label}
         </button>

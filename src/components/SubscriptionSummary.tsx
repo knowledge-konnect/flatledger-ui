@@ -47,7 +47,7 @@ export const SubscriptionSummary: React.FC<SubscriptionSummaryProps> = ({ compac
     return (
       <button
         onClick={() => navigate('/subscription/manage')}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-violet-600 hover:from-emerald-700 hover:to-violet-700 text-white text-sm font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all duration-200"
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white text-sm font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all duration-200"
         data-testid="upgrade-btn"
       >
         <Crown className="h-4 w-4" />
@@ -114,7 +114,7 @@ export const SubscriptionSummary: React.FC<SubscriptionSummaryProps> = ({ compac
         {planName && <span className="opacity-70 hidden sm:inline">· {planName}</span>}
         <button
           onClick={() => navigate('/subscription/manage')}
-          className="ml-1 flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-violet-600 hover:from-emerald-700 hover:to-violet-700 text-white rounded-lg px-3 py-1 text-xs font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all duration-200"
+          className="ml-1 flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white rounded-lg px-3 py-1 text-xs font-semibold shadow-sm hover:shadow-md hover:-translate-y-px transition-all duration-200"
         >
           <Crown className="h-3.5 w-3.5" />
           Upgrade

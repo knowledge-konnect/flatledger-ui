@@ -206,19 +206,6 @@ export default function OpeningBalanceEntry() {
       await submitMutation.mutateAsync(payload);
       setShowPreviewModal(false);
       setBackendError('');
-      // Persist summary so the already-applied page can display real figures
-      try {
-        localStorage.setItem(
-          'ob_applied_summary',
-          JSON.stringify({
-            societyOpeningAmount: payload.society_opening_amount,
-            totalMemberDues: summary.totalOutstanding,
-            totalMemberAdvance: summary.totalAdvance,
-          })
-        );
-      } catch {
-        // localStorage write failure is non-critical
-      }
       setShowSuccessScreen(true);
     } catch (error: unknown) {
       const axiosError = error as {

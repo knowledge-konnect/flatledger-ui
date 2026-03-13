@@ -18,6 +18,7 @@ interface KpiCardProps {
   progress?: number;
   progressLabel?: string;
   loading?: boolean;
+  onClick?: () => void;
 }
 
 const colorMap: Record<KpiColorVariant, { bg: string; icon: string; bar: string; border: string }> = {
@@ -30,20 +31,20 @@ const colorMap: Record<KpiColorVariant, { bg: string; icon: string; bar: string;
   emerald: { bg: 'bg-[#DCFCE7] dark:bg-emerald-950/30', icon: 'text-[#059669] dark:text-emerald-400', bar: 'bg-[#10B981]', border: 'border-[#10B981]/30' },
 };
 
-export function KpiCard({ label, value, icon: Icon, color, sub, progress, progressLabel, loading = false }: KpiCardProps) {
+export function KpiCard({ label, value, icon: Icon, color, sub, progress, progressLabel, loading = false, onClick }: KpiCardProps) {
   const c = colorMap[color];
   const pct = Math.min(100, Math.max(0, progress ?? 0));
 
   if (loading) {
     return (
-      <div className="rounded-[10px] border border-[#E2E8F0] dark:border-slate-800 bg-white dark:bg-slate-900 p-5 animate-pulse" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+      <div className="rounded-[10px] border border-[#E2E8F0] dark:border-slate-800 bg-white dark:bg-slate-900 p-4 animate-pulse" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
         <div className="flex items-start justify-between">
           <div className="flex-1 space-y-3">
             <div className="h-3 w-24 rounded-lg bg-slate-100 dark:bg-slate-800" />
-            <div className="h-8 w-28 rounded-lg bg-slate-100 dark:bg-slate-800" />
+            <div className="h-7 w-24 rounded-lg bg-slate-100 dark:bg-slate-800" />
             <div className="h-2.5 w-20 rounded-lg bg-slate-100 dark:bg-slate-800" />
           </div>
-          <div className="h-11 w-11 rounded-xl bg-slate-100 dark:bg-slate-800" />
+          <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800" />
         </div>
       </div>
     );
@@ -51,33 +52,34 @@ export function KpiCard({ label, value, icon: Icon, color, sub, progress, progre
 
   return (
     <div
-      className="relative overflow-hidden bg-white dark:bg-slate-900 rounded-[10px] border border-[#E2E8F0] dark:border-slate-800 p-5 transition-all duration-200 hover:-translate-y-1 cursor-default select-none"
+      className={`relative overflow-hidden bg-white dark:bg-slate-900 rounded-[10px] border border-[#E2E8F0] dark:border-slate-800 p-4 transition-all duration-200 hover:-translate-y-0.5 select-none ${onClick ? 'cursor-pointer' : 'cursor-default'}`}
       style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}
       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 30px rgba(0,0,0,0.08)'; }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.05)'; }}
+      onClick={onClick}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-bold text-[#374151] dark:text-slate-300 uppercase tracking-widest mb-2">
+          <p className="text-[10px] font-bold text-[#374151] dark:text-slate-300 uppercase tracking-widest mb-1.5">
             {label}
           </p>
-          <p className="text-3xl font-bold text-[#0F172A] dark:text-white truncate leading-tight">
+          <p className="text-2xl font-bold text-[#0F172A] dark:text-white truncate leading-tight">
             {value}
           </p>
           {sub && (
-            <p className="mt-1.5 text-[13px] font-medium text-[#374151] dark:text-slate-300">{sub}</p>
+            <p className="mt-1 text-xs font-medium text-[#475569] dark:text-slate-300 leading-snug">{sub}</p>
           )}
         </div>
-        <div className={`flex-shrink-0 w-11 h-11 rounded-xl ${c.bg} flex items-center justify-center`}>
-          <Icon className={`w-5 h-5 ${c.icon}`} />
+        <div className={`flex-shrink-0 w-10 h-10 rounded-xl ${c.bg} flex items-center justify-center`}>
+          <Icon className={`w-[18px] h-[18px] ${c.icon}`} />
         </div>
       </div>
 
       {progress !== undefined && (
-        <div className="mt-4 pt-3 border-t border-[#F1F5F9] dark:border-slate-800">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Collection</span>
-            <span className={`text-[11px] font-semibold ${c.icon}`}>{progressLabel ?? `${pct.toFixed(1)}%`}</span>
+        <div className="mt-3 pt-2.5 border-t border-[#F1F5F9] dark:border-slate-800">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Collection</span>
+            <span className={`text-[10px] font-semibold ${c.icon}`}>{progressLabel ?? `${pct.toFixed(1)}%`}</span>
           </div>
           <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
             <div

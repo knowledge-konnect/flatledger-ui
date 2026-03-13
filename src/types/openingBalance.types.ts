@@ -7,6 +7,15 @@ export interface OpeningBalanceStatus {
   isApplied: boolean;
   appliedAt: string | null;
   appliedBy: string | null;
+  societyOpeningAmount?: number;
+  totalMemberDues?: number;
+  totalMemberAdvance?: number;
+}
+
+export interface OpeningBalanceAppliedSummary {
+  societyOpeningAmount?: number;
+  totalMemberDues?: number;
+  totalMemberAdvance?: number;
 }
 
 export interface FlatBalance {

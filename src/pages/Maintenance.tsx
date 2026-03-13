@@ -875,6 +875,21 @@ export default function Maintenance() {
             </div>
           )}
 
+          {/* ── Already-paid warning ──────────────────────────────────────── */}
+          {!isEditing && selectedFlatPublicId && flatSummary && outstandingAmount === 0 && (
+            <div className="flex items-start gap-3 mx-6 mt-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 px-4 py-3">
+              <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                  This flat has no outstanding balance
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
+                  The account is fully settled. Recording a payment now will be stored as an <strong>advance</strong> and automatically applied to the next bill.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* ── Two-column body ───────────────────────────────────────────── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-0 p-4 sm:p-6 pb-0">
 
@@ -1006,19 +1021,27 @@ export default function Maintenance() {
                   {...register('amount')}
                 />
                 {/* Live remaining balance */}
-                {paymentAmountNumber > 0 && selectedFlatPublicId && flatSummary && outstandingAmount > 0 && (
+                {paymentAmountNumber > 0 && selectedFlatPublicId && flatSummary && (
                   <div className={`flex items-center justify-between text-xs px-3 py-2 rounded-lg ${
-                    paymentAmountNumber >= outstandingAmount
+                    outstandingAmount === 0
+                      ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800'
+                      : paymentAmountNumber >= outstandingAmount
                       ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800'
                       : 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700'
                   }`}>
-                    <span className="text-slate-500 dark:text-slate-400">Balance after payment:</span>
+                    <span className="text-slate-500 dark:text-slate-400">
+                      {outstandingAmount === 0 ? 'Will be recorded as:' : 'Balance after payment:'}
+                    </span>
                     <span className={`font-bold ${
-                      paymentAmountNumber >= outstandingAmount
+                      outstandingAmount === 0
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : paymentAmountNumber >= outstandingAmount
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-orange-600 dark:text-orange-400'
                     }`}>
-                      {paymentAmountNumber >= outstandingAmount
+                      {outstandingAmount === 0
+                        ? `Advance +${formatCurrency(paymentAmountNumber)}`
+                        : paymentAmountNumber >= outstandingAmount
                         ? '✔ Fully cleared'
                         : formatCurrency(outstandingAmount - paymentAmountNumber)}
                     </span>

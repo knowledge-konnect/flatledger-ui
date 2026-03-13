@@ -402,44 +402,53 @@
 
   .table-container {
     @apply overflow-x-auto;
-    border-radius: 10px;
-    border: 1px solid #E2E8F0;
-    @apply dark:border-slate-800;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
   }
 
   .table {
-    @apply w-full text-sm;
+    @apply w-full text-sm border-collapse;
   }
 
   .table th {
-    @apply px-5 py-3.5;
-    font-size: 12px;
-    @apply font-semibold uppercase tracking-wider;
-    @apply text-[#64748B] dark:text-[#94A3B8];
-    @apply bg-[#F8FAFC] dark:bg-slate-900/50;
-    border-bottom: 1.5px solid #E2E8F0;
-    @apply dark:border-slate-800;
-
+    @apply px-3 py-3;
+    font-size: 11px;
+    @apply text-left font-semibold uppercase tracking-wider whitespace-nowrap;
+    @apply bg-slate-800 dark:bg-slate-950;
+    @apply text-slate-100 dark:text-slate-100;
+    border-bottom: 2px solid #1E293B;
+    @apply dark:border-slate-900;
   }
 
   .table td {
-    @apply px-5 py-3.5;
+    @apply px-3 py-2.5;
     @apply text-[#0F172A] dark:text-[#F8FAFC];
     border-bottom: 1px solid #F1F5F9;
-    @apply dark:border-slate-800/60;
+    @apply dark:border-slate-700/60;
   }
 
   .table tr:last-child td {
     @apply border-b-0;
   }
 
+  .table tbody tr:nth-child(even) td {
+    @apply bg-slate-50/70 dark:bg-slate-800/40;
+  }
+
   .table tbody tr:hover td {
-    @apply bg-slate-50 dark:bg-slate-800/40;
+    @apply bg-emerald-50 dark:bg-emerald-950/30;
   }
 
   .table tbody tr {
     @apply transition-colors duration-100;
+  }
+
+  .table tfoot tr {
+    border-top: 2px solid #CBD5E1;
+    @apply dark:border-slate-600;
+    @apply bg-slate-100 dark:bg-slate-800;
+  }
+
+  .table tfoot td {
+    @apply px-3 py-3;
   }
 
   /* ============================================

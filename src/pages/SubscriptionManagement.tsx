@@ -112,7 +112,7 @@ export default function SubscriptionManagement() {
     },
     trial: {
       label: 'Free Trial',
-      gradient: 'from-emerald-500 to-violet-600',
+      gradient: 'from-emerald-500 to-green-700',
       icon: Calendar,
       iconColor: 'text-emerald-400',
       badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
@@ -294,16 +294,16 @@ export default function SubscriptionManagement() {
 
           {/* ── Upgrade CTA — show for trial / expired / cancelled ─────────── */}
           {(status === 'trial' || status === 'expired' || status === 'cancelled' || status === null) && (
-            <div className="rounded-2xl border-2 border-emerald-200 dark:border-emerald-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+            <div className="rounded-2xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Upgrade now</p>
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-xl font-bold text-emerald-950 dark:text-emerald-50">
                     {status === 'trial' ? `Lock in your plan before trial ends` : 'Reactivate your subscription'}
                   </h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">All features, no restrictions. Cancel anytime.</p>
+                  <p className="text-sm text-emerald-700/80 dark:text-emerald-200/80">All features, no restrictions. Cancel anytime.</p>
                 </div>
-                <Crown className="w-10 h-10 text-emerald-400 flex-shrink-0" />
+                <Crown className="w-10 h-10 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
               </div>
 
               {/* Plan selector cards */}
@@ -324,13 +324,13 @@ export default function SubscriptionManagement() {
                         'relative rounded-xl border-2 p-4 text-left transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500',
                         isSelected
                           ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30 shadow-md'
-                          : 'border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700 bg-white dark:bg-slate-900'
+                          : 'border-emerald-200 dark:border-emerald-900 hover:border-emerald-400 dark:hover:border-emerald-700 bg-white/90 dark:bg-emerald-950/20'
                       )}
                     >
                       {/* Plan name + badge + radio */}
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{plan.name}</p>
+                          <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">{plan.name}</p>
                           {isYearly && (
                             <span className="px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full whitespace-nowrap">
                               BEST VALUE · 2 MONTHS FREE
@@ -341,14 +341,14 @@ export default function SubscriptionManagement() {
                           'w-4 h-4 rounded-full border-2 flex-shrink-0 transition-all',
                           isSelected
                             ? 'border-emerald-600 bg-emerald-600'
-                            : 'border-slate-300 dark:border-slate-600'
+                            : 'border-emerald-300 dark:border-emerald-700'
                         )}>
                           {isSelected && <span className="block w-full h-full rounded-full scale-50 bg-white" />}
                         </span>
                       </div>
-                      <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                      <p className="text-2xl font-bold text-emerald-950 dark:text-emerald-50">
                         {formatCurrency(plan.monthlyAmount)}
-                        <span className="text-sm font-normal text-slate-500 dark:text-slate-400">
+                        <span className="text-sm font-normal text-emerald-700/80 dark:text-emerald-200/80">
                           {isYearly ? ' / year' : ' / month'}
                         </span>
                       </p>
@@ -358,7 +358,7 @@ export default function SubscriptionManagement() {
                         </p>
                       )}
                       {!isYearly && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Billed monthly · cancel anytime</p>
+                        <p className="text-xs text-emerald-700/80 dark:text-emerald-200/80 mt-1">Billed monthly · cancel anytime</p>
                       )}
                     </button>
                   );
@@ -369,7 +369,7 @@ export default function SubscriptionManagement() {
               <button
                 onClick={handleSubscribe}
                 disabled={loading || isPaymentLoading || isProcessing || !resolvedSelectedPlan}
-                className="mt-4 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-violet-600 hover:from-emerald-700 hover:to-violet-700 text-white font-semibold shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="mt-4 w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white font-semibold shadow-sm hover:shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Lock className="w-4 h-4" />
                 {isPaymentLoading || isProcessing
@@ -379,17 +379,17 @@ export default function SubscriptionManagement() {
                     : 'Select a plan'}
               </button>
 
-              <p className="mt-2 text-center text-xs text-slate-400 dark:text-slate-500">
+              <p className="mt-2 text-center text-xs text-emerald-700/70 dark:text-emerald-200/70">
                 Secure payment via Razorpay · UPI, cards, net banking accepted
               </p>
             </div>
           )}
 
           {/* ── Included features ─────────────────────────────────────────── */}
-          <div className="rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+          <div className="rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-900 p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
               <ShieldCheck className="w-5 h-5 text-emerald-500" />
-              <h3 className="font-semibold text-slate-900 dark:text-white">Everything included in your plan</h3>
+              <h3 className="font-semibold text-emerald-950 dark:text-emerald-50">Everything included in your plan</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {PLAN_FEATURES.map(({ icon: Icon, label }) => (
@@ -397,7 +397,7 @@ export default function SubscriptionManagement() {
                   <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
                     <Icon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <span className="text-sm text-slate-700 dark:text-slate-300">{label}</span>
+                  <span className="text-sm text-emerald-900/90 dark:text-emerald-100/90">{label}</span>
                 </div>
               ))}
             </div>
@@ -405,10 +405,10 @@ export default function SubscriptionManagement() {
 
           {/* ── Payment instructions ──────────────────────────────────────── */}
           {status !== 'active' && (
-          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+          <div className="rounded-2xl bg-white dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-900 p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-              <CreditCard className="w-5 h-5 text-slate-500" />
-              <h3 className="font-semibold text-slate-900 dark:text-white">How billing works</h3>
+              <CreditCard className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <h3 className="font-semibold text-emerald-950 dark:text-emerald-50">How billing works</h3>
             </div>
             <ol className="space-y-3">
               {[
@@ -421,18 +421,18 @@ export default function SubscriptionManagement() {
                   <span className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
                     {i + 1}
                   </span>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">{step}</span>
+                  <span className="text-sm text-emerald-900/80 dark:text-emerald-100/80">{step}</span>
                 </li>
               ))}
             </ol>
           </div>          )}
           {/* ── Support ───────────────────────────────────────────────────── */}
-          <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+          <div className="rounded-2xl bg-white dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-900 p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
-              <Mail className="w-5 h-5 text-slate-500" />
-              <h3 className="font-semibold text-slate-900 dark:text-white">Need help?</h3>
+              <Mail className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <h3 className="font-semibold text-emerald-950 dark:text-emerald-50">Need help?</h3>
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
+            <p className="text-sm text-emerald-900/75 dark:text-emerald-100/80 mb-3">
               Having trouble with billing or your subscription? We're here to help.
             </p>
             <a
@@ -442,7 +442,7 @@ export default function SubscriptionManagement() {
               <Mail className="w-4 h-4" />
               support@FlatLedger.com
             </a>
-            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">We reply within 24 hours on business days.</p>
+            <p className="text-xs text-emerald-700/70 dark:text-emerald-200/70 mt-1">We reply within 24 hours on business days.</p>
           </div>
 
       </div>
