@@ -6,7 +6,7 @@ import apiClient, { getInMemoryAccessToken } from '../api/client';
 export interface DashboardPeriod {
   start: string;
   end: string;
-  period_key: string;
+  period_key?: string;
 }
 
 export interface DashboardSnapshot {
@@ -15,11 +15,24 @@ export interface DashboardSnapshot {
   total_collected: number;
   collection_rate: number;
   bill_outstanding: number;
+  period_bill_outstanding?: number;
+  all_time_bill_outstanding?: number;
   opening_dues_remaining: number;
   total_member_outstanding: number;
+  all_time_member_outstanding?: number;
   total_expense: number;
   net_cash_flow: number;
   bank_balance: number;
+  opening_fund_balance?: number;
+  period_fund_inflow?: number;
+  period_fund_outflow?: number;
+  closing_fund_balance?: number;
+  present_balance?: number;
+}
+
+export interface TrendMeta {
+  window_months?: number;
+  end_month?: string;
 }
 
 export interface TrendItem {
@@ -49,6 +62,7 @@ export interface RecentActivityItem {
 export interface DashboardResponse {
   period: DashboardPeriod;
   snapshot: DashboardSnapshot;
+  trend_meta?: TrendMeta;
   trends: TrendItem[];
   expense_breakdown: ExpenseBreakdownItem[];
   top_defaulters: TopDefaulter[];

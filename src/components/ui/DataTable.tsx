@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { ChevronUp, ChevronDown, ChevronsUpDown, Download } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useIsMobile } from '../../hooks/useMediaQuery';
@@ -130,7 +130,7 @@ export function DataTable<T extends { id: string }>({
               className={cn(
                 'p-4 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700',
                 'transition-all duration-200',
-                onRowClick && 'cursor-pointer hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600',
+                onRowClick && 'cursor-pointer hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-600',
                 'animate-slide-in-up'
               )}
               style={{ animationDelay: `${index * 0.05}s` }}
@@ -141,7 +141,7 @@ export function DataTable<T extends { id: string }>({
                     type="checkbox"
                     checked={selectedIds.has(item.id)}
                     onChange={() => handleSelectRow(item.id)}
-                    className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                    className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
                     onClick={(e) => e.stopPropagation()}
                   />
                 </div>
@@ -211,7 +211,7 @@ export function DataTable<T extends { id: string }>({
                     type="checkbox"
                     checked={selectedIds.size === data.length && data.length > 0}
                     onChange={handleSelectAll}
-                    className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                    className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
                   />
                 </th>
               )}
@@ -269,7 +269,7 @@ export function DataTable<T extends { id: string }>({
                   className={cn(
                     'bg-white dark:bg-slate-900 transition-colors animate-slide-in-up',
                     onRowClick && 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800',
-                    selectedIds.has(item.id) && 'bg-indigo-50 dark:bg-indigo-900/20'
+                    selectedIds.has(item.id) && 'bg-emerald-50 dark:bg-emerald-900/20'
                   )}
                   style={{ animationDelay: `${index * 0.02}s` }}
                 >
@@ -279,7 +279,7 @@ export function DataTable<T extends { id: string }>({
                         type="checkbox"
                         checked={selectedIds.has(item.id)}
                         onChange={() => handleSelectRow(item.id)}
-                        className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
+                        className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
                       />
                     </td>
                   )}

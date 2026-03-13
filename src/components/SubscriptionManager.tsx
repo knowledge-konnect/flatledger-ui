@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useSubscription } from '../hooks/useSubscription';
 import Button from '../components/ui/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -71,7 +71,7 @@ export const SubscriptionManager: React.FC = () => {
       case 'active':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'trial':
-        return <Calendar className="h-5 w-5 text-blue-500" />;
+        return <Calendar className="h-5 w-5 text-emerald-500" />;
       case 'expired':
       case 'cancelled':
         return <XCircle className="h-5 w-5 text-red-500" />;
@@ -126,7 +126,7 @@ export const SubscriptionManager: React.FC = () => {
                 {plans.map((plan: any) => (
                   <label
                     key={plan.id}
-                    className={`flex-1 cursor-pointer p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-start min-w-[160px] ${selectedPlanId === plan.id ? 'border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-300 dark:hover:border-indigo-600'}`}
+                    className={`flex-1 cursor-pointer p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-start min-w-[160px] ${selectedPlanId === plan.id ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-emerald-300 dark:hover:border-emerald-600'}`}
                     tabIndex={0}
                     onClick={() => setSelectedPlanId(plan.id)}
                     onKeyPress={e => { if (e.key === 'Enter') setSelectedPlanId(plan.id); }}
@@ -137,11 +137,11 @@ export const SubscriptionManager: React.FC = () => {
                       value={plan.id}
                       checked={selectedPlanId === plan.id}
                       onChange={() => setSelectedPlanId(plan.id)}
-                      className="mr-2 accent-indigo-600"
+                      className="mr-2 accent-emerald-600"
                       aria-label={`Select ${plan.name} plan`}
                     />
                     <span className="font-bold text-lg text-slate-900 dark:text-white">{plan.name}</span>
-                    <span className="text-indigo-700 dark:text-indigo-300 font-bold text-xl">₹{plan.monthlyAmount}{plan.name.toLowerCase().includes('year') ? '/year' : '/month'}</span>
+                    <span className="text-emerald-700 dark:text-emerald-300 font-bold text-xl">₹{plan.monthlyAmount}{plan.name.toLowerCase().includes('year') ? '/year' : '/month'}</span>
                     <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">{plan.description}</span>
                   </label>
                 ))}
@@ -165,7 +165,7 @@ export const SubscriptionManager: React.FC = () => {
                 onClick={handleSubscribe}
                 disabled={loading || subscribing || !selectedPlanId}
                 isLoading={subscribing}
-                className="bg-indigo-600 text-white hover:bg-indigo-700"
+                className="bg-emerald-600 text-white hover:bg-emerald-700"
               >
                 <CreditCard className="h-4 w-4 mr-2" />
                 {subscribing ? 'Processing...' : 'Upgrade'}

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+﻿import { useEffect, useRef } from 'react';
 import { Building2, Wrench, Home, Calculator, ArrowRight, X } from 'lucide-react';
 import Button from '../ui/Button';
 
@@ -7,7 +7,7 @@ export const WELCOME_MODAL_SEEN_KEY = 'welcome_modal_seen';
 const STEPS = [
   {
     icon: Building2,
-    color: 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400',
+    color: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400',
     label: 'Society Profile',
     description: 'Your society name and contact details — the foundation of your account.',
   },
@@ -19,13 +19,13 @@ const STEPS = [
   },
   {
     icon: Home,
-    color: 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400',
+    color: 'bg-teal-100 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400',
     label: 'Add Flats / Units',
     description: 'Register every flat in your society. Monthly bills are generated for each unit.',
   },
   {
     icon: Calculator,
-    color: 'bg-pink-100 dark:bg-pink-900/40 text-pink-600 dark:text-pink-400',
+    color: 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400',
     label: 'Opening Balance',
     description: 'Carry over your current bank balance and any outstanding dues from your previous system.',
   },
@@ -67,7 +67,7 @@ export default function WelcomeModal({ onClose }: WelcomeModalProps) {
       <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-slide-in-up">
 
         {/* ── Header gradient ── */}
-        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 px-6 pt-8 pb-6 text-white text-center">
+        <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 px-6 pt-8 pb-6 text-white text-center">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm mb-4">
             <span className="text-3xl leading-none">🏢</span>
           </div>

@@ -82,18 +82,18 @@ export default function TrialCountdown({
   const isUrgent = trialDaysRemaining <= 7
   const bgColor = isUrgent
     ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-    : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+    : 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'
   const textColor = isUrgent
     ? 'text-amber-800 dark:text-amber-200'
-    : 'text-blue-800 dark:text-blue-200'
+    : 'text-emerald-800 dark:text-emerald-200'
   const accentColor = isUrgent
     ? 'text-amber-600 dark:text-amber-400'
-    : 'text-blue-600 dark:text-blue-400'
+    : 'text-emerald-600 dark:text-emerald-400'
 
   if (compact) {
     return (
       <div className={`flex items-center gap-2 p-2 ${bgColor} border rounded-lg ${className}`}>
-        {showIcon && <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />}
+        {showIcon && <Clock className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />}
         <span className={`text-sm font-medium ${textColor}`}>
           {trialDaysRemaining} day{trialDaysRemaining !== 1 ? 's' : ''} left
         </span>
@@ -104,7 +104,7 @@ export default function TrialCountdown({
   return (
     <div className={`p-4 ${bgColor} border rounded-lg ${className}`}>
       <div className="flex items-center gap-3 mb-2">
-        {showIcon && <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />}
+        {showIcon && <Clock className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />}
         <div>
           <h3 className={`font-semibold ${textColor}`}>
             {isUrgent ? 'Trial Ending Soon' : 'Free Trial Active'}

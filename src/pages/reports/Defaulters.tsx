@@ -9,7 +9,7 @@ import Pagination from '../../components/ui/Pagination';
 import { cn } from '../../lib/utils';
 import reportsApi, { DefaulterEntry } from '../../api/reportsApi';
 import {
-  ReportState, initialState, ReportLoading, ReportError, StatCard, NumberInput, formatCurrency,
+  ReportState, initialState, ReportLoading, ReportError, StatCard, NumberInput, formatCurrency, fmtPeriod,
 } from './_shared';
 
 export default function DefaultersPage() {
@@ -40,7 +40,13 @@ export default function DefaultersPage() {
     return '';
   }
 
-  const allData = state.data ?? [];
+  const allData = [...(state.data ?? [])].sort((a, b) => {
+    const pendingDiff = b.pending_months - a.pending_months;
+    if (pendingDiff !== 0) return pendingDiff;
+    const outstandingDiff = b.total_outstanding - a.total_outstanding;
+    if (outstandingDiff !== 0) return outstandingDiff;
+    return a.flat_no.localeCompare(b.flat_no);
+  });
   const totalOutstanding = allData.reduce((s, d) => s + d.total_outstanding, 0);
   const startIndex = page * pageSize;
   const paginatedData = allData.slice(startIndex, startIndex + pageSize);
@@ -105,17 +111,18 @@ export default function DefaultersPage() {
                       <TableHead>Flat No</TableHead>
                       <TableHead>Owner</TableHead>
                       <TableHead>Mobile</TableHead>
-                      <TableHead>Total Billed</TableHead>
-                      <TableHead>Paid</TableHead>
-                      <TableHead>Outstanding</TableHead>
-                      <TableHead>Pending Months</TableHead>
+                      <TableHead className="text-right">Total Billed</TableHead>
+                      <TableHead className="text-right">Paid</TableHead>
+                      <TableHead className="text-right">Outstanding</TableHead>
+                      <TableHead className="text-right">% of Total</TableHead>
+                      <TableHead className="text-right">Pending Months</TableHead>
                       <TableHead>Since</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginatedData.length === 0 ? (
                       <TableRow>
-                        <TableCell className="text-center py-8 text-slate-400" colSpan={8}>
+                        <TableCell className="text-center py-8 text-slate-400" colSpan={9}>
                           {allData.length === 0 ? 'No defaulters found' : 'No results on this page'}
                         </TableCell>
                       </TableRow>
@@ -124,13 +131,16 @@ export default function DefaultersPage() {
                         <TableCell className="font-semibold">{d.flat_no}</TableCell>
                         <TableCell>{d.owner_name}</TableCell>
                         <TableCell>{d.contact_mobile}</TableCell>
-                        <TableCell>{formatCurrency(d.total_billed)}</TableCell>
-                        <TableCell className="text-green-600 dark:text-green-400">{formatCurrency(d.total_paid)}</TableCell>
-                        <TableCell className="text-red-600 dark:text-red-400 font-medium">
+                        <TableCell className="text-right tabular-nums">{formatCurrency(d.total_billed)}</TableCell>
+                        <TableCell className="text-right tabular-nums text-green-600 dark:text-green-400">{formatCurrency(d.total_paid)}</TableCell>
+                        <TableCell className="text-right tabular-nums text-red-600 dark:text-red-400 font-medium">
                           {formatCurrency(d.total_outstanding)}
                         </TableCell>
-                        <TableCell>{d.pending_months}</TableCell>
-                        <TableCell>{d.oldest_due_period}</TableCell>
+                        <TableCell className="text-right text-slate-500 dark:text-slate-400 tabular-nums">
+                          {totalOutstanding > 0 ? ((d.total_outstanding / totalOutstanding) * 100).toFixed(1) + '%' : '—'}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{d.pending_months}</TableCell>
+                        <TableCell className="whitespace-nowrap">{d.oldest_due_period ? fmtPeriod(d.oldest_due_period) : '—'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -138,7 +148,7 @@ export default function DefaultersPage() {
               </CardContent>
             </Card>
 
-            {allData.length > 10 && (
+            {allData.length > pageSize && (
               <Pagination
                 page={page}
                 pageSize={pageSize}

@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+﻿import { ReactNode } from 'react';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -21,8 +21,8 @@ export default function PageHeader({
     <div className={cn('flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6', className)}>
       <div className="flex items-start gap-3">
         {Icon && (
-          <div className="w-10 h-10 rounded-lg bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 flex items-center justify-center flex-shrink-0">
-            <Icon className="w-5 h-5 text-[#2563EB] dark:text-[#3B82F6]" />
+          <div className="w-10 h-10 rounded-lg bg-primary/10 dark:bg-primary-500/10 flex items-center justify-center flex-shrink-0">
+            <Icon className="w-5 h-5 text-primary dark:text-primary-500" />
           </div>
         )}
         <div>

@@ -19,6 +19,7 @@ export interface CollectionSummaryData {
   total_collected: number;
   total_outstanding: number;
   total_flats: number;
+  collection_percentage?: number;
   periods: CollectionPeriod[];
 }
 

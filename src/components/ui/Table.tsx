@@ -23,10 +23,14 @@ export function TableRow({ children, className }: { children: ReactNode; classNa
   return <tr className={className}>{children}</tr>;
 }
 
-export function TableHead({ children, className }: { children: ReactNode; className?: string }) {
-  return <th className={className}>{children}</th>;
+export function TableHead({ children, className, colSpan }: { children: ReactNode; className?: string; colSpan?: number }) {
+  return <th className={className} colSpan={colSpan}>{children}</th>;
 }
 
 export function TableCell({ children, className, colSpan }: { children: ReactNode; className?: string; colSpan?: number }) {
   return <td className={className} colSpan={colSpan}>{children}</td>;
+}
+
+export function TableFoot({ children }: { children: ReactNode }) {
+  return <tfoot>{children}</tfoot>;
 }

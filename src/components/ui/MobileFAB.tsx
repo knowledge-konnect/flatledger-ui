@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Plus, X, CreditCard, TrendingDown, Building } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -29,7 +29,7 @@ export default function MobileFAB() {
       icon: Building,
       label: 'Add Flat',
       onClick: () => window.location.href = '/flats',
-      color: 'bg-violet-600',
+      color: 'bg-emerald-600',
     },
   ];
 
@@ -71,7 +71,7 @@ export default function MobileFAB() {
             'w-14 h-14 rounded-full shadow-premium-xl flex items-center justify-center text-white transition-all duration-300',
             isOpen
               ? 'bg-red-600 rotate-45'
-              : 'bg-gradient-to-r from-indigo-600 to-indigo-500'
+              : 'bg-gradient-to-r from-emerald-600 to-emerald-500'
           )}
         >
           {isOpen ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}

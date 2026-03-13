@@ -1,12 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-} from 'recharts';
+﻿import { useState, useEffect, useCallback, useRef } from 'react';
+import ReactApexChart from 'react-apexcharts';
 import {
   FileText, TrendingUp, TrendingDown, Wallet, Users,
   Receipt, BarChart2, RefreshCw, AlertCircle, Loader2,
-  BookOpen, CreditCard, PieChart as PieChartIcon,
+  BookOpen, CreditCard, PieChart as PieChartIcon, Percent,
 } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
@@ -24,10 +21,16 @@ import reportsApi, {
 /*  Helpers                                            */
 /* ─────────────────────────────────────────────────── */
 
-const today = () => new Date().toISOString().split('T')[0];
-const startOfYear = () => new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0];
-const currentYearMonth = () => new Date().toISOString().slice(0, 7);
-const startYearMonth = () => `${new Date().getFullYear()}-01`;
+const pad2 = (n: number) => String(n).padStart(2, '0');
+const formatLocalDate = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const formatLocalYearMonth = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+
+const today = () => formatLocalDate(new Date());
+const startOfMonth = () => {
+  const now = new Date();
+  return formatLocalDate(new Date(now.getFullYear(), now.getMonth(), 1));
+};
+const currentYearMonth = () => formatLocalYearMonth(new Date());
 
 // Date formatters for Payment Register ledger
 const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -49,27 +52,27 @@ function presetDate(preset: 'thisMonth' | 'lastMonth' | 'last3Months' | 'thisYea
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
-  const tod = now.toISOString().split('T')[0];
+  const tod = formatLocalDate(now);
   if (preset === 'thisMonth') {
-    return { start: new Date(y, m, 1).toISOString().split('T')[0], end: tod };
+    return { start: formatLocalDate(new Date(y, m, 1)), end: tod };
   }
   if (preset === 'lastMonth') {
     const s = new Date(y, m - 1, 1);
     const e = new Date(y, m, 0);
-    return { start: s.toISOString().split('T')[0], end: e.toISOString().split('T')[0] };
+    return { start: formatLocalDate(s), end: formatLocalDate(e) };
   }
   if (preset === 'last3Months') {
-    return { start: new Date(y, m - 2, 1).toISOString().split('T')[0], end: tod };
+    return { start: formatLocalDate(new Date(y, m - 2, 1)), end: tod };
   }
   // thisYear
-  return { start: new Date(y, 0, 1).toISOString().split('T')[0], end: tod };
+  return { start: formatLocalDate(new Date(y, 0, 1)), end: tod };
 }
 
 function presetPeriod(preset: 'thisMonth' | 'thisQuarter' | 'thisYear'): { startPeriod: string; endPeriod: string } {
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth(); // 0-indexed
-  const cur = now.toISOString().slice(0, 7);
+  const cur = formatLocalYearMonth(now);
   if (preset === 'thisMonth') {
     return { startPeriod: cur, endPeriod: cur };
   }
@@ -93,8 +96,8 @@ function initialState<T>(): ReportState<T> {
 }
 
 const CHART_COLORS = [
-  '#6366F1', '#22C55E', '#F59E0B', '#EF4444',
-  '#14B8A6', '#8B5CF6', '#EC4899', '#F97316',
+  '#10B981', '#F59E0B', '#6366F1', '#EF4444',
+  '#14B8A6', '#EC4899', '#3B82F6',
 ];
 
 /* ─────────────────────────────────────────────────── */
@@ -104,7 +107,7 @@ const CHART_COLORS = [
 function ReportLoading({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400 dark:text-slate-500">
-      <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
       <p className="text-sm">Loading {label}…</p>
     </div>
   );
@@ -128,8 +131,8 @@ function ReportError({ message, onRetry }: { message: string; onRetry: () => voi
 
 function StatCard({
   label, value, icon: Icon,
-  colorClass = 'bg-indigo-50 dark:bg-indigo-950/30',
-  iconColorClass = 'text-indigo-600 dark:text-indigo-400',
+  colorClass = 'bg-emerald-50 dark:bg-emerald-950/30',
+  iconColorClass = 'text-emerald-600 dark:text-emerald-400',
 }: {
   label: string;
   value: string | number;
@@ -165,29 +168,37 @@ const PRESET_DATE_LABELS = [
   { key: 'thisYear',    label: 'This Year' },
 ] as const;
 
+type DatePresetKey = typeof PRESET_DATE_LABELS[number]['key'];
+
 const PRESET_PERIOD_LABELS = [
   { key: 'thisMonth',   label: 'This Month' },
   { key: 'thisQuarter', label: 'This Quarter' },
   { key: 'thisYear',    label: 'This Year' },
 ] as const;
 
+type PeriodPresetKey = typeof PRESET_PERIOD_LABELS[number]['key'];
+
 function QuickDatePresets({
   onSelect,
+  activeKey,
 }: {
-  onSelect: (start: string, end: string) => void;
+  onSelect: (preset: DatePresetKey, start: string, end: string) => void;
+  activeKey: DatePresetKey | null;
 }) {
   return (
     <div className="flex flex-wrap gap-1 items-center">
-      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mr-0.5">Quick:</span>
+      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mr-0.5">Quick range:</span>
       {PRESET_DATE_LABELS.map(p => (
         <button
           key={p.key}
           type="button"
-          onClick={() => { const r = presetDate(p.key); onSelect(r.start, r.end); }}
-          className="px-2 py-0.5 text-[11px] rounded-full border border-slate-300 dark:border-slate-600
-                     text-slate-600 dark:text-slate-300 hover:bg-indigo-50 hover:border-indigo-300
-                     hover:text-indigo-600 dark:hover:bg-indigo-950/40 dark:hover:border-indigo-700
-                     dark:hover:text-indigo-400 transition-colors"
+          onClick={() => { const r = presetDate(p.key); onSelect(p.key, r.start, r.end); }}
+          className={cn(
+            'px-2 py-0.5 text-[11px] rounded-full border transition-colors',
+            activeKey === p.key
+              ? 'bg-emerald-600 text-white border-emerald-600 dark:bg-emerald-500 dark:border-emerald-500'
+              : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 dark:hover:bg-emerald-950/40 dark:hover:border-emerald-700 dark:hover:text-emerald-400'
+          )}
         >
           {p.label}
         </button>
@@ -198,21 +209,25 @@ function QuickDatePresets({
 
 function QuickPeriodPresets({
   onSelect,
+  activeKey,
 }: {
-  onSelect: (startPeriod: string, endPeriod: string) => void;
+  onSelect: (preset: PeriodPresetKey, startPeriod: string, endPeriod: string) => void;
+  activeKey: PeriodPresetKey | null;
 }) {
   return (
     <div className="flex flex-wrap gap-1 items-center">
-      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mr-0.5">Quick:</span>
+      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mr-0.5">Quick range:</span>
       {PRESET_PERIOD_LABELS.map(p => (
         <button
           key={p.key}
           type="button"
-          onClick={() => { const r = presetPeriod(p.key); onSelect(r.startPeriod, r.endPeriod); }}
-          className="px-2 py-0.5 text-[11px] rounded-full border border-slate-300 dark:border-slate-600
-                     text-slate-600 dark:text-slate-300 hover:bg-indigo-50 hover:border-indigo-300
-                     hover:text-indigo-600 dark:hover:bg-indigo-950/40 dark:hover:border-indigo-700
-                     dark:hover:text-indigo-400 transition-colors"
+          onClick={() => { const r = presetPeriod(p.key); onSelect(p.key, r.startPeriod, r.endPeriod); }}
+          className={cn(
+            'px-2 py-0.5 text-[11px] rounded-full border transition-colors',
+            activeKey === p.key
+              ? 'bg-emerald-600 text-white border-emerald-600 dark:bg-emerald-500 dark:border-emerald-500'
+              : 'border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-600 dark:hover:bg-emerald-950/40 dark:hover:border-emerald-700 dark:hover:text-emerald-400'
+          )}
         >
           {p.label}
         </button>
@@ -238,7 +253,7 @@ function DateInput({
         onChange={e => onChange(e.target.value)}
         className="px-2.5 py-1.5 text-xs rounded-md border border-slate-300 dark:border-slate-600
                    bg-white dark:bg-slate-900 text-slate-900 dark:text-white
-                   focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500
+                   focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500
                    h-[34px]"
       />
     </div>
@@ -262,7 +277,7 @@ function NumberInput({
         onChange={e => onChange(Number(e.target.value))}
         className="px-2.5 py-1.5 text-xs rounded-md border border-slate-300 dark:border-slate-600
                    bg-white dark:bg-slate-900 text-slate-900 dark:text-white
-                   focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 w-36
+                   focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 w-36
                    h-[34px]"
       />
     </div>
@@ -279,8 +294,9 @@ function CollectionSummaryReport({
   state: ReportState<CollectionSummaryData>;
   onFetch: (sp: string, ep: string) => void;
 }) {
-  const [startPeriod, setStartPeriod] = useState(startYearMonth());
+  const [startPeriod, setStartPeriod] = useState(currentYearMonth());
   const [endPeriod, setEndPeriod] = useState(currentYearMonth());
+  const [activePeriodPreset, setActivePeriodPreset] = useState<PeriodPresetKey | null>('thisMonth');
   const didFetch = useRef(false);
   useEffect(() => {
     if (!didFetch.current && !state.data && !state.loading) {
@@ -290,7 +306,12 @@ function CollectionSummaryReport({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const applyPreset = (sp: string, ep: string) => { setStartPeriod(sp); setEndPeriod(ep); onFetch(sp, ep); };
+  const applyPreset = (preset: PeriodPresetKey, sp: string, ep: string) => {
+    setActivePeriodPreset(preset);
+    setStartPeriod(sp);
+    setEndPeriod(ep);
+    onFetch(sp, ep);
+  };
 
   if (state.loading) return <ReportLoading label="Collection Summary" />;
   if (state.error) return <ReportError message={state.error} onRetry={() => onFetch(startPeriod, endPeriod)} />;
@@ -298,7 +319,7 @@ function CollectionSummaryReport({
 
   const d = state.data;
   const chartData = d.periods.map(p => ({
-    name: p.period,
+    name: fmtPeriod(p.period),
     Billed: p.total_billed,
     Collected: p.total_collected,
     Outstanding: p.total_outstanding,
@@ -307,8 +328,8 @@ function CollectionSummaryReport({
   return (
     <div className="space-y-3">
       {/* Combined Filter & Description Block */}
-      <div className="bg-white dark:bg-slate-900 rounded-lg border-2 border-indigo-200 dark:border-indigo-800 shadow-sm">
-        <div className="px-4 py-2.5 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-950/40 dark:to-blue-950/40 border-b border-indigo-200 dark:border-indigo-800">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border-2 border-emerald-200 dark:border-emerald-800 shadow-sm">
+        <div className="px-4 py-2.5 bg-gradient-to-r from-emerald-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800">
           <div className="flex items-center gap-2">
             <span className="text-lg">📊</span>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Billing & Collections Overview</h3>
@@ -317,10 +338,10 @@ function CollectionSummaryReport({
         </div>
         <div className="p-3">
           <div className="flex flex-wrap items-end gap-2">
-            <DateInput label="Start Period" value={startPeriod} onChange={setStartPeriod} type="month" />
-            <DateInput label="End Period" value={endPeriod} onChange={setEndPeriod} type="month" />
+            <DateInput label="From Month" value={startPeriod} onChange={(v) => { setStartPeriod(v); setActivePeriodPreset(null); }} type="month" />
+            <DateInput label="To Month" value={endPeriod} onChange={(v) => { setEndPeriod(v); setActivePeriodPreset(null); }} type="month" />
             <div className="flex-1 min-w-[200px]">
-              <QuickPeriodPresets onSelect={applyPreset} />
+              <QuickPeriodPresets onSelect={applyPreset} activeKey={activePeriodPreset} />
             </div>
             <Button variant="primary" size="sm" onClick={() => onFetch(startPeriod, endPeriod)} disabled={state.loading} className="h-[34px]">
               {state.loading
@@ -331,14 +352,29 @@ function CollectionSummaryReport({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <StatCard label="Total Billed" value={formatCurrency(d.total_billed)} icon={Wallet}
-          colorClass="bg-blue-50 dark:bg-blue-950/30" iconColorClass="text-blue-600 dark:text-blue-400" />
+          colorClass="bg-emerald-50 dark:bg-emerald-950/30" iconColorClass="text-emerald-600 dark:text-emerald-400" />
         <StatCard label="Total Collected" value={formatCurrency(d.total_collected)} icon={TrendingUp}
           colorClass="bg-green-50 dark:bg-green-950/30" iconColorClass="text-green-600 dark:text-green-400" />
         <StatCard label="Total Outstanding" value={formatCurrency(d.total_outstanding)} icon={TrendingDown}
           colorClass="bg-red-50 dark:bg-red-950/30" iconColorClass="text-red-600 dark:text-red-400" />
-        <StatCard label="Total Flats" value={d.total_flats} icon={Users}
+        <StatCard
+          label="Collection Rate"
+          value={`${(d.collection_percentage ?? (d.total_billed > 0 ? (d.total_collected / d.total_billed) * 100 : 0)).toFixed(1)}%`}
+          icon={Percent}
+          colorClass={
+            (d.collection_percentage ?? 0) >= 80 ? 'bg-green-50 dark:bg-green-950/30'
+              : (d.collection_percentage ?? 0) >= 50 ? 'bg-amber-50 dark:bg-amber-950/30'
+              : 'bg-red-50 dark:bg-red-950/30'
+          }
+          iconColorClass={
+            (d.collection_percentage ?? 0) >= 80 ? 'text-green-600 dark:text-green-400'
+              : (d.collection_percentage ?? 0) >= 50 ? 'text-amber-600 dark:text-amber-400'
+              : 'text-red-600 dark:text-red-400'
+          }
+        />
+        <StatCard label="Flats Billed" value={d.total_flats} icon={Users}
           colorClass="bg-purple-50 dark:bg-purple-950/30" iconColorClass="text-purple-600 dark:text-purple-400" />
       </div>
 
@@ -347,18 +383,26 @@ function CollectionSummaryReport({
           <CardTitle className="text-sm font-semibold">Monthly Trends</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => formatCurrency(v)} />
-              <Legend />
-              <Bar dataKey="Billed" fill="#6366F1" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Collected" fill="#22C55E" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Outstanding" fill="#EF4444" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <ReactApexChart
+            type="bar"
+            height={240}
+            series={[
+              { name: 'Billed', data: chartData.map((d: any) => d.Billed ?? 0) },
+              { name: 'Collected', data: chartData.map((d: any) => d.Collected ?? 0) },
+              { name: 'Outstanding', data: chartData.map((d: any) => d.Outstanding ?? 0) },
+            ]}
+            options={{
+              chart: { toolbar: { show: false }, background: 'transparent' },
+              colors: ['#10B981', '#F59E0B', '#EF4444'],
+              plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
+              dataLabels: { enabled: false },
+              xaxis: { categories: chartData.map((d: any) => d.name), labels: { style: { fontSize: '11px', colors: '#1e293b' } } },
+              yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px', colors: '#1e293b' } } },
+              tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+              legend: { position: 'top', fontSize: '12px' },
+              grid: { borderColor: '#E2E8F0' },
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -374,7 +418,8 @@ function CollectionSummaryReport({
                 <TableHead>Billed</TableHead>
                 <TableHead>Collected</TableHead>
                 <TableHead>Outstanding</TableHead>
-                <TableHead>Paid</TableHead>
+                <TableHead>Collection %</TableHead>
+                <TableHead>Paid Flats</TableHead>
                 <TableHead>Partial</TableHead>
                 <TableHead>Unpaid</TableHead>
               </TableRow>
@@ -382,23 +427,36 @@ function CollectionSummaryReport({
             <TableBody>
               {d.periods.length === 0 ? (
                 <TableRow>
-                  <TableCell className="text-center py-8 text-slate-400" colSpan={7}>
+                  <TableCell className="text-center py-8 text-slate-400" colSpan={8}>
                     No data available
                   </TableCell>
                 </TableRow>
-              ) : d.periods.map(p => (
-                <TableRow key={p.period}>
-                  <TableCell className="font-medium">{p.period}</TableCell>
-                  <TableCell>{formatCurrency(p.total_billed)}</TableCell>
-                  <TableCell className="text-green-600 dark:text-green-400">{formatCurrency(p.total_collected)}</TableCell>
-                  <TableCell className={p.total_outstanding > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-500'}>
-                    {formatCurrency(p.total_outstanding)}
-                  </TableCell>
-                  <TableCell>{p.flats_paid}</TableCell>
-                  <TableCell>{p.flats_partial}</TableCell>
-                  <TableCell>{p.flats_unpaid}</TableCell>
-                </TableRow>
-              ))}
+              ) : d.periods.map(p => {
+                const rate = p.total_billed > 0 ? (p.total_collected / p.total_billed) * 100 : 0;
+                return (
+                  <TableRow key={p.period}>
+                    <TableCell className="font-medium whitespace-nowrap">{fmtPeriod(p.period)}</TableCell>
+                    <TableCell>{formatCurrency(p.total_billed)}</TableCell>
+                    <TableCell className="text-green-600 dark:text-green-400">{formatCurrency(p.total_collected)}</TableCell>
+                    <TableCell className={p.total_outstanding > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-500'}>
+                      {formatCurrency(p.total_outstanding)}
+                    </TableCell>
+                    <TableCell>
+                      <span className={cn(
+                        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold',
+                        rate >= 80 ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
+                          : rate >= 50 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
+                          : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
+                      )}>
+                        {rate.toFixed(1)}%
+                      </span>
+                    </TableCell>
+                    <TableCell>{p.flats_paid}</TableCell>
+                    <TableCell>{p.flats_partial}</TableCell>
+                    <TableCell>{p.flats_unpaid}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
@@ -470,7 +528,7 @@ function DefaultersReport({
         </div>
         <div className="p-3">
           <div className="flex flex-wrap items-end gap-2">
-            <NumberInput label="Min Outstanding (₹)" value={minOutstanding} onChange={setMinOutstanding} />
+            <NumberInput label="Minimum Outstanding Amount (₹)" value={minOutstanding} onChange={setMinOutstanding} />
             <div className="flex-1"></div>
             <Button variant="primary" size="sm" onClick={() => { onFetch(minOutstanding); setPage(0); }} disabled={state.loading} className="h-[34px]">
               {state.loading
@@ -499,6 +557,7 @@ function DefaultersReport({
                 <TableHead>Total Billed</TableHead>
                 <TableHead>Paid</TableHead>
                 <TableHead>Outstanding</TableHead>
+                <TableHead>% of Total</TableHead>
                 <TableHead>Pending Months</TableHead>
                 <TableHead>Since</TableHead>
               </TableRow>
@@ -506,7 +565,7 @@ function DefaultersReport({
             <TableBody>
               {paginatedData.length === 0 ? (
                 <TableRow>
-                  <TableCell className="text-center py-8 text-slate-400" colSpan={8}>
+                  <TableCell className="text-center py-8 text-slate-400" colSpan={9}>
                     {allData.length === 0 ? 'No defaulters found' : 'No results on this page'}
                   </TableCell>
                 </TableRow>
@@ -520,8 +579,11 @@ function DefaultersReport({
                   <TableCell className="text-red-600 dark:text-red-400 font-medium">
                     {formatCurrency(d.total_outstanding)}
                   </TableCell>
+                  <TableCell className="text-slate-500 tabular-nums">
+                    {totalOutstanding > 0 ? ((d.total_outstanding / totalOutstanding) * 100).toFixed(1) + '%' : '—'}
+                  </TableCell>
                   <TableCell>{d.pending_months}</TableCell>
-                  <TableCell>{d.oldest_due_period}</TableCell>
+                  <TableCell className="whitespace-nowrap">{d.oldest_due_period ? fmtPeriod(d.oldest_due_period) : '—'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -553,18 +615,24 @@ function IncomeVsExpenseReport({
   state: ReportState<IncomeVsExpenseData>;
   onFetch: (sd: string, ed: string) => void;
 }) {
-  const [startDate, setStartDate] = useState(startOfYear());
+  const [startDate, setStartDate] = useState(startOfMonth());
   const [endDate, setEndDate] = useState(today());
+  const [activeDatePreset, setActiveDatePreset] = useState<DatePresetKey | null>('thisMonth');
   const didFetch = useRef(false);
   useEffect(() => {
     if (!didFetch.current && !state.data && !state.loading) {
       didFetch.current = true;
-      onFetch(startOfYear(), today());
+      onFetch(startOfMonth(), today());
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const applyPreset = (sd: string, ed: string) => { setStartDate(sd); setEndDate(ed); onFetch(sd, ed); };
+  const applyPreset = (preset: DatePresetKey, sd: string, ed: string) => {
+    setActiveDatePreset(preset);
+    setStartDate(sd);
+    setEndDate(ed);
+    onFetch(sd, ed);
+  };
 
   if (state.loading) return <ReportLoading label="Income vs Expense" />;
   if (state.error) return <ReportError message={state.error} onRetry={() => onFetch(startDate, endDate)} />;
@@ -572,7 +640,7 @@ function IncomeVsExpenseReport({
 
   const d = state.data!;
   const chartData = d.months.map(m => ({
-    name: m.month,
+    name: fmtPeriod(m.month),
     Income: m.income,
     Expense: m.expense,
     Net: m.net,
@@ -591,10 +659,10 @@ function IncomeVsExpenseReport({
         </div>
         <div className="p-3">
           <div className="flex flex-wrap items-end gap-2">
-            <DateInput label="Start Date" value={startDate} onChange={setStartDate} />
-            <DateInput label="End Date" value={endDate} onChange={setEndDate} />
+            <DateInput label="From Date" value={startDate} onChange={(v) => { setStartDate(v); setActiveDatePreset(null); }} />
+            <DateInput label="To Date" value={endDate} onChange={(v) => { setEndDate(v); setActiveDatePreset(null); }} />
             <div className="flex-1 min-w-[200px]">
-              <QuickDatePresets onSelect={applyPreset} />
+              <QuickDatePresets onSelect={applyPreset} activeKey={activeDatePreset} />
             </div>
             <Button variant="primary" size="sm" onClick={() => onFetch(startDate, endDate)} disabled={state.loading} className="h-[34px]">
               {state.loading
@@ -611,8 +679,8 @@ function IncomeVsExpenseReport({
         <StatCard label="Total Expense" value={formatCurrency(d.total_expense)} icon={TrendingDown}
           colorClass="bg-red-50 dark:bg-red-950/30" iconColorClass="text-red-600 dark:text-red-400" />
         <StatCard
-          label="Net Balance"
-          value={formatCurrency(d.net_balance)}
+          label="Net Surplus / (Deficit)"
+          value={`${d.net_balance >= 0 ? '+' : ''}${formatCurrency(d.net_balance)}`}
           icon={d.net_balance >= 0 ? TrendingUp : TrendingDown}
           colorClass={d.net_balance >= 0 ? 'bg-green-50 dark:bg-green-950/30' : 'bg-red-50 dark:bg-red-950/30'}
           iconColorClass={d.net_balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}
@@ -624,17 +692,25 @@ function IncomeVsExpenseReport({
           <CardTitle className="text-sm font-semibold">Monthly Comparison</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => formatCurrency(v)} />
-              <Legend />
-              <Bar dataKey="Income" fill="#22C55E" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Expense" fill="#EF4444" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <ReactApexChart
+            type="bar"
+            height={240}
+            series={[
+              { name: 'Income', data: chartData.map((d: any) => d.Income ?? 0) },
+              { name: 'Expense', data: chartData.map((d: any) => d.Expense ?? 0) },
+            ]}
+            options={{
+              chart: { toolbar: { show: false }, background: 'transparent' },
+              colors: ['#10B981', '#EF4444'],
+              plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
+              dataLabels: { enabled: false },
+              xaxis: { categories: chartData.map((d: any) => d.name), labels: { style: { fontSize: '11px', colors: '#1e293b' } } },
+              yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px', colors: '#1e293b' } } },
+              tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+              legend: { position: 'top', fontSize: '12px' },
+              grid: { borderColor: '#E2E8F0' },
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -643,15 +719,23 @@ function IncomeVsExpenseReport({
           <CardTitle className="text-sm font-semibold">Net Balance Trend</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => formatCurrency(v)} />
-              <Line type="monotone" dataKey="Net" stroke="#6366F1" strokeWidth={2} dot={{ r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <ReactApexChart
+            type="line"
+            height={180}
+            series={[{ name: 'Net', data: chartData.map((d: any) => d.Net ?? 0) }]}
+            options={{
+              chart: { toolbar: { show: false }, background: 'transparent' },
+              colors: ['#10B981'],
+              stroke: { width: 2, curve: 'smooth' },
+              markers: { size: 3 },
+              dataLabels: { enabled: false },
+              xaxis: { categories: chartData.map((d: any) => d.name), labels: { style: { fontSize: '11px', colors: '#1e293b' } } },
+              yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px', colors: '#1e293b' } } },
+              tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+              legend: { show: false },
+              grid: { borderColor: '#E2E8F0' },
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -675,7 +759,7 @@ function IncomeVsExpenseReport({
                 </TableRow>
               ) : d.months.map(m => (
                 <TableRow key={m.month}>
-                  <TableCell className="font-medium">{m.month}</TableCell>
+                  <TableCell className="font-medium whitespace-nowrap">{fmtPeriod(m.month)}</TableCell>
                   <TableCell className="text-green-600 dark:text-green-400">{formatCurrency(m.income)}</TableCell>
                   <TableCell className="text-red-600 dark:text-red-400">{formatCurrency(m.expense)}</TableCell>
                   <TableCell className={cn('font-semibold', m.net >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')}>
@@ -701,20 +785,27 @@ function FundLedgerReport({
   state: ReportState<FundLedgerData>;
   onFetch: (sd: string, ed: string) => void;
 }) {
-  const [startDate, setStartDate] = useState(startOfYear());
+  const [startDate, setStartDate] = useState(startOfMonth());
   const [endDate, setEndDate] = useState(today());
+  const [activeDatePreset, setActiveDatePreset] = useState<DatePresetKey | null>('thisMonth');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const didFetch = useRef(false);
   useEffect(() => {
     if (!didFetch.current && !state.data && !state.loading) {
       didFetch.current = true;
-      onFetch(startOfYear(), today());
+      onFetch(startOfMonth(), today());
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const applyPreset = (sd: string, ed: string) => { setStartDate(sd); setEndDate(ed); setPage(0); onFetch(sd, ed); };
+  const applyPreset = (preset: DatePresetKey, sd: string, ed: string) => {
+    setActiveDatePreset(preset);
+    setStartDate(sd);
+    setEndDate(ed);
+    setPage(0);
+    onFetch(sd, ed);
+  };
 
   if (state.loading) return <ReportLoading label="Fund Ledger" />;
   if (state.error) return <ReportError message={state.error} onRetry={() => onFetch(startDate, endDate)} />;
@@ -732,7 +823,9 @@ function FundLedgerReport({
   }));
 
   // Total credit / debit / opening_fund from entries for the footer
-  const footerCredit  = d.entries.reduce((s, e) => s + (e.entry_type !== 'debit' ? (e.credit || 0) : 0), 0);
+  const footerCollections = d.entries.reduce((s, e) => s + (e.entry_type === 'credit' ? (e.credit || 0) : 0), 0);
+  const footerOpeningFund = d.entries.reduce((s, e) => s + (e.entry_type === 'opening_fund' ? (e.credit || 0) : 0), 0);
+  const footerCredit = footerCollections + footerOpeningFund;
   const footerDebit   = d.entries.reduce((s, e) => s + (e.debit || 0), 0);
 
   // Pagination
@@ -743,8 +836,8 @@ function FundLedgerReport({
   return (
     <div className="space-y-3">
       {/* Combined Filter & Description Block */}
-      <div className="bg-white dark:bg-slate-900 rounded-lg border-2 border-blue-200 dark:border-blue-800 shadow-sm">
-        <div className="px-4 py-2.5 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/40 border-b border-blue-200 dark:border-blue-800">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border-2 border-emerald-200 dark:border-emerald-800 shadow-sm">
+        <div className="px-4 py-2.5 bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-950/40 dark:to-cyan-950/40 border-b border-emerald-200 dark:border-emerald-800">
           <div className="flex items-center gap-2">
             <span className="text-lg">📖</span>
             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Fund Transaction History</h3>
@@ -753,10 +846,10 @@ function FundLedgerReport({
         </div>
         <div className="p-3">
           <div className="flex flex-wrap items-end gap-2">
-            <DateInput label="Start Date" value={startDate} onChange={setStartDate} />
-            <DateInput label="End Date" value={endDate} onChange={setEndDate} />
+            <DateInput label="From Date" value={startDate} onChange={(v) => { setStartDate(v); setActiveDatePreset(null); }} />
+            <DateInput label="To Date" value={endDate} onChange={(v) => { setEndDate(v); setActiveDatePreset(null); }} />
             <div className="flex-1 min-w-[200px]">
-              <QuickDatePresets onSelect={applyPreset} />
+              <QuickDatePresets onSelect={applyPreset} activeKey={activeDatePreset} />
             </div>
             <Button variant="primary" size="sm" onClick={() => { setPage(0); onFetch(startDate, endDate); }} disabled={state.loading} className="h-[34px]">
               {state.loading
@@ -772,7 +865,7 @@ function FundLedgerReport({
         <StatCard label="Opening Balance" value={formatCurrency(openingBalance)} icon={Wallet}
           colorClass="bg-slate-50 dark:bg-slate-800/40" iconColorClass="text-slate-500 dark:text-slate-400" />
         <StatCard label="Opening Fund" value={formatCurrency(totalOpeningFund)} icon={BookOpen}
-          colorClass="bg-indigo-50 dark:bg-indigo-950/30" iconColorClass="text-indigo-600 dark:text-indigo-400" />
+          colorClass="bg-emerald-50 dark:bg-emerald-950/30" iconColorClass="text-emerald-600 dark:text-emerald-400" />
         <StatCard label="Total Collections" value={formatCurrency(totalCollections)} icon={TrendingUp}
           colorClass="bg-green-50 dark:bg-green-950/30" iconColorClass="text-green-600 dark:text-green-400" />
         <StatCard label="Total Expenses" value={formatCurrency(totalExpenses)} icon={TrendingDown}
@@ -786,15 +879,23 @@ function FundLedgerReport({
           <CardTitle className="text-base">Running Balance</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={balanceChartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `₹${(v / 1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v: number) => formatCurrency(v)} />
-              <Line type="monotone" dataKey="Balance" stroke="#6366F1" strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+          <ReactApexChart
+            type="area"
+            height={220}
+            series={[{ name: 'Balance', data: balanceChartData.map((d: any) => d.Balance ?? 0) }]}
+            options={{
+              chart: { toolbar: { show: false }, background: 'transparent' },
+              colors: ['#10B981'],
+              stroke: { width: 2, curve: 'smooth' },
+              fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.3, opacityTo: 0.05 } },
+              dataLabels: { enabled: false },
+              xaxis: { categories: balanceChartData.map((d: any) => d.name), labels: { style: { fontSize: '10px', colors: '#1e293b' }, rotate: 0 }, tickAmount: 6 },
+              yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px', colors: '#1e293b' } } },
+              tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+              legend: { show: false },
+              grid: { borderColor: '#E2E8F0' },
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -833,7 +934,7 @@ function FundLedgerReport({
                     key={idx}
                     className={cn(
                       'border-b border-slate-100 dark:border-slate-700/60 transition-colors duration-100',
-                      'hover:bg-indigo-50 dark:hover:bg-indigo-950/30',
+                      'hover:bg-emerald-50 dark:hover:bg-emerald-950/30',
                       isEven
                         ? 'bg-white dark:bg-slate-900'
                         : 'bg-slate-50/70 dark:bg-slate-800/40'
@@ -855,7 +956,7 @@ function FundLedgerReport({
                         </span>
                       )}
                       {isOpeningFund && (
-                        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 whitespace-nowrap">
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 whitespace-nowrap">
                           Opening Fund
                         </span>
                       )}
@@ -902,7 +1003,12 @@ function FundLedgerReport({
               <tfoot>
                 <tr className="border-t-2 border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800">
                   <td colSpan={3} className="px-3 py-3 text-right text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide">
-                    Total ({d.entries.length} {d.entries.length === 1 ? 'entry' : 'entries'})
+                    <div>Total ({d.entries.length} {d.entries.length === 1 ? 'entry' : 'entries'})</div>
+                    {footerOpeningFund > 0 && (
+                      <div className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 mt-0.5 normal-case">
+                        incl. {formatCurrency(footerOpeningFund)} opening fund
+                      </div>
+                    )}
                   </td>
                   <td className="px-3 py-3 text-right text-sm font-bold text-green-700 dark:text-green-400 tabular-nums whitespace-nowrap">
                     {formatCurrency(footerCredit)}
@@ -939,7 +1045,14 @@ function FundLedgerReport({
 /*  TAB 5 — Payment Register                          */
 /* ─────────────────────────────────────────────────── */
 
-const PERIOD_LABEL_FILTER_OPTIONS = ['All', 'Current', 'Arrear', 'Advance'] as const;
+const PERIOD_LABEL_FILTER_OPTIONS = [
+  { value: 'All', label: 'All Payments' },
+  { value: 'Current', label: 'Current Dues' },
+  { value: 'Arrear', label: 'Arrears' },
+  { value: 'Advance', label: 'Advance Payments' },
+] as const;
+
+type PeriodLabelFilter = typeof PERIOD_LABEL_FILTER_OPTIONS[number]['value'];
 
 // One grouped row = one flat's payments on one date
 interface GroupedPaymentRow {
@@ -1004,21 +1117,23 @@ function PaymentRegisterReport({
   state: ReportState<PaymentRegisterPage>;
   onFetch: (sd: string, ed: string, page?: number, pageSize?: number) => void;
 }) {
-  const [startDate, setStartDate] = useState(startOfYear());
+  const [startDate, setStartDate] = useState(startOfMonth());
   const [endDate, setEndDate] = useState(today());
-  const [labelFilter, setLabelFilter] = useState<typeof PERIOD_LABEL_FILTER_OPTIONS[number]>('All');
+  const [activeDatePreset, setActiveDatePreset] = useState<DatePresetKey | null>('thisMonth');
+  const [labelFilter, setLabelFilter] = useState<PeriodLabelFilter>('All');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const didFetch = useRef(false);
   useEffect(() => {
     if (!didFetch.current && !state.data && !state.loading) {
       didFetch.current = true;
-      onFetch(startOfYear(), today(), 1, 50);
+      onFetch(startOfMonth(), today(), 1, 50);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const applyPreset = (sd: string, ed: string) => {
+  const applyPreset = (preset: DatePresetKey, sd: string, ed: string) => {
+    setActiveDatePreset(preset);
     setStartDate(sd); setEndDate(ed);
     setPage(1);
     onFetch(sd, ed, 1, pageSize);
@@ -1088,10 +1203,10 @@ function PaymentRegisterReport({
         </div>
         <div className="p-3">
           <div className="flex flex-wrap items-end gap-2">
-            <DateInput label="Start Date" value={startDate} onChange={setStartDate} />
-            <DateInput label="End Date" value={endDate} onChange={setEndDate} />
+            <DateInput label="From Date" value={startDate} onChange={(v) => { setStartDate(v); setActiveDatePreset(null); }} />
+            <DateInput label="To Date" value={endDate} onChange={(v) => { setEndDate(v); setActiveDatePreset(null); }} />
             <div className="flex-1 min-w-[200px]">
-              <QuickDatePresets onSelect={applyPreset} />
+              <QuickDatePresets onSelect={applyPreset} activeKey={activeDatePreset} />
             </div>
             <Button variant="primary" size="sm" onClick={() => { setPage(1); onFetch(startDate, endDate, 1, pageSize); }} disabled={state.loading} className="h-[34px]">
               {state.loading
@@ -1104,18 +1219,18 @@ function PaymentRegisterReport({
 
       {/* Period label filter */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-sm text-slate-500 dark:text-slate-400">Show:</span>
+        <span className="text-sm text-slate-500 dark:text-slate-400">Payment Type:</span>
         {PERIOD_LABEL_FILTER_OPTIONS.map(opt => (
           <button
-            key={opt}
-            onClick={() => setLabelFilter(opt)}
+            key={opt.value}
+            onClick={() => setLabelFilter(opt.value)}
             className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors duration-200 ${
-              labelFilter === opt
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-indigo-400'
+              labelFilter === opt.value
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-emerald-400'
             }`}
           >
-            {opt}
+            {opt.label}
           </button>
         ))}
       </div>
@@ -1130,16 +1245,22 @@ function PaymentRegisterReport({
             </CardHeader>
             <CardContent className="pb-4">
               <div className="flex flex-col items-center gap-3">
-                <ResponsiveContainer width="100%" height={180}>
-                  <PieChart>
-                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={3} dataKey="value">
-                      {pieData.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                  </PieChart>
-                </ResponsiveContainer>
+                <ReactApexChart
+                  type="donut"
+                  height={180}
+                  series={pieData.map((d: any) => d.value)}
+                  options={{
+                    chart: { background: 'transparent' },
+                    labels: pieData.map((d: any) => d.name),
+                    colors: CHART_COLORS,
+                    legend: { show: false },
+                    dataLabels: { enabled: false },
+                    plotOptions: { pie: { donut: { size: '55%' } } },
+                    tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                  }}
+                />
                 <div className="flex flex-col gap-1.5 w-full">
-                  {pieData.map((entry, i) => (
+                  {pieData.map((entry: any, i: number) => (
                     <div key={entry.name} className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
                       <span className="text-xs text-slate-700 dark:text-slate-300">{entry.name}</span>
@@ -1158,8 +1279,8 @@ function PaymentRegisterReport({
             <CardContent className="p-3">
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-indigo-50 dark:bg-indigo-950/30">
-                    <TrendingUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-emerald-50 dark:bg-emerald-950/30">
+                    <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Collected</p>
                 </div>
@@ -1200,8 +1321,8 @@ function PaymentRegisterReport({
             <CardContent className="p-3">
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-blue-50 dark:bg-blue-950/30">
-                    <Receipt className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-emerald-50 dark:bg-emerald-950/30">
+                    <Receipt className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">Advance</p>
                 </div>
@@ -1245,7 +1366,7 @@ function PaymentRegisterReport({
                     key={idx}
                     className={cn(
                       'border-b border-slate-100 dark:border-slate-700/60 transition-colors duration-100',
-                      'hover:bg-indigo-50 dark:hover:bg-indigo-950/30',
+                      'hover:bg-emerald-50 dark:hover:bg-emerald-950/30',
                       isEven
                         ? 'bg-white dark:bg-slate-900'
                         : 'bg-slate-50/70 dark:bg-slate-800/40'
@@ -1261,7 +1382,7 @@ function PaymentRegisterReport({
                       {formatCurrency(Number(p.amount) || 0)}
                     </td>
                     <td className="px-3 py-2.5 whitespace-nowrap">
-                      <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                      <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                         {p.payment_mode}
                       </span>
                     </td>
@@ -1292,7 +1413,7 @@ function PaymentRegisterReport({
                         </span>
                       )}
                       {lbl === null && (
-                        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 whitespace-nowrap">
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 whitespace-nowrap">
                           Opening
                         </span>
                       )}
@@ -1330,8 +1451,8 @@ function PaymentRegisterReport({
                 onClick={() => changePageSize(ps)}
                 className={`px-2.5 py-1 rounded text-xs font-semibold border transition-colors duration-150 ${
                   currentPageSize === ps
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-indigo-400'
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-emerald-400'
                 }`}
               >
                 {ps}
@@ -1345,14 +1466,14 @@ function PaymentRegisterReport({
             <button
               disabled={currentPage <= 1}
               onClick={() => goToPage(currentPage - 1)}
-              className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-semibold hover:border-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-semibold hover:border-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               ← Prev
             </button>
             <button
               disabled={currentPage >= totalPages}
               onClick={() => goToPage(currentPage + 1)}
-              className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-semibold hover:border-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              className="px-3 py-1.5 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-xs font-semibold hover:border-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
               Next →
             </button>
@@ -1373,18 +1494,24 @@ function ExpenseByCategoryReport({
   state: ReportState<ExpenseByCategoryData>;
   onFetch: (sd: string, ed: string) => void;
 }) {
-  const [startDate, setStartDate] = useState(startOfYear());
+  const [startDate, setStartDate] = useState(startOfMonth());
   const [endDate, setEndDate] = useState(today());
+  const [activeDatePreset, setActiveDatePreset] = useState<DatePresetKey | null>('thisMonth');
   const didFetch = useRef(false);
   useEffect(() => {
     if (!didFetch.current && !state.data && !state.loading) {
       didFetch.current = true;
-      onFetch(startOfYear(), today());
+      onFetch(startOfMonth(), today());
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const applyPreset = (sd: string, ed: string) => { setStartDate(sd); setEndDate(ed); onFetch(sd, ed); };
+  const applyPreset = (preset: DatePresetKey, sd: string, ed: string) => {
+    setActiveDatePreset(preset);
+    setStartDate(sd);
+    setEndDate(ed);
+    onFetch(sd, ed);
+  };
 
   if (state.loading) return <ReportLoading label="Expense by Category" />;
   if (state.error) return <ReportError message={state.error} onRetry={() => onFetch(startDate, endDate)} />;
@@ -1406,10 +1533,10 @@ function ExpenseByCategoryReport({
         </div>
         <div className="p-3">
           <div className="flex flex-wrap items-end gap-2">
-            <DateInput label="Start Date" value={startDate} onChange={setStartDate} />
-            <DateInput label="End Date" value={endDate} onChange={setEndDate} />
+            <DateInput label="From Date" value={startDate} onChange={(v) => { setStartDate(v); setActiveDatePreset(null); }} />
+            <DateInput label="To Date" value={endDate} onChange={(v) => { setEndDate(v); setActiveDatePreset(null); }} />
             <div className="flex-1 min-w-[200px]">
-              <QuickDatePresets onSelect={applyPreset} />
+              <QuickDatePresets onSelect={applyPreset} activeKey={activeDatePreset} />
             </div>
             <Button variant="primary" size="sm" onClick={() => onFetch(startDate, endDate)} disabled={state.loading} className="h-[34px]">
               {state.loading
@@ -1434,28 +1561,25 @@ function ExpenseByCategoryReport({
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row items-center gap-6">
-              <ResponsiveContainer width={220} height={220}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={90}
-                    paddingAngle={3}
-                    dataKey="value"
-                    label={((props: any) => `${((props.percent ?? 0) * 100).toFixed(0)}%`) as any}
-                    labelLine={false}
-                  >
-                    {pieData.map((_, i) => (
-                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                </PieChart>
-              </ResponsiveContainer>
+              <div className="flex-shrink-0 w-[220px]">
+                <ReactApexChart
+                  type="donut"
+                  width={220}
+                  height={220}
+                  series={pieData.map((d: any) => d.value)}
+                  options={{
+                    chart: { background: 'transparent' },
+                    labels: pieData.map((d: any) => d.name),
+                    colors: CHART_COLORS,
+                    legend: { show: false },
+                    dataLabels: { formatter: (_: any, opts: any) => `${opts.w.globals.series[opts.seriesIndex] > 0 ? ((opts.w.globals.series[opts.seriesIndex] / opts.w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0)) * 100).toFixed(0) : 0}%` },
+                    plotOptions: { pie: { donut: { size: '60%' } } },
+                    tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                  }}
+                />
+              </div>
               <div className="flex flex-col gap-2 flex-1">
-                {d.categories.map((c, i) => (
+                {d.categories.map((c: any, i: number) => (
                   <div key={c.category_code} className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
@@ -1479,6 +1603,7 @@ function ExpenseByCategoryReport({
                 <TableHead>Category</TableHead>
                 <TableHead>Code</TableHead>
                 <TableHead>Total Amount</TableHead>
+                <TableHead>% Share</TableHead>
                 <TableHead>No. of Entries</TableHead>
                 <TableHead>First Expense</TableHead>
                 <TableHead>Last Expense</TableHead>
@@ -1487,11 +1612,13 @@ function ExpenseByCategoryReport({
             <TableBody>
               {d.categories.length === 0 ? (
                 <TableRow>
-                  <TableCell className="text-center py-8 text-slate-400" colSpan={6}>
+                  <TableCell className="text-center py-8 text-slate-400" colSpan={7}>
                     No data available
                   </TableCell>
                 </TableRow>
-              ) : d.categories.map((c, i) => (
+              ) : d.categories.map((c, i) => {
+                const pct = d.total_expense > 0 ? (c.total_amount / d.total_expense) * 100 : 0;
+                return (
                 <TableRow key={c.category_code}>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -1508,11 +1635,20 @@ function ExpenseByCategoryReport({
                   <TableCell className="text-red-600 dark:text-red-400 font-medium">
                     {formatCurrency(c.total_amount)}
                   </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-red-400 dark:bg-red-500" style={{ width: `${Math.min(pct, 100)}%` }} />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 tabular-nums">{pct.toFixed(1)}%</span>
+                    </div>
+                  </TableCell>
                   <TableCell>{c.total_entries}</TableCell>
                   <TableCell className="text-slate-500">{c.first_expense_date}</TableCell>
                   <TableCell className="text-slate-500">{c.last_expense_date}</TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
@@ -1573,7 +1709,7 @@ export default function Reports() {
     setReports(prev => ({ ...prev, [key]: { loading: false, error: msg, data: null } }));
   }, []);
 
-  const fetchCollectionSummary = useCallback((startPeriod = startYearMonth(), endPeriod = currentYearMonth()) => {
+  const fetchCollectionSummary = useCallback((startPeriod = currentYearMonth(), endPeriod = currentYearMonth()) => {
     setLoading('collectionSummary');
     reportsApi.getCollectionSummary(startPeriod, endPeriod)
       .then(d => setSuccess('collectionSummary', d))
@@ -1587,28 +1723,28 @@ export default function Reports() {
       .catch(e => setError('defaulters', e?.response?.data?.message || e?.message || 'Failed to load'));
   }, [setLoading, setSuccess, setError]);
 
-  const fetchIncomeVsExpense = useCallback((startDate = startOfYear(), endDate = today()) => {
+  const fetchIncomeVsExpense = useCallback((startDate = startOfMonth(), endDate = today()) => {
     setLoading('incomeVsExpense');
     reportsApi.getIncomeVsExpense(startDate, endDate)
       .then(d => setSuccess('incomeVsExpense', d))
       .catch(e => setError('incomeVsExpense', e?.response?.data?.message || e?.message || 'Failed to load'));
   }, [setLoading, setSuccess, setError]);
 
-  const fetchFundLedger = useCallback((startDate = startOfYear(), endDate = today()) => {
+  const fetchFundLedger = useCallback((startDate = startOfMonth(), endDate = today()) => {
     setLoading('fundLedger');
     reportsApi.getFundLedger(startDate, endDate)
       .then(d => setSuccess('fundLedger', d))
       .catch(e => setError('fundLedger', e?.response?.data?.message || e?.message || 'Failed to load'));
   }, [setLoading, setSuccess, setError]);
 
-  const fetchPaymentRegister = useCallback((startDate = startOfYear(), endDate = today(), page = 1, pageSize = 25) => {
+  const fetchPaymentRegister = useCallback((startDate = startOfMonth(), endDate = today(), page = 1, pageSize = 25) => {
     setLoading('paymentRegister');
     reportsApi.getPaymentRegister(startDate, endDate, page, pageSize)
       .then(d => setSuccess('paymentRegister', d))
       .catch(e => setError('paymentRegister', e?.response?.data?.message || e?.message || 'Failed to load'));
   }, [setLoading, setSuccess, setError]);
 
-  const fetchExpenseByCategory = useCallback((startDate = startOfYear(), endDate = today()) => {
+  const fetchExpenseByCategory = useCallback((startDate = startOfMonth(), endDate = today()) => {
     setLoading('expenseByCategory');
     reportsApi.getExpenseByCategory(startDate, endDate)
       .then(d => setSuccess('expenseByCategory', d))
@@ -1621,7 +1757,7 @@ export default function Reports() {
 
   function tabIndicator(key: keyof AllReports) {
     if (reports[key].loading)
-      return <span className="ml-1.5 w-2 h-2 rounded-full bg-indigo-400 animate-pulse inline-block" />;
+      return <span className="ml-1.5 w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />;
     if (reports[key].error)
       return <span className="ml-1.5 w-2 h-2 rounded-full bg-red-400 inline-block" />;
     return null;
@@ -1649,7 +1785,7 @@ export default function Reports() {
                   className={cn(
                     'flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap',
                     isActive
-                      ? 'border-indigo-600 text-indigo-600 bg-indigo-50 dark:border-indigo-400 dark:text-indigo-400 dark:bg-indigo-950/30'
+                      ? 'border-emerald-600 text-emerald-600 bg-emerald-50 dark:border-emerald-400 dark:text-emerald-400 dark:bg-emerald-950/30'
                       : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-800/50'
                   )}
                 >

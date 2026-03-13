@@ -15,6 +15,34 @@ export interface FAQCategory {
 
 export const FAQ_CATEGORIES: FAQCategory[] = [
   {
+    id: 'dashboard',
+    label: 'Dashboard',
+    icon: '📈',
+    description: 'Overview stats & billing actions',
+    faqs: [
+      {
+        question: 'What does the Dashboard show?',
+        answer:
+          'The **Dashboard** is your home page. It shows:\n• **Summary cards** – total flats, payments collected this month, pending dues, and collection rate\n• **Billing status banner** – tells you if bills have been generated for the current month\n• **Recent Activity** – a live log of the latest actions in your society account',
+      },
+      {
+        question: 'How do I generate maintenance bills for the month?',
+        answer:
+          'On the **Dashboard**, look for the billing status banner near the top. If bills haven\'t been generated yet, a **"Generate Bills"** button appears. Click it to create maintenance dues for all active flats for the current month. Once generated, residents can have their payments recorded against the bill.',
+      },
+      {
+        question: 'What is the Recent Activity feed?',
+        answer:
+          'The **Recent Activity** section on the Dashboard shows the latest actions performed in your account — such as payments recorded, flats added, expenses created, or user changes. It updates automatically and is useful for quick audits.',
+      },
+      {
+        question: 'What do the summary cards on the Dashboard mean?',
+        answer:
+          '• **Total Flats** – count of all active flat records\n• **Collected This Month** – total maintenance payments received in the current billing period\n• **Pending Dues** – total outstanding balance across all flats\n• **Collection Rate** – percentage of dues collected vs total billed',
+      },
+    ],
+  },
+  {
     id: 'flats',
     label: 'Flats',
     icon: '🏠',
@@ -163,24 +191,44 @@ export const FAQ_CATEGORIES: FAQCategory[] = [
     description: 'Financial & analytics reports',
     faqs: [
       {
-        question: 'How do I access financial reports?',
-        answer:
-          'Go to **Reports** from the sidebar. The **Reports & Analytics** page shows charts like **Income vs Expense Trend**, **Collection Rate Trend**, and **Outstanding by Flat** — all updated in real time.',
-      },
-      {
-        question: 'How do I export a report as PDF?',
-        answer:
-          'On the **Reports** page, click the **"Export PDF"** button at the top-right. This generates a PDF of the current report view which you can download or print.',
-      },
-      {
-        question: 'How do I export the outstanding balance list?',
-        answer:
-          'On the **Reports** page, find the **"Outstanding by Flat"** section → click the **"Export"** button next to its title. This downloads a CSV of all flats with their outstanding amounts.',
-      },
-      {
         question: 'What reports are available?',
         answer:
-          'The **Reports & Analytics** page includes:\n• **Income vs Expense Trend** – monthly comparison chart\n• **Collection Rate Trend** – % of dues collected over time\n• **Outstanding by Flat** – which flats owe the most\n• **AGM Report** – summary report for Annual General Meetings',
+          'Reports has 6 built-in pages accessible from the sidebar:\n• **Billing Summary** – monthly collection stats & bar chart\n• **Outstanding Dues** – flats with pending balances, color-coded by severity\n• **Income & Expenses** – month-by-month income vs expense comparison\n• **Fund Transactions** – day-by-day running fund ledger\n• **Payments Received** – all payments with current/arrear/advance breakdown\n• **Expenses by Category** – pie chart of spending per category',
+      },
+      {
+        question: 'How do I view the Billing Summary report?',
+        answer:
+          'Go to **Reports → Billing Summary** in the sidebar. It shows total collected, pending dues, collection rate, flat count, and a bar chart per period. Use the **Start** and **End month** pickers — or the quick presets — to change the date range.',
+      },
+      {
+        question: 'How do I see which flats have outstanding dues?',
+        answer:
+          'Go to **Reports → Outstanding Dues**. Flats are sorted by overdue months — red rows have 3+ months pending, yellow rows have 1–3 months. Use the **Minimum Outstanding** filter to focus on larger amounts. Export as CSV using the button at the top right.',
+      },
+      {
+        question: 'How do I compare monthly income vs expenses?',
+        answer:
+          'Go to **Reports → Income & Expenses**. A chart and table show Income, Expenses, and Net Surplus/Deficit for each month. Green net = surplus, red net = deficit. Adjust the period using the date pickers or quick presets.',
+      },
+      {
+        question: 'What is the Fund Transactions report?',
+        answer:
+          'Go to **Reports → Fund Transactions**. It shows a day-by-day running ledger of the society fund — opening balance, every credit and debit, and the closing balance for the selected date range. Useful for internal audits and AGMs.',
+      },
+      {
+        question: 'How do I see all payments received in a period?',
+        answer:
+          'Go to **Reports → Payments Received**. All recorded payments are listed with flat details and amounts broken down into **Current**, **Arrear**, **Advance**, and **Unlinked** columns. Use the **Period Label** filter to narrow by payment type.',
+      },
+      {
+        question: 'How do I see spending by expense category?',
+        answer:
+          'Go to **Reports → Expenses by Category**. A pie chart and table break down total spend per category (Electricity, Water, Security, Repairs, etc.) for the selected date range.',
+      },
+      {
+        question: 'How do I export a report?',
+        answer:
+          'Each report page has an **Export CSV** or **Export PDF** button in the top-right area. Set your date range filters first, then click Export to download the data for that period.',
       },
     ],
   },
@@ -241,7 +289,7 @@ export const FAQ_CATEGORIES: FAQCategory[] = [
       {
         question: 'How do I configure maintenance charges and due dates?',
         answer:
-          'Go to **Settings** → under **Society**, click **"Maintenance Config"** (Charges & due dates) → set the default maintenance amount, due day, and late fee rules → click **Save**. (Admin-only)',
+          'Go to **Settings** → under **Society**, click **"Maintenance Charges"** → set the default monthly amount, due day, late fee, and grace period → click **Save**. (Admin-only)',
       },
       {
         question: 'How do I enable dark mode?',
@@ -297,7 +345,7 @@ export const FAQ_CATEGORIES: FAQCategory[] = [
       {
         question: 'How long is the free trial?',
         answer:
-          'FlatLedger offers a **14-day free trial** with full access to all features. No credit card is required to start. A trial countdown is shown in the sidebar during the trial period.',
+          'FlatLedger offers a **30-day free trial** with full access to all features. No credit card is required to start. A trial countdown is shown in the sidebar during the trial period.',
       },
       {
         question: 'What happens when my trial expires?',
@@ -362,7 +410,7 @@ export const LANDING_FAQ_CATEGORIES: FAQCategory[] = [
       {
         question: 'What can FlatLedger do?',
         answer:
-          'FlatLedger covers the full lifecycle of society management:\n- **Flats & Residents** — manage all unit records\n- **Maintenance Billing** — auto-generate monthly bills\n- **Payment Tracking** — record cash/UPI/cheque payments\n- **Expense Management** — track society expenses by category\n- **Financial Reports** — income vs expense charts, defaulter lists\n- **Role-Based Access** — treasurer, secretary, manager, viewer roles\n- **CSV Exports** — download any data',
+          'FlatLedger covers the full lifecycle of society management:\n- **Flats & Residents** — manage all unit records\n- **Maintenance Billing** — auto-generate monthly bills from the Dashboard\n- **Payment Tracking** — record cash/UPI/cheque payments\n- **Expense Management** — track society expenses by category\n- **Financial Reports** — 6 built-in reports: billing summary, outstanding dues, income vs expenses, fund transactions, payment register, expenses by category\n- **Role-Based Access** — society admin, admin, treasurer, viewer roles\n- **CSV Exports** — download any data',
       },
       {
         question: 'How many flats can I manage?',
@@ -377,17 +425,17 @@ export const LANDING_FAQ_CATEGORIES: FAQCategory[] = [
       {
         question: 'Does it support multiple users / roles?',
         answer:
-          'Yes. You can add team members with specific roles — **Treasurer**, **Secretary**, **Manager**, or **Viewer** — each with appropriate access levels. The society admin has full control.',
+          'Yes. You can add team members with specific roles — **Society Admin**, **Admin**, **Treasurer**, or **Viewer** — each with appropriate access levels. The Society Admin has full control over all features and settings.',
       },
       {
         question: 'Can I generate maintenance bills automatically?',
         answer:
-          'Yes. Go to **Maintenance → Generate Bills** and select the month. The app creates bills for all active flats based on the individual maintenance amount set per flat. You can also set a custom due date.',
+          'Yes. Go to the **Dashboard** → look for the billing status banner → click **"Generate Bills"**. The app creates bills for all active flats based on the individual maintenance amount set per flat.',
       },
       {
         question: 'Can I track defaulters?',
         answer:
-          'Yes. The **Dashboard** and **Reports** section show outstanding dues and defaulter lists in real time. You can also export the defaulter list as a CSV.',
+          'Yes. Go to **Reports → Outstanding Dues** for a full defaulter list sorted by overdue months, color-coded by severity. The **Dashboard** also shows a pending dues summary. Both can be exported as CSV.',
       },
     ],
   },

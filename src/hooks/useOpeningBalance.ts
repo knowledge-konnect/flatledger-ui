@@ -37,6 +37,24 @@ export function useOpeningBalanceStatus() {
 }
 
 /**
+ * Hook to fetch opening-balance summary for the applied/locked state.
+ */
+export function useOpeningBalanceSummary(enabled = true) {
+  return useQuery({
+    queryKey: ['opening-balance-summary'],
+    queryFn: () => openingBalanceApi.getAppliedSummary(),
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 404) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+  });
+}
+
+/**
  * Hook to submit opening balance
  */
 export function useSubmitOpeningBalance() {
@@ -48,6 +66,7 @@ export function useSubmitOpeningBalance() {
     onSuccess: () => {
       // Invalidate status to reflect the change
       queryClient.invalidateQueries({ queryKey: ['opening-balance-status'] });
+      queryClient.invalidateQueries({ queryKey: ['opening-balance-summary'] });
       queryClient.invalidateQueries({ queryKey: ['flats'] });
     },
   });

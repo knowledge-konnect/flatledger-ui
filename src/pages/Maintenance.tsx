@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import { Plus, CreditCard, Search, Edit, Trash, IndianRupee, AlertCircle, TrendingUp, Info, Zap, Lock, Home, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -399,7 +399,7 @@ export default function Maintenance() {
           {/* Period header bar */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30">
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+              <Calendar className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Viewing Period</span>
             </div>
             <div className="flex items-center gap-1">
@@ -423,7 +423,7 @@ export default function Maintenance() {
                 <select
                   value={period}
                   onChange={(e) => setPeriod(e.target.value)}
-                  className="appearance-none pl-3 pr-8 py-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-colors hover:border-indigo-400 dark:hover:border-indigo-500"
+                  className="appearance-none pl-3 pr-8 py-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-colors hover:border-emerald-400 dark:hover:border-emerald-500"
                 >
                   {getMonthOptions().map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -454,8 +454,8 @@ export default function Maintenance() {
 
           {/* Total Charges */}
           <div className="flex items-center gap-3 px-5 py-4 flex-1 min-w-[130px]">
-            <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-              <IndianRupee className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+              <IndianRupee className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="min-w-0">
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Total Charges</p>
@@ -670,19 +670,19 @@ export default function Maintenance() {
                       modeRaw.includes('cash')
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800'
                         : modeRaw.includes('upi')
-                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-300 dark:border-indigo-800'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800'
                         : modeRaw.includes('cheque') || modeRaw.includes('check')
                         ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800'
                         : modeRaw.includes('bank') || modeRaw.includes('neft') || modeRaw.includes('transfer')
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800'
                         : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
                     return (
                     <tr
                       key={payment.publicId}
                       className={`group transition-all duration-200 ${
                         isToday
-                          ? 'border-l-2 border-l-indigo-400 bg-indigo-50/30 dark:bg-indigo-950/10 hover:bg-indigo-50/60 dark:hover:bg-indigo-950/20'
-                          : 'hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 dark:hover:from-indigo-950/20 dark:hover:to-purple-950/20'
+                          ? 'border-l-2 border-l-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20'
+                          : 'hover:bg-gradient-to-r hover:from-emerald-50/50 hover:to-purple-50/50 dark:hover:from-emerald-950/20 dark:hover:to-purple-950/20'
                       }`}
                     >
                       <td className="px-6 py-3 whitespace-nowrap">
@@ -691,13 +691,13 @@ export default function Maintenance() {
                             {formatDate(payment.paymentDate)}
                           </span>
                           {isToday && (
-                            <span className="ml-2 text-[10px] font-bold uppercase tracking-wide text-indigo-500 dark:text-indigo-400">Today</span>
+                            <span className="ml-2 text-[10px] font-bold uppercase tracking-wide text-emerald-500 dark:text-emerald-400">Today</span>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/50 dark:border-indigo-800/50">
-                          <span className="text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                        <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-gradient-to-br from-emerald-500/10 to-purple-500/10 border border-emerald-200/50 dark:border-emerald-800/50">
+                          <span className="text-sm font-bold bg-gradient-to-r from-emerald-600 to-purple-600 bg-clip-text text-transparent">
                             {payment.flatNumber || '-'}
                           </span>
                         </div>
@@ -801,9 +801,9 @@ export default function Maintenance() {
                               aria-label="Edit payment"
                               onClick={() => openEditModal(payment)}
                               className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
-                                         bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:scale-110
-                                         dark:bg-indigo-950/50 dark:text-indigo-400 dark:hover:bg-indigo-900/50
-                                         focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                         bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-110
+                                         dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-900/50
+                                         focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
@@ -870,6 +870,21 @@ export default function Maintenance() {
                   >
                     Generate Bills &rarr;
                   </Link>
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Already-paid warning ──────────────────────────────────────── */}
+          {!isEditing && selectedFlatPublicId && flatSummary && outstandingAmount === 0 && (
+            <div className="flex items-start gap-3 mx-6 mt-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 px-4 py-3">
+              <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                  This flat has no outstanding balance
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
+                  The account is fully settled. Recording a payment now will be stored as an <strong>advance</strong> and automatically applied to the next bill.
                 </p>
               </div>
             </div>
@@ -1006,19 +1021,27 @@ export default function Maintenance() {
                   {...register('amount')}
                 />
                 {/* Live remaining balance */}
-                {paymentAmountNumber > 0 && selectedFlatPublicId && flatSummary && outstandingAmount > 0 && (
+                {paymentAmountNumber > 0 && selectedFlatPublicId && flatSummary && (
                   <div className={`flex items-center justify-between text-xs px-3 py-2 rounded-lg ${
-                    paymentAmountNumber >= outstandingAmount
+                    outstandingAmount === 0
+                      ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800'
+                      : paymentAmountNumber >= outstandingAmount
                       ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800'
                       : 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700'
                   }`}>
-                    <span className="text-slate-500 dark:text-slate-400">Balance after payment:</span>
+                    <span className="text-slate-500 dark:text-slate-400">
+                      {outstandingAmount === 0 ? 'Will be recorded as:' : 'Balance after payment:'}
+                    </span>
                     <span className={`font-bold ${
-                      paymentAmountNumber >= outstandingAmount
+                      outstandingAmount === 0
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : paymentAmountNumber >= outstandingAmount
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-orange-600 dark:text-orange-400'
                     }`}>
-                      {paymentAmountNumber >= outstandingAmount
+                      {outstandingAmount === 0
+                        ? `Advance +${formatCurrency(paymentAmountNumber)}`
+                        : paymentAmountNumber >= outstandingAmount
                         ? '✔ Fully cleared'
                         : formatCurrency(outstandingAmount - paymentAmountNumber)}
                     </span>

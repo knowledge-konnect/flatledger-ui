@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, Download, Edit, Trash, AlertCircle, Home } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Button from '../components/ui/Button';
@@ -298,7 +298,7 @@ export default function Flats() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-2">
           <div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30">
+              <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-emerald-600 shadow-lg shadow-emerald-500/30">
                 <Home className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -329,7 +329,7 @@ export default function Flats() {
                          rounded-xl shadow-sm
                          text-slate-900 dark:text-slate-100
                          placeholder:text-slate-400
-                         focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500
+                         focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500
                          transition-all duration-200"
               />
             </div>
@@ -349,7 +349,7 @@ export default function Flats() {
               <Button 
                 size="sm" 
                 onClick={() => openAddModal()}
-                className="h-10 px-4 font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-200"
+                className="h-10 px-4 font-medium bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-200"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Flat
@@ -410,11 +410,11 @@ export default function Flats() {
                     {paged.map((flat) => (
                       <tr 
                         key={flat.publicId} 
-                        className="group hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 dark:hover:from-indigo-950/20 dark:hover:to-purple-950/20 transition-all duration-200"
+                        className="group hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all duration-200"
                       >
                         <td className="px-6 py-3 whitespace-nowrap">
-                          <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/50 dark:border-indigo-800/50">
-                            <span className="text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                          <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-200/50 dark:border-emerald-800/50">
+                            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
                               {flat.flatNumber}
                             </span>
                           </div>
@@ -470,9 +470,9 @@ export default function Flats() {
                                 setShowAddModal(true);
                               }}
                               className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
-                                       bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:scale-110
-                                       dark:bg-indigo-950/50 dark:text-indigo-400 dark:hover:bg-indigo-900/50
-                                       focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                       bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-110
+                                       dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-900/50
+                                       focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                             >
                               <Edit className="w-4 h-4" />
                             </button>

@@ -1,4 +1,4 @@
-import { CheckCircle, Circle, ArrowRight, Sparkles } from 'lucide-react';
+﻿import { CheckCircle, Circle, ArrowRight, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSetupProgress } from '../../hooks/useSetupProgress';
 import Card from '../ui/Card';
@@ -47,17 +47,17 @@ export default function SetupProgressWidget() {
   }
 
   return (
-    <Card className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-950/20 dark:via-purple-950/20 dark:to-pink-950/20 border-indigo-200 dark:border-indigo-800">
+    <Card className="bg-gradient-to-br from-emerald-50 via-purple-50 to-pink-50 dark:from-emerald-950/20 dark:via-purple-950/20 dark:to-pink-950/20 border-emerald-200 dark:border-emerald-800">
       <div className="p-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Setup Progress
             </h3>
           </div>
-          <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+          <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
             {Math.round(progressPercentage)}%
           </div>
         </div>
@@ -66,7 +66,7 @@ export default function SetupProgressWidget() {
         <div className="mb-3">
           <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out"
+              className="h-full bg-gradient-to-r from-emerald-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out"
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
@@ -96,7 +96,7 @@ export default function SetupProgressWidget() {
                   {step.label}
                 </span>
                 {isNextStep && !step.status && (
-                  <span className="ml-auto text-xs font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded-full">
+                  <span className="ml-auto text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">
                     Next
                   </span>
                 )}

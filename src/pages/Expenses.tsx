@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
-import { Plus, Zap, Droplet, Shield, Wrench, TrendingDown, Edit, Trash2, Search, X, AlertCircle, DollarSign, Lightbulb, Hammer, Home } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+﻿import { useState, useMemo } from 'react';
+import { Plus, Zap, Droplet, Shield, Wrench, TrendingDown, Edit, Trash2, Search, X, AlertCircle, DollarSign, Lightbulb, Hammer, Home, BarChart2, Divide } from 'lucide-react';
+import ReactApexChart from 'react-apexcharts';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import PageHeader from '../components/ui/PageHeader';
@@ -31,7 +31,7 @@ type ExpenseFormData = z.infer<typeof expenseSchema>;
 const defaultCategoryColors: Record<string, string> = {
   electricity: '#F97316',    
   water: '#0891B2',          
-  security: '#5B5EDE',       
+  security: '#6366F1',       
   repairs: '#DC2626',       
   maintenance: '#8B5CF6',    
   utilities: '#10B981',     
@@ -56,8 +56,8 @@ const defaultCategoryIcons: Record<string, any> = {
 
 // List of colors to cycle through for unmapped categories
 const colorPalette = [
-  '#F97316', '#0891B2', '#5B5EDE', '#DC2626', '#8B5CF6',
-  '#10B981', '#0EA5E9', '#EC4899', '#EAB308', '#06B6D4',
+  '#F97316', '#0891B2', '#6366F1', '#DC2626', '#8B5CF6',
+  '#10B981', '#0EA5E9', '#EC4899', '#F59E0B', '#06B6D4',
   '#A855F7', '#F43F5E', '#14B8A6', '#6366F1', '#D946EF',
 ];
 
@@ -376,7 +376,7 @@ export default function Expenses() {
           }
         />
 
-        {/* Header Stats Cards */}
+        {/* KPI Cards */}
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -385,28 +385,40 @@ export default function Expenses() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-rose-500 to-rose-600 p-5 text-white shadow-lg">
-              <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
-              <div className="relative">
-                <p className="text-sm font-medium text-white/80 mb-1">Total Expenses (MTD)</p>
-                <p className="text-2xl sm:text-3xl font-bold text-white">{formatCurrency(totalExpenses)}</p>
-                <p className="text-xs text-white/60 mt-1">{filteredAndSortedExpenses.length} transaction{filteredAndSortedExpenses.length !== 1 ? 's' : ''}</p>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-red-100 dark:border-red-900/40 shadow-sm flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Expenses (MTD)</p>
+                <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/40 flex items-center justify-center flex-shrink-0">
+                  <TrendingDown className="w-4 h-4 text-red-500 dark:text-red-400" />
+                </div>
+              </div>
+              <div>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{formatCurrency(totalExpenses)}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{filteredAndSortedExpenses.length} transaction{filteredAndSortedExpenses.length !== 1 ? 's' : ''}</p>
               </div>
             </div>
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 p-5 text-white shadow-lg">
-              <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
-              <div className="relative">
-                <p className="text-sm font-medium text-white/80 mb-1">Active Categories</p>
-                <p className="text-2xl sm:text-3xl font-bold text-white">{categoryData.length}</p>
-                <p className="text-xs text-white/60 mt-1">{categoriesData.length} total categories</p>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-emerald-100 dark:border-emerald-900/40 shadow-sm flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Categories</p>
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
+                  <BarChart2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+              </div>
+              <div>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{categoryData.length}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{categoriesData.length} total categories</p>
               </div>
             </div>
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-5 text-white shadow-lg">
-              <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
-              <div className="relative">
-                <p className="text-sm font-medium text-white/80 mb-1">Avg Per Transaction</p>
-                <p className="text-2xl sm:text-3xl font-bold text-white">{filteredAndSortedExpenses.length > 0 ? formatCurrency(totalExpenses / filteredAndSortedExpenses.length) : formatCurrency(0)}</p>
-                <p className="text-xs text-white/60 mt-1">Based on {filteredAndSortedExpenses.length} expenses</p>
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-teal-100 dark:border-teal-900/40 shadow-sm flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Avg Per Transaction</p>
+                <div className="w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center flex-shrink-0">
+                  <Divide className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                </div>
+              </div>
+              <div>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{filteredAndSortedExpenses.length > 0 ? formatCurrency(totalExpenses / filteredAndSortedExpenses.length) : formatCurrency(0)}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Based on {filteredAndSortedExpenses.length} expenses</p>
               </div>
             </div>
           </div>
@@ -426,14 +438,14 @@ export default function Expenses() {
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                   <span className="text-gray-500 dark:text-gray-400">to</span>
                   <input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
               </div>
@@ -441,28 +453,33 @@ export default function Expenses() {
             <CardContent className="p-6">
               {categoryData.length > 0 ? (
                 <>
-                  <ResponsiveContainer width="100%" height={320}>
-                    <PieChart>
-                      <Pie
-                        data={categoryData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={(props: any) => `${props.name} ${((props.percent ?? 0) * 100).toFixed(0)}%`}
-                        outerRadius={110}
-                        fill="#8884d8"
-                        dataKey="value"
-                        onClick={(data) => handlePieChartClick(data)}
-                      >
-                        {categoryData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip formatter={(value: any) => formatCurrency(typeof value === 'number' ? value : 0)} contentStyle={{ backgroundColor: '#fff', border: '1px solid #ccc' }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 text-center">
-                    <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">💡 Click on a slice to filter expenses</p>
+                  <ReactApexChart
+                    type="donut"
+                    height={320}
+                    series={categoryData.map((d: any) => d.value)}
+                    options={{
+                      chart: {
+                        background: 'transparent',
+                        events: {
+                          dataPointSelection: (_: any, __: any, config: any) => {
+                            const entry = categoryData[config.dataPointIndex];
+                            if (entry) handlePieChartClick(entry);
+                          },
+                        },
+                      },
+                      labels: categoryData.map((d: any) => d.name),
+                      colors: categoryData.map((d: any) => d.color),
+                      legend: { position: 'bottom', fontSize: '12px' },
+                      dataLabels: {
+                        enabled: true,
+                        formatter: (val: number) => `${val.toFixed(0)}%`,
+                      },
+                      plotOptions: { pie: { donut: { size: '55%' } } },
+                      tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                    }}
+                  />
+                  <div className="mt-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-700 text-center">
+                    <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">💡 Click on a slice to filter expenses</p>
                   </div>
 
                   {/* Quick Stats Below Chart */}
@@ -505,7 +522,7 @@ export default function Expenses() {
                   <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">{formatCurrency(totalExpenses)}</span>
                 )}
                 {selectedCategoryFilter && (
-                  <button onClick={() => setSelectedCategoryFilter('')} className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Clear</button>
+                  <button onClick={() => setSelectedCategoryFilter('')} className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline">Clear</button>
                 )}
               </div>
             </div>
@@ -527,7 +544,7 @@ export default function Expenses() {
                         onClick={() => setSelectedCategoryFilter(isSelected ? '' : category.code)}
                         className={`flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer transition-all duration-150 border ${
                           isSelected
-                            ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-300 dark:border-indigo-700'
+                            ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700'
                             : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-slate-200 dark:hover:border-slate-700'
                         }`}
                       >
@@ -573,7 +590,7 @@ export default function Expenses() {
                       placeholder="Search vendor, notes..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                      className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
                     />
                   </div>
                   <Select
@@ -598,7 +615,7 @@ export default function Expenses() {
               {(searchTerm || selectedCategoryFilter) && (
                 <div className="flex flex-wrap gap-2 pt-2">
                   {searchTerm && (
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">
                       <Search className="w-3 h-3" />
                       Search: "{searchTerm}"
                       <button onClick={() => setSearchTerm('')} className="ml-1 hover:opacity-70">
@@ -665,7 +682,7 @@ export default function Expenses() {
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {filteredAndSortedExpenses.map((expense) => (
-                      <tr key={expense.publicId} className="group hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 dark:hover:from-indigo-950/20 dark:hover:to-purple-950/20 transition-all duration-200">
+                      <tr key={expense.publicId} className="group hover:bg-gradient-to-r hover:from-emerald-50/50 hover:to-purple-50/50 dark:hover:from-emerald-950/20 dark:hover:to-purple-950/20 transition-all duration-200">
                         <td className="px-6 py-3 whitespace-nowrap">
                           <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{formatDate(expense.dateIncurred)}</span>
                         </td>
@@ -690,9 +707,9 @@ export default function Expenses() {
                               aria-label="Edit expense"
                               onClick={() => handleEditExpense(expense)}
                               className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
-                                         bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:scale-110
-                                         dark:bg-indigo-950/50 dark:text-indigo-400 dark:hover:bg-indigo-900/50
-                                         focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                         bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-110
+                                         dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-900/50
+                                         focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
@@ -824,7 +841,7 @@ export default function Expenses() {
         <div className="space-y-4 p-4 sm:p-6 pb-20">
           {deleteTarget && (
             <>
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
+              <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">
                 <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
                   You're about to delete this expense:
                 </p>

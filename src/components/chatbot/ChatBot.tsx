@@ -143,10 +143,10 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
         onClick={() => setIsOpen((o) => !o)}
         aria-label="Open Help Chat"
         className={cn(
-          'fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-indigo-400/50',
+          'fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-emerald-400/50',
           isOpen
             ? 'bg-slate-700 dark:bg-slate-600 rotate-0 scale-95'
-            : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-110',
+            : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-110',
         )}
       >
         {isOpen ? (
@@ -174,7 +174,7 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
           style={{ maxHeight: '560px' }}
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-3 flex items-center justify-between flex-shrink-0">
+          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 py-3 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center gap-2.5">
               {view !== 'home' && (
                 <button
@@ -191,7 +191,7 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                 </div>
                 <div>
                   <p className="text-white font-semibold text-sm leading-none">FlatLedger Guide</p>
-                  <p className="text-indigo-200 text-[11px] mt-0.5 flex items-center gap-1">
+                  <p className="text-emerald-200 text-[11px] mt-0.5 flex items-center gap-1">
                     <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isOnline ? 'bg-emerald-400' : 'bg-slate-400'}`} />
                     {isOnline ? 'Online · replies in minutes' : 'Offline · replies in 24h'}
                   </p>
@@ -227,7 +227,7 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                 )}
               >
                 {msg.type === 'bot' && (
-                  <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-sm flex-shrink-0 mr-2 mt-0.5">
+                  <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-sm flex-shrink-0 mr-2 mt-0.5">
                     🤖
                   </div>
                 )}
@@ -235,7 +235,7 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                   className={cn(
                     'max-w-[78%] px-3 py-2 rounded-2xl text-sm leading-relaxed',
                     msg.type === 'user'
-                      ? 'bg-indigo-600 text-white rounded-tr-sm'
+                      ? 'bg-emerald-600 text-white rounded-tr-sm'
                       : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-tl-sm shadow-sm',
                   )}
                   dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.text) }}
@@ -246,7 +246,7 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
             {/* #7 — Typing indicator */}
             {isTyping && (
               <div className="flex justify-start">
-                <div className="w-7 h-7 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center text-sm flex-shrink-0 mr-2 mt-0.5">
+                <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-sm flex-shrink-0 mr-2 mt-0.5">
                   🤖
                 </div>
                 <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-1">
@@ -274,7 +274,7 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                     placeholder="Search a question..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                   />
                 </div>
 
@@ -291,9 +291,9 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                             setSelectedCategory(cat);
                             handleFAQSelect(faq);
                           }}
-                          className="w-full text-left px-3 py-2 rounded-lg text-xs text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700 transition-colors"
+                          className="w-full text-left px-3 py-2 rounded-lg text-xs text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700 transition-colors"
                         >
-                          <span className="text-indigo-500 font-medium">{cat.icon} {cat.label}</span>
+                          <span className="text-emerald-500 font-medium">{cat.icon} {cat.label}</span>
                           <br />
                           {faq.question}
                         </button>
@@ -307,7 +307,7 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                       <button
                         key={cat.id}
                         onClick={() => handleCategorySelect(cat)}
-                        className="flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all text-center group"
+                        className="flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all text-center group"
                       >
                         <span className="text-xl group-hover:scale-110 transition-transform">{cat.icon}</span>
                         <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 leading-tight">
@@ -331,7 +331,7 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                     placeholder="Filter questions..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                   />
                 </div>
                 {filteredFAQs.length === 0 ? (
@@ -341,9 +341,9 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                     <button
                       key={idx}
                       onClick={() => handleFAQSelect(faq)}
-                      className="w-full text-left px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-slate-800 transition-all text-xs text-slate-700 dark:text-slate-300 font-medium flex items-start gap-2"
+                      className="w-full text-left px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all text-xs text-slate-700 dark:text-slate-300 font-medium flex items-start gap-2"
                     >
-                      <span className="text-indigo-400 font-bold mt-0.5 flex-shrink-0">Q</span>
+                      <span className="text-emerald-400 font-bold mt-0.5 flex-shrink-0">Q</span>
                       {faq.question}
                     </button>
                   ))
@@ -358,13 +358,13 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                 <div className="flex gap-2">
                   <button
                     onClick={handleBack}
-                    className="flex-1 py-2 rounded-xl border border-indigo-200 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 text-xs font-medium hover:bg-indigo-50 dark:hover:bg-slate-800 transition-colors"
+                    className="flex-1 py-2 rounded-xl border border-emerald-200 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 text-xs font-medium hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors"
                   >
                     ← More in {selectedCategory?.label}
                   </button>
                   <button
                     onClick={handleReset}
-                    className="flex-1 py-2 rounded-xl bg-indigo-600 text-white text-xs font-medium hover:bg-indigo-700 transition-colors"
+                    className="flex-1 py-2 rounded-xl bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition-colors"
                   >
                     Ask another
                   </button>
@@ -373,7 +373,7 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                   <Link
                     to="/signup"
                     onClick={() => setIsOpen(false)}
-                    className="flex items-center justify-center w-full py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 text-white text-xs font-semibold hover:from-indigo-700 hover:to-indigo-800 transition-all shadow-sm gap-1.5"
+                    className="flex items-center justify-center w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 text-white text-xs font-semibold hover:from-emerald-700 hover:to-emerald-800 transition-all shadow-sm gap-1.5"
                   >
                     Start Free Trial — 30 days free, no card needed →
                   </Link>
@@ -383,7 +383,7 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                   Still confused?{' '}
                   <a
                     href="mailto:support@FlatLedger.com"
-                    className="text-indigo-500 hover:text-indigo-600 underline underline-offset-2"
+                    className="text-emerald-500 hover:text-emerald-600 underline underline-offset-2"
                   >
                     Email us →
                   </a>
