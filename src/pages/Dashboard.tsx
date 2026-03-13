@@ -204,10 +204,8 @@ export default function Dashboard() {
   const extraCollections = Math.max(0, totalCollected - totalBilled);
   const periodShortfall = Math.max(0, totalBilled - totalCollected);
 
-  const periodOutstanding = snap?.period_bill_outstanding ?? snap?.bill_outstanding ?? 0;
   const allTimeOutstanding = snap?.all_time_member_outstanding ?? snap?.total_member_outstanding ?? 0;
   const presentBalance = snap?.present_balance ?? snap?.closing_fund_balance ?? snap?.bank_balance ?? 0;
-  const openingBalance = snap?.opening_fund_balance ?? Math.max(0, presentBalance - (snap?.net_cash_flow ?? 0));
   const periodFundInflow = snap?.period_fund_inflow ?? Math.max(0, snap?.net_cash_flow ?? 0);
   const periodFundOutflow = snap?.period_fund_outflow ?? Math.max(0, -(snap?.net_cash_flow ?? 0));
   const netCashFlow = snap?.net_cash_flow ?? (periodFundInflow - periodFundOutflow);
@@ -221,12 +219,6 @@ export default function Dashboard() {
   });
 
   const collectionColor = currentBillCoverage >= 80 ? 'green' : currentBillCoverage >= 50 ? 'amber' : 'red' as any;
-  const collectionSub =
-    extraCollections > 0
-      ? `Billed ${formatCurrency(totalBilled)} | Extra arrears/advance ${formatCurrency(extraCollections)}`
-      : periodShortfall > 0
-        ? `Billed ${formatCurrency(totalBilled)} | Pending for period ${formatCurrency(periodShortfall)}`
-        : `Billed ${formatCurrency(totalBilled)} | Fully covered`;
 
   return (
     <DashboardLayout title="Dashboard">

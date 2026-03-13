@@ -11,7 +11,7 @@ import { cn } from '../../lib/utils';
 import { axisLabelStyle, baseChartOptions, baseGrid, currencyK, currencyTooltip } from '../../lib/chartOptions';
 import {
   ReportState, initialState, ReportLoading, ReportError, StatCard,
-  QuickPeriodPresets, DateInput, currentYearMonth, formatCurrency, fmtPeriod, PeriodPresetKey,
+  QuickPeriodPresets, currentYearMonth, formatCurrency, fmtPeriod, PeriodPresetKey,
 } from './_shared';
 
 export default function CollectionSummaryPage() {
