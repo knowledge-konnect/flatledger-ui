@@ -23,14 +23,19 @@ const APP_SHELL = [
 ];
 
 // ---------------------------------------------------------------------------
-// Install — pre-cache the app shell
+// Install — pre-cache the app shell (individual failures won't abort install)
 // ---------------------------------------------------------------------------
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches
-      .open(STATIC_CACHE)
-      .then((cache) => cache.addAll(APP_SHELL.map((url) => new Request(url, { cache: 'reload' }))))
-      .then(() => self.skipWaiting())
+    caches.open(STATIC_CACHE).then((cache) =>
+      Promise.allSettled(
+        APP_SHELL.map((url) =>
+          cache.add(new Request(url, { cache: 'reload' })).catch((err) => {
+            console.warn(`[SW] Failed to pre-cache ${url}:`, err);
+          })
+        )
+      )
+    ).then(() => self.skipWaiting())
   );
 });
 
