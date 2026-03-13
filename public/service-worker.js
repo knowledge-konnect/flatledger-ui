@@ -7,7 +7,7 @@
  *  - API requests: Network-only (never cache sensitive financial data).
  */
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const STATIC_CACHE = `flatledger-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `flatledger-dynamic-${CACHE_VERSION}`;
 
