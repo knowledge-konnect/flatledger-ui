@@ -4,7 +4,7 @@ import { ArrowLeft, AlertCircle, Info, ChevronDown, ChevronUp } from 'lucide-rea
 import { useFlats } from '../../hooks/useFlats';
 import { useOpeningBalanceStatus, useSubmitOpeningBalance } from '../../hooks/useOpeningBalance';
 import { useAuth } from '../../contexts/AuthProvider';
-import { isFinancialRole, collectUserRoles } from '../../types/roles';
+import { isAdminRole, collectUserRoles } from '../../types/roles';
 import { FlatBalance, OpeningBalanceSummary } from '../../types/openingBalance.types';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import Button from '../ui/Button';
@@ -18,8 +18,8 @@ export default function OpeningBalanceEntry() {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  // Check if user holds a financial-level role (Society Admin, Admin, Treasurer)
-  const isTreasurer = isFinancialRole(collectUserRoles(user));
+  // Check if user is Society Admin
+  const isTreasurer = isAdminRole(collectUserRoles(user));
   
   // API hooks
   const { data: statusData, isLoading: statusLoading } = useOpeningBalanceStatus();

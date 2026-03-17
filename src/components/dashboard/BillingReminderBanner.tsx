@@ -8,7 +8,7 @@ interface BillingReminderBannerProps {
   isLoading?: boolean;
   isGenerating?: boolean;
   zeroAmountFlatsCount?: number;
-  onGenerate: () => void;
+  onGenerate?: () => void;
 }
 
 export default function BillingReminderBanner({
@@ -81,15 +81,17 @@ export default function BillingReminderBanner({
             </p>
           </div>
         </div>
-        <Button
-          size="sm"
-          onClick={onGenerate}
-          isLoading={isGenerating}
-          disabled={isGenerating}
-          className="flex-shrink-0"
-        >
-          Generate Now
-        </Button>
+        {onGenerate && (
+          <Button
+            size="sm"
+            onClick={onGenerate}
+            isLoading={isGenerating}
+            disabled={isGenerating}
+            className="flex-shrink-0"
+          >
+            Generate Now
+          </Button>
+        )}
       </div>
     </div>
   );

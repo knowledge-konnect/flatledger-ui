@@ -11,7 +11,7 @@ import { useUsers, useCreateUser } from '../hooks/useUsers';
 import { usersApi } from '../api/usersApi';
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
-import { RoleCode, RoleDisplayName, ROLE_DISPLAY_TO_CODE, ROLE_LABELS } from '../types/roles';
+import { RoleCode, RoleDisplayName, ROLE_DISPLAY_TO_CODE, ROLE_LABELS, isAdminRole, collectUserRoles } from '../types/roles';
 import { User } from '../api/usersApi';
 import { AlertMessages } from '../lib/alertMessages';
 import { useFlats } from '../hooks/useFlats';
@@ -30,6 +30,8 @@ const ROLE_OPTIONS = (Object.values(RoleCode) as RoleCode[]).map(code => ({
 /* =====================================================
    COMPONENT
 ===================================================== */
+
+import { useAuth } from '../contexts/AuthProvider';
 
 export default function Users() {
   const [showModal, setShowModal] = useState(false);
@@ -61,6 +63,8 @@ export default function Users() {
   const { data: flatsData = [] } = useFlats();
   const users = (usersData || []) as User[];
   const flats = (flatsData || []) as FlatDto[];
+  const { user } = useAuth();
+  const isAdmin = isAdminRole(collectUserRoles(user));
 
   /* =====================================================
      HELPER FUNCTIONS
@@ -340,14 +344,16 @@ export default function Users() {
                   className="w-full pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-200"
                 />
               </div>
-              <Button
-                size="sm"
-                onClick={() => setShowModal(true)}
-                className="h-10 px-4 font-medium bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-200"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add User
-              </Button>
+              {isAdmin && (
+                <Button
+                  size="sm"
+                  onClick={() => setShowModal(true)}
+                  className="h-10 px-4 font-medium bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-200"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add User
+                </Button>
+              )}
             </div>
           </div>
 
@@ -417,9 +423,11 @@ export default function Users() {
                   <p className="font-semibold text-slate-800 dark:text-slate-200">No users yet</p>
                   <p className="text-sm text-slate-400 mt-1">Add your first team member to get started</p>
                 </div>
-                <Button size="sm" onClick={() => setShowModal(true)} className="bg-gradient-to-r from-emerald-500 to-emerald-700 text-white">
-                  <Plus className="w-4 h-4 mr-2" /> Add User
-                </Button>
+                {isAdmin && (
+                  <Button size="sm" onClick={() => setShowModal(true)} className="bg-gradient-to-r from-emerald-500 to-emerald-700 text-white">
+                    <Plus className="w-4 h-4 mr-2" /> Add User
+                  </Button>
+                )}
               </div>
             ) : filteredUsers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
@@ -502,30 +510,32 @@ export default function Users() {
                           </td>
                           {/* Actions */}
                           <td className="px-6 py-3 whitespace-nowrap">
-                            <div className="flex gap-2 justify-center items-center">
-                              <button
-                                aria-label={`Edit ${user.name}`}
-                                onClick={() => {
-                                  setSelectedUser(user);
-                                  setName(user.name);
-                                  setEmail(user.email);
-                                  setMobile(user.mobile || '');
-                                  setSelectedRoleCode(ROLE_DISPLAY_TO_CODE[user.roleDisplayName] ?? RoleCode.VIEWER);
-                                  setIsEditing(true);
-                                  setShowModal(true);
-                                }}
-                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-110 dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-900/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                aria-label={`Delete ${user.name}`}
-                                onClick={() => { setDeleteTarget(user); setShowDeleteModal(true); }}
-                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-110 dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/50 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
-                              >
-                                <Trash className="w-4 h-4" />
-                              </button>
-                            </div>
+                            {isAdmin && (
+                              <div className="flex gap-2 justify-center items-center">
+                                <button
+                                  aria-label={`Edit ${user.name}`}
+                                  onClick={() => {
+                                    setSelectedUser(user);
+                                    setName(user.name);
+                                    setEmail(user.email);
+                                    setMobile(user.mobile || '');
+                                    setSelectedRoleCode(ROLE_DISPLAY_TO_CODE[user.roleDisplayName] ?? RoleCode.VIEWER);
+                                    setIsEditing(true);
+                                    setShowModal(true);
+                                  }}
+                                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-110 dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-900/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  aria-label={`Delete ${user.name}`}
+                                  onClick={() => { setDeleteTarget(user); setShowDeleteModal(true); }}
+                                  className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-110 dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/50 focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                                >
+                                  <Trash className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       );
@@ -539,178 +549,182 @@ export default function Users() {
         </div>
 
       {/* Add/Edit User Modal */}
-      <Modal
-        isOpen={showModal}
-        onClose={() => {
-          setShowModal(false);
-          setIsEditing(false);
-          setSelectedUser(null);
-          setName('');
-          setEmail('');          setUsername('');          setMobile('');
-          setPassword('');
-          setSelectedRoleCode(RoleCode.VIEWER);
-          setSelectedFlatPublicId('');
-        }}
-        title={isEditing ? 'Edit User' : 'Add User'}
-      >
-        <div className="p-4 sm:p-6 space-y-4">
-          {!isEditing && (
-            <Select
-              label="Select Flat Owner"
-              value={selectedFlatPublicId}
-              onChange={(e) => handleFlatSelection(e.target.value)}
-              options={flatOwnerOptions.length > 0 ? flatOwnerOptions : [{ value: '', label: 'No flat owners available' }]}
-            />
-          )}
+      {isAdmin && (
+        <Modal
+          isOpen={showModal}
+          onClose={() => {
+            setShowModal(false);
+            setIsEditing(false);
+            setSelectedUser(null);
+            setName('');
+            setEmail('');          setUsername('');          setMobile('');
+            setPassword('');
+            setSelectedRoleCode(RoleCode.VIEWER);
+            setSelectedFlatPublicId('');
+          }}
+          title={isEditing ? 'Edit User' : 'Add User'}
+        >
+          <div className="p-4 sm:p-6 space-y-4">
+            {!isEditing && (
+              <Select
+                label="Select Flat Owner"
+                value={selectedFlatPublicId}
+                onChange={(e) => handleFlatSelection(e.target.value)}
+                options={flatOwnerOptions.length > 0 ? flatOwnerOptions : [{ value: '', label: 'No flat owners available' }]}
+              />
+            )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Full Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              readOnly={!isEditing && selectedFlatPublicId !== ''}
-            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Full Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                readOnly={!isEditing && selectedFlatPublicId !== ''}
+              />
 
-            <Input
-              label="Email Address"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              readOnly={!isEditing && selectedFlatPublicId !== ''}
-              placeholder={!isEditing ? 'user@example.com' : ''}
-            />
+              <Input
+                label="Email Address"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                readOnly={!isEditing && selectedFlatPublicId !== ''}
+                placeholder={!isEditing ? 'user@example.com' : ''}
+              />
 
-            <Input
-              label="Mobile Number (Optional)"
-              type="tel"
-              value={mobile}
-              onChange={(e) => setMobile(e.target.value)}
-              placeholder="+91 XXXXX XXXXX"
-              readOnly={!isEditing && selectedFlatPublicId !== ''}
-            />
+              <Input
+                label="Mobile Number (Optional)"
+                type="tel"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                placeholder="+91 XXXXX XXXXX"
+                readOnly={!isEditing && selectedFlatPublicId !== ''}
+              />
 
-            <Select
-              label="Role"
-              value={selectedRoleCode}
-              onChange={(e) => setSelectedRoleCode(e.target.value as RoleCode)}
-              options={ROLE_OPTIONS}
-            />
+              <Select
+                label="Role"
+                value={selectedRoleCode}
+                onChange={(e) => setSelectedRoleCode(e.target.value as RoleCode)}
+                options={ROLE_OPTIONS}
+              />
+            </div>
+
+            {!isEditing && (
+              <>
+                {!email.trim() && !username.trim() && (
+                  <p className="text-[11px] text-rose-500 dark:text-rose-400 -mt-2">
+                    Email or username is required for login.
+                  </p>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Input
+                      label="Username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.replace(/\s/g, ''))}
+                      placeholder="e.g. john_doe"
+                    />
+                    <p className="text-[11px] text-slate-400 leading-snug">
+                      {username.trim()
+                        ? <>Login: <span className="font-medium text-slate-600 dark:text-slate-300">{username.trim()}</span></>
+                        : 'Required if no email provided.'}
+                    </p>
+                  </div>
+                  <Input
+                    label="Password"
+                    type="text"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Set a password for this user"
+                  />
+                </div>
+              </>
+            )}
           </div>
 
-          {!isEditing && (
-            <>
-              {!email.trim() && !username.trim() && (
-                <p className="text-[11px] text-rose-500 dark:text-rose-400 -mt-2">
-                  Email or username is required for login.
-                </p>
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Input
-                    label="Username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value.replace(/\s/g, ''))}
-                    placeholder="e.g. john_doe"
-                  />
-                  <p className="text-[11px] text-slate-400 leading-snug">
-                    {username.trim()
-                      ? <>Login: <span className="font-medium text-slate-600 dark:text-slate-300">{username.trim()}</span></>
-                      : 'Required if no email provided.'}
-                  </p>
-                </div>
-                <Input
-                  label="Password"
-                  type="text"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Set a password for this user"
-                />
-              </div>
-            </>
-          )}
-        </div>
-
-        <ModalFooter>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setShowModal(false);
-              setIsEditing(false);
-              setSelectedUser(null);
-              setName('');
-              setEmail('');
-              setUsername('');
-              setMobile('');
-              setPassword('');
-              setSelectedRoleCode(RoleCode.VIEWER);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={isEditing ? handleEditUser : createUser}
-            disabled={createUserMutation.isPending || isUpdating}
-          >
-            {isEditing
-              ? (isUpdating ? 'Updating...' : 'Update User')
-              : (createUserMutation.isPending ? 'Creating...' : 'Create User')
-            }
-          </Button>
-        </ModalFooter>
-      </Modal>
+          <ModalFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowModal(false);
+                setIsEditing(false);
+                setSelectedUser(null);
+                setName('');
+                setEmail('');
+                setUsername('');
+                setMobile('');
+                setPassword('');
+                setSelectedRoleCode(RoleCode.VIEWER);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={isEditing ? handleEditUser : createUser}
+              disabled={createUserMutation.isPending || isUpdating}
+            >
+              {isEditing
+                ? (isUpdating ? 'Updating...' : 'Update User')
+                : (createUserMutation.isPending ? 'Creating...' : 'Create User')
+              }
+            </Button>
+          </ModalFooter>
+        </Modal>
+      )}
 
       {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={() => {
-          setShowDeleteModal(false);
-          setDeleteTarget(null);
-        }}
-        title="Delete User"
-        size="sm"
-      >
-        <div className="space-y-4 p-4 sm:p-6">
-          {deleteTarget && (
-            <>
-              <p className="text-sm text-foreground">
-                Are you sure you want to delete <strong>{deleteTarget.name}</strong>?
-              </p>
-
-              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border-2 border-red-400 dark:border-red-600">
-                <p className="text-xs font-semibold text-red-900 dark:text-red-100 mb-1.5 flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  Warning
+      {isAdmin && (
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setDeleteTarget(null);
+          }}
+          title="Delete User"
+          size="sm"
+        >
+          <div className="space-y-4 p-4 sm:p-6">
+            {deleteTarget && (
+              <>
+                <p className="text-sm text-foreground">
+                  Are you sure you want to delete <strong>{deleteTarget.name}</strong>?
                 </p>
-                <ul className="text-xs text-red-800 dark:text-red-200 space-y-0.5 ml-3 list-disc font-semibold">
-                  <li>This action cannot be undone</li>
-                  <li>User will lose access immediately</li>
-                  <li>Associated data may be affected</li>
-                </ul>
-              </div>
-            </>
-          )}
-        </div>
 
-        <ModalFooter>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setShowDeleteModal(false);
-              setDeleteTarget(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleDeleteUser}
-            disabled={isDeleting}
-            className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white focus:ring-red-500/50"
-          >
-            {isDeleting ? 'Deleting...' : 'Delete User'}
-          </Button>
-        </ModalFooter>
-      </Modal>
+                <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border-2 border-red-400 dark:border-red-600">
+                  <p className="text-xs font-semibold text-red-900 dark:text-red-100 mb-1.5 flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    Warning
+                  </p>
+                  <ul className="text-xs text-red-800 dark:text-red-200 space-y-0.5 ml-3 list-disc font-semibold">
+                    <li>This action cannot be undone</li>
+                    <li>User will lose access immediately</li>
+                    <li>Associated data may be affected</li>
+                  </ul>
+                </div>
+              </>
+            )}
+          </div>
+
+          <ModalFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setDeleteTarget(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDeleteUser}
+              disabled={isDeleting}
+              className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white focus:ring-red-500/50"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete User'}
+            </Button>
+          </ModalFooter>
+        </Modal>
+      )}
 
       {/* Created User Credentials Modal */}
       <Modal

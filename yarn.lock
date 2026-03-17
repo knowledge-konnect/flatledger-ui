@@ -414,7 +414,7 @@
   "resolved" "https://registry.npmjs.org/@rollup/rollup-win32-x64-gnu/-/rollup-win32-x64-gnu-4.59.0.tgz"
   "version" "4.59.0"
 
-"@rollup/rollup-win32-x64-msvc@4.59.0":
+"@rollup/rollup-win32-x64-msvc@^4.59.0", "@rollup/rollup-win32-x64-msvc@4.59.0":
   "integrity" "sha512-2HRCml6OztYXyJXAvdDXPKcawukWY2GpR5/nxKp4iBgiO3wcoEGkAaqctIbZcNB6KlUQBIqt8VYkNSj2397EfA=="
   "resolved" "https://registry.npmjs.org/@rollup/rollup-win32-x64-msvc/-/rollup-win32-x64-msvc-4.59.0.tgz"
   "version" "4.59.0"
@@ -852,9 +852,9 @@
   "version" "2.0.1"
 
 "caniuse-lite@^1.0.30001646", "caniuse-lite@^1.0.30001663":
-  "integrity" "sha512-7LTwJjcRkzKFmtqGsibMeuXmvFDfZq/nzIjnmgCGzKKRVzjD72selLDK1oPF/Oxzmt4fNcPvTDvGqSDG4tCALw=="
-  "resolved" "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001667.tgz"
-  "version" "1.0.30001667"
+  "integrity" "sha512-llngX0E7nQci5BPJDqoZSbuZ5Bcs9F5db7EtgfwBerX9XGtkkiO4NwfDDIRzHTTwcYC8vC7bmeUEPGrKlR/TkQ=="
+  "resolved" "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001780.tgz"
+  "version" "1.0.30001780"
 
 "chalk@^4.0.0":
   "integrity" "sha512-oKnbhFyRIXpUuez8iBMmyEa4nbj4IOQyuhc/wy9kY7/WVPcwIO9VA668Pu8RkO7+0G76SLROeyw9CpQ061i4mA=="
@@ -1324,9 +1324,9 @@
     "keyv" "^4.5.4"
 
 "flatted@^3.2.9":
-  "integrity" "sha512-X8cqMLLie7KsNUDSdzeN8FYK9rEt4Dt67OsG/DNGnYTSDBG4uFAJFBnUeiV+zCVAvwFy56IjM9sH51jVaEhNxw=="
-  "resolved" "https://registry.npmjs.org/flatted/-/flatted-3.3.1.tgz"
-  "version" "3.3.1"
+  "integrity" "sha512-IxfVbRFVlV8V/yRaGzk0UVIcsKKHMSfYw66T/u4nTwlWteQePsxe//LjudR1AMX4tZW3WFCh3Zqa/sjlqpbURQ=="
+  "resolved" "https://registry.npmjs.org/flatted/-/flatted-3.4.1.tgz"
+  "version" "3.4.1"
 
 "follow-redirects@^1.15.11":
   "integrity" "sha512-deG2P0JfjrTxl50XGCDyfI97ZGVCxIpfKYmfyrQ54n5FO/0gfIES8C/Psl6kWVDolizcaaxZJnTS0QSMxvnsBQ=="
@@ -2066,7 +2066,7 @@
   dependencies:
     "prop-types" "^15.8.1"
 
-"react-dom@^18.0.0 || ^19.0.0", "react-dom@^18.2.0", "react-dom@>=18":
+"react-dom@^18.0.0 || ^19.0.0", "react-dom@^18.0.0 || ^19.0.0 || ^19.0.0-rc", "react-dom@^18.2.0", "react-dom@>=18":
   "integrity" "sha512-6IMTriUmvsjHUjNtEDudZfuDQUoWXVxKHhlEGSk81n4YFS+r/Kl99wXiwlVXtPBtJenozv2P+hxDsw9eA7Xo6g=="
   "resolved" "https://registry.npmjs.org/react-dom/-/react-dom-18.2.0.tgz"
   "version" "18.2.0"
@@ -2123,7 +2123,7 @@
     "cookie" "^1.0.1"
     "set-cookie-parser" "^2.6.0"
 
-"react@^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc", "react@^16.6.0 || ^17.0.0 || ^18.0.0", "react@^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc", "react@^16.8.0 || ^17 || ^18 || ^19", "react@^18 || ^19", "react@^18.0.0 || ^19.0.0", "react@^18.2.0", "react@>=16.8.0", "react@>=18":
+"react@^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc", "react@^16.6.0 || ^17.0.0 || ^18.0.0", "react@^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc", "react@^16.8.0 || ^17 || ^18 || ^19", "react@^18 || ^19", "react@^18.0.0 || ^19.0.0", "react@^18.0.0 || ^19.0.0 || ^19.0.0-rc", "react@^18.2.0", "react@>=16.8.0", "react@>=18":
   "integrity" "sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ=="
   "resolved" "https://registry.npmjs.org/react/-/react-18.2.0.tgz"
   "version" "18.2.0"
@@ -2328,6 +2328,11 @@
   "integrity" "sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw=="
   "resolved" "https://registry.npmjs.org/signal-exit/-/signal-exit-4.1.0.tgz"
   "version" "4.1.0"
+
+"sonner@^2.0.7":
+  "integrity" "sha512-W6ZN4p58k8aDKA4XPcx2hpIQXBRAgyiWVkYhT7CvK6D3iAu7xjvVyhQHg2/iaKJZ1XVJ4r7XuwGL+WGEK37i9w=="
+  "resolved" "https://registry.npmjs.org/sonner/-/sonner-2.0.7.tgz"
+  "version" "2.0.7"
 
 "source-map-js@^1.2.1", "source-map-js@>=0.6.2 <2.0.0":
   "integrity" "sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA=="

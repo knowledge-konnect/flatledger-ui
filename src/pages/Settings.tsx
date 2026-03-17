@@ -20,7 +20,7 @@ import { useNotifications, useUpdateNotifications } from "../hooks/useNotificati
 import { useToast } from "../components/ui/Toast"
 import { cn } from "../lib/utils"
 import { useOpeningBalanceStatus } from "../hooks/useOpeningBalance"
-import { isAdminRole, isFinancialRole, collectUserRoles } from "../types/roles"
+import { isAdminRole, collectUserRoles } from "../types/roles"
 
 const NAV_SECTIONS: { label: string; items: { id: string; label: string; icon: React.ElementType; description: string; adminOnly?: boolean; href?: string }[] }[] = [
   {
@@ -106,7 +106,6 @@ export default function SettingsPageRedesigned() {
 
   const allRoles = collectUserRoles(user)
   const isAdmin = isAdminRole(allRoles)
-  const isTreasurer = isFinancialRole(allRoles)
 
   useEffect(() => {
     if (society.data) {
@@ -245,7 +244,7 @@ export default function SettingsPageRedesigned() {
   const visibleSections = NAV_SECTIONS.map(section => ({
     ...section,
     items: section.items.filter(item => {
-      if (item.adminOnly) return isAdmin || isTreasurer
+      if (item.adminOnly) return isAdmin
       return true
     })
   })).filter(s => s.items.length > 0)
@@ -368,7 +367,7 @@ export default function SettingsPageRedesigned() {
                           value={profileFormData.mobile}
                           onChange={e => setProfileFormData(p => ({ ...p, mobile: e.target.value }))}
                         />
-                        <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveProfile} disabled={isSaving}>
+                        <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveProfile} disabled={isSaving || !isAdmin}>
                           {isSaving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                           {isSaving ? 'Saving...' : 'Save Mobile'}
                         </Button>
@@ -444,9 +443,9 @@ export default function SettingsPageRedesigned() {
                     </div>
                   ) : (
                     <div className="max-w-sm space-y-4">
-                      <Input label="Society Name" placeholder="Enter society name" value={societyFormData.name} onChange={e => setSocietyFormData(p => ({ ...p, name: e.target.value }))} />
-                      <Input label="Address" placeholder="Enter address" value={societyFormData.address} onChange={e => setSocietyFormData(p => ({ ...p, address: e.target.value }))} />
-                      <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveSociety} disabled={updateSociety.isPending}>
+                      <Input label="Society Name" placeholder="Enter society name" value={societyFormData.name} onChange={e => setSocietyFormData(p => ({ ...p, name: e.target.value }))} disabled={!isAdmin} />
+                      <Input label="Address" placeholder="Enter address" value={societyFormData.address} onChange={e => setSocietyFormData(p => ({ ...p, address: e.target.value }))} disabled={!isAdmin} />
+                      <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveSociety} disabled={updateSociety.isPending || !isAdmin}>
                         {updateSociety.isPending ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         {updateSociety.isPending ? 'Saving...' : 'Save Changes'}
                       </Button>

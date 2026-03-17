@@ -17,6 +17,8 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { cn, formatCurrency } from '../lib/utils';
+import { useAuth } from '../contexts/AuthProvider';
+import { isAdminRole, collectUserRoles } from '../types/roles';
 
 const PLAN_FEATURES = [
   { icon: Building2,     label: 'Unlimited flats & residents' },
@@ -35,6 +37,8 @@ export default function SubscriptionManagement() {
   const { showToast } = useToast();
   const { showErrorToast } = useApiErrorToast();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = isAdminRole(collectUserRoles(user));
   const {
     accessAllowed,
     status,
@@ -244,7 +248,7 @@ export default function SubscriptionManagement() {
             )}
 
             {/* Action buttons — only when there's something to show */}
-            {(status === null || status === 'active') && (
+            {isAdmin && (status === null || status === 'active') && (
               <div className="relative mt-4 flex flex-wrap gap-2">
                 {status === null && (
                   <button
@@ -269,7 +273,7 @@ export default function SubscriptionManagement() {
             )}
 
             {/* Inline cancel confirmation */}
-            {showCancelConfirm && (
+            {isAdmin && showCancelConfirm && (
               <div className="relative mt-4 p-4 rounded-xl bg-black/20 border border-white/30">
                 <p className="text-sm text-white font-medium mb-3">Cancel your subscription?</p>
                 <p className="text-xs text-white/70 mb-3">You'll keep access until the end of your billing period. You can resubscribe anytime.</p>
@@ -293,7 +297,7 @@ export default function SubscriptionManagement() {
           </div>
 
           {/* ── Upgrade CTA — show for trial / expired / cancelled ─────────── */}
-          {(status === 'trial' || status === 'expired' || status === 'cancelled' || status === null) && (
+          {isAdmin && (status === 'trial' || status === 'expired' || status === 'cancelled' || status === null) && (
             <div className="rounded-2xl border-2 border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/30 p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="space-y-1">

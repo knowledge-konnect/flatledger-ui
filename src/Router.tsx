@@ -4,6 +4,8 @@ import MobileFAB from './components/ui/MobileFAB';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth } from './contexts/AuthProvider';
 import { FlatLedgerIcon } from './components/ui/FlatLedgerIcon';
+import { RoleCode } from './types/roles';
+import { AdminApp } from './admin/AdminApp';
 
 import LandingPage from './pages/LandingPage';
 import NotFound from './pages/NotFound';
@@ -171,7 +173,7 @@ export default function Router() {
           <Route
             path="/users"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}>
                 <Users />
               </ProtectedRoute>
             }
@@ -179,7 +181,7 @@ export default function Router() {
           <Route
             path="/settings"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}>
                 <Settings />
               </ProtectedRoute>
             }
@@ -187,7 +189,7 @@ export default function Router() {
           <Route
             path="/settings/opening-balance"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}>
                 <OpeningBalanceEntry />
               </ProtectedRoute>
             }
@@ -195,7 +197,7 @@ export default function Router() {
           <Route
             path="/setup"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}>
                 <Setup />
               </ProtectedRoute>
             }
@@ -203,7 +205,7 @@ export default function Router() {
           <Route
             path="/subscription/manage"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}>
                 <SubscriptionManagement />
               </ProtectedRoute>
             }
@@ -216,6 +218,9 @@ export default function Router() {
               </ProtectedRoute>
             }
           />
+
+          {/* ─── Super Admin Panel ─── */}
+          <Route path="/admin/*" element={<AdminApp />} />
 
           {/* Fallback - 404 for unknown routes */}
           <Route

@@ -24,6 +24,7 @@ interface JwtPayload {
   societyPublicId?: string;
   role?: string;
   roles?: string[];
+  roleDisplayName?: string;
   email?: string;
   name?: string;
   userName?: string; // Backend may use userName instead of name
@@ -41,6 +42,19 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Normalize roles from either string[] or object[]{id, code, displayName} to string[]
+function normalizeRoles(roles: unknown): string[] | null {
+  if (!Array.isArray(roles) || roles.length === 0) return null;
+  return roles.map(r => {
+    if (typeof r === 'string') return r;
+    if (r && typeof r === 'object') {
+      const obj = r as Record<string, unknown>;
+      return String(obj.code || obj.name || obj.displayName || '');
+    }
+    return String(r);
+  }).filter(Boolean);
+}
+
 // Decode JWT and extract user information
 // Optionally merge with full AuthResponse data for additional fields
 function decodeJwtToken(token: string, authResponse?: AuthResponse): User | null {
@@ -54,10 +68,11 @@ function decodeJwtToken(token: string, authResponse?: AuthResponse): User | null
       name: authResponse?.userName || decoded.userName || decoded.name || '',
       userName: authResponse?.userName || decoded.userName || decoded.name || '',
       role: authResponse?.role || decoded.role || '',
-      roles: authResponse?.roles || decoded.roles || (decoded.role ? [decoded.role] : []),
+      roles: normalizeRoles(authResponse?.roles) || normalizeRoles(decoded.roles) || (decoded.role ? [decoded.role] : []),
       societyId: decoded.societyId || '',
       societyPublicId: authResponse?.societyPublicId || decoded.societyPublicId || decoded.societyId || '',
       societyName: authResponse?.societyName || null,
+      roleDisplayName: authResponse?.roleDisplayName || decoded.roleDisplayName || '',
       forcePasswordChange: authResponse?.forcePasswordChange ?? false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
