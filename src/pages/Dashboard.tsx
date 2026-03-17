@@ -24,6 +24,7 @@ import { useDashboard } from '../hooks/useDashboard';
 import { useFlats } from '../hooks/useFlats';
 import { useAuth } from '../contexts/AuthProvider';
 import { useBillingStatus, useGenerateBilling } from '../hooks/useBillingStatus';
+import { isAdminRole, collectUserRoles } from '../types/roles';
 import BillingReminderBanner from '../components/dashboard/BillingReminderBanner';
 import { useToast } from '../components/ui/Toast';
 import { formatCurrency, cn } from '../lib/utils';
@@ -99,6 +100,7 @@ function getLastMonthRange() {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const isAdmin = isAdminRole(collectUserRoles(user));
   const { showToast } = useToast();
   const navigate = useNavigate();
   const { isComplete: setupComplete, isLoading: setupLoading, steps: setupSteps } = useSetupProgress();
@@ -296,7 +298,7 @@ export default function Dashboard() {
           isLoading={billingStatusLoading}
           isGenerating={generateBilling.isPending}
           zeroAmountFlatsCount={zeroAmountFlatsCount}
-          onGenerate={handleGenerateBilling}
+          onGenerate={isAdmin ? handleGenerateBilling : undefined}
         />
 
           {/* ── 4 KPI Cards ───────────────────────────────────────────────── */}

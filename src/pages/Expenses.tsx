@@ -5,6 +5,8 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import PageHeader from '../components/ui/PageHeader';
 import Button from '../components/ui/Button';
+import { useAuth } from '../contexts/AuthProvider';
+import { isAdminRole, collectUserRoles } from '../types/roles';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
 import Modal, { ModalFooter } from '../components/ui/Modal';
@@ -62,6 +64,8 @@ const colorPalette = [
 ];
 
 export default function Expenses() {
+  const { user } = useAuth();
+  const isAdmin = isAdminRole(collectUserRoles(user));
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const today = new Date();
@@ -343,7 +347,7 @@ export default function Expenses() {
       <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 max-w-sm text-center">
         {searchTerm ? 'No expenses match your search. Try adjusting your filters.' : 'Start tracking expenses to get insights into your spending patterns.'}
       </p>
-      {!searchTerm && (
+      {!searchTerm && isAdmin && (
         <Button onClick={() => {
           setSelectedExpense(null);
           reset();
@@ -365,7 +369,8 @@ export default function Expenses() {
           description="Track and manage society expenses"
           icon={TrendingDown}
           actions={
-            <Button size="md" onClick={() => {
+            isAdmin && (
+              <Button size="md" onClick={() => {
               setSelectedExpense(null);
               reset();
               setShowAddModal(true);
@@ -373,10 +378,10 @@ export default function Expenses() {
               <Plus className="w-4 h-4" />
               Add Expense
             </Button>
+            )
           }
         />
 
-        {/* KPI Cards */}
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -604,10 +609,12 @@ export default function Expenses() {
                     onChange={(e) => setSortBy(e.target.value)}
                     className="!py-2 text-sm"
                   />
-                  <Button size="sm" onClick={() => { setSelectedExpense(null); reset(); setShowAddModal(true); }}>
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Expense
-                  </Button>
+                  {isAdmin && (
+                    <Button size="sm" onClick={() => { setSelectedExpense(null); reset(); setShowAddModal(true); }}>
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Expense
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -702,7 +709,8 @@ export default function Expenses() {
                           <span className="text-sm text-slate-600 dark:text-slate-400">{expense.createdByName || '—'}</span>
                         </td>
                         <td className="px-6 py-3 whitespace-nowrap">
-                          <div className="flex gap-2 justify-center items-center">
+                          {isAdmin && (
+                            <div className="flex gap-2 justify-center items-center">
                             <button
                               aria-label="Edit expense"
                               onClick={() => handleEditExpense(expense)}
@@ -724,6 +732,7 @@ export default function Expenses() {
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -745,153 +754,155 @@ export default function Expenses() {
                 </table>
               </div>
             )}
+            {isAdmin && (
+              <Modal
+                    isOpen={showAddModal}
+                    onClose={handleCloseModal}
+                    title={selectedExpense ? 'Edit Expense' : 'Add New Expense'}
+                    size="xl"
+                  >
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-6">
+                        {/* Left column */}
+                        <div className="space-y-4">
+                          <Input
+                            label="Expense Date"
+                            type="date"
+                            error={errors.date?.message}
+                            {...register('date')}
+                          />
+                          <Select
+                            label="Category"
+                            options={[
+                              { value: '', label: 'Select a category...' },
+                              ...categoriesData.map((cat) => ({
+                                value: cat.code,
+                                label: cat.displayName,
+                              })),
+                            ]}
+                            error={errors.categoryCode?.message}
+                            {...register('categoryCode')}
+                          />
+                          <Input
+                            label="Amount (₹)"
+                            type="number"
+                            placeholder="1500"
+                            step="0.01"
+                            error={errors.amount?.message}
+                            {...register('amount')}
+                          />
+                        </div>
+                        {/* Right column */}
+                        <div className="space-y-4">
+                          <Input
+                            label="Vendor Name"
+                            placeholder="e.g., ACME Plumbing"
+                            error={errors.vendor?.message}
+                            {...register('vendor')}
+                          />
+                          <Input
+                            label="Description"
+                            placeholder="e.g., Pipe repair in building"
+                            error={errors.description?.message}
+                            {...register('description')}
+                          />
+                        </div>
+                      </div>
+                    </form>
+                    <ModalFooter>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCloseModal}
+                        disabled={createMutation.isPending || updateMutation.isPending}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={createMutation.isPending || updateMutation.isPending}
+                        onClick={handleSubmit(onSubmit)}
+                      >
+                        {createMutation.isPending || updateMutation.isPending ? (
+                          <>
+                            <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            {selectedExpense ? 'Updating...' : 'Adding...'}
+                          </>
+                        ) : selectedExpense ? 'Update Expense' : 'Add Expense'}
+                      </Button>
+                    </ModalFooter>
+                  </Modal>
+            )}
           </CardContent>
         </Card>
-      </div>
-
-      {/* Add/Edit Expense Modal */}
-      <Modal
-        isOpen={showAddModal}
-        onClose={handleCloseModal}
-        title={selectedExpense ? 'Edit Expense' : 'Add New Expense'}
-        size="xl"
-      >
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-6">
-            {/* Left column */}
-            <div className="space-y-4">
-              <Input
-                label="Expense Date"
-                type="date"
-                error={errors.date?.message}
-                {...register('date')}
-              />
-              <Select
-                label="Category"
-                options={[
-                  { value: '', label: 'Select a category...' },
-                  ...categoriesData.map((cat) => ({
-                    value: cat.code,
-                    label: cat.displayName,
-                  })),
-                ]}
-                error={errors.categoryCode?.message}
-                {...register('categoryCode')}
-              />
-              <Input
-                label="Amount (₹)"
-                type="number"
-                placeholder="1500"
-                step="0.01"
-                error={errors.amount?.message}
-                {...register('amount')}
-              />
-            </div>
-            {/* Right column */}
-            <div className="space-y-4">
-              <Input
-                label="Vendor Name"
-                placeholder="e.g., ACME Plumbing"
-                error={errors.vendor?.message}
-                {...register('vendor')}
-              />
-              <Input
-                label="Description"
-                placeholder="e.g., Pipe repair in building"
-                error={errors.description?.message}
-                {...register('description')}
-              />
-            </div>
-          </div>
-        </form>
-        <ModalFooter>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCloseModal}
-            disabled={createMutation.isPending || updateMutation.isPending}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={createMutation.isPending || updateMutation.isPending}
-            onClick={handleSubmit(onSubmit)}
-          >
-            {createMutation.isPending || updateMutation.isPending ? (
-              <>
-                <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                {selectedExpense ? 'Updating...' : 'Adding...'}
-              </>
-            ) : selectedExpense ? 'Update Expense' : 'Add Expense'}
-          </Button>
-        </ModalFooter>
-      </Modal>
 
       {/* Delete Confirmation Modal */}
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={() => {
-          setShowDeleteModal(false);
-          setDeleteTarget(null);
-        }}
-        title="🗑️ Delete Expense"
-        size="sm"
-      >
-        <div className="space-y-4 p-4 sm:p-6 pb-20">
-          {deleteTarget && (
-            <>
-              <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">
-                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                  You're about to delete this expense:
-                </p>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold text-gray-900 dark:text-white">{deleteTarget.vendor}</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{formatDate(deleteTarget.dateIncurred)}</p>
+      {isAdmin && (
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setDeleteTarget(null);
+          }}
+          title="🗑️ Delete Expense"
+          size="sm"
+        >
+          <div className="space-y-4 p-4 sm:p-6 pb-20">
+            {deleteTarget && (
+              <>
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                    You're about to delete this expense:
+                  </p>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-semibold text-gray-900 dark:text-white">{deleteTarget.vendor}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">{formatDate(deleteTarget.dateIncurred)}</p>
+                    </div>
+                    <p className="text-lg font-bold text-red-600 dark:text-red-400">{formatCurrency(deleteTarget.amount)}</p>
                   </div>
-                  <p className="text-lg font-bold text-red-600 dark:text-red-400">{formatCurrency(deleteTarget.amount)}</p>
                 </div>
-              </div>
-              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-700">
-                <p className="text-xs font-bold text-red-900 dark:text-red-100 mb-1">⚠️ Warning</p>
-                <p className="text-xs text-red-800 dark:text-red-200">This action cannot be undone. The expense will be permanently deleted.</p>
-              </div>
-            </>
-          )}
-        </div>
-
-        <ModalFooter>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setShowDeleteModal(false);
-              setDeleteTarget(null);
-            }}
-            disabled={deleteMutation.isPending}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleDeleteExpense}
-            disabled={deleteMutation.isPending}
-            className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white dark:border-red-500 dark:text-red-400"
-          >
-            {deleteMutation.isPending ? (
-              <>
-                <div className="w-4 h-4 mr-2 border-2 border-red-600 border-t-transparent rounded-full animate-spin dark:border-red-400"></div>
-                Deleting...
-              </>
-            ) : (
-              <>
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
+                <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-700">
+                  <p className="text-xs font-bold text-red-900 dark:text-red-100 mb-1">⚠️ Warning</p>
+                  <p className="text-xs text-red-800 dark:text-red-200">This action cannot be undone. The expense will be permanently deleted.</p>
+                </div>
               </>
             )}
-          </Button>
-        </ModalFooter>
-      </Modal>
+          </div>
+
+          <ModalFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setDeleteTarget(null);
+              }}
+              disabled={deleteMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDeleteExpense}
+              disabled={deleteMutation.isPending}
+              className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white dark:border-red-500 dark:text-red-400"
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <div className="w-4 h-4 mr-2 border-2 border-red-600 border-t-transparent rounded-full animate-spin dark:border-red-400"></div>
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </>
+              )}
+            </Button>
+          </ModalFooter>
+        </Modal>
+      )}
+      </div>
     </DashboardLayout>
   );
 }

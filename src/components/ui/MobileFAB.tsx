@@ -1,6 +1,8 @@
 ﻿import { useState } from 'react';
 import { Plus, X, CreditCard, TrendingDown, Building } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../contexts/AuthProvider';
+import { isAdminRole, collectUserRoles } from '../../types/roles';
 
 interface FABAction {
   icon: React.ElementType;
@@ -11,6 +13,10 @@ interface FABAction {
 
 export default function MobileFAB() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = isAdminRole(collectUserRoles(user));
+
+  if (!isAdmin) return null;
 
   const actions: FABAction[] = [
     {

@@ -91,6 +91,8 @@ function isPaymentLocked(_payment: any): boolean {
   // return new Date(payment.paymentDate) < cutoff;
 }
 
+import { isAdminRole, collectUserRoles } from '../types/roles';
+
 export default function Maintenance() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [period, setPeriod] = useState(getCurrentMonth());
@@ -109,6 +111,7 @@ export default function Maintenance() {
     }) | null
   >(null);
   const { user } = useAuth();
+  const isAdmin = isAdminRole(collectUserRoles(user));
   const { showToast } = useToast();
   const { showErrorToast } = useApiErrorToast();
 
@@ -370,26 +373,28 @@ export default function Maintenance() {
           description="Track and manage maintenance fee payments"
           icon={CreditCard}
           actions={
-            <Button
-              size="md"
-              onClick={() => {
-                setIsEditing(false);
-                setSelectedPayment(null);
-                setLastAllocationSummary(null);
-                reset({
-                  flatPublicId: '',
-                  amount: '',
-                  paymentModeId: '',
-                  paymentDate: new Date().toISOString().split('T')[0],
-                  referenceNumber: '',
-                });
-                setShowAddModal(true);
-              }}
-              disabled={!summaryLoading && (summary?.totalCharges || 0) === 0 ? false : false}
-            >
-              <Plus className="w-4 h-4" />
-              Record Payment
-            </Button>
+            isAdmin && (
+              <Button
+                size="md"
+                onClick={() => {
+                  setIsEditing(false);
+                  setSelectedPayment(null);
+                  setLastAllocationSummary(null);
+                  reset({
+                    flatPublicId: '',
+                    amount: '',
+                    paymentModeId: '',
+                    paymentDate: new Date().toISOString().split('T')[0],
+                    referenceNumber: '',
+                  });
+                  setShowAddModal(true);
+                }}
+                disabled={!summaryLoading && (summary?.totalCharges || 0) === 0 ? false : false}
+              >
+                <Plus className="w-4 h-4" />
+                Record Payment
+              </Button>
+            )
           }
         />
 
@@ -592,25 +597,27 @@ export default function Maintenance() {
                   className="input pl-9 py-1.5 text-sm w-full"
                 />
               </div>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setIsEditing(false);
-                  setSelectedPayment(null);
-                  setLastAllocationSummary(null);
-                  reset({
-                    flatPublicId: '',
-                    amount: '',
-                    paymentModeId: '',
-                    paymentDate: new Date().toISOString().split('T')[0],
-                    referenceNumber: '',
-                  });
-                  setShowAddModal(true);
-                }}
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" />
-                Record Payment
-              </Button>
+              {isAdmin && (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setSelectedPayment(null);
+                    setLastAllocationSummary(null);
+                    reset({
+                      flatPublicId: '',
+                      amount: '',
+                      paymentModeId: '',
+                      paymentDate: new Date().toISOString().split('T')[0],
+                      referenceNumber: '',
+                    });
+                    setShowAddModal(true);
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Record Payment
+                </Button>
+              )}
             </div>
           </div>
 
@@ -624,7 +631,7 @@ export default function Maintenance() {
                 icon={CreditCard}
                 title="No payments found"
                 description="Record your first payment to get started"
-                action={{
+                action={isAdmin ? {
                   label: 'Record Payment',
                   onClick: () => {
                     setIsEditing(false);
@@ -640,7 +647,7 @@ export default function Maintenance() {
                     setShowAddModal(true);
                   },
                   icon: Plus,
-                }}
+                } : undefined}
               />
             </div>
           ) : (
@@ -781,54 +788,56 @@ export default function Maintenance() {
                         </span>
                       </td>
                       <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="flex gap-2 justify-center items-center">
-                          {(payment.allocations?.length ?? 0) > 0 || isPaymentLocked(payment) ? (
-                            <Tooltip
-                              content={
-                                isPaymentLocked(payment)
-                                  ? 'Payments older than 30 days cannot be edited.'
-                                  : 'Allocated payments cannot be edited. Delete and recreate.'
-                              }
-                              side="top"
-                            >
-                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg
-                                               bg-slate-100 dark:bg-slate-800 cursor-not-allowed opacity-50">
-                                <Lock className="w-3.5 h-3.5 text-slate-400" />
-                              </span>
-                            </Tooltip>
-                          ) : (
+                        {isAdmin && (
+                          <div className="flex gap-2 justify-center items-center">
+                            {(payment.allocations?.length ?? 0) > 0 || isPaymentLocked(payment) ? (
+                              <Tooltip
+                                content={
+                                  isPaymentLocked(payment)
+                                    ? 'Payments older than 30 days cannot be edited.'
+                                    : 'Allocated payments cannot be edited. Delete and recreate.'
+                                }
+                                side="top"
+                              >
+                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg
+                                                 bg-slate-100 dark:bg-slate-800 cursor-not-allowed opacity-50">
+                                  <Lock className="w-3.5 h-3.5 text-slate-400" />
+                                </span>
+                              </Tooltip>
+                            ) : (
+                              <button
+                                aria-label="Edit payment"
+                                onClick={() => openEditModal(payment)}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
+                                           bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-110
+                                           dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-900/50
+                                           focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                            )}
                             <button
-                              aria-label="Edit payment"
-                              onClick={() => openEditModal(payment)}
-                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
-                                         bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-110
-                                         dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-900/50
-                                         focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                              aria-label="Delete payment"
+                              disabled={isPaymentLocked(payment)}
+                              onClick={() => {
+                                if (isPaymentLocked(payment)) {
+                                  showToast('This payment is older than 30 days and cannot be deleted.', 'error');
+                                  return;
+                                }
+                                setDeleteTarget(payment);
+                                setShowDeleteModal(true);
+                              }}
+                              className={`inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
+                                         focus:outline-none focus:ring-2 focus:ring-rose-500/50
+                                         ${ isPaymentLocked(payment)
+                                           ? 'bg-slate-100 dark:bg-slate-800 opacity-50 cursor-not-allowed'
+                                           : 'bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-110 dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/50'
+                                         }`}
                             >
-                              <Edit className="w-4 h-4" />
+                              <Trash className="w-4 h-4" />
                             </button>
-                          )}
-                          <button
-                            aria-label="Delete payment"
-                            disabled={isPaymentLocked(payment)}
-                            onClick={() => {
-                              if (isPaymentLocked(payment)) {
-                                showToast('This payment is older than 30 days and cannot be deleted.', 'error');
-                                return;
-                              }
-                              setDeleteTarget(payment);
-                              setShowDeleteModal(true);
-                            }}
-                            className={`inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
-                                       focus:outline-none focus:ring-2 focus:ring-rose-500/50
-                                       ${ isPaymentLocked(payment)
-                                         ? 'bg-slate-100 dark:bg-slate-800 opacity-50 cursor-not-allowed'
-                                         : 'bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-110 dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/50'
-                                       }`}
-                          >
-                            <Trash className="w-4 h-4" />
-                          </button>
-                        </div>
+                          </div>
+                        )}
                       </td>
                     </tr>
                     );
@@ -840,16 +849,17 @@ export default function Maintenance() {
         </div>
       </div>
 
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => {
-          setShowAddModal(false);
-          setLastAllocationSummary(null);
-          reset();
-        }}
-        title={isEditing ? "Edit Payment" : "Record Payment"}
-        size="xl"
-      >
+      {isAdmin && (
+        <Modal
+          isOpen={showAddModal}
+          onClose={() => {
+            setShowAddModal(false);
+            setLastAllocationSummary(null);
+            reset();
+          }}
+          title={isEditing ? "Edit Payment" : "Record Payment"}
+          size="xl"
+        >
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
 
           {/* ── No-bills warning banner ───────────────────────────────────── */}
@@ -1187,17 +1197,19 @@ export default function Maintenance() {
             </Button>
           </ModalFooter>
         </form>
-      </Modal>
+        </Modal>
+      )}
 
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={() => {
-          setShowDeleteModal(false);
-          setDeleteTarget(null);
-        }}
-        title="Delete Payment"
-        size="sm"
-      >
+      {isAdmin && (
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setDeleteTarget(null);
+          }}
+          title="Delete Payment"
+          size="sm"
+        >
         <div className="space-y-4 p-4 sm:p-6">
           <p className="text-foreground">
             Are you sure you want to delete the payment for <strong>Flat {deleteTarget?.flatNumber}</strong> of <strong>{formatCurrency(deleteTarget?.amount)}</strong>?
@@ -1228,7 +1240,8 @@ export default function Maintenance() {
             </Button>
           </ModalFooter>
         </div>
-      </Modal>
+        </Modal>
+      )}
     </DashboardLayout>
   );
 }

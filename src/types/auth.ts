@@ -13,7 +13,7 @@ export interface RegisterCredentials {
 
 export interface AuthResponse {
   accessToken: string;
-  roles: string[];
+  roles: (string | { id?: number; code?: string; displayName?: string; name?: string })[];
   accessTokenExpiresAt?: string;
   // refreshToken and refreshTokenExpiresAt are no longer in the response body.
   // The backend sets refreshToken as an httpOnly cookie automatically.
@@ -25,6 +25,7 @@ export interface AuthResponse {
   userName?: string;
   email?: string;
   role?: string;
+  roleDisplayName?: string;
   forcePasswordChange?: boolean;
 }
 

@@ -2,7 +2,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Building2, Wrench, IndianRupee, BarChart3, Users, Settings, LogOut, X, ChevronDown, BarChart2, AlertTriangle, TrendingUp, BookOpen, CreditCard, PieChart } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthProvider';
-import { isFinancialRole, collectUserRoles, RoleDisplayName } from '../../types/roles';
+import { isAdminRole, collectUserRoles, RoleDisplayName } from '../../types/roles';
 import { useToast } from '../ui/Toast';
 import { cn } from '../../lib/utils';
 import { AlertMessages } from '../../lib/alertMessages';
@@ -35,8 +35,8 @@ const navGroups = [
   {
     label: 'Admin',
     items: [
-      { name: 'Users', href: '/users', icon: Users, iconColor: 'text-emerald-500', iconBg: 'bg-emerald-50 dark:bg-emerald-950/60' },
-      { name: 'Settings', href: '/settings', icon: Settings, iconColor: 'text-slate-500', iconBg: 'bg-slate-100 dark:bg-slate-800/60' },
+      { name: 'Users', href: '/users', icon: Users, iconColor: 'text-emerald-500', iconBg: 'bg-emerald-50 dark:bg-emerald-950/60', adminOnly: true },
+      { name: 'Settings', href: '/settings', icon: Settings, iconColor: 'text-slate-500', iconBg: 'bg-slate-100 dark:bg-slate-800/60', adminOnly: true },
     ],
   },
 ];
@@ -52,15 +52,15 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
   const { logout, user } = useAuth();
   const { showToast } = useToast();
 
-  // Check if user holds a financial-level role (Society Admin, Admin or Treasurer)
-  const isAdminUser = isFinancialRole(collectUserRoles(user));
+  // Check if user is Society Admin
+  const isAdminUser = isAdminRole(collectUserRoles(user));
 
   const userInitials = ((name: string) => {
     const words = name.trim().split(/\s+/);
     return words.map(w => w[0]).slice(0, 2).join('').toUpperCase();
   })(user?.name || user?.email || 'U');
 
-  const rawRole = user?.roleDisplayName || user?.roles?.[0] || user?.role || RoleDisplayName.VIEWER;
+  const rawRole = String(user?.roleDisplayName || user?.roles?.[0] || user?.role || RoleDisplayName.VIEWER);
   const userRole = rawRole.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
   return (

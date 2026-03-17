@@ -1,0 +1,183 @@
+====================================================
+FLATLEDGER BACKEND — RBAC REQUIREMENTS PROMPT
+====================================================
+
+CONTEXT
+-------
+The FlatLedger frontend uses a two-role system. The backend must align with
+this contract for role-based access control to work end-to-end.
+
+
+1. DATABASE ROLES
+-----------------
+Only two roles must exist in the roles table:
+
+  ID  | Code            | Display Name
+  ----|-----------------|-------------
+   1  | society_admin   | Society Admin
+   6  | viewer          | Viewer
+
+Do not add, rename, or reuse any other roles. All other role entries
+should be removed or deactivated.
+
+
+2. JWT TOKEN SHAPE
+------------------
+When a user logs in, the JWT payload MUST include ALL of the following fields:
+
+  {
+    "id": "<user_id>",
+    "email": "<user_email>",
+    "name": "<user_full_name>",
+    "societyId": "<society_id>",
+
+    // Array form (primary — used by frontend collectUserRoles)
+    "roles": [
+      {
+        "id": 1,
+        "code": "society_admin",
+        "displayName": "Society Admin"
+      }
+    ],
+
+    // Flat string form (fallback)
+    "role": "society_admin",
+
+    // Display name string (fallback)
+    "roleDisplayName": "Society Admin"
+  }
+
+Rules:
+- "roles" must be an array, even if the user has only one role.
+- "role" and "roleDisplayName" are fallback fields — include all three.
+- Values for "code" must be exactly: "society_admin" or "viewer" (lowercase,
+  underscore-separated). Do NOT use "member", "admin", "treasurer",
+  or any other string.
+- Values for "displayName" / "roleDisplayName" must be exactly:
+  "Society Admin" or "Viewer".
+
+
+3. SERVER-SIDE ROLE ENFORCEMENT (403 FORBIDDEN)
+------------------------------------------------
+The backend MUST enforce role checks on all mutating endpoints.
+Viewers (role code: "viewer") must receive HTTP 403 on any of the following:
+
+  EXPENSES
+    POST   /api/expenses              — create expense
+    PUT    /api/expenses/:id          — update expense
+    DELETE /api/expenses/:id          — delete expense
+
+  MAINTENANCE / PAYMENTS
+    POST   /api/maintenance           — record payment
+    PUT    /api/maintenance/:id       — update payment
+    DELETE /api/maintenance/:id       — delete payment
+
+  FLATS
+    POST   /api/flats                 — create flat
+    PUT    /api/flats/:id             — update flat
+    DELETE /api/flats/:id             — delete flat
+
+  USERS / MEMBERS
+    POST   /api/users/invite          — invite user
+    PUT    /api/users/:id             — update user / change role
+    DELETE /api/users/:id             — remove user
+
+  SETTINGS
+    PUT    /api/settings              — update society settings
+    PUT    /api/settings/branding     — update branding
+    PUT    /api/settings/billing      — update billing config
+    POST   /api/settings/payment-gateway — configure payment gateway
+
+  BILLING
+    POST   /api/billing/generate      — generate bills
+    POST   /api/billing/send-reminder — send reminders
+
+  OPENING BALANCE
+    POST   /api/opening-balance       — set opening balance
+    PUT    /api/opening-balance/:id   — update opening balance
+
+  SUBSCRIPTION
+    POST   /api/subscription/subscribe   — subscribe to plan
+    POST   /api/subscription/cancel      — cancel subscription
+    POST   /api/subscription/upgrade     — upgrade plan
+
+READ endpoints (GET) are accessible to both roles.
+
+Error response format for 403:
+  {
+    "error": "Forbidden",
+    "message": "You do not have permission to perform this action."
+  }
+
+
+4. USERS API RESPONSE CONTRACT
+-------------------------------
+Every user object returned by GET /api/users (list or detail) MUST include:
+
+  {
+    "id": "<user_id>",
+    "name": "<full_name>",
+    "email": "<email>",
+    "phone": "<phone_or_null>",
+    "flatNumber": "<flat_or_null>",
+
+    // Array form
+    "roles": [
+      {
+        "id": 1,
+        "code": "society_admin",
+        "displayName": "Society Admin"
+      }
+    ],
+
+    // Flat fallback
+    "role": "society_admin",
+    "roleDisplayName": "Society Admin"
+  }
+
+The "roleDisplayName" field is used by the frontend to display the user's
+role in the Users management table. If omitted, the role column will be blank.
+
+
+5. INVITE / CREATE USER ENDPOINT
+----------------------------------
+POST /api/users/invite must accept a "roleCode" field in the request body:
+
+  {
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "phone": "9876543210",
+    "flatNumber": "A-101",
+    "roleCode": "viewer"        // "society_admin" or "viewer"
+  }
+
+- If "roleCode" is omitted, default to "viewer".
+- If an invalid roleCode is sent, return HTTP 400 with a descriptive error.
+
+
+6. ROLE CHANGE ENDPOINT
+------------------------
+PUT /api/users/:id must accept a "roleCode" field:
+
+  {
+    "roleCode": "society_admin"   // or "viewer"
+  }
+
+Only a society_admin may call this endpoint (enforce server-side).
+
+
+7. SUMMARY CHECKLIST
+---------------------
+  [ ] roles table has exactly: society_admin (id=1) and viewer (id=6)
+  [ ] JWT includes "roles" array, "role" string, and "roleDisplayName" string
+  [ ] role "code" values are exactly "society_admin" and "viewer"
+  [ ] all mutating endpoints return 403 for viewer role
+  [ ] GET endpoints are accessible to both roles
+  [ ] user objects in API responses include "roleDisplayName"
+  [ ] invite endpoint accepts "roleCode" field
+  [ ] role change endpoint accepts "roleCode" field
+  [ ] no other role codes exist in the system (no "member", "treasurer", etc.)
+
+====================================================
+END OF REQUIREMENTS
+====================================================
