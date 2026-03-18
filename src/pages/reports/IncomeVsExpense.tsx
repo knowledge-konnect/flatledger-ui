@@ -165,9 +165,9 @@ export default function IncomeVsExpensePage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Month</TableHead>
-                      <TableHead>Income</TableHead>
-                      <TableHead>Expense</TableHead>
-                      <TableHead>Net</TableHead>
+                      <TableHead className="text-right">Income</TableHead>
+                      <TableHead className="text-right">Expense</TableHead>
+                      <TableHead className="text-right">Net</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

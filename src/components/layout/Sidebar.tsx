@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Wrench, IndianRupee, BarChart3, Users, Settings, LogOut, X, ChevronDown, BarChart2, AlertTriangle, TrendingUp, BookOpen, CreditCard, PieChart } from 'lucide-react';
+import { LayoutDashboard, Building2, Wrench, IndianRupee, BarChart3, Users, Settings, LogOut, X, ChevronDown, BarChart2, AlertTriangle, TrendingUp, PieChart } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthProvider';
 import { isAdminRole, collectUserRoles, RoleDisplayName } from '../../types/roles';
 import { useToast } from '../ui/Toast';
@@ -11,8 +11,6 @@ const reportsSubItems = [
   { name: 'Billing Summary',      href: '/reports/collection-summary', icon: BarChart2 },
   { name: 'Outstanding Dues',     href: '/reports/defaulters',          icon: AlertTriangle },
   { name: 'Income & Expenses',    href: '/reports/income-vs-expense',  icon: TrendingUp },
-  { name: 'Fund Transactions',    href: '/reports/fund-ledger',         icon: BookOpen },
-  { name: 'Payments Received',    href: '/reports/payment-register',   icon: CreditCard },
   { name: 'Expenses by Category', href: '/reports/expense-by-category', icon: PieChart },
 ];
 

@@ -35,8 +35,8 @@ export default function AdminSocieties() {
     setPage(1);
   };
 
-  const items = data?.data.data.items ?? [];
-  const totalCount = data?.data.data.totalCount ?? 0;
+  const items = data?.data?.data?.items ?? [];
+  const totalCount = data?.data?.data?.totalCount ?? 0;
 
   const columns: AdminColumn<AdminSocietyDto>[] = [
     {

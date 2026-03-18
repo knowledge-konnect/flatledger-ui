@@ -32,9 +32,14 @@ let _adminInitialized = false;
 export const setAdminInitialized = () => { _adminInitialized = true; };
 
 // ─── Axios instance ───────────────────────────────────────────────────────────
+// Always call Render directly — bypasses the Vite dev proxy so admin requests
+// never get intercepted by the user-side proxy configuration.
+const _adminBaseUrl = (import.meta.env.VITE_ADMIN_API_URL as string | undefined)?.replace(/\/+$/, '')
+  || (import.meta.env.VITE_APP_API_URL as string | undefined)?.replace(/\/+$/, '')
+  || '';
+
 export const adminClient = axios.create({
-  // Use VITE_API_BASE_URL if set; fallback to proxy base (which proxies /api)
-  baseURL: (import.meta.env.VITE_API_BASE_URL as string | undefined) || '',
+  baseURL: _adminBaseUrl,
   headers: { 'Content-Type': 'application/json' },
   timeout: 30_000,
 });

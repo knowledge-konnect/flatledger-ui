@@ -22,8 +22,8 @@ import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 const expenseSchema = z.object({
   date: z.string().min(1, 'Date is required'),
   categoryCode: z.string().min(1, 'Category is required'),
-  vendor: z.string().min(1, 'Vendor name is required'),
-  description: z.string().min(1, 'Description is required'),
+  vendor: z.string().optional(),
+  description: z.string().optional(),
   amount: z.string().min(1, 'Amount is required'),
 });
 
@@ -653,16 +653,16 @@ export default function Expenses() {
           </CardHeader>
           <CardContent className="p-0">
             {isLoading ? (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gradient-to-r from-slate-50 via-slate-50/70 to-slate-50 dark:from-slate-800/50 dark:via-slate-800/30 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Category</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Vendor</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">Added By</th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Actions</th>
+                    <tr className="bg-emerald-800 dark:bg-emerald-950 border-b border-emerald-700 dark:border-emerald-900 divide-x divide-emerald-700 dark:divide-emerald-900">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Category</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Vendor</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">Added By</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -675,21 +675,21 @@ export default function Expenses() {
             ) : filteredAndSortedExpenses.length === 0 ? (
               <EmptyState />
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gradient-to-r from-slate-50 via-slate-50/70 to-slate-50 dark:from-slate-800/50 dark:via-slate-800/30 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Category</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Vendor</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Amount</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">Added By</th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Actions</th>
+                    <tr className="bg-emerald-800 dark:bg-emerald-950 border-b border-emerald-700 dark:border-emerald-900 divide-x divide-emerald-700 dark:divide-emerald-900">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Category</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Vendor</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">Added By</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                     {filteredAndSortedExpenses.map((expense) => (
-                      <tr key={expense.publicId} className="group hover:bg-gradient-to-r hover:from-emerald-50/50 hover:to-purple-50/50 dark:hover:from-emerald-950/20 dark:hover:to-purple-950/20 transition-all duration-200">
+                      <tr key={expense.publicId} className="group hover:bg-gradient-to-r hover:from-emerald-50/50 hover:to-purple-50/50 dark:hover:from-emerald-950/20 dark:hover:to-purple-950/20 transition-all duration-200 divide-x divide-slate-100 dark:divide-slate-700/60">
                         <td className="px-6 py-3 whitespace-nowrap">
                           <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{formatDate(expense.dateIncurred)}</span>
                         </td>
@@ -795,13 +795,13 @@ export default function Expenses() {
                         {/* Right column */}
                         <div className="space-y-4">
                           <Input
-                            label="Vendor Name"
+                            label="Vendor Name (Optional)"
                             placeholder="e.g., ACME Plumbing"
                             error={errors.vendor?.message}
                             {...register('vendor')}
                           />
                           <Input
-                            label="Description"
+                            label="Description (Optional)"
                             placeholder="e.g., Pipe repair in building"
                             error={errors.description?.message}
                             {...register('description')}
