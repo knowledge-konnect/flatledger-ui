@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { X, AlertTriangle, Check } from 'lucide-react';
 import { FlatDto } from '../../api/flatsApi';
 import { OpeningBalanceSummary } from '../../types/openingBalance.types';
@@ -81,11 +81,11 @@ export default function OpeningBalancePreviewModal({
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="p-4 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20 border-indigo-200 dark:border-indigo-800">
-              <div className="text-sm font-medium text-indigo-700 dark:text-indigo-300 mb-1">
+            <Card className="p-4 bg-gradient-to-br from-emerald-50 to-purple-50 dark:from-emerald-950/20 dark:to-purple-950/20 border-emerald-200 dark:border-emerald-800">
+              <div className="text-sm font-medium text-emerald-700 dark:text-emerald-300 mb-1">
                 Society Opening Fund
               </div>
-              <div className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">
+              <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
                 {formatCurrency(summary.societyBalance)}
               </div>
             </Card>
@@ -176,7 +176,7 @@ export default function OpeningBalancePreviewModal({
                 checked={confirmed}
                 onChange={(e) => setConfirmed(e.target.checked)}
                 disabled={isSubmitting}
-                className="mt-1 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                className="mt-1 h-4 w-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
               />
               <div className="flex-1">
                 <div className="font-semibold text-slate-900 dark:text-slate-100 mb-1">

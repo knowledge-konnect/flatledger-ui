@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { ArrowRight, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSetupProgress } from '../../hooks/useSetupProgress';
@@ -41,7 +41,7 @@ export default function SetupBanner() {
   };
 
   return (
-    <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 rounded-xl px-4 py-3">
+    <div className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3">
 
       {/* Circular progress indicator */}
       <div className="flex-shrink-0 relative w-9 h-9">
@@ -51,7 +51,7 @@ export default function SetupBanner() {
             cx="16" cy="16" r="12"
             fill="none"
             strokeWidth="3.5"
-            className="stroke-indigo-100 dark:stroke-indigo-900"
+            className="stroke-emerald-100 dark:stroke-emerald-900"
           />
           {/* Progress arc */}
           <circle
@@ -60,21 +60,21 @@ export default function SetupBanner() {
             strokeWidth="3.5"
             strokeDasharray={`${strokeDash} ${CIRCUMFERENCE}`}
             strokeLinecap="round"
-            className="stroke-indigo-600 dark:stroke-indigo-400 transition-all duration-500"
+            className="stroke-emerald-600 dark:stroke-emerald-400 transition-all duration-500"
           />
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-indigo-700 dark:text-indigo-300">
+        <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-emerald-700 dark:text-emerald-300">
           {progress}%
         </span>
       </div>
 
       {/* Text */}
       <div className="flex-1 min-w-0">
-        <span className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">
+        <span className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
           Setup {completedCount}/{steps.length} complete
         </span>
         {nextStep && (
-          <span className="text-sm text-indigo-700 dark:text-indigo-300 ml-2 hidden sm:inline">
+          <span className="text-sm text-emerald-700 dark:text-emerald-300 ml-2 hidden sm:inline">
             — Next: <span className="font-medium">{nextStep.label}</span>
           </span>
         )}
@@ -83,7 +83,7 @@ export default function SetupBanner() {
       {/* Continue CTA */}
       <button
         onClick={() => navigate('/setup')}
-        className="flex-shrink-0 flex items-center gap-1 text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-100 transition-colors whitespace-nowrap"
+        className="flex-shrink-0 flex items-center gap-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-100 transition-colors whitespace-nowrap"
       >
         Continue Setup
         <ArrowRight className="w-4 h-4" />
@@ -93,7 +93,7 @@ export default function SetupBanner() {
       <button
         onClick={handleDismiss}
         aria-label="Dismiss setup banner"
-        className="flex-shrink-0 text-indigo-300 dark:text-indigo-700 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+        className="flex-shrink-0 text-emerald-300 dark:text-emerald-700 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
       >
         <X className="w-4 h-4" />
       </button>

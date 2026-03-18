@@ -1,4 +1,4 @@
-// API Constants
+﻿// API Constants
 export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: '/auth/login',
@@ -76,9 +76,9 @@ export const STATUS_COLORS = {
     border: 'border-red-200 dark:border-red-800',
   },
   info: {
-    bg: 'bg-blue-100 dark:bg-blue-900/30',
-    text: 'text-blue-700 dark:text-blue-300',
-    border: 'border-blue-200 dark:border-blue-800',
+    bg: 'bg-sky-100 dark:bg-sky-900/30',
+    text: 'text-sky-700 dark:text-sky-300',
+    border: 'border-sky-200 dark:border-sky-800',
   },
 };
 

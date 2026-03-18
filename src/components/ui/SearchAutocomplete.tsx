@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { Search, X, Clock } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -125,7 +125,7 @@ export function SearchAutocomplete({
     
     return parts.map((part, i) =>
       regex.test(part) ? (
-        <mark key={i} className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-semibold">
+        <mark key={i} className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 font-semibold">
           {part}
         </mark>
       ) : (
@@ -157,7 +157,7 @@ export function SearchAutocomplete({
             'border-2 border-slate-200 dark:border-slate-700',
             'text-slate-900 dark:text-white',
             'placeholder:text-slate-400 dark:placeholder:text-slate-500',
-            'focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20',
+            'focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20',
             'transition-all duration-200'
           )}
         />
@@ -179,7 +179,7 @@ export function SearchAutocomplete({
         <div className="absolute top-full left-0 right-0 mt-2 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-50 max-h-96 overflow-y-auto animate-scale-in">
           {isLoading ? (
             <div className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto mb-2"></div>
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600 mx-auto mb-2"></div>
               <p className="text-sm">Searching...</p>
             </div>
           ) : query ? (
@@ -192,7 +192,7 @@ export function SearchAutocomplete({
                   className={cn(
                     'w-full px-4 py-3 text-left flex items-center gap-3 transition-colors',
                     selectedIndex === index
-                      ? 'bg-indigo-50 dark:bg-indigo-900/30'
+                      ? 'bg-emerald-50 dark:bg-emerald-900/30'
                       : 'hover:bg-slate-50 dark:hover:bg-slate-800'
                   )}
                 >
@@ -223,7 +223,7 @@ export function SearchAutocomplete({
                 </span>
                 <button
                   onClick={clearRecentSearches}
-                  className="text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                  className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
                 >
                   Clear
                 </button>
@@ -235,7 +235,7 @@ export function SearchAutocomplete({
                   className={cn(
                     'w-full px-4 py-3 text-left flex items-center gap-3 transition-colors',
                     selectedIndex === index
-                      ? 'bg-indigo-50 dark:bg-indigo-900/30'
+                      ? 'bg-emerald-50 dark:bg-emerald-900/30'
                       : 'hover:bg-slate-50 dark:hover:bg-slate-800'
                   )}
                 >

@@ -1,4 +1,4 @@
-import { Building2 } from 'lucide-react';
+﻿import { Building2 } from 'lucide-react';
 import Card from '../ui/Card';
 import { FlatDto } from '../../api/flatsApi';
 
@@ -26,7 +26,7 @@ function getOccupancyGroups(flats: FlatDto[]): StatusGroup[] {
 
   return [
     { label: 'Owner Occupied', count: counts.occupied, dot: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-400' },
-    { label: 'Rented Out',     count: counts.rented,   dot: 'bg-blue-500',    text: 'text-blue-600 dark:text-blue-400' },
+    { label: 'Rented Out',     count: counts.rented,   dot: 'bg-sky-500',    text: 'text-sky-600 dark:text-sky-400' },
     { label: 'Vacant',         count: counts.vacant,   dot: 'bg-amber-500',   text: 'text-amber-600 dark:text-amber-400' },
   ];
 }

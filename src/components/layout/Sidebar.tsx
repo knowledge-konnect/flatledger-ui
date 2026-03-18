@@ -1,8 +1,8 @@
 ﻿import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Wrench, IndianRupee, BarChart3, Users, Settings, LogOut, X, ChevronDown, BarChart2, AlertTriangle, TrendingUp, BookOpen, CreditCard, PieChart } from 'lucide-react';
+import { LayoutDashboard, Building2, Wrench, IndianRupee, BarChart3, Users, Settings, LogOut, X, ChevronDown, BarChart2, AlertTriangle, TrendingUp, PieChart } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthProvider';
-import { isFinancialRole, collectUserRoles, RoleDisplayName } from '../../types/roles';
+import { isAdminRole, collectUserRoles, RoleDisplayName } from '../../types/roles';
 import { useToast } from '../ui/Toast';
 import { cn } from '../../lib/utils';
 import { AlertMessages } from '../../lib/alertMessages';
@@ -11,8 +11,6 @@ const reportsSubItems = [
   { name: 'Billing Summary',      href: '/reports/collection-summary', icon: BarChart2 },
   { name: 'Outstanding Dues',     href: '/reports/defaulters',          icon: AlertTriangle },
   { name: 'Income & Expenses',    href: '/reports/income-vs-expense',  icon: TrendingUp },
-  { name: 'Fund Transactions',    href: '/reports/fund-ledger',         icon: BookOpen },
-  { name: 'Payments Received',    href: '/reports/payment-register',   icon: CreditCard },
   { name: 'Expenses by Category', href: '/reports/expense-by-category', icon: PieChart },
 ];
 
@@ -20,13 +18,13 @@ const navGroups = [
   {
     label: 'Overview',
     items: [
-      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, iconColor: 'text-blue-500', iconBg: 'bg-blue-50 dark:bg-blue-950/60' },
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, iconColor: 'text-emerald-500', iconBg: 'bg-emerald-50 dark:bg-emerald-950/60' },
     ],
   },
   {
     label: 'Management',
     items: [
-      { name: 'Flats', href: '/flats', icon: Building2, iconColor: 'text-indigo-500', iconBg: 'bg-indigo-50 dark:bg-indigo-950/60' },
+      { name: 'Flats', href: '/flats', icon: Building2, iconColor: 'text-emerald-500', iconBg: 'bg-emerald-50 dark:bg-emerald-950/60' },
       { name: 'Maintenance', href: '/maintenance', icon: Wrench, iconColor: 'text-orange-500', iconBg: 'bg-orange-50 dark:bg-orange-950/60' },
       { name: 'Expenses', href: '/expenses', icon: IndianRupee, iconColor: 'text-red-500', iconBg: 'bg-red-50 dark:bg-red-950/60' },
       { name: 'Reports', href: '/reports', icon: BarChart3, iconColor: 'text-violet-500', iconBg: 'bg-violet-50 dark:bg-violet-950/60' },
@@ -35,8 +33,8 @@ const navGroups = [
   {
     label: 'Admin',
     items: [
-      { name: 'Users', href: '/users', icon: Users, iconColor: 'text-emerald-500', iconBg: 'bg-emerald-50 dark:bg-emerald-950/60' },
-      { name: 'Settings', href: '/settings', icon: Settings, iconColor: 'text-slate-500', iconBg: 'bg-slate-100 dark:bg-slate-800/60' },
+      { name: 'Users', href: '/users', icon: Users, iconColor: 'text-emerald-500', iconBg: 'bg-emerald-50 dark:bg-emerald-950/60', adminOnly: true },
+      { name: 'Settings', href: '/settings', icon: Settings, iconColor: 'text-slate-500', iconBg: 'bg-slate-100 dark:bg-slate-800/60', adminOnly: true },
     ],
   },
 ];
@@ -52,22 +50,22 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
   const { logout, user } = useAuth();
   const { showToast } = useToast();
 
-  // Check if user holds a financial-level role (Society Admin, Admin or Treasurer)
-  const isAdminUser = isFinancialRole(collectUserRoles(user));
+  // Check if user is Society Admin
+  const isAdminUser = isAdminRole(collectUserRoles(user));
 
   const userInitials = ((name: string) => {
     const words = name.trim().split(/\s+/);
     return words.map(w => w[0]).slice(0, 2).join('').toUpperCase();
   })(user?.name || user?.email || 'U');
 
-  const rawRole = user?.roleDisplayName || user?.roles?.[0] || user?.role || RoleDisplayName.VIEWER;
+  const rawRole = String(user?.roleDisplayName || user?.roles?.[0] || user?.role || RoleDisplayName.VIEWER);
   const userRole = rawRole.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
   return (
     <>
       {isMobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm animate-fade-in transition-all duration-200"
+          className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-fade-in transition-all duration-200"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
@@ -75,7 +73,8 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
       <aside
         id="sidebar"
         className={cn(
-          'fixed top-0 left-0 bottom-0 w-64 bg-white dark:bg-[#020617] border-r border-[#E2E8F0] dark:border-[#1E293B] z-50 transform transition-all duration-200',
+          'fixed top-0 left-0 bottom-0 w-64 z-50 transform transition-all duration-200',
+          'bg-emerald-950 border-r border-emerald-900/60',
           'lg:translate-x-0',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
@@ -83,35 +82,35 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
         data-testid="sidebar-menu"
       >
         <div className="h-full flex flex-col">
-          {/* Header - Premium Branding */}
-          <div className="h-16 px-4 border-b border-[#E2E8F0] dark:border-[#1E293B] flex items-center justify-between">
+          {/* Header */}
+          <div className="h-16 px-4 border-b border-emerald-900/60 flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] dark:from-[#3B82F6] dark:to-[#2563EB] flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-sm">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 shadow-lg shadow-emerald-900/50">
                 {((name: string) => {
                   const words = name.trim().split(/\s+/);
                   return words.map(w => w[0]).slice(0, 2).join('').toUpperCase();
                 })(user?.societyName || 'SL')}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#0F172A] dark:text-[#F8FAFC] truncate">
+                <p className="text-sm font-semibold text-white truncate">
                   {user?.societyName || 'FlatLedger'}
                 </p>
-                <p className="text-xs text-[#64748B] dark:text-[#94A3B8] truncate">
+                <p className="text-[11px] text-emerald-400/70 truncate font-medium">
                   Management
                 </p>
               </div>
             </div>
             <button
               onClick={() => setIsMobileOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="lg:hidden p-2 rounded-lg hover:bg-emerald-900/60 transition-colors"
               data-testid="close-sidebar-btn"
             >
-              <X className="w-5 h-5 text-[#64748B] dark:text-[#94A3B8]" />
+              <X className="w-5 h-5 text-emerald-400/70" />
             </button>
           </div>
 
           {/* Navigation - Grouped */}
-          <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-hide space-y-4">
+          <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-hide space-y-5">
             {navGroups.map((group) => {
               const visibleItems = group.items.filter(item =>
                 !('adminOnly' in item && item.adminOnly && !isAdminUser)
@@ -120,7 +119,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
 
               return (
                 <div key={group.label}>
-                  <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-[#94A3B8] dark:text-[#475569]">
+                  <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-widest text-emerald-500/50">
                     {group.label}
                   </p>
                   <div className="space-y-0.5">
@@ -133,22 +132,21 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                             <button
                               onClick={() => setReportsOpen(v => !v)}
                               className={cn(
-                                'w-full flex items-center gap-3 pl-3 pr-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 relative group',
+                                'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
                                 isParentActive
-                                  ? 'bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 text-[#2563EB] dark:text-[#3B82F6] border-l-2 border-[#2563EB] dark:border-[#3B82F6] pl-[10px]'
-                                  : 'text-[#64748B] dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:text-[#0F172A] dark:hover:text-[#F8FAFC] border-l-2 border-transparent hover:translate-x-0.5'
+                                  ? 'bg-emerald-500 text-white shadow-md shadow-emerald-900/50'
+                                  : 'text-emerald-100/60 hover:bg-emerald-900/70 hover:text-emerald-50'
                               )}
                               data-testid="nav-reports"
                             >
-                              <span className={cn(
-                                'flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0 transition-colors duration-150',
-                                item.iconBg
-                              )}>
-                                <item.icon className={cn('w-4 h-4', item.iconColor)} />
-                              </span>
+                              <item.icon className={cn(
+                                'w-4 h-4 flex-shrink-0 transition-colors duration-150',
+                                isParentActive ? 'text-white' : 'text-emerald-400/70'
+                              )} />
                               <span className="flex-1 text-left">{item.name}</span>
                               <ChevronDown className={cn(
                                 'w-4 h-4 transition-transform duration-200 flex-shrink-0',
+                                isParentActive ? 'text-white/80' : 'text-emerald-400/50',
                                 reportsOpen ? 'rotate-180' : ''
                               )} />
                             </button>
@@ -156,12 +154,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                               'overflow-hidden transition-all duration-200 ease-in-out',
                               reportsOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                             )}>
-                              <div className={cn(
-                                'ml-4 mt-0.5 mb-1 space-y-0.5 border-l-2 pl-3 transition-colors duration-200',
-                                isParentActive
-                                  ? 'border-[#2563EB]/50 dark:border-[#3B82F6]/50'
-                                  : 'border-slate-200 dark:border-slate-700'
-                              )}>
+                              <div className="ml-3 mt-1 mb-1 space-y-0.5 border-l border-emerald-800/60 pl-3">
                                 {reportsSubItems.map(child => {
                                   const isChildActive = currentPath === child.href || currentPath.startsWith(child.href + '/');
                                   return (
@@ -170,14 +163,17 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                                       to={child.href}
                                       onClick={() => setIsMobileOpen(false)}
                                       className={cn(
-                                        'flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-150 border-l-2',
+                                        'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150',
                                         isChildActive
-                                          ? 'bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 text-[#2563EB] dark:text-[#3B82F6] font-semibold border-[#2563EB] dark:border-[#3B82F6]'
-                                          : 'text-[#64748B] dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:text-[#0F172A] dark:hover:text-[#F8FAFC] border-transparent hover:translate-x-0.5'
+                                          ? 'bg-emerald-500/20 text-emerald-300 font-semibold'
+                                          : 'text-emerald-100/50 hover:bg-emerald-900/60 hover:text-emerald-100'
                                       )}
                                       data-testid={`nav-${child.name.toLowerCase().replace(/\s+/g, '-')}`}
                                     >
-                                      <child.icon className={cn('w-3.5 h-3.5 flex-shrink-0', isChildActive ? 'text-[#2563EB] dark:text-[#3B82F6]' : '')} />
+                                      <child.icon className={cn(
+                                        'w-3.5 h-3.5 flex-shrink-0',
+                                        isChildActive ? 'text-emerald-400' : 'text-emerald-500/50'
+                                      )} />
                                       <span className="flex-1">{child.name}</span>
                                     </Link>
                                   );
@@ -195,19 +191,17 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                           key={item.name}
                           to={item.href}
                           className={cn(
-                            'flex items-center gap-3 pl-3 pr-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 relative group',
+                            'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
                             isActive
-                              ? 'bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 text-[#2563EB] dark:text-[#3B82F6] border-l-2 border-[#2563EB] dark:border-[#3B82F6] pl-[10px]'
-                              : 'text-[#64748B] dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:text-[#0F172A] dark:hover:text-[#F8FAFC] border-l-2 border-transparent hover:translate-x-0.5'
+                              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-900/50'
+                              : 'text-emerald-100/60 hover:bg-emerald-900/70 hover:text-emerald-50'
                           )}
                           data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                         >
-                          <span className={cn(
-                            'flex items-center justify-center w-7 h-7 rounded-md flex-shrink-0 transition-colors duration-150',
-                            item.iconBg
-                          )}>
-                            <item.icon className={cn('w-4 h-4', item.iconColor)} />
-                          </span>
+                          <item.icon className={cn(
+                            'w-4 h-4 flex-shrink-0 transition-colors duration-150',
+                            isActive ? 'text-white' : 'text-emerald-400/70'
+                          )} />
                           <span className="flex-1">{item.name}</span>
                         </Link>
                       );
@@ -219,16 +213,16 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
           </nav>
 
           {/* User Profile Card + Logout */}
-          <div className="p-3 border-t border-[#E2E8F0] dark:border-[#1E293B]">
-            <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] dark:from-[#3B82F6] dark:to-[#2563EB] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+          <div className="p-3 border-t border-emerald-900/60">
+            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-900/50">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm">
                 {userInitials}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9] truncate">
+                <p className="text-xs font-semibold text-white truncate">
                   {user?.name || user?.email || 'User'}
                 </p>
-                <p className="text-[10px] text-[#64748B] dark:text-[#94A3B8] truncate">{userRole}</p>
+                <p className="text-[10px] text-emerald-400/60 truncate">{userRole}</p>
               </div>
               <button
                 onClick={async () => {
@@ -243,7 +237,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                 }}
                 disabled={isLoggingOut}
                 title="Logout"
-                className="p-1.5 rounded-md text-[#94A3B8] hover:text-[#DC2626] dark:hover:text-[#EF4444] hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-150 disabled:opacity-50 flex-shrink-0"
+                className="p-1.5 rounded-lg text-emerald-400/50 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150 disabled:opacity-50 flex-shrink-0"
                 data-testid="sidebar-logout-btn"
               >
                 <LogOut className="w-4 h-4" />
@@ -255,3 +249,4 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
     </>
   );
 }
+

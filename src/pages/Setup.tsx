@@ -85,7 +85,7 @@ export default function Setup() {
 
           {/* ── Header ───────────────────────────────────────────────────── */}
           <div className="text-center space-y-3">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-700 shadow-lg shadow-emerald-500/30">
               {isComplete ? (
                 <Sparkles className="w-8 h-8 text-white" />
               ) : (
@@ -108,13 +108,13 @@ export default function Setup() {
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                 Overall Progress
               </span>
-              <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
+              <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                 {progress}%
               </span>
             </div>
             <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out"
+                className="h-full bg-emerald-500 transition-all duration-500 ease-out"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -139,7 +139,7 @@ export default function Setup() {
                     isDone
                       ? 'border-green-200 dark:border-green-800 bg-green-50/40 dark:bg-green-950/10'
                       : isNext
-                      ? 'border-indigo-300 dark:border-indigo-700 shadow-md ring-1 ring-indigo-200 dark:ring-indigo-800'
+                      ? 'border-emerald-300 dark:border-emerald-700 shadow-md ring-1 ring-emerald-200 dark:ring-emerald-800'
                       : 'border-slate-200 dark:border-slate-800 opacity-60'
                   }`}
                 >
@@ -150,7 +150,7 @@ export default function Setup() {
                         isDone
                           ? 'bg-green-100 dark:bg-green-900/40'
                           : isNext
-                          ? 'bg-indigo-100 dark:bg-indigo-900/40'
+                          ? 'bg-emerald-100 dark:bg-emerald-900/40'
                           : 'bg-slate-100 dark:bg-slate-800'
                       }`}
                     >
@@ -160,7 +160,7 @@ export default function Setup() {
                         <Icon
                           className={`w-5 h-5 ${
                             isNext
-                              ? 'text-indigo-600 dark:text-indigo-400'
+                              ? 'text-emerald-600 dark:text-emerald-400'
                               : 'text-slate-400 dark:text-slate-500'
                           }`}
                         />
@@ -179,7 +179,7 @@ export default function Setup() {
                           </span>
                         )}
                         {!isDone && isNext && (
-                          <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/40 px-2 py-0.5 rounded-full">
+                          <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full">
                             Up Next
                           </span>
                         )}

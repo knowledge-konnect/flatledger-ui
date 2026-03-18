@@ -20,7 +20,7 @@ import { useNotifications, useUpdateNotifications } from "../hooks/useNotificati
 import { useToast } from "../components/ui/Toast"
 import { cn } from "../lib/utils"
 import { useOpeningBalanceStatus } from "../hooks/useOpeningBalance"
-import { isAdminRole, isFinancialRole, collectUserRoles } from "../types/roles"
+import { isAdminRole, collectUserRoles } from "../types/roles"
 
 const NAV_SECTIONS: { label: string; items: { id: string; label: string; icon: React.ElementType; description: string; adminOnly?: boolean; href?: string }[] }[] = [
   {
@@ -106,7 +106,6 @@ export default function SettingsPageRedesigned() {
 
   const allRoles = collectUserRoles(user)
   const isAdmin = isAdminRole(allRoles)
-  const isTreasurer = isFinancialRole(allRoles)
 
   useEffect(() => {
     if (society.data) {
@@ -245,7 +244,7 @@ export default function SettingsPageRedesigned() {
   const visibleSections = NAV_SECTIONS.map(section => ({
     ...section,
     items: section.items.filter(item => {
-      if (item.adminOnly) return isAdmin || isTreasurer
+      if (item.adminOnly) return isAdmin
       return true
     })
   })).filter(s => s.items.length > 0)
@@ -286,14 +285,14 @@ export default function SettingsPageRedesigned() {
                           className={cn(
                             'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 text-left group',
                             isActive
-                              ? 'bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 text-[#2563EB] dark:text-[#3B82F6]'
+                              ? 'bg-primary/10 dark:bg-primary-500/10 text-primary dark:text-primary-500'
                               : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-slate-100'
                           )}
                         >
                           <span className={cn(
                             'w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors',
                             isActive
-                              ? 'bg-[#2563EB]/15 dark:bg-[#3B82F6]/15'
+                              ? 'bg-primary/15 dark:bg-primary-500/15'
                               : 'bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700'
                           )}>
                             <item.icon className="w-3.5 h-3.5" />
@@ -324,14 +323,14 @@ export default function SettingsPageRedesigned() {
             {activeSection === 'profile' && (
               <>
                 {/* Identity banner */}
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 p-6 flex items-center gap-5 shadow">
+                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-500 to-emerald-600 dark:from-emerald-600 dark:to-emerald-700 p-6 flex items-center gap-5 shadow">
                   <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)' }} />
                   <div className="relative w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-2xl flex-shrink-0">
                     {initials}
                   </div>
                   <div className="relative">
                     <p className="text-white font-bold text-lg">{displayName || 'Loading...'}</p>
-                    <p className="text-blue-100 text-sm">{displayEmail}</p>
+                    <p className="text-emerald-100 text-sm">{displayEmail}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">{user?.role || user?.roles?.[0] || 'Member'}</span>
                       {user?.societyName && (
@@ -368,7 +367,7 @@ export default function SettingsPageRedesigned() {
                           value={profileFormData.mobile}
                           onChange={e => setProfileFormData(p => ({ ...p, mobile: e.target.value }))}
                         />
-                        <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveProfile} disabled={isSaving}>
+                        <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveProfile} disabled={isSaving || !isAdmin}>
                           {isSaving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                           {isSaving ? 'Saving...' : 'Save Mobile'}
                         </Button>
@@ -433,7 +432,7 @@ export default function SettingsPageRedesigned() {
                       <h3 className="font-semibold text-slate-800 dark:text-slate-200">Society Information</h3>
                       <p className="text-xs text-slate-400 mt-0.5">Visible to all members of your society</p>
                     </div>
-                    <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 font-medium">Admin Only</span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-300 font-medium">Admin Only</span>
                   </div>
                   {society.isLoading ? (
                     <div className="flex items-center justify-center py-10"><Loader className="w-5 h-5 animate-spin text-slate-400" /></div>
@@ -444,9 +443,9 @@ export default function SettingsPageRedesigned() {
                     </div>
                   ) : (
                     <div className="max-w-sm space-y-4">
-                      <Input label="Society Name" placeholder="Enter society name" value={societyFormData.name} onChange={e => setSocietyFormData(p => ({ ...p, name: e.target.value }))} />
-                      <Input label="Address" placeholder="Enter address" value={societyFormData.address} onChange={e => setSocietyFormData(p => ({ ...p, address: e.target.value }))} />
-                      <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveSociety} disabled={updateSociety.isPending}>
+                      <Input label="Society Name" placeholder="Enter society name" value={societyFormData.name} onChange={e => setSocietyFormData(p => ({ ...p, name: e.target.value }))} disabled={!isAdmin} />
+                      <Input label="Address" placeholder="Enter address" value={societyFormData.address} onChange={e => setSocietyFormData(p => ({ ...p, address: e.target.value }))} disabled={!isAdmin} />
+                      <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveSociety} disabled={updateSociety.isPending || !isAdmin}>
                         {updateSociety.isPending ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         {updateSociety.isPending ? 'Saving...' : 'Save Changes'}
                       </Button>
@@ -477,7 +476,7 @@ export default function SettingsPageRedesigned() {
                           <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><IndianRupee className="w-4 h-4" /></span>
                             <input
-                              className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                               placeholder="e.g. 2000" type="number" min={0}
                               value={maintenanceForm.defaultMonthlyCharge}
                               onChange={e => setMaintenanceForm(p => ({ ...p, defaultMonthlyCharge: Number(e.target.value) }))}
@@ -488,7 +487,7 @@ export default function SettingsPageRedesigned() {
                         <div>
                           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Due Day of Month</label>
                           <input
-                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             placeholder="e.g. 5" type="number" min={1} max={28}
                             value={maintenanceForm.dueDayOfMonth}
                             onChange={e => setMaintenanceForm(p => ({ ...p, dueDayOfMonth: Number(e.target.value) }))}
@@ -500,7 +499,7 @@ export default function SettingsPageRedesigned() {
                           <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><IndianRupee className="w-4 h-4" /></span>
                             <input
-                              className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                               placeholder="e.g. 100" type="number" min={0}
                               value={maintenanceForm.lateFeePerMonth}
                               onChange={e => setMaintenanceForm(p => ({ ...p, lateFeePerMonth: Number(e.target.value) }))}
@@ -511,7 +510,7 @@ export default function SettingsPageRedesigned() {
                         <div>
                           <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider block mb-1.5">Grace Period (days)</label>
                           <input
-                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             placeholder="e.g. 5" type="number" min={0}
                             value={maintenanceForm.gracePeriodDays}
                             onChange={e => setMaintenanceForm(p => ({ ...p, gracePeriodDays: Number(e.target.value) }))}
@@ -559,7 +558,7 @@ export default function SettingsPageRedesigned() {
                               disabled={updateNotifications.isPending}
                               className={cn(
                                 'relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0 disabled:opacity-60',
-                                isOn ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'
+                                isOn ? 'bg-emerald-500' : 'bg-slate-200 dark:bg-slate-700'
                               )}
                             >
                               <span className={cn(
@@ -599,7 +598,7 @@ export default function SettingsPageRedesigned() {
                           className={cn(
                             'flex-1 flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-150',
                             ((key === 'dark') === isDark)
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400'
+                              ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400'
                               : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300 dark:hover:border-slate-600'
                           )}
                         >
@@ -627,14 +626,14 @@ export default function SettingsPageRedesigned() {
                 ) : (
                   <>
                     {/* Plan hero */}
-                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-violet-500 to-indigo-600 p-6 shadow">
+                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-600 to-emerald-800 p-6 shadow">
                       <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, white 0%, transparent 60%)' }} />
                       <div className="relative flex items-center justify-between">
                         <div>
-                          <p className="text-violet-200 text-xs font-semibold uppercase tracking-wider mb-1">Current Plan</p>
+                          <p className="text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-1">Current Plan</p>
                           <p className="text-white text-2xl font-bold">{subscription.planName || 'No Active Plan'}</p>
                           {subscription.monthlyAmount && (
-                            <p className="text-violet-100 text-sm mt-1">₹{subscription.monthlyAmount}<span className="text-violet-300">/month</span></p>
+                            <p className="text-emerald-100 text-sm mt-1">₹{subscription.monthlyAmount}<span className="text-emerald-300">/month</span></p>
                           )}
                         </div>
                         <div className="flex flex-col items-end gap-2">
@@ -678,7 +677,7 @@ export default function SettingsPageRedesigned() {
                       {(subscription.status === 'trial' || subscription.status === 'expired' || subscription.status === 'cancelled') && (
                         <Button
                           variant="primary"
-                          className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700"
+                          className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-violet-600 hover:from-emerald-700 hover:to-violet-700"
                           onClick={() => navigate('/subscription/manage')}
                         >
                           <Crown className="w-4 h-4" />

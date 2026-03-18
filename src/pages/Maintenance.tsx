@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
 import { Plus, CreditCard, Search, Edit, Trash, IndianRupee, AlertCircle, TrendingUp, Info, Zap, Lock, Home, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -91,6 +91,8 @@ function isPaymentLocked(_payment: any): boolean {
   // return new Date(payment.paymentDate) < cutoff;
 }
 
+import { isAdminRole, collectUserRoles } from '../types/roles';
+
 export default function Maintenance() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [period, setPeriod] = useState(getCurrentMonth());
@@ -109,6 +111,7 @@ export default function Maintenance() {
     }) | null
   >(null);
   const { user } = useAuth();
+  const isAdmin = isAdminRole(collectUserRoles(user));
   const { showToast } = useToast();
   const { showErrorToast } = useApiErrorToast();
 
@@ -370,26 +373,28 @@ export default function Maintenance() {
           description="Track and manage maintenance fee payments"
           icon={CreditCard}
           actions={
-            <Button
-              size="md"
-              onClick={() => {
-                setIsEditing(false);
-                setSelectedPayment(null);
-                setLastAllocationSummary(null);
-                reset({
-                  flatPublicId: '',
-                  amount: '',
-                  paymentModeId: '',
-                  paymentDate: new Date().toISOString().split('T')[0],
-                  referenceNumber: '',
-                });
-                setShowAddModal(true);
-              }}
-              disabled={!summaryLoading && (summary?.totalCharges || 0) === 0 ? false : false}
-            >
-              <Plus className="w-4 h-4" />
-              Record Payment
-            </Button>
+            isAdmin && (
+              <Button
+                size="md"
+                onClick={() => {
+                  setIsEditing(false);
+                  setSelectedPayment(null);
+                  setLastAllocationSummary(null);
+                  reset({
+                    flatPublicId: '',
+                    amount: '',
+                    paymentModeId: '',
+                    paymentDate: new Date().toISOString().split('T')[0],
+                    referenceNumber: '',
+                  });
+                  setShowAddModal(true);
+                }}
+                disabled={!summaryLoading && (summary?.totalCharges || 0) === 0 ? false : false}
+              >
+                <Plus className="w-4 h-4" />
+                Record Payment
+              </Button>
+            )
           }
         />
 
@@ -399,7 +404,7 @@ export default function Maintenance() {
           {/* Period header bar */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30">
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-indigo-500 dark:text-indigo-400" />
+              <Calendar className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Viewing Period</span>
             </div>
             <div className="flex items-center gap-1">
@@ -423,7 +428,7 @@ export default function Maintenance() {
                 <select
                   value={period}
                   onChange={(e) => setPeriod(e.target.value)}
-                  className="appearance-none pl-3 pr-8 py-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/40 transition-colors hover:border-indigo-400 dark:hover:border-indigo-500"
+                  className="appearance-none pl-3 pr-8 py-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-colors hover:border-emerald-400 dark:hover:border-emerald-500"
                 >
                   {getMonthOptions().map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
@@ -454,8 +459,8 @@ export default function Maintenance() {
 
           {/* Total Charges */}
           <div className="flex items-center gap-3 px-5 py-4 flex-1 min-w-[130px]">
-            <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
-              <IndianRupee className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+              <IndianRupee className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="min-w-0">
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Total Charges</p>
@@ -592,25 +597,27 @@ export default function Maintenance() {
                   className="input pl-9 py-1.5 text-sm w-full"
                 />
               </div>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setIsEditing(false);
-                  setSelectedPayment(null);
-                  setLastAllocationSummary(null);
-                  reset({
-                    flatPublicId: '',
-                    amount: '',
-                    paymentModeId: '',
-                    paymentDate: new Date().toISOString().split('T')[0],
-                    referenceNumber: '',
-                  });
-                  setShowAddModal(true);
-                }}
-              >
-                <Plus className="w-3.5 h-3.5 mr-1" />
-                Record Payment
-              </Button>
+              {isAdmin && (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setSelectedPayment(null);
+                    setLastAllocationSummary(null);
+                    reset({
+                      flatPublicId: '',
+                      amount: '',
+                      paymentModeId: '',
+                      paymentDate: new Date().toISOString().split('T')[0],
+                      referenceNumber: '',
+                    });
+                    setShowAddModal(true);
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Record Payment
+                </Button>
+              )}
             </div>
           </div>
 
@@ -624,7 +631,7 @@ export default function Maintenance() {
                 icon={CreditCard}
                 title="No payments found"
                 description="Record your first payment to get started"
-                action={{
+                action={isAdmin ? {
                   label: 'Record Payment',
                   onClick: () => {
                     setIsEditing(false);
@@ -640,24 +647,24 @@ export default function Maintenance() {
                     setShowAddModal(true);
                   },
                   icon: Plus,
-                }}
+                } : undefined}
               />
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gradient-to-r from-slate-50 via-slate-50/70 to-slate-50 dark:from-slate-800/50 dark:via-slate-800/30 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Flat</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">Owner</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Amount</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">Payment Mode</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden md:table-cell">Recorded By</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden md:table-cell">Paid For</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden lg:table-cell">Notes</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden lg:table-cell">Reference</th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Actions</th>
+                  <tr className="bg-emerald-800 dark:bg-emerald-950 border-b border-emerald-700 dark:border-emerald-900 divide-x divide-emerald-700 dark:divide-emerald-900">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Date</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Flat</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">Owner</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Amount</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">Payment Mode</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">Recorded By</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">Paid For</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden lg:table-cell">Notes</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden lg:table-cell">Reference</th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -670,19 +677,19 @@ export default function Maintenance() {
                       modeRaw.includes('cash')
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800'
                         : modeRaw.includes('upi')
-                        ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-300 dark:border-indigo-800'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800'
                         : modeRaw.includes('cheque') || modeRaw.includes('check')
                         ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800'
                         : modeRaw.includes('bank') || modeRaw.includes('neft') || modeRaw.includes('transfer')
-                        ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800'
                         : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
                     return (
                     <tr
                       key={payment.publicId}
-                      className={`group transition-all duration-200 ${
+                      className={`group transition-all duration-200 divide-x divide-slate-100 dark:divide-slate-700/60 ${
                         isToday
-                          ? 'border-l-2 border-l-indigo-400 bg-indigo-50/30 dark:bg-indigo-950/10 hover:bg-indigo-50/60 dark:hover:bg-indigo-950/20'
-                          : 'hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 dark:hover:from-indigo-950/20 dark:hover:to-purple-950/20'
+                          ? 'border-l-2 border-l-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20'
+                          : 'hover:bg-gradient-to-r hover:from-emerald-50/50 hover:to-purple-50/50 dark:hover:from-emerald-950/20 dark:hover:to-purple-950/20'
                       }`}
                     >
                       <td className="px-6 py-3 whitespace-nowrap">
@@ -691,13 +698,13 @@ export default function Maintenance() {
                             {formatDate(payment.paymentDate)}
                           </span>
                           {isToday && (
-                            <span className="ml-2 text-[10px] font-bold uppercase tracking-wide text-indigo-500 dark:text-indigo-400">Today</span>
+                            <span className="ml-2 text-[10px] font-bold uppercase tracking-wide text-emerald-500 dark:text-emerald-400">Today</span>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/50 dark:border-indigo-800/50">
-                          <span className="text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                        <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-gradient-to-br from-emerald-500/10 to-purple-500/10 border border-emerald-200/50 dark:border-emerald-800/50">
+                          <span className="text-sm font-bold bg-gradient-to-r from-emerald-600 to-purple-600 bg-clip-text text-transparent">
                             {payment.flatNumber || '-'}
                           </span>
                         </div>
@@ -781,54 +788,56 @@ export default function Maintenance() {
                         </span>
                       </td>
                       <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="flex gap-2 justify-center items-center">
-                          {(payment.allocations?.length ?? 0) > 0 || isPaymentLocked(payment) ? (
-                            <Tooltip
-                              content={
-                                isPaymentLocked(payment)
-                                  ? 'Payments older than 30 days cannot be edited.'
-                                  : 'Allocated payments cannot be edited. Delete and recreate.'
-                              }
-                              side="top"
-                            >
-                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg
-                                               bg-slate-100 dark:bg-slate-800 cursor-not-allowed opacity-50">
-                                <Lock className="w-3.5 h-3.5 text-slate-400" />
-                              </span>
-                            </Tooltip>
-                          ) : (
+                        {isAdmin && (
+                          <div className="flex gap-2 justify-center items-center">
+                            {(payment.allocations?.length ?? 0) > 0 || isPaymentLocked(payment) ? (
+                              <Tooltip
+                                content={
+                                  isPaymentLocked(payment)
+                                    ? 'Payments older than 30 days cannot be edited.'
+                                    : 'Allocated payments cannot be edited. Delete and recreate.'
+                                }
+                                side="top"
+                              >
+                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg
+                                                 bg-slate-100 dark:bg-slate-800 cursor-not-allowed opacity-50">
+                                  <Lock className="w-3.5 h-3.5 text-slate-400" />
+                                </span>
+                              </Tooltip>
+                            ) : (
+                              <button
+                                aria-label="Edit payment"
+                                onClick={() => openEditModal(payment)}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
+                                           bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-110
+                                           dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-900/50
+                                           focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                            )}
                             <button
-                              aria-label="Edit payment"
-                              onClick={() => openEditModal(payment)}
-                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
-                                         bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:scale-110
-                                         dark:bg-indigo-950/50 dark:text-indigo-400 dark:hover:bg-indigo-900/50
-                                         focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                              aria-label="Delete payment"
+                              disabled={isPaymentLocked(payment)}
+                              onClick={() => {
+                                if (isPaymentLocked(payment)) {
+                                  showToast('This payment is older than 30 days and cannot be deleted.', 'error');
+                                  return;
+                                }
+                                setDeleteTarget(payment);
+                                setShowDeleteModal(true);
+                              }}
+                              className={`inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
+                                         focus:outline-none focus:ring-2 focus:ring-rose-500/50
+                                         ${ isPaymentLocked(payment)
+                                           ? 'bg-slate-100 dark:bg-slate-800 opacity-50 cursor-not-allowed'
+                                           : 'bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-110 dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/50'
+                                         }`}
                             >
-                              <Edit className="w-4 h-4" />
+                              <Trash className="w-4 h-4" />
                             </button>
-                          )}
-                          <button
-                            aria-label="Delete payment"
-                            disabled={isPaymentLocked(payment)}
-                            onClick={() => {
-                              if (isPaymentLocked(payment)) {
-                                showToast('This payment is older than 30 days and cannot be deleted.', 'error');
-                                return;
-                              }
-                              setDeleteTarget(payment);
-                              setShowDeleteModal(true);
-                            }}
-                            className={`inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
-                                       focus:outline-none focus:ring-2 focus:ring-rose-500/50
-                                       ${ isPaymentLocked(payment)
-                                         ? 'bg-slate-100 dark:bg-slate-800 opacity-50 cursor-not-allowed'
-                                         : 'bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-110 dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/50'
-                                       }`}
-                          >
-                            <Trash className="w-4 h-4" />
-                          </button>
-                        </div>
+                          </div>
+                        )}
                       </td>
                     </tr>
                     );
@@ -840,16 +849,17 @@ export default function Maintenance() {
         </div>
       </div>
 
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => {
-          setShowAddModal(false);
-          setLastAllocationSummary(null);
-          reset();
-        }}
-        title={isEditing ? "Edit Payment" : "Record Payment"}
-        size="xl"
-      >
+      {isAdmin && (
+        <Modal
+          isOpen={showAddModal}
+          onClose={() => {
+            setShowAddModal(false);
+            setLastAllocationSummary(null);
+            reset();
+          }}
+          title={isEditing ? "Edit Payment" : "Record Payment"}
+          size="xl"
+        >
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
 
           {/* ── No-bills warning banner ───────────────────────────────────── */}
@@ -870,6 +880,21 @@ export default function Maintenance() {
                   >
                     Generate Bills &rarr;
                   </Link>
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Already-paid warning ──────────────────────────────────────── */}
+          {!isEditing && selectedFlatPublicId && flatSummary && outstandingAmount === 0 && (
+            <div className="flex items-start gap-3 mx-6 mt-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 px-4 py-3">
+              <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                  This flat has no outstanding balance
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
+                  The account is fully settled. Recording a payment now will be stored as an <strong>advance</strong> and automatically applied to the next bill.
                 </p>
               </div>
             </div>
@@ -1006,19 +1031,27 @@ export default function Maintenance() {
                   {...register('amount')}
                 />
                 {/* Live remaining balance */}
-                {paymentAmountNumber > 0 && selectedFlatPublicId && flatSummary && outstandingAmount > 0 && (
+                {paymentAmountNumber > 0 && selectedFlatPublicId && flatSummary && (
                   <div className={`flex items-center justify-between text-xs px-3 py-2 rounded-lg ${
-                    paymentAmountNumber >= outstandingAmount
+                    outstandingAmount === 0
+                      ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800'
+                      : paymentAmountNumber >= outstandingAmount
                       ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800'
                       : 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700'
                   }`}>
-                    <span className="text-slate-500 dark:text-slate-400">Balance after payment:</span>
+                    <span className="text-slate-500 dark:text-slate-400">
+                      {outstandingAmount === 0 ? 'Will be recorded as:' : 'Balance after payment:'}
+                    </span>
                     <span className={`font-bold ${
-                      paymentAmountNumber >= outstandingAmount
+                      outstandingAmount === 0
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : paymentAmountNumber >= outstandingAmount
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-orange-600 dark:text-orange-400'
                     }`}>
-                      {paymentAmountNumber >= outstandingAmount
+                      {outstandingAmount === 0
+                        ? `Advance +${formatCurrency(paymentAmountNumber)}`
+                        : paymentAmountNumber >= outstandingAmount
                         ? '✔ Fully cleared'
                         : formatCurrency(outstandingAmount - paymentAmountNumber)}
                     </span>
@@ -1164,17 +1197,19 @@ export default function Maintenance() {
             </Button>
           </ModalFooter>
         </form>
-      </Modal>
+        </Modal>
+      )}
 
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={() => {
-          setShowDeleteModal(false);
-          setDeleteTarget(null);
-        }}
-        title="Delete Payment"
-        size="sm"
-      >
+      {isAdmin && (
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setDeleteTarget(null);
+          }}
+          title="Delete Payment"
+          size="sm"
+        >
         <div className="space-y-4 p-4 sm:p-6">
           <p className="text-foreground">
             Are you sure you want to delete the payment for <strong>Flat {deleteTarget?.flatNumber}</strong> of <strong>{formatCurrency(deleteTarget?.amount)}</strong>?
@@ -1205,7 +1240,8 @@ export default function Maintenance() {
             </Button>
           </ModalFooter>
         </div>
-      </Modal>
+        </Modal>
+      )}
     </DashboardLayout>
   );
 }

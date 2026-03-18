@@ -11,8 +11,8 @@ export default function PaymentGateways() {
           <p className="text-muted-foreground mb-8">In our MVP, maintenance payments are collected offline by the society admin.</p>
 
           <div className="space-y-6">
-            <div className="p-6 rounded-lg bg-[#2563EB]/10 dark:bg-[#3B82F6]/10 border border-[#2563EB]/20 dark:border-[#3B82F6]/20 flex gap-4">
-              <Info className="w-6 h-6 text-[#2563EB] dark:text-[#3B82F6] flex-shrink-0 mt-0.5" />
+            <div className="p-6 rounded-lg bg-primary/10 dark:bg-primary-500/10 border border-primary/20 dark:border-primary-500/20 flex gap-4">
+              <Info className="w-6 h-6 text-primary dark:text-primary-500 flex-shrink-0 mt-0.5" />
               <div>
                 <h3 className="font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-2">How Payment Collection Works</h3>
                 <p className="text-[#0F172A] dark:text-[#F8FAFC] text-sm mb-4">
@@ -34,7 +34,7 @@ export default function PaymentGateways() {
               </p>
               <a
                 href="mailto:support@FlatLedger.com?subject=Payment Collection Inquiry"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#2563EB] dark:bg-[#3B82F6] text-white rounded-lg hover:bg-[#1D4ED8] dark:hover:bg-[#2563EB] transition-colors font-medium"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary dark:bg-primary-500 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary transition-colors font-medium"
               >
                 <Mail className="w-4 h-4" />
                 Email Support

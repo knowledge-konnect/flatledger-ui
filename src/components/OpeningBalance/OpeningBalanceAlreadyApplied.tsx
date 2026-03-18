@@ -1,24 +1,9 @@
-import { Lock, Calendar, User, Building2, ArrowLeft, CheckCircle2, TrendingDown, TrendingUp, ShieldCheck, FileBarChart2, AlertCircle } from 'lucide-react';
+﻿import { Lock, Calendar, User, Building2, ArrowLeft, CheckCircle2, TrendingDown, TrendingUp, ShieldCheck, FileBarChart2, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { OpeningBalanceStatus } from '../../types/openingBalance.types';
+import { useOpeningBalanceSummary } from '../../hooks/useOpeningBalance';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
-
-interface AppliedSummary {
-  societyOpeningAmount: number;
-  totalMemberDues: number;
-  totalMemberAdvance: number;
-}
-
-function loadAppliedSummary(): AppliedSummary | null {
-  try {
-    const raw = localStorage.getItem('ob_applied_summary');
-    if (!raw) return null;
-    return JSON.parse(raw) as AppliedSummary;
-  } catch {
-    return null;
-  }
-}
 
 interface OpeningBalanceAlreadyAppliedProps {
   status: OpeningBalanceStatus;
@@ -26,7 +11,18 @@ interface OpeningBalanceAlreadyAppliedProps {
 
 export default function OpeningBalanceAlreadyApplied({ status }: OpeningBalanceAlreadyAppliedProps) {
   const navigate = useNavigate();
-  const appliedSummary = loadAppliedSummary();
+  const { data: summaryData, isLoading: isSummaryLoading } = useOpeningBalanceSummary(status.isApplied);
+  const appliedSummary =
+    summaryData ??
+    (status.societyOpeningAmount !== undefined ||
+    status.totalMemberDues !== undefined ||
+    status.totalMemberAdvance !== undefined
+      ? {
+          societyOpeningAmount: status.societyOpeningAmount,
+          totalMemberDues: status.totalMemberDues,
+          totalMemberAdvance: status.totalMemberAdvance,
+        }
+      : null);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -106,12 +102,16 @@ export default function OpeningBalanceAlreadyApplied({ status }: OpeningBalanceA
           <Card className="p-5 border border-slate-200 dark:border-slate-800 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Society Fund</span>
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center">
-                <Building2 className="w-4 h-4 text-indigo-500" />
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center">
+                <Building2 className="w-4 h-4 text-emerald-500" />
               </div>
             </div>
             <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 tabular-nums">
-              {appliedSummary ? formatCurrency(appliedSummary.societyOpeningAmount) : <span className="text-slate-300 dark:text-slate-600">—</span>}
+              {appliedSummary?.societyOpeningAmount !== undefined
+                ? formatCurrency(appliedSummary.societyOpeningAmount)
+                : isSummaryLoading
+                ? <span className="text-sm text-slate-400 dark:text-slate-500">Loading...</span>
+                : <span className="text-slate-300 dark:text-slate-600">—</span>}
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Initial bank balance</p>
           </Card>
@@ -124,7 +124,11 @@ export default function OpeningBalanceAlreadyApplied({ status }: OpeningBalanceA
               </div>
             </div>
             <div className="text-2xl font-bold text-red-600 dark:text-red-400 tabular-nums">
-              {appliedSummary ? formatCurrency(appliedSummary.totalMemberDues) : <span className="text-slate-300 dark:text-slate-600">—</span>}
+              {appliedSummary?.totalMemberDues !== undefined
+                ? formatCurrency(appliedSummary.totalMemberDues)
+                : isSummaryLoading
+                ? <span className="text-sm text-slate-400 dark:text-slate-500">Loading...</span>
+                : <span className="text-slate-300 dark:text-slate-600">—</span>}
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Dues from flats</p>
           </Card>
@@ -137,11 +141,23 @@ export default function OpeningBalanceAlreadyApplied({ status }: OpeningBalanceA
               </div>
             </div>
             <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-              {appliedSummary ? formatCurrency(appliedSummary.totalMemberAdvance) : <span className="text-slate-300 dark:text-slate-600">—</span>}
+              {appliedSummary?.totalMemberAdvance !== undefined
+                ? formatCurrency(appliedSummary.totalMemberAdvance)
+                : isSummaryLoading
+                ? <span className="text-sm text-slate-400 dark:text-slate-500">Loading...</span>
+                : <span className="text-slate-300 dark:text-slate-600">—</span>}
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Prepaid by flats</p>
           </Card>
         </div>
+
+        {!isSummaryLoading && !appliedSummary && (
+          <Card className="p-4 border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/20">
+            <p className="text-sm text-amber-800 dark:text-amber-200">
+              Opening balance summary values are not available from the backend yet. The page will show these cards once the API returns the applied totals.
+            </p>
+          </Card>
+        )}
 
         {/* Why can't I modify */}
         <Card className="p-6 border border-slate-200 dark:border-slate-800">

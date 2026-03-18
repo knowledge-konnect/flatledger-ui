@@ -6,7 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    host: '0.0.0.0',
+    host: 'localhost',
+    hmr: {
+      host: 'localhost',
+      port: 3000,
+    },
     proxy: {
       '/api': {
         target: 'https://flatledger-api.onrender.com',
@@ -16,13 +20,14 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['react-is'],
+    include: ['react-is', 'dompurify'],
     exclude: ['lucide-react'],
   },
   resolve: {
     alias: {
       '@': '/app/src',
     },
+    dedupe: ['react', 'react-dom', '@tanstack/react-query'],
   },
   build: {
     rollupOptions: {

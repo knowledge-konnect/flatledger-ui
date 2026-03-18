@@ -1,10 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
+﻿import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, AlertCircle, Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { useFlats } from '../../hooks/useFlats';
 import { useOpeningBalanceStatus, useSubmitOpeningBalance } from '../../hooks/useOpeningBalance';
 import { useAuth } from '../../contexts/AuthProvider';
-import { isFinancialRole, collectUserRoles } from '../../types/roles';
+import { isAdminRole, collectUserRoles } from '../../types/roles';
 import { FlatBalance, OpeningBalanceSummary } from '../../types/openingBalance.types';
 import LoadingSpinner from '../ui/LoadingSpinner';
 import Button from '../ui/Button';
@@ -18,8 +18,8 @@ export default function OpeningBalanceEntry() {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  // Check if user holds a financial-level role (Society Admin, Admin, Treasurer)
-  const isTreasurer = isFinancialRole(collectUserRoles(user));
+  // Check if user is Society Admin
+  const isTreasurer = isAdminRole(collectUserRoles(user));
   
   // API hooks
   const { data: statusData, isLoading: statusLoading } = useOpeningBalanceStatus();
@@ -206,19 +206,6 @@ export default function OpeningBalanceEntry() {
       await submitMutation.mutateAsync(payload);
       setShowPreviewModal(false);
       setBackendError('');
-      // Persist summary so the already-applied page can display real figures
-      try {
-        localStorage.setItem(
-          'ob_applied_summary',
-          JSON.stringify({
-            societyOpeningAmount: payload.society_opening_amount,
-            totalMemberDues: summary.totalOutstanding,
-            totalMemberAdvance: summary.totalAdvance,
-          })
-        );
-      } catch {
-        // localStorage write failure is non-critical
-      }
       setShowSuccessScreen(true);
     } catch (error: unknown) {
       const axiosError = error as {
@@ -429,7 +416,7 @@ export default function OpeningBalanceEntry() {
                       <div className="relative">
                         <div className="absolute inset-0 bg-slate-900/20 dark:bg-slate-100/10 -m-6 rounded-lg z-10" 
                              onClick={() => setShowFlatSelector(false)} />
-                        <div className="relative z-20 bg-white dark:bg-slate-800 border-2 border-blue-500 rounded-lg p-3">
+                        <div className="relative z-20 bg-white dark:bg-slate-800 border-2 border-emerald-500 rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                               Select Flat to Add
@@ -617,7 +604,7 @@ export default function OpeningBalanceEntry() {
                       type="checkbox"
                       checked={confirmed}
                       onChange={(e) => setConfirmed(e.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                     />
                     <span className="text-xs text-slate-700 dark:text-slate-300 leading-snug">
                       I confirm these balances are accurate and final.

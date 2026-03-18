@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo } from 'react';
 import { Plus, Search, Download, Edit, Trash, AlertCircle, Home } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Button from '../components/ui/Button';
@@ -34,8 +34,10 @@ type FlatFormData = z.infer<typeof flatSchema>;
 
 import { useFlats, useCreateFlat, useUpdateFlat, useDeleteFlat } from '../hooks/useFlats';
 import { useAuth } from '../contexts/AuthProvider';
+import { isAdminRole, collectUserRoles } from '../types/roles';
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
+import { useBillingStatus, useGenerateBilling } from '../hooks/useBillingStatus';
 
 // Component to fetch and display outstanding balance for a single flat
 function FlatOutstandingBalance({ publicId }: { publicId: string }) {
@@ -92,12 +94,15 @@ export default function Flats() {
   const [isEditing, setIsEditing] = useState(false);
   const [flats, setFlats] = useState<UIFLat[]>([]);
   const { user } = useAuth();
+  const isAdmin = isAdminRole(collectUserRoles(user));
 
   const { data: apiFlats, isLoading: apiFlatsLoading } = useFlats();
   
   const createFlat = useCreateFlat();
   const updateFlat = useUpdateFlat();
   const deleteFlat = useDeleteFlat();
+  const { data: billingStatus } = useBillingStatus();
+  const generateBilling = useGenerateBilling();
   const { data: statuses } = useFlatStatuses();
   const { data: maintenanceConfig } = useMaintenanceConfig(user?.societyPublicId || '');
   const { showToast } = useToast();
@@ -143,6 +148,7 @@ export default function Flats() {
   };
 
   useKeyboardShortcut('n', () => {
+    if (!isAdmin) return;
     const tag = (document.activeElement?.tagName || '').toLowerCase();
     if (tag === 'input' || tag === 'textarea') return;
     openAddModal();
@@ -186,13 +192,22 @@ export default function Flats() {
           statusCode: selectedStatusCode,
         };
         const created = await createFlat.mutateAsync(payload as any);
-        
+
         setShowAddModal(false);
         reset(emptyForm);
-        if (created && created.flatNo) {
-          showToast(`Flat ${created.flatNo} created successfully`, 'success');
+
+        const flatLabel = created?.flatNo ? `Flat ${created.flatNo}` : 'Flat';
+
+        // If this month's bills are already generated, auto-generate bill for the new flat
+        if (billingStatus?.isGenerated && billingStatus?.currentMonth) {
+          try {
+            await generateBilling.mutateAsync({ period: billingStatus.currentMonth });
+            showToast(`${flatLabel} created and bill generated for ${billingStatus.currentMonth}`, 'success');
+          } catch {
+            showToast(`${flatLabel} created. Could not auto-generate bill — go to Dashboard to generate manually.`, 'warning');
+          }
         } else {
-          showToast('Flat created successfully', 'success');
+          showToast(`${flatLabel} created successfully`, 'success');
         }
       }
     } catch (error: any) {
@@ -298,7 +313,7 @@ export default function Flats() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-2">
           <div>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30">
+              <div className="flex items-center justify-center w-11 h-11 rounded-xl bg-emerald-600 shadow-lg shadow-emerald-500/30">
                 <Home className="w-5 h-5 text-white" />
               </div>
               <div>
@@ -329,7 +344,7 @@ export default function Flats() {
                          rounded-xl shadow-sm
                          text-slate-900 dark:text-slate-100
                          placeholder:text-slate-400
-                         focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500
+                         focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500
                          transition-all duration-200"
               />
             </div>
@@ -346,14 +361,16 @@ export default function Flats() {
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
-              <Button 
-                size="sm" 
-                onClick={() => openAddModal()}
-                className="h-10 px-4 font-medium bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/40 transition-all duration-200"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Flat
-              </Button>
+              {isAdmin && (
+                <Button 
+                  size="sm" 
+                  onClick={() => openAddModal()}
+                  className="h-10 px-4 font-medium bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all duration-200"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Flat
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -369,36 +386,38 @@ export default function Flats() {
               <EmptyState
                 icon={Home}
                 title="No flats found"
-                description="Add your first flat to get started"
-                action={{
-                  label: 'Add Flat',
-                  onClick: () => openAddModal(),
-                  icon: Plus,
-                }}
+                description={isAdmin ? "Add your first flat to get started" : "No flats available"}
+                {...(isAdmin ? {
+                  action: {
+                    label: 'Add Flat',
+                    onClick: () => openAddModal(),
+                    icon: Plus,
+                  }
+                } : {})}
               />
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gradient-to-r from-slate-50 via-slate-50/70 to-slate-50 dark:from-slate-800/50 dark:via-slate-800/30 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    <tr className="bg-emerald-800 dark:bg-emerald-950 border-b border-emerald-700 dark:border-emerald-900 divide-x divide-emerald-700 dark:divide-emerald-900">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">
                         Flat
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">
                         Owner
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden md:table-cell">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">
                         Contact
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">
                         Maintenance
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden lg:table-cell">
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden lg:table-cell">
                         Outstanding
                       </th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">
                         Status
                       </th>
                       <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
@@ -410,11 +429,11 @@ export default function Flats() {
                     {paged.map((flat) => (
                       <tr 
                         key={flat.publicId} 
-                        className="group hover:bg-gradient-to-r hover:from-indigo-50/50 hover:to-purple-50/50 dark:hover:from-indigo-950/20 dark:hover:to-purple-950/20 transition-all duration-200"
+                        className="group hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all duration-200 divide-x divide-slate-100 dark:divide-slate-800"
                       >
                         <td className="px-6 py-3 whitespace-nowrap">
-                          <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-200/50 dark:border-indigo-800/50">
-                            <span className="text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                          <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-200/50 dark:border-emerald-800/50">
+                            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
                               {flat.flatNumber}
                             </span>
                           </div>
@@ -453,43 +472,45 @@ export default function Flats() {
                           </div>
                         </td>
                         <td className="px-6 py-3 whitespace-nowrap">
-                          <div className="flex gap-2 justify-center items-center">
-                            <button
-                              aria-label={`Edit ${flat.flatNumber}`}
-                              onClick={() => {
-                                setSelectedFlat(flat);
-                                reset({
-                                  flatNumber: flat.flatNumber,
-                                  ownerName: flat.ownerName,
-                                  ownerEmail: flat.ownerEmail,
-                                  ownerPhone: flat.ownerPhone,
-                                  maintenanceAmount: String(flat.maintenanceAmount),
-                                  statusCode: flat.statusCode || '',
-                                });
-                                setIsEditing(true);
-                                setShowAddModal(true);
-                              }}
-                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
-                                       bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:scale-110
-                                       dark:bg-indigo-950/50 dark:text-indigo-400 dark:hover:bg-indigo-900/50
-                                       focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              aria-label={`Delete ${flat.flatNumber}`}
-                              onClick={() => {
-                                setDeleteTarget(flat);
-                                setShowDeleteModal(true);
-                              }}
-                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
-                                       bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-110
-                                       dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/50
-                                       focus:outline-none focus:ring-2 focus:ring-rose-500/50"
-                            >
-                              <Trash className="w-4 h-4" />
-                            </button>
-                          </div>
+                          {isAdmin ? (
+                            <div className="flex gap-2 justify-center items-center">
+                              <button
+                                aria-label={`Edit ${flat.flatNumber}`}
+                                onClick={() => {
+                                  setSelectedFlat(flat);
+                                  reset({
+                                    flatNumber: flat.flatNumber,
+                                    ownerName: flat.ownerName,
+                                    ownerEmail: flat.ownerEmail,
+                                    ownerPhone: flat.ownerPhone,
+                                    maintenanceAmount: String(flat.maintenanceAmount),
+                                    statusCode: flat.statusCode || '',
+                                  });
+                                  setIsEditing(true);
+                                  setShowAddModal(true);
+                                }}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
+                                         bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-110
+                                         dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-900/50
+                                         focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                aria-label={`Delete ${flat.flatNumber}`}
+                                onClick={() => {
+                                  setDeleteTarget(flat);
+                                  setShowDeleteModal(true);
+                                }}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
+                                         bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-110
+                                         dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/50
+                                         focus:outline-none focus:ring-2 focus:ring-rose-500/50"
+                              >
+                                <Trash className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : null}
                         </td>
                       </tr>
                     ))}
@@ -506,219 +527,223 @@ export default function Flats() {
         </div>
       </div>
 
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => {
-          setShowAddModal(false);
-          reset(emptyForm);
-          setIsEditing(false);
-          setSelectedFlat(null);
-        }}
-        title={isEditing ? 'Edit Flat' : 'Add New Flat'}
-        size="lg"
-      >
-        <form onSubmit={handleSubmit(onSubmit)} className="form-group space-y-4 md:space-y-6 p-4 sm:p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            <div className="form-field">
-              <label className="block text-sm font-semibold text-foreground mb-2">
-                Flat Number
-              </label>
-              <input
-                type="text"
-                placeholder="e.g., A-101"
-                {...register('flatNumber')}
-                className="input"
-              />
-              {errors.flatNumber && (
-                <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.flatNumber.message}
-                </div>
-              )}
+      {isAdmin && (
+        <Modal
+          isOpen={showAddModal}
+          onClose={() => {
+            setShowAddModal(false);
+            reset(emptyForm);
+            setIsEditing(false);
+            setSelectedFlat(null);
+          }}
+          title={isEditing ? 'Edit Flat' : 'Add New Flat'}
+          size="lg"
+        >
+          <form onSubmit={handleSubmit(onSubmit)} className="form-group space-y-4 md:space-y-6 p-4 sm:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div className="form-field">
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  Flat Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., A-101"
+                  {...register('flatNumber')}
+                  className="input"
+                />
+                {errors.flatNumber && (
+                  <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.flatNumber.message}
+                  </div>
+                )}
+              </div>
+
+              <div className="form-field">
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  Owner Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Full name"
+                  {...register('ownerName')}
+                  className="input"
+                />
+                {errors.ownerName && (
+                  <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.ownerName.message}
+                  </div>
+                )}
+              </div>
+
+              <div className="form-field">
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  Email <span className="text-muted-foreground text-xs">(optional)</span>
+                </label>
+                <input
+                  type="email"
+                  placeholder="owner@example.com"
+                  {...register('ownerEmail')}
+                  className="input"
+                />
+                {errors.ownerEmail && (
+                  <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.ownerEmail.message}
+                  </div>
+                )}
+              </div>
+
+              <div className="form-field">
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  maxLength={10}
+                  minLength={10}
+                  placeholder="+1234567890"
+                  {...register('ownerPhone')}
+                  className="input"
+                />
+                {errors.ownerPhone && (
+                  <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.ownerPhone.message}
+                  </div>
+                )}
+              </div>
+
+              <div className="form-field md:col-span-2">
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  Maintenance Amount
+                </label>
+                <input
+                  type="number"
+                  placeholder="5000"
+                  step="0.01"
+                  {...register('maintenanceAmount')}
+                  className="input"
+                />
+                {errors.maintenanceAmount && (
+                  <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.maintenanceAmount.message}
+                  </div>
+                )}
+              </div>
+
+              <div className="form-field md:col-span-2">
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  Status
+                </label>
+                <select
+                  {...register('statusCode')}
+                  className="input"
+                >
+                  <option value="">Select Status</option>
+                  {safeStatuses.map((s) => (
+                    <option key={s.code} value={s.code}>{s.displayName}</option>
+                  ))}
+                </select>
+                {errors.statusCode && (
+                  <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.statusCode.message}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="form-field">
-              <label className="block text-sm font-semibold text-foreground mb-2">
-                Owner Name
-              </label>
-              <input
-                type="text"
-                placeholder="Full name"
-                {...register('ownerName')}
-                className="input"
-              />
-              {errors.ownerName && (
-                <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.ownerName.message}
-                </div>
-              )}
-            </div>
-
-            <div className="form-field">
-              <label className="block text-sm font-semibold text-foreground mb-2">
-                Email <span className="text-muted-foreground text-xs">(optional)</span>
-              </label>
-              <input
-                type="email"
-                placeholder="owner@example.com"
-                {...register('ownerEmail')}
-                className="input"
-              />
-              {errors.ownerEmail && (
-                <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.ownerEmail.message}
-                </div>
-              )}
-            </div>
-
-            <div className="form-field">
-              <label className="block text-sm font-semibold text-foreground mb-2">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                maxLength={10}
-                minLength={10}
-                placeholder="+1234567890"
-                {...register('ownerPhone')}
-                className="input"
-              />
-              {errors.ownerPhone && (
-                <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.ownerPhone.message}
-                </div>
-              )}
-            </div>
-
-            <div className="form-field md:col-span-2">
-              <label className="block text-sm font-semibold text-foreground mb-2">
-                Maintenance Amount
-              </label>
-              <input
-                type="number"
-                placeholder="5000"
-                step="0.01"
-                {...register('maintenanceAmount')}
-                className="input"
-              />
-              {errors.maintenanceAmount && (
-                <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.maintenanceAmount.message}
-                </div>
-              )}
-            </div>
-
-            <div className="form-field md:col-span-2">
-              <label className="block text-sm font-semibold text-foreground mb-2">
-                Status
-              </label>
-              <select
-                {...register('statusCode')}
-                className="input"
+            <ModalFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowAddModal(false);
+                  reset(emptyForm);
+                  setIsEditing(false);
+                  setSelectedFlat(null);
+                }}
               >
-                <option value="">Select Status</option>
-                {safeStatuses.map((s) => (
-                  <option key={s.code} value={s.code}>{s.displayName}</option>
-                ))}
-              </select>
-              {errors.statusCode && (
-                <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.statusCode.message}
-                </div>
-              )}
-            </div>
-          </div>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting || (isEditing ? (updateFlat as any).isLoading : (createFlat as any).isLoading)}
+              >
+                {isEditing
+                  ? ((updateFlat as any).isLoading ? 'Saving...' : (isSubmitting ? 'Saving...' : 'Save'))
+                  : ((createFlat as any).isLoading ? 'Adding...' : (isSubmitting ? 'Adding...' : 'Add Flat'))}
+              </Button>
+            </ModalFooter>
+          </form>
+        </Modal>
+      )}
 
+      {isAdmin && (
+        <Modal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setDeleteTarget(null);
+          }}
+          title="Delete Flat"
+          size="sm"
+        >
+          <div className="py-4 px-4 sm:px-6">
+            <p className="text-sm text-gray-700 dark:text-gray-300">Are you sure you want to delete <strong>{deleteTarget?.flatNumber}</strong>? This action cannot be undone.</p>
+          </div>
           <ModalFooter>
             <Button
-              type="button"
               variant="outline"
+              type="button"
               onClick={() => {
-                setShowAddModal(false);
-                reset(emptyForm);
-                setIsEditing(false);
-                setSelectedFlat(null);
+                setShowDeleteModal(false);
+                setDeleteTarget(null);
               }}
             >
               Cancel
             </Button>
             <Button
-              type="submit"
-              disabled={isSubmitting || (isEditing ? (updateFlat as any).isLoading : (createFlat as any).isLoading)}
+              type="button"
+              variant="danger"
+              disabled={(deleteFlat as any).isLoading}
+              onClick={async () => {
+                if (!deleteTarget) return;
+                try {
+                  await deleteFlat.mutateAsync(deleteTarget.publicId ?? '');
+                  showToast('Flat deleted', 'success');
+                  setShowDeleteModal(false);
+                  setDeleteTarget(null);
+                } catch (err: any) {
+                  const errorData = err?.response?.data;
+                  if (errorData) {
+                    showErrorToast({
+                      ok: false,
+                      message: errorData.message || 'Failed to delete flat',
+                      code: errorData.code,
+                      fieldErrors: errorData.errors?.reduce(
+                        (acc: any, errItem: any) => {
+                          acc[errItem.field] = errItem.messages;
+                          return acc;
+                        },
+                        {}
+                      ),
+                      traceId: errorData.traceId,
+                    });
+                  } else {
+                    showToast('Failed to delete flat', 'error');
+                  }
+                }
+              }}
             >
-              {isEditing
-                ? ((updateFlat as any).isLoading ? 'Saving...' : (isSubmitting ? 'Saving...' : 'Save'))
-                : ((createFlat as any).isLoading ? 'Adding...' : (isSubmitting ? 'Adding...' : 'Add Flat'))}
+              {(deleteFlat as any).isLoading ? 'Deleting...' : 'Delete'}
             </Button>
           </ModalFooter>
-        </form>
-      </Modal>
-
-      <Modal
-        isOpen={showDeleteModal}
-        onClose={() => {
-          setShowDeleteModal(false);
-          setDeleteTarget(null);
-        }}
-        title="Delete Flat"
-        size="sm"
-      >
-        <div className="py-4 px-4 sm:px-6">
-          <p className="text-sm text-gray-700 dark:text-gray-300">Are you sure you want to delete <strong>{deleteTarget?.flatNumber}</strong>? This action cannot be undone.</p>
-        </div>
-        <ModalFooter>
-          <Button
-            variant="outline"
-            type="button"
-            onClick={() => {
-              setShowDeleteModal(false);
-              setDeleteTarget(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="danger"
-            disabled={(deleteFlat as any).isLoading}
-            onClick={async () => {
-              if (!deleteTarget) return;
-              try {
-                await deleteFlat.mutateAsync(deleteTarget.publicId ?? '');
-                showToast('Flat deleted', 'success');
-                setShowDeleteModal(false);
-                setDeleteTarget(null);
-              } catch (err: any) {
-                const errorData = err?.response?.data;
-                if (errorData) {
-                  showErrorToast({
-                    ok: false,
-                    message: errorData.message || 'Failed to delete flat',
-                    code: errorData.code,
-                    fieldErrors: errorData.errors?.reduce(
-                      (acc: any, errItem: any) => {
-                        acc[errItem.field] = errItem.messages;
-                        return acc;
-                      },
-                      {}
-                    ),
-                    traceId: errorData.traceId,
-                  });
-                } else {
-                  showToast('Failed to delete flat', 'error');
-                }
-              }
-            }}
-          >
-            {(deleteFlat as any).isLoading ? 'Deleting...' : 'Delete'}
-          </Button>
-        </ModalFooter>
-      </Modal>
+        </Modal>
+      )}
       </div>
       {/* Import CSV UI hidden. Export provided above. */}
     </DashboardLayout>

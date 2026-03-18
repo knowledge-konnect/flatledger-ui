@@ -97,7 +97,7 @@ export default function Payment() {
           contact: localStorage.getItem('userPhone') || '',
         },
         theme: {
-          color: '#3b82f6',
+          color: '#10B981',
         },
       }
 
@@ -204,7 +204,7 @@ export default function Payment() {
                     className="w-full p-4 border-2 border-primary rounded-xl hover:bg-primary/5 transition-all duration-300 flex items-center justify-between group disabled:opacity-70 disabled:cursor-not-allowed"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                      <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
                         ₹
                       </div>
                       <div className="text-left">

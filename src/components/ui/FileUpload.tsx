@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+﻿import { useCallback, useState } from 'react';
 import { Upload, X, FileIcon, CheckCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
@@ -96,8 +96,8 @@ export function FileUpload({
         className={cn(
           'relative border-2 border-dashed rounded-xl p-8 transition-all duration-200',
           dragActive
-            ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-            : 'border-slate-300 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-600',
+            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+            : 'border-slate-300 dark:border-slate-700 hover:border-emerald-400 dark:hover:border-emerald-600',
           'cursor-pointer'
         )}
       >
@@ -109,8 +109,8 @@ export function FileUpload({
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
         <div className="flex flex-col items-center justify-center text-center">
-          <div className="w-16 h-16 mb-4 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-            <Upload className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+          <div className="w-16 h-16 mb-4 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+            <Upload className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
           </div>
           <p className="text-base font-medium text-slate-900 dark:text-white mb-1">
             Drag & drop files here
@@ -134,7 +134,7 @@ export function FileUpload({
               key={index}
               className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 animate-slide-in-up"
             >
-              <FileIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+              <FileIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
                   {file.name}

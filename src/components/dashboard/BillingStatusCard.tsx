@@ -1,4 +1,4 @@
-import Card, { CardContent } from '../ui/Card';
+﻿import Card, { CardContent } from '../ui/Card';
 import Badge from '../ui/Badge';
 import { formatCurrency } from '../../lib/utils';
 
@@ -43,7 +43,7 @@ export default function BillingStatusCard({
             {isGenerated && monthlyCharge !== undefined && monthlyCharge > 0 && (
               <div className="flex items-center justify-between gap-3">
                 <span className="text-sm text-slate-600 dark:text-slate-400">Charge/Flat:</span>
-                <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">{formatCurrency(monthlyCharge)}</span>
+                <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(monthlyCharge)}</span>
               </div>
             )}
             {isGenerated && monthlyCharge !== undefined && monthlyCharge > 0 && generatedCount > 0 && (
