@@ -175,9 +175,9 @@ export default function ExpenseByCategoryPage() {
                     <TableRow>
                       <TableHead>Category</TableHead>
                       <TableHead>Code</TableHead>
-                      <TableHead>Total Amount</TableHead>
+                      <TableHead className="text-right">Total Amount</TableHead>
                       <TableHead>% Share</TableHead>
-                      <TableHead>No. of Entries</TableHead>
+                      <TableHead className="text-right">No. of Entries</TableHead>
                       <TableHead>First Expense</TableHead>
                       <TableHead>Last Expense</TableHead>
                     </TableRow>

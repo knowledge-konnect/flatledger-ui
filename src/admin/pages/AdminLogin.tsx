@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,9 +22,12 @@ export default function AdminLogin() {
     resolver: zodResolver(loginSchema),
   });
 
-  // Already authenticated — should not be here
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
   if (isAuthenticated) {
-    navigate('/admin/dashboard', { replace: true });
     return null;
   }
 

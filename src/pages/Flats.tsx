@@ -37,6 +37,7 @@ import { useAuth } from '../contexts/AuthProvider';
 import { isAdminRole, collectUserRoles } from '../types/roles';
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
+import { useBillingStatus, useGenerateBilling } from '../hooks/useBillingStatus';
 
 // Component to fetch and display outstanding balance for a single flat
 function FlatOutstandingBalance({ publicId }: { publicId: string }) {
@@ -100,6 +101,8 @@ export default function Flats() {
   const createFlat = useCreateFlat();
   const updateFlat = useUpdateFlat();
   const deleteFlat = useDeleteFlat();
+  const { data: billingStatus } = useBillingStatus();
+  const generateBilling = useGenerateBilling();
   const { data: statuses } = useFlatStatuses();
   const { data: maintenanceConfig } = useMaintenanceConfig(user?.societyPublicId || '');
   const { showToast } = useToast();
@@ -189,13 +192,22 @@ export default function Flats() {
           statusCode: selectedStatusCode,
         };
         const created = await createFlat.mutateAsync(payload as any);
-        
+
         setShowAddModal(false);
         reset(emptyForm);
-        if (created && created.flatNo) {
-          showToast(`Flat ${created.flatNo} created successfully`, 'success');
+
+        const flatLabel = created?.flatNo ? `Flat ${created.flatNo}` : 'Flat';
+
+        // If this month's bills are already generated, auto-generate bill for the new flat
+        if (billingStatus?.isGenerated && billingStatus?.currentMonth) {
+          try {
+            await generateBilling.mutateAsync({ period: billingStatus.currentMonth });
+            showToast(`${flatLabel} created and bill generated for ${billingStatus.currentMonth}`, 'success');
+          } catch {
+            showToast(`${flatLabel} created. Could not auto-generate bill — go to Dashboard to generate manually.`, 'warning');
+          }
         } else {
-          showToast('Flat created successfully', 'success');
+          showToast(`${flatLabel} created successfully`, 'success');
         }
       }
     } catch (error: any) {
@@ -386,26 +398,26 @@ export default function Flats() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gradient-to-r from-slate-50 via-slate-50/70 to-slate-50 dark:from-slate-800/50 dark:via-slate-800/30 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    <tr className="bg-emerald-800 dark:bg-emerald-950 border-b border-emerald-700 dark:border-emerald-900 divide-x divide-emerald-700 dark:divide-emerald-900">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">
                         Flat
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">
                         Owner
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden md:table-cell">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">
                         Contact
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">
                         Maintenance
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden lg:table-cell">
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden lg:table-cell">
                         Outstanding
                       </th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">
                         Status
                       </th>
                       <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
@@ -417,7 +429,7 @@ export default function Flats() {
                     {paged.map((flat) => (
                       <tr 
                         key={flat.publicId} 
-                        className="group hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all duration-200"
+                        className="group hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all duration-200 divide-x divide-slate-100 dark:divide-slate-800"
                       >
                         <td className="px-6 py-3 whitespace-nowrap">
                           <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-200/50 dark:border-emerald-800/50">

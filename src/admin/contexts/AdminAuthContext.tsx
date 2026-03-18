@@ -31,20 +31,19 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // On mount: validate any stored token by calling /me
+  // On mount: only check /me if token exists, otherwise show login immediately
   useEffect(() => {
+    const token = getAdminToken();
+    if (!token) {
+      setIsLoading(false);
+      setAdminInitialized();
+      return;
+    }
     const init = async () => {
-      const token = getAdminToken();
-      if (!token) {
-        setIsLoading(false);
-        setAdminInitialized();
-        return;
-      }
       try {
         const res = await adminAuthApi.me();
         setAdmin(res.data.data);
       } catch {
-        // Token invalid or expired — clear it silently
         clearAdminToken();
         setAdmin(null);
       } finally {

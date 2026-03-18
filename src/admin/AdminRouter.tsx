@@ -67,7 +67,7 @@ export function AdminRouter() {
         </Route>
 
         {/* Fallback */}
-        <Route path="*" element={<Navigate to="login" replace />} />
+        <Route path="*" element={<Navigate to="/admin/login" replace />} />
       </Routes>
     </Suspense>
   );

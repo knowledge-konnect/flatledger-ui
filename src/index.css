@@ -401,7 +401,7 @@
      ============================================ */
 
   .table-container {
-    @apply overflow-x-auto;
+    @apply overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700;
   }
 
   .table {
@@ -411,18 +411,28 @@
   .table th {
     @apply px-3 py-3;
     font-size: 11px;
-    @apply text-left font-semibold uppercase tracking-wider whitespace-nowrap;
-    @apply bg-slate-800 dark:bg-slate-950;
+    @apply font-semibold uppercase tracking-wider whitespace-nowrap;
+    @apply bg-emerald-800 dark:bg-emerald-950;
     @apply text-slate-100 dark:text-slate-100;
-    border-bottom: 2px solid #1E293B;
-    @apply dark:border-slate-900;
+    border-bottom: 2px solid #065F46;
+    border-right: 1px solid #047857;
+    @apply dark:border-emerald-900;
+  }
+
+  .table th:last-child {
+    border-right: none;
   }
 
   .table td {
     @apply px-3 py-2.5;
     @apply text-[#0F172A] dark:text-[#F8FAFC];
-    border-bottom: 1px solid #F1F5F9;
+    border-bottom: 1px solid #E2E8F0;
+    border-right: 1px solid #F1F5F9;
     @apply dark:border-slate-700/60;
+  }
+
+  .table td:last-child {
+    border-right: none;
   }
 
   .table tr:last-child td {
@@ -449,6 +459,12 @@
 
   .table tfoot td {
     @apply px-3 py-3;
+    border-right: 1px solid #E2E8F0;
+    @apply dark:border-slate-700/60;
+  }
+
+  .table tfoot td:last-child {
+    border-right: none;
   }
 
   /* ============================================

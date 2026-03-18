@@ -2,7 +2,7 @@
 import { lazy, Suspense, memo } from 'react';
 import MobileFAB from './components/ui/MobileFAB';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { useAuth } from './contexts/AuthProvider';
+import { useAuth, AuthProvider } from './contexts/AuthProvider';
 import { FlatLedgerIcon } from './components/ui/FlatLedgerIcon';
 import { RoleCode } from './types/roles';
 import { AdminApp } from './admin/AdminApp';
@@ -47,18 +47,16 @@ const PageLoader = memo(function PageLoader() {
   );
 });
 
-export default function Router() {
+// All user-facing routes, must be rendered inside <AuthProvider>
+function UserRoutes() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const { pathname } = useLocation();
 
-  // Skip the auth gate on fully-public pages so they render immediately.
-  // ProtectedRoute handles its own isLoading guard for all private routes.
   const publicPaths = ['/', '/privacy', '/terms', '/subscription', '/free-trial', '/login', '/signup', '/forgot-password'];
   if (isLoading && !publicPaths.includes(pathname)) {
     return <PageLoader />;
   }
 
-  // If user is authenticated and needs to change password, redirect to change password page
   if (isAuthenticated && user && user.forcePasswordChange === true) {
     return (
       <Suspense fallback={<PageLoader />}>
@@ -70,168 +68,60 @@ export default function Router() {
     );
   }
 
-  // Render route tree based on final auth state
-  // isAuthenticated is stable when we reach here (isLoading is false)
   return (
     <>
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
-          {/* Redirect logic: check isAuthenticated first to avoid rendering Login when authenticated */}
-          <Route 
-            path="/login" 
-            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
-          />
-          <Route 
-            path="/signup" 
-            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Signup />} 
-          />
+          <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
+          <Route path="/signup" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
-          <Route
-            path="/change-password"
-            element={
-              <ProtectedRoute>
-                <ChangePassword />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
           <Route path="/unauthorized" element={<Unauthorized />} />
-
-          {/* Public SaaS pages */}
           <Route path="/subscription" element={<Subscription />} />
           <Route path="/free-trial" element={<FreeTrial />} />
-
-          {/* Protected routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/flats"
-            element={
-              <ProtectedRoute>
-                <Flats />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/maintenance"
-            element={
-              <ProtectedRoute>
-                <Maintenance />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/flats/:publicId/ledger"
-            element={
-              <ProtectedRoute>
-                <MaintenanceLedger />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/expenses"
-            element={
-              <ProtectedRoute>
-                <Expenses />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/flats" element={<ProtectedRoute><Flats /></ProtectedRoute>} />
+          <Route path="/maintenance" element={<ProtectedRoute><Maintenance /></ProtectedRoute>} />
+          <Route path="/flats/:publicId/ledger" element={<ProtectedRoute><MaintenanceLedger /></ProtectedRoute>} />
+          <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
           <Route path="/reports" element={<Navigate to="/reports/collection-summary" replace />} />
-          <Route
-            path="/reports/collection-summary"
-            element={<ProtectedRoute><CollectionSummary /></ProtectedRoute>}
-          />
-          <Route
-            path="/reports/defaulters"
-            element={<ProtectedRoute><Defaulters /></ProtectedRoute>}
-          />
-          <Route
-            path="/reports/income-vs-expense"
-            element={<ProtectedRoute><IncomeVsExpense /></ProtectedRoute>}
-          />
-          <Route
-            path="/reports/fund-ledger"
-            element={<ProtectedRoute><FundLedger /></ProtectedRoute>}
-          />
-          <Route
-            path="/reports/payment-register"
-            element={<ProtectedRoute><PaymentRegister /></ProtectedRoute>}
-          />
-          <Route
-            path="/reports/expense-by-category"
-            element={<ProtectedRoute><ExpenseByCategory /></ProtectedRoute>}
-          />
-          <Route
-            path="/users"
-            element={
-              <ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}>
-                <Users />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings/opening-balance"
-            element={
-              <ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}>
-                <OpeningBalanceEntry />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/setup"
-            element={
-              <ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}>
-                <Setup />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/subscription/manage"
-            element={
-              <ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}>
-                <SubscriptionManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/premium-dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-
-          {/* ─── Super Admin Panel ─── */}
-          <Route path="/admin/*" element={<AdminApp />} />
-
-          {/* Fallback - 404 for unknown routes */}
-          <Route
-            path="*"
-            element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <NotFound />}
-          />
+          <Route path="/reports/collection-summary" element={<ProtectedRoute><CollectionSummary /></ProtectedRoute>} />
+          <Route path="/reports/defaulters" element={<ProtectedRoute><Defaulters /></ProtectedRoute>} />
+          <Route path="/reports/income-vs-expense" element={<ProtectedRoute><IncomeVsExpense /></ProtectedRoute>} />
+          <Route path="/reports/fund-ledger" element={<ProtectedRoute><FundLedger /></ProtectedRoute>} />
+          <Route path="/reports/payment-register" element={<ProtectedRoute><PaymentRegister /></ProtectedRoute>} />
+          <Route path="/reports/expense-by-category" element={<ProtectedRoute><ExpenseByCategory /></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><Users /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><Settings /></ProtectedRoute>} />
+          <Route path="/settings/opening-balance" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><OpeningBalanceEntry /></ProtectedRoute>} />
+          <Route path="/setup" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><Setup /></ProtectedRoute>} />
+          <Route path="/subscription/manage" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><SubscriptionManagement /></ProtectedRoute>} />
+          <Route path="/premium-dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="*" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <NotFound />} />
         </Routes>
       </Suspense>
-
-      {/* Mobile FAB for dashboard routes */}
       {isAuthenticated && <MobileFAB />}
     </>
+  );
+}
+
+export default function Router() {
+  return (
+    <Routes>
+      {/* Admin panel — has its own AdminAuthProvider, never touches AuthProvider */}
+      <Route path="/admin/*" element={<AdminApp />} />
+      {/* All other routes — wrapped in AuthProvider */}
+      <Route
+        path="/*"
+        element={
+          <AuthProvider>
+            <UserRoutes />
+          </AuthProvider>
+        }
+      />
+    </Routes>
   );
 }
