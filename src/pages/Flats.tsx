@@ -12,6 +12,8 @@ import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
 import { useFlatStatuses, useFlatFinancialSummary } from '../hooks/useFlats';
 import { useMaintenanceConfig } from '../hooks/useSocieties';
 import Modal, { ModalFooter } from '../components/ui/Modal';
+import Input from '../components/ui/Input';
+import Select from '../components/ui/Select';
 import { formatCurrency } from '../lib/utils';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -37,7 +39,7 @@ import { useAuth } from '../contexts/AuthProvider';
 import { isAdminRole, collectUserRoles } from '../types/roles';
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
-import { useBillingStatus, useGenerateBilling } from '../hooks/useBillingStatus';
+import { billingApi } from '../api/billingApi';
 
 // Component to fetch and display outstanding balance for a single flat
 function FlatOutstandingBalance({ publicId }: { publicId: string }) {
@@ -93,6 +95,7 @@ export default function Flats() {
   const [selectedFlat, setSelectedFlat] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [flats, setFlats] = useState<UIFLat[]>([]);
+  const [formError, setFormError] = useState<string | null>(null); // For business rule errors
   const { user } = useAuth();
   const isAdmin = isAdminRole(collectUserRoles(user));
 
@@ -101,8 +104,7 @@ export default function Flats() {
   const createFlat = useCreateFlat();
   const updateFlat = useUpdateFlat();
   const deleteFlat = useDeleteFlat();
-  const { data: billingStatus } = useBillingStatus();
-  const generateBilling = useGenerateBilling();
+
   const { data: statuses } = useFlatStatuses();
   const { data: maintenanceConfig } = useMaintenanceConfig(user?.societyPublicId || '');
   const { showToast } = useToast();
@@ -155,6 +157,7 @@ export default function Flats() {
   });
 
   const onSubmit = async (data: FlatFormData) => {
+    setFormError(null); // Clear previous error
     try {
       if (!user) throw new Error('User not authenticated');
 
@@ -198,23 +201,24 @@ export default function Flats() {
 
         const flatLabel = created?.flatNo ? `Flat ${created.flatNo}` : 'Flat';
 
-        // If this month's bills are already generated, auto-generate bill for the new flat
-        if (billingStatus?.isGenerated && billingStatus?.currentMonth) {
+        // Trigger billing generation for the new flat (backend auto-generates)
+        if (created?.id) {
           try {
-            await generateBilling.mutateAsync({ period: billingStatus.currentMonth });
-            showToast(`${flatLabel} created and bill generated for ${billingStatus.currentMonth}`, 'success');
+            await billingApi.generateForFlat(created.id);
           } catch {
-            showToast(`${flatLabel} created. Could not auto-generate bill — go to Dashboard to generate manually.`, 'warning');
+            // Billing generation failure is non-critical; flat was created successfully
           }
-        } else {
-          showToast(`${flatLabel} created successfully`, 'success');
         }
+        showToast(`${flatLabel} created successfully`, 'success');
       }
     } catch (error: any) {
       if (error?.response?.data) {
+        // If error is not a field error, show at top of form
+        const message = error.response.data.message || 'Failed to add flat. Please try again.';
+        setFormError(message);
         showErrorToast({
           ok: false,
-          message: error.response.data.message || 'Failed to add flat. Please try again.',
+          message,
           code: error.response.data.code,
           fieldErrors: error.response.data.errors?.reduce(
             (acc: any, err: any) => {
@@ -226,6 +230,7 @@ export default function Flats() {
           traceId: error.response.data.traceId,
         });
       } else {
+        setFormError(error?.message || 'Failed to add flat. Please try again.');
         showToast(error?.message || 'Failed to add flat. Please try again.', 'error');
       }
     }
@@ -540,119 +545,69 @@ export default function Flats() {
           size="lg"
         >
           <form onSubmit={handleSubmit(onSubmit)} className="form-group space-y-4 md:space-y-6 p-4 sm:p-6">
+            {formError && (
+              <div className="mb-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3">
+                <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-red-900 dark:text-red-100">{formError}</p>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div className="form-field">
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Flat Number
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., A-101"
-                  {...register('flatNumber')}
-                  className="input"
-                />
-                {errors.flatNumber && (
-                  <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
-                    <AlertCircle className="w-4 h-4" />
-                    {errors.flatNumber.message}
-                  </div>
-                )}
-              </div>
+              <Input
+                label="Flat Number"
+                type="text"
+                placeholder="e.g., A-101"
+                error={errors.flatNumber?.message}
+                {...register('flatNumber')}
+              />
 
-              <div className="form-field">
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Owner Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Full name"
-                  {...register('ownerName')}
-                  className="input"
-                />
-                {errors.ownerName && (
-                  <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
-                    <AlertCircle className="w-4 h-4" />
-                    {errors.ownerName.message}
-                  </div>
-                )}
-              </div>
+              <Input
+                label="Owner Name"
+                type="text"
+                placeholder="Full name"
+                error={errors.ownerName?.message}
+                {...register('ownerName')}
+              />
 
-              <div className="form-field">
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Email <span className="text-muted-foreground text-xs">(optional)</span>
-                </label>
-                <input
-                  type="email"
-                  placeholder="owner@example.com"
-                  {...register('ownerEmail')}
-                  className="input"
-                />
-                {errors.ownerEmail && (
-                  <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
-                    <AlertCircle className="w-4 h-4" />
-                    {errors.ownerEmail.message}
-                  </div>
-                )}
-              </div>
+              <Input
+                label="Email (Optional)"
+                type="email"
+                placeholder="owner@example.com"
+                error={errors.ownerEmail?.message}
+                {...register('ownerEmail')}
+              />
 
-              <div className="form-field">
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  maxLength={10}
-                  minLength={10}
-                  placeholder="+1234567890"
-                  {...register('ownerPhone')}
-                  className="input"
-                />
-                {errors.ownerPhone && (
-                  <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
-                    <AlertCircle className="w-4 h-4" />
-                    {errors.ownerPhone.message}
-                  </div>
-                )}
-              </div>
+              <Input
+                label="Phone Number"
+                type="tel"
+                maxLength={10}
+                placeholder="+1234567890"
+                error={errors.ownerPhone?.message}
+                {...register('ownerPhone')}
+              />
 
-              <div className="form-field md:col-span-2">
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Maintenance Amount
-                </label>
-                <input
+              <div className="md:col-span-2">
+                <Input
+                  label="Maintenance Amount"
                   type="number"
                   placeholder="5000"
                   step="0.01"
+                  error={errors.maintenanceAmount?.message}
                   {...register('maintenanceAmount')}
-                  className="input"
                 />
-                {errors.maintenanceAmount && (
-                  <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
-                    <AlertCircle className="w-4 h-4" />
-                    {errors.maintenanceAmount.message}
-                  </div>
-                )}
               </div>
 
-              <div className="form-field md:col-span-2">
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  Status
-                </label>
-                <select
+              <div className="md:col-span-2">
+                <Select
+                  label="Status"
+                  options={[
+                    { value: '', label: 'Select Status' },
+                    ...safeStatuses.map(s => ({ value: s.code, label: s.displayName })),
+                  ]}
+                  error={errors.statusCode?.message}
                   {...register('statusCode')}
-                  className="input"
-                >
-                  <option value="">Select Status</option>
-                  {safeStatuses.map((s) => (
-                    <option key={s.code} value={s.code}>{s.displayName}</option>
-                  ))}
-                </select>
-                {errors.statusCode && (
-                  <div className="flex items-center gap-2 mt-1 text-sm text-destructive font-semibold">
-                    <AlertCircle className="w-4 h-4" />
-                    {errors.statusCode.message}
-                  </div>
-                )}
+                />
               </div>
             </div>
 

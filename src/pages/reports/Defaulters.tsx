@@ -69,14 +69,7 @@ export default function DefaultersPage() {
                 <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Outstanding Dues</h3>
                 <span className="text-xs text-slate-500 dark:text-slate-400">• Flats with pending payments</span>
               </div>
-              <div className="flex gap-2 text-[10px] text-slate-600 dark:text-slate-400">
-                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-100 dark:bg-red-900/30">
-                  <span className="w-2 h-2 rounded bg-red-500" /> {'>'} 3 months
-                </span>
-                <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-yellow-100 dark:bg-yellow-900/30">
-                  <span className="w-2 h-2 rounded bg-yellow-500" /> 1-3 months
-                </span>
-              </div>
+              {/* Legend removed for improved user-friendliness. */}
             </div>
           </div>
           <div className="p-3">
@@ -139,7 +132,22 @@ export default function DefaultersPage() {
                         <TableCell className="text-right text-slate-500 dark:text-slate-400 tabular-nums">
                           {totalOutstanding > 0 ? ((d.total_outstanding / totalOutstanding) * 100).toFixed(1) + '%' : '—'}
                         </TableCell>
-                        <TableCell className="text-right tabular-nums">{d.pending_months}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          <span
+                            className={
+                              d.pending_months > 3
+                                ? 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 text-xs font-semibold'
+                                : d.pending_months >= 1
+                                ? 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300 text-xs font-semibold'
+                                : 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 text-xs font-semibold'
+                            }
+                          >
+                            {d.pending_months > 3 && <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />}
+                            {d.pending_months >= 1 && d.pending_months <= 3 && <span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" />}
+                            {d.pending_months === 0 && <span className="w-2 h-2 rounded-full bg-slate-400 inline-block" />}
+                            {d.pending_months}
+                          </span>
+                        </TableCell>
                         <TableCell className="whitespace-nowrap">{d.oldest_due_period ? fmtPeriod(d.oldest_due_period) : '—'}</TableCell>
                       </TableRow>
                     ))}

@@ -46,6 +46,11 @@ export default function Users() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   // form state
+  // General/business-rule error shown in the top banner
+  const [formError, setFormError] = useState<string | null>(null);
+  // Per-field inline errors
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -92,16 +97,19 @@ export default function Users() {
   ===================================================== */
 
   async function createUser() {
+    setFormError(null);
+    setNameError(null);
+    setPasswordError(null);
     if (!name.trim()) {
-      showToast('Full name is required.', 'error');
+      setNameError('Full name is required.');
       return;
     }
     if (!email.trim() && !username.trim()) {
-      showToast('Provide an email or username — the user needs one to log in.', 'error');
+      setFormError('Provide an email or username — the user needs one to log in.');
       return;
     }
     if (!password.trim()) {
-      showToast('Password is required.', 'error');
+      setPasswordError('Password is required.');
       return;
     }
 
@@ -135,6 +143,10 @@ export default function Users() {
       setShowCredentialsModal(true);
     } catch (error: any) {
       if (error?.response?.data) {
+        // If there are no fieldErrors, treat as general error
+        if (!error.response.data.errors || error.response.data.errors.length === 0) {
+          setFormError(error.response.data.message || AlertMessages.error.userCreationFailed);
+        }
         showErrorToast({
           ok: false,
           message: error.response.data.message || AlertMessages.error.userCreationFailed,
@@ -149,6 +161,7 @@ export default function Users() {
           traceId: error.response.data.traceId,
         });
       } else {
+        setFormError(AlertMessages.error.userCreationFailed);
         showToast(AlertMessages.error.userCreationFailed, 'error');
       }
     }
@@ -159,10 +172,12 @@ export default function Users() {
   ===================================================== */
 
   async function handleEditUser() {
+    setFormError(null);
+    setNameError(null);
     if (!selectedUser) return;
 
     if (!name.trim()) {
-      showToast(AlertMessages.error.fillAllFields, 'error');
+      setNameError('Full name is required.');
       return;
     }
 
@@ -193,6 +208,9 @@ export default function Users() {
       setSelectedFlatPublicId('');
     } catch (error: any) {
       if (error?.response?.data) {
+        if (!error.response.data.errors || error.response.data.errors.length === 0) {
+          setFormError(error.response.data.message || AlertMessages.error.userUpdateFailed);
+        }
         showErrorToast({
           ok: false,
           message: error.response.data.message || AlertMessages.error.userUpdateFailed,
@@ -207,6 +225,7 @@ export default function Users() {
           traceId: error.response.data.traceId,
         });
       } else {
+        setFormError(AlertMessages.error.userUpdateFailed);
         showToast(AlertMessages.error.userUpdateFailed, 'error');
       }
     } finally {
@@ -557,14 +576,26 @@ export default function Users() {
             setIsEditing(false);
             setSelectedUser(null);
             setName('');
-            setEmail('');          setUsername('');          setMobile('');
+            setEmail(''); setUsername(''); setMobile('');
             setPassword('');
             setSelectedRoleCode(RoleCode.VIEWER);
             setSelectedFlatPublicId('');
+            setFormError(null);
+            setNameError(null);
+            setPasswordError(null);
           }}
           title={isEditing ? 'Edit User' : 'Add User'}
         >
           <div className="p-4 sm:p-6 space-y-4">
+            {/* ── General/Business Rule Error Banner ── */}
+            {formError && (
+              <div className="mb-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3">
+                <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-red-900 dark:text-red-100">{formError}</p>
+                </div>
+              </div>
+            )}
             {!isEditing && (
               <Select
                 label="Select Flat Owner"
@@ -578,7 +609,8 @@ export default function Users() {
               <Input
                 label="Full Name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => { setName(e.target.value); if (nameError) setNameError(null); }}
+                error={nameError ?? undefined}
                 readOnly={!isEditing && selectedFlatPublicId !== ''}
               />
 
@@ -611,7 +643,7 @@ export default function Users() {
             {!isEditing && (
               <>
                 {!email.trim() && !username.trim() && (
-                  <p className="text-[11px] text-rose-500 dark:text-rose-400 -mt-2">
+                  <p className="text-[11px] text-red-500 dark:text-red-400 -mt-2">
                     Email or username is required for login.
                   </p>
                 )}
@@ -633,7 +665,8 @@ export default function Users() {
                     label="Password"
                     type="text"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => { setPassword(e.target.value); if (passwordError) setPasswordError(null); }}
+                    error={passwordError ?? undefined}
                     placeholder="Set a password for this user"
                   />
                 </div>
@@ -654,6 +687,9 @@ export default function Users() {
                 setMobile('');
                 setPassword('');
                 setSelectedRoleCode(RoleCode.VIEWER);
+                setFormError(null);
+                setNameError(null);
+                setPasswordError(null);
               }}
             >
               Cancel

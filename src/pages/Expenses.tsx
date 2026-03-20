@@ -76,6 +76,8 @@ export default function Expenses() {
   const [sortBy, setSortBy] = useState('date-desc');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
   const [selectedExpense, setSelectedExpense] = useState<ExpenseResponse | null>(null);
+  // New: formError state for business/general errors
+  const [formError, setFormError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ExpenseResponse | null>(null);
 
   // API hooks
@@ -204,6 +206,7 @@ export default function Expenses() {
   }));
 
   const onSubmit = async (data: ExpenseFormData) => {
+    setFormError(null); // Reset error at start
     try {
       if (selectedExpense) {
         // Update
@@ -233,6 +236,10 @@ export default function Expenses() {
       handleCloseModal();
     } catch (error: any) {
       if (error?.response?.data) {
+        // If there are no fieldErrors, treat as general error
+        if (!error.response.data.errors || error.response.data.errors.length === 0) {
+          setFormError(error.response.data.message || 'Error saving expense');
+        }
         showErrorToast({
           ok: false,
           message: error.response.data.message || 'Error saving expense',
@@ -247,6 +254,7 @@ export default function Expenses() {
           traceId: error.response.data.traceId,
         });
       } else {
+        setFormError('Error saving expense');
         showToast('Error saving expense', 'error');
       }
     }
@@ -762,6 +770,15 @@ export default function Expenses() {
                     size="xl"
                   >
                     <form onSubmit={handleSubmit(onSubmit)}>
+                      {/* ── General/Business Rule Error Banner ── */}
+                      {formError && (
+                        <div className="mb-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3">
+                          <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-red-900 dark:text-red-100">{formError}</p>
+                          </div>
+                        </div>
+                      )}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-6">
                         {/* Left column */}
                         <div className="space-y-4">

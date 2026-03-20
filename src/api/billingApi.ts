@@ -26,4 +26,8 @@ export const billingApi = {
     const response = await apiClient.post<ApiResponse<GenerateBillingResponse>>('/billing/generate-monthly', payload);
     return response.data.data;
   },
+
+  async generateForFlat(flatId: number): Promise<void> {
+    await apiClient.post('/billing/generate-for-flat', flatId);
+  },
 };
