@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { adminSocietiesApi } from '../api/adminSocietiesApi';
 import { societyUpdateSchema, type SocietyUpdateFormData } from '../schemas/adminSchemas';
@@ -19,7 +19,6 @@ export default function AdminSocietyEdit() {
     register,
     handleSubmit,
     reset,
-    watch,
     formState: { errors },
   } = useForm<SocietyUpdateFormData>({
     resolver: zodResolver(societyUpdateSchema),

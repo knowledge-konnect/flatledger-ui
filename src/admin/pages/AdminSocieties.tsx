@@ -5,7 +5,6 @@ import { Pencil } from 'lucide-react';
 import { adminSocietiesApi } from '../api/adminSocietiesApi';
 import { AdminDataTable, type AdminColumn } from '../components/AdminDataTable';
 import { AdminSearchBar } from '../components/AdminSearchBar';
-import { AdminStatusBadge } from '../components/AdminStatusBadge';
 import { AdminPageHeader } from '../components/AdminPageHeader';
 import type { AdminSocietyDto } from '../types/adminTypes';
 import { cn } from '../../lib/utils';
