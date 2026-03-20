@@ -57,7 +57,6 @@ export const societyUpdateSchema = z.object({
   pincode: z.string().optional().nullable(),
   currency: z.string().length(3, 'Currency must be 3 characters'),
   defaultMaintenanceCycle: z.enum(['monthly', 'quarterly', 'yearly']),
-  isDeleted: z.boolean().optional(),
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;

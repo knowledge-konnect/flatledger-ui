@@ -96,6 +96,8 @@ import { isAdminRole, collectUserRoles } from '../types/roles';
 export default function Maintenance() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [period, setPeriod] = useState(getCurrentMonth());
+  // New: formError state for business/general errors
+  const [formError, setFormError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
@@ -192,11 +194,12 @@ export default function Maintenance() {
   }, [flatSummaryResults, safeFlats]);
 
   const onSubmit = async (data: PaymentFormData) => {
-    if (localSubmitting) return; 
+    if (localSubmitting) return;
     setLocalSubmitting(true);
+    setFormError(null); // Reset error at start
     try {
       if (!user) {
-        showToast('User not authenticated', 'error');
+        setFormError('User not authenticated');
         return;
       }
 
@@ -261,10 +264,16 @@ export default function Maintenance() {
         reset();
       }
     } catch (error: any) {
+      // Prefer formError for business/general errors
       if (error?.response?.data) {
+        const message = error.response.data.message || 'Failed to save payment';
+        // If there are no fieldErrors, treat as general error
+        if (!error.response.data.errors || error.response.data.errors.length === 0) {
+          setFormError(message);
+        }
         showErrorToast({
           ok: false,
-          message: error.response.data.message || 'Failed to save payment',
+          message,
           code: error.response.data.code,
           fieldErrors: error.response.data.errors?.reduce(
             (acc: any, err: any) => {
@@ -276,6 +285,7 @@ export default function Maintenance() {
           traceId: error.response.data.traceId,
         });
       } else {
+        setFormError(error?.message || 'Failed to save payment. Please try again.');
         showToast(error?.message || 'Failed to save payment. Please try again.', 'error');
       }
     } finally {
@@ -860,7 +870,17 @@ export default function Maintenance() {
           title={isEditing ? "Edit Payment" : "Record Payment"}
           size="xl"
         >
+
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
+          {/* ── General/Business Rule Error Banner ── */}
+          {formError && (
+            <div className="mx-6 mt-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3">
+              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-red-900 dark:text-red-100">{formError}</p>
+              </div>
+            </div>
+          )}
 
           {/* ── No-bills warning banner ───────────────────────────────────── */}
           {!isEditing && !billingStatus?.isGenerated && (

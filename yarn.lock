@@ -140,6 +140,11 @@
   dependencies:
     "@babel/helper-plugin-utils" "^7.27.1"
 
+"@babel/runtime@^7.28.4", "@babel/runtime@^7.28.6":
+  "integrity" "sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g=="
+  "resolved" "https://registry.npmjs.org/@babel/runtime/-/runtime-7.29.2.tgz"
+  "version" "7.29.2"
+
 "@babel/template@^7.27.2":
   "integrity" "sha512-LPDZ85aEJyYSd18/DkjNh4/y1ntkE5KwUHWTiqgRxruuZL2F1yuHligVHLvcHY2vMHXttKFpJn6LwfI7cw7ODw=="
   "resolved" "https://registry.npmjs.org/@babel/template/-/template-7.27.2.tgz"
@@ -1489,6 +1494,20 @@
   dependencies:
     "function-bind" "^1.1.2"
 
+"html-parse-stringify@^3.0.1":
+  "integrity" "sha512-KknJ50kTInJ7qIScF3jeaFRpMpE8/lfiTdzf/twXyPBLAGrLRTmkz3AdTnKeh40X8k9L2fdYwEp/42WGXIRGcg=="
+  "resolved" "https://registry.npmjs.org/html-parse-stringify/-/html-parse-stringify-3.0.1.tgz"
+  "version" "3.0.1"
+  dependencies:
+    "void-elements" "3.1.0"
+
+"i18next@^25.8.20", "i18next@>= 25.6.2":
+  "integrity" "sha512-xjo9+lbX/P1tQt3xpO2rfJiBppNfUnNIPKgCvNsTKsvTOCro1Qr/geXVg1N47j5ScOSaXAPq8ET93raK3Rr06A=="
+  "resolved" "https://registry.npmjs.org/i18next/-/i18next-25.8.20.tgz"
+  "version" "25.8.20"
+  dependencies:
+    "@babel/runtime" "^7.28.6"
+
 "iconv-lite@^0.6.3":
   "integrity" "sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw=="
   "resolved" "https://registry.npmjs.org/iconv-lite/-/iconv-lite-0.6.3.tgz"
@@ -2093,6 +2112,15 @@
   "resolved" "https://registry.npmjs.org/react-hook-form/-/react-hook-form-7.65.0.tgz"
   "version" "7.65.0"
 
+"react-i18next@^16.5.8":
+  "integrity" "sha512-2ABeHHlakxVY+LSirD+OiERxFL6+zip0PaHo979bgwzeHg27Sqc82xxXWIrSFmfWX0ZkrvXMHwhsi/NGUf5VQg=="
+  "resolved" "https://registry.npmjs.org/react-i18next/-/react-i18next-16.5.8.tgz"
+  "version" "16.5.8"
+  dependencies:
+    "@babel/runtime" "^7.28.4"
+    "html-parse-stringify" "^3.0.1"
+    "use-sync-external-store" "^1.6.0"
+
 "react-is@^16.13.1":
   "integrity" "sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ=="
   "resolved" "https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz"
@@ -2123,7 +2151,7 @@
     "cookie" "^1.0.1"
     "set-cookie-parser" "^2.6.0"
 
-"react@^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc", "react@^16.6.0 || ^17.0.0 || ^18.0.0", "react@^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc", "react@^16.8.0 || ^17 || ^18 || ^19", "react@^18 || ^19", "react@^18.0.0 || ^19.0.0", "react@^18.0.0 || ^19.0.0 || ^19.0.0-rc", "react@^18.2.0", "react@>=16.8.0", "react@>=18":
+"react@^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc", "react@^16.6.0 || ^17.0.0 || ^18.0.0", "react@^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc", "react@^16.8.0 || ^17 || ^18 || ^19", "react@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react@^18 || ^19", "react@^18.0.0 || ^19.0.0", "react@^18.0.0 || ^19.0.0 || ^19.0.0-rc", "react@^18.2.0", "react@>= 16.8.0", "react@>=16.8.0", "react@>=18":
   "integrity" "sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ=="
   "resolved" "https://registry.npmjs.org/react/-/react-18.2.0.tgz"
   "version" "18.2.0"
@@ -2618,6 +2646,11 @@
   dependencies:
     "punycode" "^2.1.0"
 
+"use-sync-external-store@^1.6.0":
+  "integrity" "sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w=="
+  "resolved" "https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.6.0.tgz"
+  "version" "1.6.0"
+
 "util-deprecate@^1.0.2":
   "integrity" "sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw=="
   "resolved" "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz"
@@ -2641,6 +2674,11 @@
     "tinyglobby" "^0.2.15"
   optionalDependencies:
     "fsevents" "~2.3.3"
+
+"void-elements@3.1.0":
+  "integrity" "sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w=="
+  "resolved" "https://registry.npmjs.org/void-elements/-/void-elements-3.1.0.tgz"
+  "version" "3.1.0"
 
 "webidl-conversions@^3.0.0":
   "integrity" "sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ=="

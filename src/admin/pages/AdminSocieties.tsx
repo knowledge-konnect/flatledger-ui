@@ -13,9 +13,8 @@ import { cn } from '../../lib/utils';
 export default function AdminSocieties() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [showDeleted, setShowDeleted] = useState<'' | 'true' | 'false'>('');
 
-  const queryKey = ['admin_societies', page, search, showDeleted] as const;
+  const queryKey = ['admin_societies', page, search] as const;
 
   const { data, isLoading } = useQuery({
     queryKey,
@@ -24,8 +23,6 @@ export default function AdminSocieties() {
         page,
         pageSize: 20,
         search,
-        isDeleted:
-          showDeleted === '' ? '' : showDeleted === 'true' ? true : false,
       }),
     staleTime: 30_000,
   });
@@ -43,14 +40,7 @@ export default function AdminSocieties() {
       key: 'name',
       header: 'Name',
       cell: (row) => (
-        <span
-          className={cn(
-            'font-medium',
-            row.isDeleted
-              ? 'line-through text-slate-400 dark:text-slate-600'
-              : 'text-slate-900 dark:text-white',
-          )}
-        >
+        <span className={cn('font-medium', 'text-slate-900 dark:text-white')}>
           {row.name}
         </span>
       ),
@@ -63,16 +53,6 @@ export default function AdminSocieties() {
       header: 'Cycle',
       cell: (row) => (
         <span className="capitalize">{row.defaultMaintenanceCycle}</span>
-      ),
-    },
-    {
-      key: 'isDeleted',
-      header: 'Status',
-      cell: (row) => (
-        <AdminStatusBadge
-          status={row.isDeleted ? 'deleted' : 'active'}
-          label={row.isDeleted ? 'Deleted' : 'Active'}
-        />
       ),
     },
     {
@@ -105,18 +85,6 @@ export default function AdminSocieties() {
           placeholder="Search by name or city…"
           className="sm:w-72"
         />
-        <select
-          value={showDeleted}
-          onChange={(e) => {
-            setShowDeleted(e.target.value as '' | 'true' | 'false');
-            setPage(1);
-          }}
-          className="h-9 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <option value="">All statuses</option>
-          <option value="false">Active only</option>
-          <option value="true">Deleted only</option>
-        </select>
       </div>
 
       <AdminDataTable
@@ -129,9 +97,7 @@ export default function AdminSocieties() {
         onPageChange={setPage}
         isLoading={isLoading}
         emptyMessage="No societies found."
-        rowClassName={(row) =>
-          row.isDeleted ? 'opacity-60' : ''
-        }
+        // rowClassName removed as isDeleted is no longer used
         actions={(row) => (
           <Link
             to={`/admin/societies/${row.id}/edit`}

@@ -7,6 +7,7 @@ import apiClient from './client';
  * All entities use publicId (UUID) as primary identifier
  */
 export interface FlatDto {
+  id?: number; // Internal numeric ID
   publicId: string; // UUID - primary identifier
   societyPublicId?: string; // UUID - society identifier
   flatNo: string;

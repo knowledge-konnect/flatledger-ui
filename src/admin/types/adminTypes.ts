@@ -152,7 +152,6 @@ export interface AdminPaymentDto {
   paymentType: string;
   razorpayPaymentId: string | null;
   verifiedAt: string | null;
-  isDeleted: boolean;
   createdAt: string;
 }
 

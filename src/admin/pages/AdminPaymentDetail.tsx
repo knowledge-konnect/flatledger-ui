@@ -117,16 +117,7 @@ export default function AdminPaymentDetail() {
             />
           )}
           <DetailRow label="Created At" value={formatDateTime(payment.createdAt)} />
-          <DetailRow
-            label="Deleted"
-            value={
-              payment.isDeleted ? (
-                <span className="text-red-500">Yes</span>
-              ) : (
-                <span className="text-slate-400">No</span>
-              )
-            }
-          />
+          // ...existing code...
         </div>
       ) : (
         <div className="text-sm text-slate-500 p-6 text-center">Payment not found.</div>

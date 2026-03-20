@@ -25,7 +25,6 @@ export default function AdminSocietyEdit() {
     resolver: zodResolver(societyUpdateSchema),
   });
 
-  const isDeleted = watch('isDeleted');
 
   const { data: societyData, isLoading } = useQuery({
     queryKey: ['admin_society', id],
@@ -45,7 +44,6 @@ export default function AdminSocietyEdit() {
         pincode: s.pincode ?? '',
         currency: s.currency,
         defaultMaintenanceCycle: s.defaultMaintenanceCycle as 'monthly' | 'quarterly' | 'yearly',
-        isDeleted: s.isDeleted,
       });
     }
   }, [societyData, reset]);
@@ -178,37 +176,7 @@ export default function AdminSocietyEdit() {
               </div>
             </div>
 
-            {/* Soft Delete Toggle */}
-            <div
-              className={`flex items-start gap-3 p-4 rounded-lg border ${
-                isDeleted
-                  ? 'border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-900/10'
-                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40'
-              }`}
-            >
-              <div className="flex items-center h-5">
-                <input
-                  {...register('isDeleted')}
-                  type="checkbox"
-                  id="isDeleted"
-                  className="w-4 h-4 rounded border-slate-300 text-red-600 focus:ring-red-500"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="isDeleted"
-                  className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300 cursor-pointer"
-                >
-                  {isDeleted && <AlertTriangle className="w-4 h-4 text-red-500" />}
-                  Mark as Deleted (Soft Delete)
-                </label>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  {isDeleted
-                    ? 'This society is marked as deleted. Uncheck to restore it.'
-                    : 'Check this to soft-delete the society. It can be restored later.'}
-                </p>
-              </div>
-            </div>
+
           </div>
 
           {/* Actions */}
