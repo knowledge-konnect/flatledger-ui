@@ -23,7 +23,6 @@ import { ActivityItem } from '../components/dashboard/ActivityItem';
 import { useDashboard } from '../hooks/useDashboard';
 import { useFlats } from '../hooks/useFlats';
 import { useAuth } from '../contexts/AuthProvider';
-import { isAdminRole, collectUserRoles } from '../types/roles';
 import { useBillingStatus, useGenerateBilling } from '../hooks/useBillingStatus';
 import BillingReminderBanner from '../components/dashboard/BillingReminderBanner';
 import { formatCurrency, cn } from '../lib/utils';
@@ -99,7 +98,7 @@ function getLastMonthRange() {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const isAdmin = isAdminRole(collectUserRoles(user));
+  // ...existing code...
   const navigate = useNavigate();
   const { isComplete: setupComplete, isLoading: setupLoading, steps: setupSteps } = useSetupProgress();
 
