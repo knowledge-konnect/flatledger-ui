@@ -58,6 +58,7 @@ export function useCreateMaintenancePayment() {
       qc.invalidateQueries({ queryKey: ['maintenance-summary'] });
       qc.invalidateQueries({ queryKey: ['flat-ledger', variables.payload.flatPublicId] });
       qc.invalidateQueries({ queryKey: ['flat-financial-summary', variables.payload.flatPublicId] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
       
       // Log activity
       if (user) {
@@ -95,6 +96,7 @@ export function useUpdateMaintenancePayment() {
       qc.invalidateQueries({ queryKey: ['maintenance-summary'] });
       qc.invalidateQueries({ queryKey: ['flat-financial-summary', data.flatPublicId] });
       qc.invalidateQueries({ queryKey: ['flat-ledger', data.flatPublicId] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
       
       // Log activity
       if (user) {
@@ -130,6 +132,7 @@ export function useDeleteMaintenancePayment() {
       qc.invalidateQueries({ queryKey: ['maintenance-summary'] });
       qc.invalidateQueries({ queryKey: ['flat-financial-summary'] });
       qc.invalidateQueries({ queryKey: ['flat-ledger'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
       
       // Log activity
       if (user) {

@@ -22,9 +22,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles 
     );
   }
 
-  // 2. If not authenticated: redirect to landing page
+  // 2. If not authenticated: redirect to login page
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/?reason=session_expired" replace />;
   }
 
   // 3. Support optional roles prop: If user.role not in allowed roles, redirect to /unauthorized
