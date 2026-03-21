@@ -201,13 +201,20 @@ export default function Flats() {
 
         const flatLabel = created?.flatNo ? `Flat ${created.flatNo}` : 'Flat';
 
-        // Trigger billing generation for the new flat (backend auto-generates)
-        if (created?.id) {
+        logger.log('[Flats] createFlat response:', created);
+
+        // Trigger billing generation for the new flat
+        if (created?.publicId) {
+          logger.log('[Flats] Triggering billing generation for flatPublicId:', created.publicId);
           try {
-            await billingApi.generateForFlat(created.id);
-          } catch {
+            await billingApi.generateForFlat({ flatPublicId: created.publicId });
+            logger.log('[Flats] Billing generation succeeded');
+          } catch (billingErr) {
+            logger.log('[Flats] Billing generation failed:', billingErr);
             // Billing generation failure is non-critical; flat was created successfully
           }
+        } else {
+          logger.log('[Flats] Skipping billing generation — no publicId on created object:', created);
         }
         showToast(`${flatLabel} created successfully`, 'success');
       }
@@ -626,11 +633,11 @@ export default function Flats() {
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || (isEditing ? (updateFlat as any).isLoading : (createFlat as any).isLoading)}
+                disabled={isSubmitting || (isEditing ? updateFlat.isPending : createFlat.isPending)}
               >
                 {isEditing
-                  ? ((updateFlat as any).isLoading ? 'Saving...' : (isSubmitting ? 'Saving...' : 'Save'))
-                  : ((createFlat as any).isLoading ? 'Adding...' : (isSubmitting ? 'Adding...' : 'Add Flat'))}
+                  ? (updateFlat.isPending ? 'Saving...' : (isSubmitting ? 'Saving...' : 'Save'))
+                  : (createFlat.isPending ? 'Adding...' : (isSubmitting ? 'Adding...' : 'Add Flat'))}
               </Button>
             </ModalFooter>
           </form>
@@ -664,7 +671,7 @@ export default function Flats() {
             <Button
               type="button"
               variant="danger"
-              disabled={(deleteFlat as any).isLoading}
+              disabled={deleteFlat.isPending}
               onClick={async () => {
                 if (!deleteTarget) return;
                 try {
@@ -694,7 +701,7 @@ export default function Flats() {
                 }
               }}
             >
-              {(deleteFlat as any).isLoading ? 'Deleting...' : 'Delete'}
+              {deleteFlat.isPending ? 'Deleting...' : 'Delete'}
             </Button>
           </ModalFooter>
         </Modal>

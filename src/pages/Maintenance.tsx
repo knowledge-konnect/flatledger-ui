@@ -367,9 +367,9 @@ export default function Maintenance() {
         const q = searchQuery.toLowerCase();
         return (
           (p.flatNumber || '').toLowerCase().includes(q) ||
-          (p.recordedByName || '').toLowerCase().includes(q) ||
+          // (p.recordedByName || '').toLowerCase().includes(q) ||
           (p.notes || '').toLowerCase().includes(q) ||
-          (p.referenceNumber || '').toLowerCase().includes(q) ||
+          // (p.referenceNumber || '').toLowerCase().includes(q) ||
           (p.paymentModeName || '').toLowerCase().includes(q)
         );
       })
@@ -661,7 +661,7 @@ export default function Maintenance() {
               />
             </div>
           ) : (
-            <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg">
+            <div className="border border-slate-200 dark:border-slate-700 rounded-lg">
               <table className="w-full">
                 <thead>
                   <tr className="bg-emerald-800 dark:bg-emerald-950 border-b border-emerald-700 dark:border-emerald-900 divide-x divide-emerald-700 dark:divide-emerald-900">
@@ -670,10 +670,10 @@ export default function Maintenance() {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">Owner</th>
                     <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Amount</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">Payment Mode</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">Recorded By</th>
+                    {/* <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">Recorded By</th> */}
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">Paid For</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden lg:table-cell">Notes</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden lg:table-cell">Reference</th>
+                    {/* <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden lg:table-cell">Reference</th> */}
                     <th className="px-6 py-3 text-center text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -737,17 +737,16 @@ export default function Maintenance() {
                         </span>
                       </td>
                       <td className="px-6 py-3 whitespace-nowrap hidden md:table-cell">
-                        <span className="text-sm text-slate-600 dark:text-slate-400">
-                          {payment.recordedByName || '-'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap hidden md:table-cell">
                         {(() => {
+                          // Always render Paid For cell, even if empty, to keep alignment
                           const allocs = payment.allocations || [];
                           const periods = allocs
                             .map(a => a.period)
                             .filter((p): p is string => !!p);
                           const uniquePeriods = [...new Set(periods)];
+                          if (!payment || (!uniquePeriods.length && !payment.paymentDate)) {
+                            return <span>-</span>;
+                          }
                           if (uniquePeriods.length === 0) {
                             // No allocation period info — derive from paymentDate
                             const d = new Date(payment.paymentDate);
@@ -790,11 +789,6 @@ export default function Maintenance() {
                       <td className="px-6 py-3 hidden lg:table-cell">
                         <span className="text-sm text-slate-500 dark:text-slate-400 truncate max-w-[180px] block">
                           {payment.notes || '-'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap hidden lg:table-cell">
-                        <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
-                          {payment.referenceNumber || '-'}
                         </span>
                       </td>
                       <td className="px-6 py-3 whitespace-nowrap">
@@ -1108,6 +1102,7 @@ export default function Maintenance() {
               </div>
 
               {/* Reference */}
+              {/*
               <div className="form-field">
                 <Input
                   label="Reference Number"
@@ -1116,6 +1111,7 @@ export default function Maintenance() {
                   {...register('referenceNumber')}
                 />
               </div>
+              */}
 
             </div>
           </div>{/* end two-column grid */}

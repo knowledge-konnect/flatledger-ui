@@ -53,8 +53,18 @@ function UserRoutes() {
   const { pathname } = useLocation();
 
   const publicPaths = ['/', '/privacy', '/terms', '/subscription', '/free-trial', '/login', '/signup', '/forgot-password'];
+  const protectedPaths = [
+    '/dashboard', '/flats', '/maintenance', '/expenses', '/reports', '/users', '/settings', '/setup', '/premium-dashboard', '/subscription/manage', '/flats/', '/reports/'
+  ];
+
   if (isLoading && !publicPaths.includes(pathname)) {
     return <PageLoader />;
+  }
+
+  // If not authenticated, not loading, and on a protected route, redirect to login
+  const isProtected = protectedPaths.some(p => pathname === p || pathname.startsWith(p + '/') );
+  if (!isAuthenticated && !isLoading && isProtected) {
+    return <Navigate to="/?reason=session_expired" replace />;
   }
 
   if (isAuthenticated && user && user.forcePasswordChange === true) {

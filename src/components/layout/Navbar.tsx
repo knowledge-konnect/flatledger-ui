@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import Button from '../ui/Button';
 import { FlatLedgerIcon } from '../ui/FlatLedgerIcon';
+import { cn } from '../../lib/utils';
 
 interface NavbarProps {
   variant?: 'landing' | 'dashboard';
@@ -16,7 +17,10 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
 
   const scrollToSection = (id: string) => (e?: React.MouseEvent) => {
     e?.preventDefault();
-    const scrollWithOffset = () => {
+    const setHashAndScroll = () => {
+      if (window.location.hash !== `#${id}`) {
+        window.location.hash = `#${id}`;
+      }
       const el = document.getElementById(id);
       if (el) {
         const offsetTop = el.offsetTop - 200;
@@ -24,11 +28,68 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
       }
     };
     if (location.pathname === '/') {
-      scrollWithOffset();
+      setHashAndScroll();
       return;
     }
     navigate('/');
-    setTimeout(scrollWithOffset, 120);
+    setTimeout(setHashAndScroll, 120);
+  };
+
+  // Track hash in state
+  const [activeHash, setActiveHash] = React.useState(
+    typeof window !== 'undefined' ? window.location.hash : ''
+  );
+
+  React.useEffect(() => {
+    const onHashChange = () => setActiveHash(window.location.hash);
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
+
+  // --- Scroll-based hash update for highlighting ---
+  React.useEffect(() => {
+    if (variant !== 'landing') return;
+    const sectionIds = ['features', 'pricing', 'faq'];
+    const NAVBAR_OFFSET = 80;
+    const handleScroll = () => {
+      let currentSection = null;
+      let maxVisible = 0;
+
+      sectionIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        const rect = el.getBoundingClientRect();
+        const visibleHeight =
+          Math.min(rect.bottom, window.innerHeight) -
+          Math.max(rect.top, NAVBAR_OFFSET);
+
+        if (visibleHeight > maxVisible && visibleHeight > 0) {
+          maxVisible = visibleHeight;
+          currentSection = id;
+        }
+      });
+      if (currentSection && window.location.hash !== `#${currentSection}`) {
+        history.replaceState(null, '', `#${currentSection}`);
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      }
+      if (!currentSection && window.location.hash) {
+        history.replaceState(null, '', window.location.pathname);
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [variant]);
+
+  // Use activeHash and location.pathname for robust highlighting
+  const isActive = (section: string) => {
+    if (location.pathname !== '/') return false;
+    if (activeHash === `#${section}`) return true;
+    // If no hash, default to features as active
+    if (!activeHash && section === 'features') return true;
+    return false;
   };
 
   if (variant === 'landing') {
@@ -52,13 +113,40 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
             </div>
 
             <div className="hidden md:flex items-center gap-1">
-              <a onClick={scrollToSection('features')} href="#features" className="px-4 py-2 text-[#0F172A] dark:text-[#F8FAFC] hover:text-primary dark:hover:text-primary-300 hover:bg-[#F8FAFC] dark:hover:bg-[#020617] rounded-lg transition-all duration-300 font-medium text-sm">
+              <a
+                onClick={scrollToSection('features')}
+                href="#features"
+                className={cn(
+                  'px-4 py-2 rounded-lg transition-all duration-300 font-medium text-sm',
+                  isActive('features')
+                    ? 'bg-emerald-600 dark:bg-emerald-500 text-white shadow'
+                    : 'text-[#0F172A] dark:text-[#F8FAFC] hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10 dark:hover:bg-emerald-400/10'
+                )}
+              >
                 Features
               </a>
-              <a onClick={scrollToSection('pricing')} href="#pricing" className="px-4 py-2 text-[#0F172A] dark:text-[#F8FAFC] hover:text-primary dark:hover:text-primary-300 hover:bg-[#F8FAFC] dark:hover:bg-[#020617] rounded-lg transition-all duration-300 font-medium text-sm">
+              <a
+                onClick={scrollToSection('pricing')}
+                href="#pricing"
+                className={cn(
+                  'px-4 py-2 rounded-lg transition-all duration-300 font-medium text-sm',
+                  isActive('pricing')
+                    ? 'bg-emerald-600 dark:bg-emerald-500 text-white shadow'
+                    : 'text-[#0F172A] dark:text-[#F8FAFC] hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10 dark:hover:bg-emerald-400/10'
+                )}
+              >
                 Pricing
               </a>
-              <a onClick={scrollToSection('faq')} href="#faq" className="px-4 py-2 text-[#0F172A] dark:text-[#F8FAFC] hover:text-primary dark:hover:text-primary-300 hover:bg-[#F8FAFC] dark:hover:bg-[#020617] rounded-lg transition-all duration-300 font-medium text-sm">
+              <a
+                onClick={scrollToSection('faq')}
+                href="#faq"
+                className={cn(
+                  'px-4 py-2 rounded-lg transition-all duration-300 font-medium text-sm',
+                  isActive('faq')
+                    ? 'bg-emerald-600 dark:bg-emerald-500 text-white shadow'
+                    : 'text-[#0F172A] dark:text-[#F8FAFC] hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10 dark:hover:bg-emerald-400/10'
+                )}
+              >
                 FAQ
               </a>
             </div>

@@ -169,28 +169,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const MAX_REFRESH_ATTEMPTS = 3;
 
   const setAuthState = (token: string | null, authResponse?: AuthResponse) => {
-    logger.log(`[AuthProvider] Setting auth state - token present: ${!!token}`);
-    
     if (token) {
       const user = decodeJwtToken(token, authResponse);
       
       if (user) {
-        // Store access token in memory only — never in localStorage
         setInMemoryAccessToken(token);
-        // Persist token + user to sessionStorage so F5 page-refresh restores state instantly
         try {
           sessionStorage.setItem(SS_TOKEN_KEY, token);
           sessionStorage.setItem(SS_USER_KEY, JSON.stringify(user));
         } catch { /* sessionStorage unavailable — silently skip */ }
-        // refreshToken is managed exclusively by the backend as an httpOnly cookie
-        
         const newState: AuthState = {
           user,
           accessToken: token,
           isAuthenticated: true,
           isLoading: false,
         };
-        
         setState(newState);
         logger.log(`[AuthProvider] Authentication successful for user:`, {
           name: user.name,
@@ -201,7 +194,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           publicId: user.publicId,
         });
       } else {
-        // Failed to decode token, clear everything
         logger.error(`[AuthProvider] Failed to decode token, clearing auth state`);
         clearAllAuthData();
         setState({
@@ -210,9 +202,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isAuthenticated: false,
           isLoading: false,
         });
+        navigate('/login', { replace: true });
       }
     } else {
-      // Clear all auth-related data when logging out
       clearAllAuthData();
       setState({
         user: null,
@@ -220,6 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: false,
         isLoading: false,
       });
+      navigate('/login', { replace: true });
     }
   };
 
@@ -433,7 +426,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [state] // Only recreate when state actually changes
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {

@@ -16,6 +16,10 @@ export interface GenerateBillingResponse {
   generatedCount: number;
 }
 
+export interface GenerateBillForFlatRequest {
+  flatPublicId: string; // UUID from FlatResponseDto.publicId
+}
+
 export const billingApi = {
   async getStatus(): Promise<BillingStatusDto> {
     const response = await apiClient.get<ApiResponse<BillingStatusDto>>('/billing/status');
@@ -27,7 +31,7 @@ export const billingApi = {
     return response.data.data;
   },
 
-  async generateForFlat(flatId: number): Promise<void> {
-    await apiClient.post('/billing/generate-for-flat', flatId);
+  async generateForFlat(payload: GenerateBillForFlatRequest): Promise<void> {
+    await apiClient.post<ApiResponse<null>>('/billing/generate-for-flat', payload);
   },
 };
