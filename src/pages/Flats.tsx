@@ -236,23 +236,12 @@ export default function Flats() {
       }
     } catch (error: any) {
       if (error?.response?.data) {
-        // If error is not a field error, show at top of form
+        // If error is not a field error, show at top of form only (no toast)
         const message = error.response.data.message || 'Failed to add flat. Please try again.';
         setFormError(message);
-        showErrorToast({
-          ok: false,
-          message,
-          code: error.response.data.code,
-          fieldErrors: error.response.data.errors?.reduce(
-            (acc: any, err: any) => {
-              acc[err.field] = err.messages;
-              return acc;
-            },
-            {}
-          ),
-          traceId: error.response.data.traceId,
-        });
+        // Do NOT show toast for form errors to avoid duplicate messages
       } else {
+        // Only show toast for unexpected errors (not form validation/business errors)
         setFormError(error?.message || 'Failed to add flat. Please try again.');
         showToast(error?.message || 'Failed to add flat. Please try again.', 'error');
       }
