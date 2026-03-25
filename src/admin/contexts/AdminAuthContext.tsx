@@ -59,7 +59,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     const payload = res.data.data;
     setAdminToken(payload.accessToken);
     setAdmin({
-      adminPublicId: payload.adminPublicId,
+      publicId: payload.adminPublicId,
       name: payload.name,
       email: payload.email,
     });

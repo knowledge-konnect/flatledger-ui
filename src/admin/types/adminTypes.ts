@@ -1,6 +1,6 @@
 // ─── Generic API shapes ───────────────────────────────────────────────────────
 export interface ApiResponse<T> {
-  isSuccess: boolean;
+  succeeded: boolean;
   data: T;
   message?: string;
 }
@@ -11,6 +11,8 @@ export interface PagedResult<T> {
   page: number;
   pageSize: number;
   totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -28,9 +30,12 @@ export interface AdminLoginResponse {
 }
 
 export interface AdminUser {
-  adminPublicId: string;
+  publicId: string;
   name: string;
   email: string;
+  isActive?: boolean;
+  lastLogin?: string;
+  createdAt?: string;
 }
 
 // ─── Plans ────────────────────────────────────────────────────────────────────
@@ -39,9 +44,9 @@ export interface AdminPlanDto {
   name: string;
   monthlyAmount: number;
   currency: string;
-  isActive: boolean;
+  isActive?: boolean;
   durationMonths: number;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface AdminPlanCreateRequest {
@@ -67,68 +72,94 @@ export type PlanListParams = {
 };
 
 // ─── Societies ────────────────────────────────────────────────────────────────
+export interface AdminSocietySubscriptionSummary {
+  id: string;
+  planName: string;
+  status: string;
+  subscribedAmount: number;
+  currency?: string;
+  currentPeriodEnd?: string;
+  trialEnd?: string;
+}
+
 export interface AdminSocietyDto {
   id: number;
   publicId: string;
-  name: string;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  pincode: string | null;
-  currency: string;
-  defaultMaintenanceCycle: string;
-  createdAt: string;
-  updatedAt: string;
-  isDeleted: boolean;
-  deletedAt: string | null;
-  onboardingDate: string | null;
-}
-
-export interface AdminSocietyUpdateRequest {
   name: string;
   address?: string | null;
   city?: string | null;
   state?: string | null;
   pincode?: string | null;
   currency: string;
-  defaultMaintenanceCycle: 'monthly' | 'quarterly' | 'yearly';
-  isDeleted?: boolean;
+  defaultMaintenanceCycle: string;
+  createdAt: string;
+  updatedAt: string;
+  isDeleted: boolean;
+  deletedAt?: string | null;
+  onboardingDate: string;
+  flatCount: number;
+  activeFlatCount: number;
+  userCount: number;
+  activeUserCount: number;
+  activeSubscription?: AdminSocietySubscriptionSummary;
 }
 
 export type SocietyListParams = {
   page?: number;
   pageSize?: number;
   search?: string;
+};
+
+// ─── Users ────────────────────────────────────────────────────────────────────
+export interface AdminUserDto {
+  id: number;
+  publicId: string;
+  societyId: number;
+  societyName?: string;
+  name: string;
+  email?: string;
+  mobile?: string;
+  username?: string;
+  roleId: number;
+  isActive: boolean;
+  isDeleted: boolean;
+  lastLogin?: string;
+  createdAt: string;
+  subscriptionStatus?: string;
+  subscriptionPlan?: string;
+  trialEndsDate?: string;
+  nextBillingDate?: string;
+}
+
+export type UserListParams = {
+  page?: number;
+  pageSize?: number;
+  societyId?: number | '';
+  search?: string;
+  isActive?: boolean | '';
   isDeleted?: boolean | '';
 };
 
 // ─── Subscriptions ────────────────────────────────────────────────────────────
-export type SubscriptionStatus = 'active' | 'cancelled' | 'trial' | 'expired';
+export type SubscriptionStatus = 'active' | 'cancelled' | 'trial' | 'expired' | 'past_due';
 
 export interface AdminSubscriptionDto {
   id: string;
   userId: number;
   userName: string;
-  userEmail: string;
+  userEmail?: string;
   planId: string;
   planName: string;
   status: SubscriptionStatus;
   subscribedAmount: number;
-  currency: string;
-  currentPeriodStart: string | null;
-  currentPeriodEnd: string | null;
-  trialStart: string | null;
-  trialEnd: string | null;
-  cancelledAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AdminSubscriptionUpdateRequest {
-  planId: string;
-  status: SubscriptionStatus;
+  currency?: string;
   currentPeriodStart?: string | null;
   currentPeriodEnd?: string | null;
+  trialStart?: string | null;
+  trialEnd?: string | null;
+  cancelledAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export type SubscriptionListParams = {
@@ -143,15 +174,16 @@ export interface AdminPaymentDto {
   id: number;
   publicId: string;
   societyId: number;
-  billId: number | null;
-  flatId: number | null;
+  billId?: number | null;
+  flatId?: number | null;
   amount: number;
-  datePaid: string;
-  modeCode: string;
-  reference: string | null;
-  paymentType: string;
-  razorpayPaymentId: string | null;
-  verifiedAt: string | null;
+  datePaid?: string;
+  modeCode?: string;
+  reference?: string | null;
+  paymentType?: string;
+  razorpayPaymentId?: string | null;
+  verifiedAt?: string | null;
+  isDeleted: boolean;
   createdAt: string;
 }
 
@@ -164,42 +196,44 @@ export type PaymentListParams = {
   to?: string;
 };
 
-// ─── Feature Flags ────────────────────────────────────────────────────────────
-export interface FeatureFlagDto {
-  id: number;
-  key: string;
-  description: string | null;
-  isEnabled: boolean;
-  societyId: number | null;
-  createdAt: string;
-  updatedAt: string;
+// ─── Invoices ─────────────────────────────────────────────────────────────────
+export interface AdminInvoiceDto {
+  id: string;
+  userId: number;
+  userName?: string;
+  subscriptionId?: string;
+  invoiceNumber: string;
+  invoiceType: string;
+  amount: number;
+  taxAmount?: number;
+  totalAmount: number;
+  currency?: string;
+  status: string;
+  periodStart?: string;
+  periodEnd?: string;
+  dueDate: string;
+  paidDate?: string;
+  paymentMethod?: string;
+  paymentReference?: string;
+  createdAt?: string;
 }
 
-export interface FeatureFlagCreateRequest {
-  key: string;
-  description?: string;
-  isEnabled: boolean;
-  societyId?: number | null;
-}
-
-export interface FeatureFlagUpdateRequest {
-  description?: string;
-  isEnabled: boolean;
-}
-
-export type FeatureListParams = {
+export type InvoiceListParams = {
   page?: number;
   pageSize?: number;
-  search?: string;
-  societyId?: number | '';
+  userId?: number | '';
+  status?: string;
+  invoiceType?: string;
+  from?: string;
+  to?: string;
 };
 
 // ─── Platform Settings ────────────────────────────────────────────────────────
 export interface PlatformSettingDto {
   id: number;
   key: string;
-  value: string | null;
-  description: string | null;
+  value?: string | null;
+  description?: string | null;
   createdAt: string;
   updatedAt: string;
 }

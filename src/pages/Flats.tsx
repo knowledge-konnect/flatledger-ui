@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Download, Edit, Trash, AlertCircle, Home } from 'lucide-react';
+import { Plus, Search, Download, Edit, Trash, AlertCircle, Home, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
@@ -88,8 +88,24 @@ export default function Flats() {
   const debouncedSearch = useDebounce(searchQuery, 250);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [sortBy] = useState<'createdAt' | 'flatNumber'>('createdAt');
-  const [sortDir] = useState<'desc' | 'asc'>('desc');
+  const [sortBy, setSortBy] = useState<'flatNumber' | 'ownerName' | 'maintenanceAmount'>('flatNumber');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const toggleSort = (field: 'flatNumber' | 'ownerName' | 'maintenanceAmount') => {
+    if (sortBy === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortDir('asc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: 'flatNumber' | 'ownerName' | 'maintenanceAmount' }) => {
+    if (sortBy !== field) return <ChevronsUpDown className="w-3 h-3 ml-1 opacity-40" />;
+    return sortDir === 'asc'
+      ? <ChevronUp className="w-3 h-3 ml-1" />
+      : <ChevronDown className="w-3 h-3 ml-1" />;
+  };
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedFlat, setSelectedFlat] = useState<any>(null);
@@ -283,12 +299,15 @@ export default function Flats() {
       (flat.ownerPhone || '').toLowerCase().includes(q)
     );
   }).sort((a, b) => {
-    if (sortBy === 'createdAt') {
-      const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return sortDir === 'asc' ? ta - tb : tb - ta;
+    let cmp = 0;
+    if (sortBy === 'flatNumber') {
+      cmp = a.flatNumber.localeCompare(b.flatNumber, undefined, { numeric: true });
+    } else if (sortBy === 'ownerName') {
+      cmp = a.ownerName.localeCompare(b.ownerName);
+    } else if (sortBy === 'maintenanceAmount') {
+      cmp = a.maintenanceAmount - b.maintenanceAmount;
     }
-    return sortDir === 'asc' ? a.flatNumber.localeCompare(b.flatNumber) : b.flatNumber.localeCompare(a.flatNumber);
+    return sortDir === 'asc' ? cmp : -cmp;
   });
 
   const total = processed.length;
@@ -414,17 +433,17 @@ export default function Flats() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-emerald-800 dark:bg-emerald-950 border-b border-emerald-700 dark:border-emerald-900 divide-x divide-emerald-700 dark:divide-emerald-900">
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">
-                        Flat
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors" onClick={() => toggleSort('flatNumber')}>
+                        <span className="inline-flex items-center">Flat <SortIcon field="flatNumber" /></span>
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">
-                        Owner
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors" onClick={() => toggleSort('ownerName')}>
+                        <span className="inline-flex items-center">Owner <SortIcon field="ownerName" /></span>
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">
                         Contact
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">
-                        Maintenance
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors" onClick={() => toggleSort('maintenanceAmount')}>
+                        <span className="inline-flex items-center justify-end w-full">Maintenance <SortIcon field="maintenanceAmount" /></span>
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden lg:table-cell">
                         Outstanding
@@ -432,7 +451,7 @@ export default function Flats() {
                       <th className="px-6 py-3 text-center text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>

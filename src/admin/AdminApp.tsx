@@ -1,5 +1,6 @@
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { AdminRouter } from './AdminRouter';
+import { ErrorBoundary } from '../components/shared/ErrorBoundary';
 
 /**
  * AdminApp is the top-level wrapper for all /admin/* routes.
@@ -9,8 +10,10 @@ import { AdminRouter } from './AdminRouter';
  */
 export function AdminApp() {
   return (
-    <AdminAuthProvider>
-      <AdminRouter />
-    </AdminAuthProvider>
+    <ErrorBoundary variant="admin">
+      <AdminAuthProvider>
+        <AdminRouter />
+      </AdminAuthProvider>
+    </ErrorBoundary>
   );
 }

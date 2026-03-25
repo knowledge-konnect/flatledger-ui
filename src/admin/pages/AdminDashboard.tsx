@@ -6,6 +6,7 @@ import {
   BarChart3,
   TrendingUp,
   Activity,
+  ArrowRight,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { adminPlansApi } from '../api/adminPlansApi';
@@ -21,6 +22,7 @@ interface StatCardProps {
   subLabel?: string;
   icon: React.ElementType;
   iconColor: string;
+  accentBorder: string;
   linkTo: string;
   isLoading?: boolean;
 }
@@ -31,13 +33,14 @@ function StatCard({
   subLabel,
   icon: Icon,
   iconColor,
+  accentBorder,
   linkTo,
   isLoading,
 }: StatCardProps) {
   return (
     <Link
       to={linkTo}
-      className="group bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md transition-all"
+      className={`group bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 border-t-4 ${accentBorder} p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
     >
       <div className="flex items-center justify-between mb-3">
         <div
@@ -68,6 +71,11 @@ function StatCard({
 }
 
 export default function AdminDashboard() {
+    const quickActions = [
+      { label: 'Create Plan', href: '/admin/plans/new', color: 'indigo' },
+      { label: 'View Payments', href: '/admin/payments', color: 'amber' },
+      { label: 'Platform Settings', href: '/admin/settings', color: 'slate' },
+    ];
   const { admin } = useAdminAuth();
 
   const results = useQueries({
@@ -109,6 +117,7 @@ export default function AdminDashboard() {
       value: plans.data?.data.data.totalCount ?? 0,
       icon: CreditCard,
       iconColor: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',
+      accentBorder: 'border-t-indigo-500',
       linkTo: '/admin/plans',
       isLoading: plans.isLoading,
     },
@@ -117,6 +126,7 @@ export default function AdminDashboard() {
       value: societies.data?.data.data.totalCount ?? 0,
       icon: Building2,
       iconColor: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
+      accentBorder: 'border-t-emerald-500',
       linkTo: '/admin/societies',
       isLoading: societies.isLoading,
     },
@@ -126,6 +136,7 @@ export default function AdminDashboard() {
       subLabel: `${activeSubs.data?.data.data.totalCount ?? 0} active`,
       icon: Layers,
       iconColor: 'bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400',
+      accentBorder: 'border-t-violet-500',
       linkTo: '/admin/subscriptions',
       isLoading: allSubs.isLoading,
     },
@@ -134,6 +145,7 @@ export default function AdminDashboard() {
       value: payments.data?.data.data.totalCount ?? 0,
       icon: BarChart3,
       iconColor: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
+      accentBorder: 'border-t-amber-500',
       linkTo: '/admin/payments',
       isLoading: payments.isLoading,
     },
@@ -166,18 +178,14 @@ export default function AdminDashboard() {
           </h2>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {[
-            { label: 'Create Plan', href: '/admin/plans/new', color: 'indigo' },
-            { label: 'Create Feature Flag', href: '/admin/features/new', color: 'violet' },
-            { label: 'View Payments', href: '/admin/payments', color: 'amber' },
-            { label: 'Platform Settings', href: '/admin/settings', color: 'slate' },
-          ].map((action) => (
+          {quickActions.map((action) => (
             <Link
               key={action.href}
               to={action.href}
-              className="px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-200 dark:hover:border-indigo-800 hover:text-indigo-700 dark:hover:text-indigo-400 transition-colors"
+              className="group flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-200 dark:hover:border-indigo-800 hover:text-indigo-700 dark:hover:text-indigo-400 transition-all duration-200"
             >
               {action.label}
+              <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex-shrink-0" />
             </Link>
           ))}
         </div>
