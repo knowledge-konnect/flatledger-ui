@@ -143,7 +143,7 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
         onClick={() => setIsOpen((o) => !o)}
         aria-label="Open Help Chat"
         className={cn(
-          'fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-emerald-400/50',
+          'hidden md:fixed md:bottom-24 md:right-6 md:z-50 md:w-14 md:h-14 md:rounded-full md:shadow-2xl md:flex md:items-center md:justify-center md:transition-all md:duration-300 md:focus:outline-none md:focus:ring-4 md:focus:ring-emerald-400/50',
           isOpen
             ? 'bg-slate-700 dark:bg-slate-600 rotate-0 scale-95'
             : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-110',
@@ -167,7 +167,7 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
       {isOpen && (
         <div
           className={cn(
-            'fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-1.5rem)] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden',
+            'hidden md:fixed md:bottom-44 md:right-6 md:z-50 md:w-[360px] md:max-w-[calc(100vw-1.5rem)] md:rounded-2xl md:shadow-2xl md:border md:border-slate-200 md:dark:border-slate-700 md:flex md:flex-col md:overflow-hidden',
             'bg-white dark:bg-slate-900',
             'animate-in slide-in-from-bottom-4 fade-in duration-300',
           )}

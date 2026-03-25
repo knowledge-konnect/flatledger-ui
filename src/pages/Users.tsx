@@ -143,23 +143,11 @@ export default function Users() {
       setShowCredentialsModal(true);
     } catch (error: any) {
       if (error?.response?.data) {
-        // If there are no fieldErrors, treat as general error
+        // If there are no fieldErrors, treat as general error, show only in modal
         if (!error.response.data.errors || error.response.data.errors.length === 0) {
           setFormError(error.response.data.message || AlertMessages.error.userCreationFailed);
         }
-        showErrorToast({
-          ok: false,
-          message: error.response.data.message || AlertMessages.error.userCreationFailed,
-          code: error.response.data.code,
-          fieldErrors: error.response.data.errors?.reduce(
-            (acc: any, err: any) => {
-              acc[err.field] = err.messages;
-              return acc;
-            },
-            {}
-          ),
-          traceId: error.response.data.traceId,
-        });
+        // Do NOT show toast for form errors to avoid duplicate messages
       } else {
         setFormError(AlertMessages.error.userCreationFailed);
         showToast(AlertMessages.error.userCreationFailed, 'error');
@@ -211,19 +199,7 @@ export default function Users() {
         if (!error.response.data.errors || error.response.data.errors.length === 0) {
           setFormError(error.response.data.message || AlertMessages.error.userUpdateFailed);
         }
-        showErrorToast({
-          ok: false,
-          message: error.response.data.message || AlertMessages.error.userUpdateFailed,
-          code: error.response.data.code,
-          fieldErrors: error.response.data.errors?.reduce(
-            (acc: any, err: any) => {
-              acc[err.field] = err.messages;
-              return acc;
-            },
-            {}
-          ),
-          traceId: error.response.data.traceId,
-        });
+        // Do NOT show toast for form errors to avoid duplicate messages
       } else {
         setFormError(AlertMessages.error.userUpdateFailed);
         showToast(AlertMessages.error.userUpdateFailed, 'error');
