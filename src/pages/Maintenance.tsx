@@ -25,6 +25,7 @@ import { useMaintenanceConfig } from '../hooks/useSocieties';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { flatsApi } from '../api/flatsApi';
 import { CreateMaintenancePaymentResponse } from '../api/maintenanceApi';
+import { isAdminRole, collectUserRoles } from '../types/roles';
 
 const paymentSchema = z.object({
   flatPublicId: z.string().min(1, 'Please select a flat'),
@@ -90,8 +91,6 @@ function isPaymentLocked(_payment: any): boolean {
   // cutoff.setDate(cutoff.getDate() - 30);
   // return new Date(payment.paymentDate) < cutoff;
 }
-
-import { isAdminRole, collectUserRoles } from '../types/roles';
 
 export default function Maintenance() {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -381,92 +380,103 @@ export default function Maintenance() {
   });
 
   const filteredPayments = searchQuery
-    if (localSubmitting) return;
-    setLocalSubmitting(true);
-    setFormError(null); // Reset error at start
-    try {
-      if (!user) {
-        setFormError('User not authenticated');
-        return;
-      }
-
-      if (isEditing && selectedPayment) {
-        // Update payment
-        await updatePayment.mutateAsync({
-          publicId: selectedPayment.publicId,
-          payload: {
-            amount: Number(data.amount),
-            paymentDate: new Date(data.paymentDate).toISOString(),
-            paymentModeCode: data.paymentModeId,
-            referenceNumber: data.referenceNumber || undefined,
-          }
-        });
-        showToast('Payment updated successfully', 'success');
-        setShowAddModal(false);
-        setIsEditing(false);
-        setSelectedPayment(null);
-        setLastAllocationSummary(null);
-        reset();
-      } else {
-        const idempotencyKey = generateIdempotencyKey();
-
-        const previousLedger = await flatsApi.getLedger(data.flatPublicId).catch(() => null);
-        const previouslyPaidPeriods = new Set(
-          (previousLedger?.bills || [])
-            .filter((bill) => normalizeBillStatus(bill.status || bill.statusCode) === 'paid')
-            .map((bill) => bill.period)
+    ? periodFilteredPayments.filter(p => {
+        const q = searchQuery.toLowerCase();
+        return (
+          (p.flatNumber || '').toLowerCase().includes(q) ||
+          // (p.recordedByName || '').toLowerCase().includes(q) ||
+          (p.notes || '').toLowerCase().includes(q) ||
+          // (p.referenceNumber || '').toLowerCase().includes(q) ||
+          (p.paymentModeName || '').toLowerCase().includes(q)
         );
+      })
+    : periodFilteredPayments;
 
-        const allocationResult = await createPayment.mutateAsync({
-          payload: {
-            flatPublicId: data.flatPublicId,
-            amount: Number(data.amount),
-            paymentDate: new Date(data.paymentDate).toISOString(),
-            paymentModeId: data.paymentModeId,
-            paymentModeCode: data.paymentModeId,
-            referenceNumber: data.referenceNumber || undefined,
-          },
-          idempotencyKey,
-        });
-
-        setIsRefreshingLedger(true);
-        const refreshedLedger = await flatsApi.getLedger(data.flatPublicId).catch(() => null);
-        const clearedPeriods = (refreshedLedger?.bills || [])
-          .filter((bill) => {
-            const status = normalizeBillStatus(bill.status || bill.statusCode);
-            return status === 'paid' && !previouslyPaidPeriods.has(bill.period);
-          })
-          .map((bill) => bill.period);
-
-        setLastAllocationSummary({
-          ...allocationResult,
-          idempotencyKey,
-          clearedPeriods,
-          paymentDate: data.paymentDate,
-        });
-
-        showToast('Payment recorded and allocated successfully', 'success');
-        setShowAddModal(false);
-        setLastAllocationSummary(null);
-        reset();
-      }
-    } catch (error: any) {
-      // Prefer formError for business/general errors
-      if (error?.response?.data) {
-        const message = error.response.data.message || 'Failed to save payment';
-        // If there are no fieldErrors, treat as general error, show only in modal
-        if (!error.response.data.errors || error.response.data.errors.length === 0) {
-          setFormError(message);
-        }
-        // Do NOT show toast for form errors to avoid duplicate messages
-      } else {
-        setFormError(error?.message || 'Failed to save payment. Please try again.');
-        showToast(error?.message || 'Failed to save payment. Please try again.', 'error');
-      }
-    } finally {
-      setLocalSubmitting(false);
+  const sortedPayments = [...filteredPayments].sort((a, b) => {
+    let cmp = 0;
+    if (sortField === 'paymentDate') {
+      cmp = new Date(a.paymentDate).getTime() - new Date(b.paymentDate).getTime();
+    } else if (sortField === 'flatNumber') {
+      cmp = (a.flatNumber || '').localeCompare(b.flatNumber || '', undefined, { numeric: true });
+    } else if (sortField === 'amount') {
+      cmp = a.amount - b.amount;
     }
-  };
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+
+  return (
+    <DashboardLayout title="Maintenance Payments">
+      <div className="space-y-4 sm:space-y-6">
+        {/* Page Header */}
+        <PageHeader
+          title="Maintenance Payments"
+          description="Track and manage maintenance fee payments"
+          icon={CreditCard}
+          actions={
+            isAdmin && (
+              <Button
+                size="md"
+                onClick={() => {
+                  setIsEditing(false);
+                  setSelectedPayment(null);
+                  setLastAllocationSummary(null);
+                  reset({
+                    flatPublicId: '',
+                    amount: '',
+                    paymentModeId: '',
+                    paymentDate: new Date().toISOString().split('T')[0],
+                    referenceNumber: '',
+                  });
+                  setShowAddModal(true);
+                }}
+              >
+                <Plus className="w-4 h-4" />
+                Record Payment
+              </Button>
+            )
+          }
+        />
+
+        {/* ── Period Selector + Summary Cards ────────────────────────────── */}
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+          {/* Period header bar */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Viewing Period</span>
+            </div>
+            <div className="flex items-center gap-1">
+              {/* Prev month button */}
+              <button
+                type="button"
+                aria-label="Previous month"
+                onClick={() => {
+                  const opts = getMonthOptions();
+                  const idx = opts.findIndex(o => o.value === period);
+                  if (idx < opts.length - 1) setPeriod(opts[idx + 1].value);
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors disabled:opacity-30"
+                disabled={getMonthOptions().findIndex(o => o.value === period) >= getMonthOptions().length - 1}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+
+              {/* Styled select */}
+              <div className="relative">
+                <select
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value)}
+                  className="appearance-none pl-3 pr-8 py-1.5 text-sm font-semibold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500/40 transition-colors hover:border-emerald-400 dark:hover:border-emerald-500"
+                >
+                  {getMonthOptions().map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+                <ChevronRight className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none rotate-90" />
+              </div>
+
+              {/* Next month button */}
+              <button
                 type="button"
                 aria-label="Next month"
                 onClick={() => {
