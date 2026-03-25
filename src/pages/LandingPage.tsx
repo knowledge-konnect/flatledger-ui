@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { usePlans } from '../hooks/usePlans';
 import {
   ArrowRight, IndianRupee, BarChart3, Users, Zap,
@@ -7,8 +7,6 @@ import {
 import { Link } from 'react-router-dom';
 import { motion, useInView } from 'framer-motion';
 import Navbar from "../components/layout/Navbar";
-
-const ChatBot = lazy(() => import('../components/chatbot/ChatBot'));
 
 // Static data — defined outside component to avoid recreation on every render
 const planFeatures = [
