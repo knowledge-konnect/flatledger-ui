@@ -217,22 +217,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* ── SOCIAL PROOF STRIP ──────────────────────────────────────────── */}
-      <section className="py-8 md:py-10 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 border-y border-slate-200 dark:border-slate-800">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid sm:grid-cols-3 gap-4 text-center">
-            {[
-              { label: "Monthly bills generated in a few clicks", value: "Fast billing" },
-              { label: "Payments tracked by flat and mode", value: "Clear records" },
-              { label: "Reports and exports ready when needed", value: "Audit-friendly" },
-            ].map((item) => (
-              <div key={item.label} className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-                <p className="text-xl sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{item.value}</p>
-                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">{item.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+        {/* Removed social proof strip section as requested */}
 
       {/* ── TESTIMONIALS ────────────────────────────────────────────────────── */}
       <section className="py-10 md:py-12 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950">
