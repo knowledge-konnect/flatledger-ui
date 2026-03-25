@@ -3,7 +3,6 @@ import type {
   ApiResponse,
   PagedResult,
   AdminSocietyDto,
-  AdminSocietyUpdateRequest,
   SocietyListParams,
 } from '../types/adminTypes';
 
@@ -17,11 +16,5 @@ export const adminSocietiesApi = {
   get: (id: number | string) =>
     adminClient.get<ApiResponse<AdminSocietyDto>>(
       `/api/admin/societies/${id}`,
-    ),
-
-  update: (id: number | string, body: AdminSocietyUpdateRequest) =>
-    adminClient.put<ApiResponse<AdminSocietyDto>>(
-      `/api/admin/societies/${id}`,
-      body,
     ),
 };

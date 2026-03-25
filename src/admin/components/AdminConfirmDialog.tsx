@@ -84,7 +84,7 @@ export function AdminConfirmDialog({
             <button
               onClick={onConfirm}
               disabled={isLoading}
-              className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 ${
+              className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-all duration-150 disabled:opacity-50 active:scale-95 flex items-center gap-2 ${
                 isDestructive
                   ? 'bg-red-600 hover:bg-red-700'
                   : 'bg-indigo-600 hover:bg-indigo-700'

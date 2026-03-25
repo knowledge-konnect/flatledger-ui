@@ -6,6 +6,7 @@ import { useAuth, AuthProvider } from './contexts/AuthProvider';
 import { FlatLedgerIcon } from './components/ui/FlatLedgerIcon';
 import { RoleCode } from './types/roles';
 import { AdminApp } from './admin/AdminApp';
+import { ErrorBoundary } from './components/shared/ErrorBoundary';
 
 import LandingPage from './pages/LandingPage';
 import NotFound from './pages/NotFound';
@@ -121,15 +122,17 @@ function UserRoutes() {
 export default function Router() {
   return (
     <Routes>
-      {/* Admin panel — has its own AdminAuthProvider, never touches AuthProvider */}
+      {/* Admin panel — has its own AdminAuthProvider and admin ErrorBoundary */}
       <Route path="/admin/*" element={<AdminApp />} />
-      {/* All other routes — wrapped in AuthProvider */}
+      {/* All other routes — wrapped in AuthProvider and society ErrorBoundary */}
       <Route
         path="/*"
         element={
-          <AuthProvider>
-            <UserRoutes />
-          </AuthProvider>
+          <ErrorBoundary variant="society">
+            <AuthProvider>
+              <UserRoutes />
+            </AuthProvider>
+          </ErrorBoundary>
         }
       />
     </Routes>

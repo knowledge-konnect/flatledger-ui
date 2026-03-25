@@ -23,7 +23,7 @@ export function AdminPageHeader({
   className,
 }: AdminPageHeaderProps) {
   return (
-    <div className={cn('mb-6', className)}>
+    <div className={cn('mb-6 pb-5 border-b border-slate-100 dark:border-slate-800/60', className)}>
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav className="flex items-center gap-1 text-xs text-slate-400 mb-2">
           {breadcrumbs.map((crumb, i) => (
@@ -45,7 +45,7 @@ export function AdminPageHeader({
       )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h1>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white tracking-tight">{title}</h1>
           {description && (
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>
           )}

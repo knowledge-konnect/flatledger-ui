@@ -1,7 +1,7 @@
 ﻿import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
-import { Plus, CreditCard, Search, Edit, Trash, IndianRupee, AlertCircle, TrendingUp, Info, Zap, Lock, Home, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, CreditCard, Search, Edit, Trash, IndianRupee, AlertCircle, TrendingUp, Info, Zap, Lock, Home, Calendar, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import PageHeader from '../components/ui/PageHeader';
 import Tooltip from '../components/ui/Tooltip';
@@ -100,6 +100,24 @@ export default function Maintenance() {
   const [formError, setFormError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<'paymentDate' | 'flatNumber' | 'amount'>('paymentDate');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  const toggleSort = (field: 'paymentDate' | 'flatNumber' | 'amount') => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: 'paymentDate' | 'flatNumber' | 'amount' }) => {
+    if (sortField !== field) return <ChevronsUpDown className="w-3 h-3 ml-1 opacity-40" />;
+    return sortDir === 'asc'
+      ? <ChevronUp className="w-3 h-3 ml-1" />
+      : <ChevronDown className="w-3 h-3 ml-1" />;
+  };
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
@@ -374,6 +392,18 @@ export default function Maintenance() {
         );
       })
     : periodFilteredPayments;
+
+  const sortedPayments = [...filteredPayments].sort((a, b) => {
+    let cmp = 0;
+    if (sortField === 'paymentDate') {
+      cmp = new Date(a.paymentDate).getTime() - new Date(b.paymentDate).getTime();
+    } else if (sortField === 'flatNumber') {
+      cmp = (a.flatNumber || '').localeCompare(b.flatNumber || '', undefined, { numeric: true });
+    } else if (sortField === 'amount') {
+      cmp = a.amount - b.amount;
+    }
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
 
   return (
     <DashboardLayout title="Maintenance Payments">    <div className="space-y-4 sm:space-y-6">
@@ -665,10 +695,16 @@ export default function Maintenance() {
               <table className="w-full">
                 <thead>
                   <tr className="bg-emerald-800 dark:bg-emerald-950 border-b border-emerald-700 dark:border-emerald-900 divide-x divide-emerald-700 dark:divide-emerald-900">
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Flat</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors" onClick={() => toggleSort('paymentDate')}>
+                      <span className="inline-flex items-center">Date <SortIcon field="paymentDate" /></span>
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors" onClick={() => toggleSort('flatNumber')}>
+                      <span className="inline-flex items-center">Flat <SortIcon field="flatNumber" /></span>
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">Owner</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Amount</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors" onClick={() => toggleSort('amount')}>
+                      <span className="inline-flex items-center justify-end w-full">Amount <SortIcon field="amount" /></span>
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">Payment Mode</th>
                     {/* <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">Recorded By</th> */}
                     <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">Paid For</th>
@@ -678,7 +714,7 @@ export default function Maintenance() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {filteredPayments.map((payment) => {
+                  {sortedPayments.map((payment) => {
                     const isToday = !!payment.paymentDate &&
                       new Date(payment.paymentDate).toDateString() === new Date().toDateString();
                     const ownerName = flatOwnerMap.get(payment.flatPublicId);

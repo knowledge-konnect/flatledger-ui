@@ -1,18 +1,19 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Pencil } from 'lucide-react';
+import { Eye, Layers } from 'lucide-react';
 import { adminSubscriptionsApi } from '../api/adminSubscriptionsApi';
 import { AdminDataTable, type AdminColumn } from '../components/AdminDataTable';
 import { AdminSearchBar } from '../components/AdminSearchBar';
 import { AdminStatusBadge } from '../components/AdminStatusBadge';
 import { AdminPageHeader } from '../components/AdminPageHeader';
+import { AdminDetailDrawer, DrawerSection, DrawerField } from '../components/AdminDetailDrawer';
 import type { AdminSubscriptionDto, SubscriptionStatus } from '../types/adminTypes';
 
 const STATUS_OPTIONS: Array<{ value: SubscriptionStatus | ''; label: string }> = [
   { value: '', label: 'All statuses' },
   { value: 'active', label: 'Active' },
   { value: 'trial', label: 'Trial' },
+  { value: 'past_due', label: 'Past Due' },
   { value: 'cancelled', label: 'Cancelled' },
   { value: 'expired', label: 'Expired' },
 ];
@@ -30,6 +31,7 @@ export default function AdminSubscriptions() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<SubscriptionStatus | ''>('');
+  const [viewTarget, setViewTarget] = useState<AdminSubscriptionDto | null>(null);
 
   const queryKey = ['admin_subscriptions', page, status] as const;
 
@@ -53,7 +55,7 @@ export default function AdminSubscriptions() {
     ? rawItems.filter(
         (s) =>
           s.userName.toLowerCase().includes(search.toLowerCase()) ||
-          s.userEmail.toLowerCase().includes(search.toLowerCase()),
+          s.userEmail?.toLowerCase().includes(search.toLowerCase()),
       )
     : rawItems;
 
@@ -91,12 +93,12 @@ export default function AdminSubscriptions() {
     {
       key: 'currentPeriodStart',
       header: 'Period Start',
-      cell: (row) => formatDate(row.currentPeriodStart),
+      cell: (row) => formatDate(row.currentPeriodStart ?? null),
     },
     {
       key: 'currentPeriodEnd',
       header: 'Period End',
-      cell: (row) => formatDate(row.currentPeriodEnd),
+      cell: (row) => formatDate(row.currentPeriodEnd ?? null),
     },
   ];
 
@@ -143,15 +145,66 @@ export default function AdminSubscriptions() {
         isLoading={isLoading}
         emptyMessage="No subscriptions found."
         actions={(row) => (
-          <Link
-            to={`/admin/subscriptions/${row.id}/edit`}
-            className="p-1.5 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-slate-500 hover:text-indigo-600 transition-colors inline-flex"
-            title="Edit"
+          <button
+            onClick={() => setViewTarget(row)}
+            className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+            title="View details"
           >
-            <Pencil className="w-4 h-4" />
-          </Link>
+            <Eye className="w-4 h-4" />
+          </button>
         )}
       />
+
+      {/* ── Subscription Detail Drawer ── */}
+      <AdminDetailDrawer
+        open={viewTarget !== null}
+        onClose={() => setViewTarget(null)}
+        title={viewTarget?.userName ?? ''}
+        subtitle={viewTarget ? `${viewTarget.planName} subscription` : undefined}
+        icon={Layers}
+        iconBg="bg-indigo-600"
+      >
+        {viewTarget && (
+          <>
+            <DrawerSection title="User">
+              <DrawerField label="Name" value={viewTarget.userName} />
+              <DrawerField label="Email" value={viewTarget.userEmail} />
+            </DrawerSection>
+
+            <DrawerSection title="Plan">
+              <DrawerField label="Plan" value={viewTarget.planName} />
+              <DrawerField
+                label="Status"
+                value={<AdminStatusBadge status={viewTarget.status} />}
+              />
+              <DrawerField
+                label="Amount"
+                value={viewTarget.currency
+                  ? `${viewTarget.currency} ${viewTarget.subscribedAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+                  : viewTarget.subscribedAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              />
+            </DrawerSection>
+
+            <DrawerSection title="Period">
+              <DrawerField label="Start" value={formatDate(viewTarget.currentPeriodStart ?? null)} />
+              <DrawerField label="End" value={formatDate(viewTarget.currentPeriodEnd ?? null)} />
+              {viewTarget.trialStart && (
+                <DrawerField label="Trial Start" value={formatDate(viewTarget.trialStart)} />
+              )}
+              {viewTarget.trialEnd && (
+                <DrawerField label="Trial End" value={formatDate(viewTarget.trialEnd)} />
+              )}
+            </DrawerSection>
+
+            <DrawerSection title="Meta">
+              <DrawerField label="Created" value={formatDate(viewTarget.createdAt ?? null)} />
+              {viewTarget.cancelledAt && (
+                <DrawerField label="Cancelled" value={formatDate(viewTarget.cancelledAt)} />
+              )}
+            </DrawerSection>
+          </>
+        )}
+      </AdminDetailDrawer>
     </div>
   );
 }

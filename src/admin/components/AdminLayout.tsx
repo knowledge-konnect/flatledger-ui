@@ -6,31 +6,40 @@ import {
   Building2,
   BarChart3,
   Layers,
-  Flag,
   Settings,
   LogOut,
   Shield,
   Menu,
   X,
+  Sun,
+  Moon,
+  Users,
+  Receipt,
+  Search,
+  ChevronDown,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { cn } from '../../lib/utils';
 
 const navItems = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-  { label: 'Plans', href: '/admin/plans', icon: CreditCard },
   { label: 'Societies', href: '/admin/societies', icon: Building2 },
+  { label: 'Users', href: '/admin/users', icon: Users },
   { label: 'Subscriptions', href: '/admin/subscriptions', icon: Layers },
   { label: 'Payments', href: '/admin/payments', icon: BarChart3 },
-  { label: 'Feature Flags', href: '/admin/features', icon: Flag },
+  { label: 'Invoices', href: '/admin/invoices', icon: Receipt },
+  { label: 'Plans', href: '/admin/plans', icon: CreditCard },
   { label: 'Platform Settings', href: '/admin/settings', icon: Settings },
 ];
 
 export function AdminLayout() {
   const { admin, logout } = useAdminAuth();
   const { pathname } = useLocation();
+  const { theme, toggleTheme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const initials = admin?.name
     ? admin.name
@@ -113,7 +122,7 @@ export function AdminLayout() {
         {/* User footer */}
         <div className="p-3 border-t border-slate-800/60">
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-800/60">
-            <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
@@ -136,7 +145,7 @@ export function AdminLayout() {
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         {/* Top bar (mobile) */}
-        <header className="lg:hidden h-14 px-4 flex items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
+        <header className="lg:hidden h-14 px-4 flex items-center justify-between bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 flex-shrink-0 z-30">
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
@@ -160,25 +169,79 @@ export function AdminLayout() {
         </header>
 
         {/* Top bar (desktop) */}
-        <header className="hidden lg:flex h-14 px-6 items-center justify-between bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex-shrink-0">
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+        <header className="hidden lg:flex h-14 px-6 items-center justify-between bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 flex-shrink-0 z-30">
+          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             {navItems.find(
               (n) =>
                 pathname === n.href ||
                 (n.href !== '/admin/dashboard' && pathname.startsWith(n.href)),
-            )?.label ?? 'Admin Panel'}
+            )?.label ?? 'Dashboard'}
           </p>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">
-              {admin?.name}
-            </span>
-            <button
-              onClick={logout}
-              className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-red-500 transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-              Logout
+          <div className="flex items-center gap-1.5">
+            {/* Search shortcut */}
+            <button className="hidden xl:flex items-center gap-2 h-9 px-3 rounded-lg bg-slate-100 dark:bg-slate-800 text-sm text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors w-52">
+              <Search className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="flex-1 text-left">Search…</span>
+              <kbd className="text-[10px] bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-1.5 py-0.5 rounded text-slate-400 font-sans leading-none">⌘K</kbd>
             </button>
+            {/* Theme toggle */}
+            <button
+              onClick={toggleTheme}
+              title="Toggle theme"
+              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            {/* Profile dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setProfileOpen((p) => !p)}
+                className="flex items-center gap-2 h-9 pl-2 pr-2.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                  {initials}
+                </div>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {admin?.name?.split(' ')[0] ?? 'Admin'}
+                </span>
+                <ChevronDown
+                  className={cn(
+                    'w-3.5 h-3.5 text-slate-400 transition-transform duration-150',
+                    profileOpen && 'rotate-180',
+                  )}
+                />
+              </button>
+              {profileOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setProfileOpen(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-1.5 w-60 z-50 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                          {initials}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{admin?.name}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{admin?.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-1.5">
+                      <button
+                        onClick={() => { logout(); setProfileOpen(false); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Sign out
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </header>
 

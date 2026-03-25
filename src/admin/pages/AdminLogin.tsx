@@ -51,7 +51,7 @@ export default function AdminLogin() {
 
       <div className="relative w-full max-w-sm">
         {/* Card */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl shadow-black/40 p-8">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-indigo-900/50">

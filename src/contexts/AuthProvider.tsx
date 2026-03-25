@@ -168,7 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshAttempts = useRef(0);
   const MAX_REFRESH_ATTEMPTS = 3;
 
-  const setAuthState = (token: string | null, authResponse?: AuthResponse) => {
+  const setAuthState = (token: string | null, authResponse?: AuthResponse, shouldNavigate: boolean = true) => {
     if (token) {
       const user = decodeJwtToken(token, authResponse);
       
@@ -202,7 +202,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isAuthenticated: false,
           isLoading: false,
         });
-        navigate('/login', { replace: true });
+        if (shouldNavigate) navigate('/login', { replace: true });
       }
     } else {
       clearAllAuthData();
@@ -212,7 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: false,
         isLoading: false,
       });
-      navigate('/login', { replace: true });
+      if (shouldNavigate) navigate('/login', { replace: true });
     }
   };
 
@@ -285,8 +285,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     navigate('/');
     logger.log(`[AuthProvider.logout] Redirected to /`);
 
-    // Clear in-memory access token and React state
-    setAuthState(null);
+    // Clear in-memory access token and React state (no further navigation — already handled above)
+    setAuthState(null, undefined, false);
 
     // Clear React Query cache
     queryClient.clear();
@@ -377,7 +377,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
       if (isPublicRoute) {
         logger.log(`[AuthProvider.initAuth] Skipping init on public route: ${currentPath}`);
-        setAuthState(null); // isLoading → false
+        setAuthState(null, undefined, false); // isLoading → false, no redirect
         return;
       }
 

@@ -1,5 +1,5 @@
 ﻿import { useState, useMemo } from 'react';
-import { Plus, Edit, Trash, AlertCircle, Users as UsersIcon, Search, Copy, Check, KeyRound, UserCheck, ShieldCheck, Clock } from 'lucide-react';
+import { Plus, Edit, Trash, AlertCircle, Users as UsersIcon, Search, Copy, Check, KeyRound, UserCheck, ShieldCheck, Clock, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Button from '../components/ui/Button';
@@ -279,14 +279,38 @@ export default function Users() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = searchQuery.trim().toLowerCase();
+  const [sortField, setSortField] = useState<'name' | 'roleDisplayName'>('name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
-  const filteredUsers = useMemo(() => users.filter(u =>
-    !debouncedSearch ||
-    u.name.toLowerCase().includes(debouncedSearch) ||
-    u.email.toLowerCase().includes(debouncedSearch) ||
-    (u.mobile || '').toLowerCase().includes(debouncedSearch) ||
-    u.roleDisplayName.toLowerCase().includes(debouncedSearch)
-  ), [users, debouncedSearch]);
+  const toggleSort = (field: 'name' | 'roleDisplayName') => {
+    if (sortField === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  };
+
+  const SortIcon = ({ field }: { field: 'name' | 'roleDisplayName' }) => {
+    if (sortField !== field) return <ChevronsUpDown className="w-3 h-3 ml-1 opacity-40" />;
+    return sortDir === 'asc'
+      ? <ChevronUp className="w-3 h-3 ml-1" />
+      : <ChevronDown className="w-3 h-3 ml-1" />;
+  };
+
+  const filteredUsers = useMemo(() => {
+    const filtered = users.filter(u =>
+      !debouncedSearch ||
+      u.name.toLowerCase().includes(debouncedSearch) ||
+      u.email.toLowerCase().includes(debouncedSearch) ||
+      (u.mobile || '').toLowerCase().includes(debouncedSearch) ||
+      u.roleDisplayName.toLowerCase().includes(debouncedSearch)
+    );
+    return [...filtered].sort((a, b) => {
+      const cmp = a[sortField].localeCompare(b[sortField]);
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+  }, [users, debouncedSearch, sortField, sortDir]);
 
   /* =====================================================
      UI
@@ -461,10 +485,14 @@ export default function Users() {
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gradient-to-r from-slate-50 via-slate-50/70 to-slate-50 dark:from-slate-800/50 dark:via-slate-800/30 dark:to-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">User</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors" onClick={() => toggleSort('name')}>
+                        <span className="inline-flex items-center">User <SortIcon field="name" /></span>
+                      </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden md:table-cell">Email</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden lg:table-cell">Mobile</th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Role</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider cursor-pointer select-none hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors" onClick={() => toggleSort('roleDisplayName')}>
+                        <span className="inline-flex items-center justify-center">Role <SortIcon field="roleDisplayName" /></span>
+                      </th>
                       <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden sm:table-cell">Status</th>
                       <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider hidden xl:table-cell">Last Login</th>
                       <th className="px-6 py-3 text-center text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Actions</th>

@@ -12,9 +12,4 @@ export const adminPaymentsApi = {
       '/api/admin/payments',
       { params },
     ),
-
-  get: (id: number | string) =>
-    adminClient.get<ApiResponse<AdminPaymentDto>>(
-      `/api/admin/payments/${id}`,
-    ),
 };

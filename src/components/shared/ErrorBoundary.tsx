@@ -2,9 +2,29 @@ import { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle } from 'lucide-react';
 import Button from '../ui/Button';
 
+type ErrorBoundaryVariant = 'society' | 'admin';
+
+const VARIANT_CONFIG: Record<ErrorBoundaryVariant, {
+  redirectPath: string;
+  buttonLabel: string;
+  accentClass: string;
+}> = {
+  society: {
+    redirectPath: '/dashboard',
+    buttonLabel: 'Return to Dashboard',
+    accentClass: 'from-red-100 to-red-200 dark:from-red-900/30 dark:to-red-800/30',
+  },
+  admin: {
+    redirectPath: '/admin/dashboard',
+    buttonLabel: 'Return to Admin Dashboard',
+    accentClass: 'from-red-100 to-red-200 dark:from-red-900/30 dark:to-red-800/30',
+  },
+};
+
 interface Props {
   children: ReactNode;
   fallback?: ReactNode;
+  variant?: ErrorBoundaryVariant;
 }
 
 interface State {
@@ -26,8 +46,9 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private handleReset = () => {
+    const { variant = 'society' } = this.props;
     this.setState({ hasError: false, error: null });
-    window.location.href = '/dashboard';
+    window.location.href = VARIANT_CONFIG[variant].redirectPath;
   };
 
   public render() {
@@ -36,10 +57,13 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
+      const { variant = 'society' } = this.props;
+      const config = VARIANT_CONFIG[variant];
+
       return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8 text-center">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/30 dark:to-red-800/30 flex items-center justify-center">
+            <div className={`w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br ${config.accentClass} flex items-center justify-center`}>
               <AlertCircle className="w-8 h-8 text-red-600 dark:text-red-400" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Something went wrong</h2>
@@ -54,7 +78,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </div>
             )}
             <Button onClick={this.handleReset} variant="primary" className="w-full">
-              Return to Dashboard
+              {config.buttonLabel}
             </Button>
           </div>
         </div>
