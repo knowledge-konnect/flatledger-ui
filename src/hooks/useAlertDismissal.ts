@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { logger } from '../lib/logger';
 
 /**
  * Hook to manage dismissible alerts with localStorage
@@ -20,7 +21,7 @@ export function useAlertDismissal(key: string) {
       localStorage.setItem(storageKey, 'true');
       setIsDismissed(true);
     } catch (error) {
-      console.error('Failed to dismiss alert:', error);
+      logger.error('Failed to dismiss alert', error);
     }
   };
 
@@ -29,7 +30,7 @@ export function useAlertDismissal(key: string) {
       localStorage.removeItem(storageKey);
       setIsDismissed(false);
     } catch (error) {
-      console.error('Failed to undo dismiss:', error);
+      logger.error('Failed to undo dismiss', error);
     }
   };
 

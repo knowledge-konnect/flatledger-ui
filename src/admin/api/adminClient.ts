@@ -1,30 +1,19 @@
 import axios from 'axios';
-
-const ADMIN_TOKEN_KEY = 'admin_token';
+import { toast } from 'sonner';
 
 // ─── Token helpers ────────────────────────────────────────────────────────────
-export const getAdminToken = (): string | null => {
-  try {
-    return localStorage.getItem(ADMIN_TOKEN_KEY);
-  } catch {
-    return null;
-  }
-};
+// Access token stored in memory only — never in localStorage (XSS mitigation).
+// Admin sessions do not persist across page refresh by design.
+let _adminAccessToken: string | null = null;
+
+export const getAdminToken = (): string | null => _adminAccessToken;
 
 export const setAdminToken = (token: string): void => {
-  try {
-    localStorage.setItem(ADMIN_TOKEN_KEY, token);
-  } catch {
-    // ignore write errors (private browsing)
-  }
+  _adminAccessToken = token;
 };
 
 export const clearAdminToken = (): void => {
-  try {
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
-  } catch {
-    // ignore
-  }
+  _adminAccessToken = null;
 };
 
 // ─── Flag to suppress interceptor redirect during initial auth check ──────────
@@ -53,14 +42,21 @@ adminClient.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 responses
+// Handle 401 / 429 responses
 adminClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && _adminInitialized) {
+    const status = error.response?.status;
+
+    if (status === 401 && _adminInitialized) {
       clearAdminToken();
       window.location.href = '/admin/login';
     }
+
+    if (status === 429) {
+      toast.error('Too many attempts. Please wait a minute and try again.');
+    }
+
     return Promise.reject(error);
   },
 );

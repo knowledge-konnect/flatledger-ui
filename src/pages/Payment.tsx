@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import Navbar from '../components/layout/Navbar'
+import { useAuth } from '../contexts/AuthProvider'
 import { ArrowLeft, CheckCircle, AlertCircle, Loader } from 'lucide-react'
 import { paymentApi, PaymentPlan } from '@/api/paymentApi'
 import { useToast } from '../components/ui/Toast'
@@ -19,6 +20,7 @@ export default function Payment() {
   const navigate = useNavigate()
   const { showToast } = useToast()
   const { showErrorToast } = useApiErrorToast()
+  const { user } = useAuth()
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [plan, setPlan] = useState<PaymentPlan | null>(null)
@@ -93,8 +95,8 @@ export default function Payment() {
           }
         },
         prefill: {
-          email: localStorage.getItem('userEmail') || '',
-          contact: localStorage.getItem('userPhone') || '',
+          email: user?.email || '',
+          contact: user?.mobile || '',
         },
         theme: {
           color: '#10B981',

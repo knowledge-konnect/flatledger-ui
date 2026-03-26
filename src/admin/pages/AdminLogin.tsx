@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,6 +13,15 @@ export default function AdminLogin() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const rateLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear rate-limit timer on unmount
+  useEffect(() => {
+    return () => {
+      if (rateLimitTimerRef.current) clearTimeout(rateLimitTimerRef.current);
+    };
+  }, []);
 
   const {
     register,
@@ -37,7 +46,13 @@ export default function AdminLogin() {
       await login(data);
       toast.success('Welcome back!');
       navigate('/admin/dashboard', { replace: true });
-    } catch (err) {
+    } catch (err: any) {
+      // Handle 429 Too Many Requests — the interceptor already shows the toast
+      if (err?.response?.status === 429) {
+        setIsRateLimited(true);
+        rateLimitTimerRef.current = setTimeout(() => setIsRateLimited(false), 60_000);
+        return;
+      }
       toast.error(getAdminErrorMessage(err));
     } finally {
       setIsSubmitting(false);
@@ -114,10 +129,17 @@ export default function AdminLogin() {
               )}
             </div>
 
+            {/* Rate-limit notice */}
+            {isRateLimited && (
+              <p className="text-xs text-red-400 text-center">
+                Too many login attempts. Please wait 1 minute.
+              </p>
+            )}
+
             {/* Submit */}
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isRateLimited}
               className="w-full h-10 mt-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               {isSubmitting && (

@@ -95,6 +95,7 @@ export function useCreateExpense() {
     onSuccess: async (data) => {
       logger.log('[useCreateExpense] Success - invalidating expenses query');
       qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
       
       // Log activity
       if (user) {
@@ -129,6 +130,7 @@ export function useUpdateExpense() {
     onSuccess: async (data, variables) => {
       logger.log('[useUpdateExpense] Success - invalidating expenses query');
       qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
       
       // Log activity based on status change
       if (user) {
@@ -174,6 +176,7 @@ export function useDeleteExpense() {
     onSuccess: async (_, publicId) => {
       logger.log('[useDeleteExpense] Success - invalidating expenses query');
       qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
       
       // Log activity
       if (user) {
@@ -206,6 +209,7 @@ export function useRestoreExpense() {
     onSuccess: async (data) => {
       logger.log('[useRestoreExpense] Success - invalidating expenses query');
       qc.invalidateQueries({ queryKey: ['expenses'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
       
       // Log activity
       if (user) {

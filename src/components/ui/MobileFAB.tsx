@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react';
 import { Plus, X, CreditCard, TrendingDown, Building } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthProvider';
 import { isAdminRole, collectUserRoles } from '../../types/roles';
@@ -14,6 +15,7 @@ interface FABAction {
 export default function MobileFAB() {
   const [isOpen, setIsOpen] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = isAdminRole(collectUserRoles(user));
 
   if (!isAdmin) return null;
@@ -22,19 +24,19 @@ export default function MobileFAB() {
     {
       icon: CreditCard,
       label: 'Record Payment',
-      onClick: () => window.location.href = '/maintenance',
+      onClick: () => navigate('/maintenance'),
       color: 'bg-green-600',
     },
     {
       icon: TrendingDown,
       label: 'Add Expense',
-      onClick: () => window.location.href = '/expenses',
+      onClick: () => navigate('/expenses'),
       color: 'bg-red-600',
     },
     {
       icon: Building,
       label: 'Add Flat',
-      onClick: () => window.location.href = '/flats',
+      onClick: () => navigate('/flats'),
       color: 'bg-emerald-600',
     },
   ];

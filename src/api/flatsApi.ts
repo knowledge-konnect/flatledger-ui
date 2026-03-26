@@ -98,6 +98,31 @@ export interface FlatLedgerDto {
 }
 
 /**
+ * Bulk create request payload
+ * POST /flats/bulk
+ */
+export interface BulkCreateFlatsPayload {
+  flats: CreateFlatDto[];
+}
+
+/**
+ * Individual failure record from bulk create
+ */
+export interface BulkFlatFailure {
+  index: number;
+  flatNo: string;
+  error: string;
+}
+
+/**
+ * Bulk create response
+ */
+export interface BulkCreateFlatsResponse {
+  succeeded: FlatDto[];
+  failed: BulkFlatFailure[];
+}
+
+/**
  * Flats API Service
  * All endpoints require authentication and active subscription (unless specified)
  * Society isolation is automatic via JWT token
@@ -179,6 +204,17 @@ export const flatsApi = {
   async getFinancialSummary(publicId: string): Promise<FlatFinancialSummaryDto> {
     const response = await apiClient.get<ApiResponse<FlatFinancialSummaryDto>>(`/flats/${publicId}/financial-summary`);
     return response.data.data;
+  },
+
+  /**
+   * Bulk create flats
+   * POST /flats/bulk
+   * @param payload BulkCreateFlatsPayload
+   * @returns Promise<BulkCreateFlatsResponse>
+   */
+  async bulkCreateFlats(payload: BulkCreateFlatsPayload): Promise<BulkCreateFlatsResponse> {
+    const response = await apiClient.post<BulkCreateFlatsResponse>('/flats/bulk', payload);
+    return response.data;
   },
 
   /**

@@ -177,6 +177,7 @@ export function useRestorePayment() {
     onSuccess: async (data) => {
       logger.log('[useRestorePayment] Success - invalidating payments query');
       qc.invalidateQueries({ queryKey: ['maintenance-payments'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
       
       // Log activity
       if (user) {

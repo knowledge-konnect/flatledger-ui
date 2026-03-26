@@ -1,6 +1,7 @@
-import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { setGlobalToastCallback } from '../../api/client';
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -26,6 +27,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4000);
   }, []);
+
+  // Register with the Axios interceptor so 429s (and similar) can surface toasts
+  // without depending on React context or hooks.
+  useEffect(() => {
+    setGlobalToastCallback(showToast);
+    return () => setGlobalToastCallback(null);
+  }, [showToast]);
 
   const removeToast = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
