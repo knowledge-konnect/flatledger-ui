@@ -1,4 +1,5 @@
 ﻿import { useState } from 'react';
+import { logger } from '../lib/logger';
 
 export interface WizardStep {
   id: number;
@@ -58,7 +59,7 @@ export function useOnboardingWizard() {
       setIsCompleted(true);
       setShowWizard(false);
     } catch (error) {
-      console.error('Failed to complete wizard:', error);
+      logger.error('Failed to complete wizard', error);
     }
   };
 
@@ -69,7 +70,7 @@ export function useOnboardingWizard() {
       setIsCompleted(false);
       setShowWizard(true);
     } catch (error) {
-      console.error('Failed to reset wizard:', error);
+      logger.error('Failed to reset wizard', error);
     }
   };
 

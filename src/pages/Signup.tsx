@@ -2,6 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { passwordSchema } from '../lib/validation';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Input from '../components/ui/Input';
@@ -16,7 +17,7 @@ import { cn } from '../lib/utils';
 const signupSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: passwordSchema,
   societyName: z.string().min(2, 'Society name is required'),
   societyAddress: z.string().min(5, 'Please enter a valid address'),
 });
@@ -89,7 +90,8 @@ export default function Signup() {
       } else {
         showToast(AlertMessages.error.signupFailed, 'error');
       }
-      // 3. Disable submit button during request (re-enable on error)
+    } finally {
+      // Always re-enable the button (success path keeps it true only if navigate unmounts)
       setIsLoading(false);
     }
   };

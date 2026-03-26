@@ -5,6 +5,7 @@ import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { useAuth } from '../contexts/AuthProvider';
 import { AlertMessages } from '../lib/alertMessages';
+import { logger } from '../lib/logger';
 
 export default function ChangePassword() {
   const { user, logout } = useAuth();
@@ -91,7 +92,7 @@ export default function ChangePassword() {
       },
       onError: (error: any) => {
         // Log full error so we can see the backend's exact 400 message
-        console.error('[ChangePassword] API error:', error?.response?.status, error?.response?.data);
+        logger.error('[ChangePassword] API error', { status: error?.response?.status });
         const errorData = error?.response?.data;
         if (errorData) {
           showErrorToast({

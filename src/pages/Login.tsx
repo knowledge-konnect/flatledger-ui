@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -26,6 +26,15 @@ export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const rateLimitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear the rate-limit timer on unmount
+  useEffect(() => {
+    return () => {
+      if (rateLimitTimerRef.current) clearTimeout(rateLimitTimerRef.current);
+    };
+  }, []);
 
   // Show session expired message if redirected from protected route
   useEffect(() => {
@@ -67,6 +76,14 @@ export default function Login() {
       }
       // Keep isLoading true to prevent flickering until redirect completes
     } catch (error: any) {
+      // Handle 429 Too Many Requests — disable submit for 60 seconds
+      if (error?.details?.status === 429) {
+        setIsRateLimited(true);
+        rateLimitTimerRef.current = setTimeout(() => setIsRateLimited(false), 60_000);
+        // The global interceptor already shows the toast — no duplicate needed
+        return;
+      }
+
       // 4. Use showErrorToast for API validation errors
       const errorData = error?.response?.data;
       if (errorData) {
@@ -86,7 +103,8 @@ export default function Login() {
       } else {
         showToast(AlertMessages.error.invalidCredentials, 'error');
       }
-      // 3. Disable login button while submitting (by setting isLoading to false on error)
+    } finally {
+      // Always re-enable the button (success path keeps it true only if navigate unmounts)
       setIsLoading(false);
     }
   };
@@ -197,10 +215,16 @@ export default function Login() {
                 </a>
               </div>
 
+              {isRateLimited && (
+                <p className="text-sm text-error-600 dark:text-error-400 text-center">
+                  Too many login attempts. Please wait 1 minute.
+                </p>
+              )}
+
               <Button
                 type="submit"
                 isLoading={isLoading}
-                disabled={isLoading}
+                disabled={isLoading || isRateLimited}
                 className="w-full mt-2"
                 size="lg"
                 data-testid="login-submit-btn"

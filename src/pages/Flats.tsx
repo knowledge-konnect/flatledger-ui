@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Download, Edit, Trash, AlertCircle, Home, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { Plus, Search, Download, Upload, Edit, Trash, AlertCircle, Home, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import ImportFlatsModal from '../components/Flats/ImportFlatsModal';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Button from '../components/ui/Button';
 import EmptyState from '../components/ui/EmptyState';
@@ -108,6 +109,7 @@ export default function Flats() {
   };
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [selectedFlat, setSelectedFlat] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [flats, setFlats] = useState<UIFLat[]>([]);
@@ -263,7 +265,7 @@ export default function Flats() {
         publicId: f.publicId,
         flatNumber: f.flatNo,
         ownerName: f.ownerName,
-        ownerEmail: f.contactEmail,
+        ownerEmail: f.contactEmail ?? '',
         ownerPhone: f.contactMobile,
         maintenanceAmount: f.maintenanceAmount,
         outstandingBalance: 0, // Will be fetched separately per flat
@@ -382,6 +384,17 @@ export default function Flats() {
                 Export
               </Button>
               {isAdmin && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowImportModal(true)}
+                  className="h-10 px-4 font-medium transition-all duration-200"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Import
+                </Button>
+              )}
+              {isAdmin && (
                 <Button 
                   size="sm" 
                   onClick={() => openAddModal()}
@@ -406,15 +419,28 @@ export default function Flats() {
               <EmptyState
                 icon={Home}
                 title="No flats found"
-                description={isAdmin ? "Add your first flat to get started" : "No flats available"}
-                {...(isAdmin ? {
-                  action: {
-                    label: 'Add Flat',
-                    onClick: () => openAddModal(),
-                    icon: Plus,
-                  }
-                } : {})}
-              />
+                description={isAdmin ? "Add your first flat or import in bulk to get started" : "No flats available"}
+              >
+                {isAdmin && (
+                  <div className="flex items-center gap-3 mt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowImportModal(true)}
+                      className="h-10 px-4 font-medium"
+                    >
+                      <Upload className="w-4 h-4 mr-2" />
+                      Import Flats
+                    </Button>
+                    <Button
+                      onClick={() => openAddModal()}
+                      className="h-10 px-4 font-medium bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/30"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Flat
+                    </Button>
+                  </div>
+                )}
+              </EmptyState>
             </div>
           ) : (
             <>
@@ -501,7 +527,7 @@ export default function Flats() {
                                   reset({
                                     flatNumber: flat.flatNumber,
                                     ownerName: flat.ownerName,
-                                    ownerEmail: flat.ownerEmail,
+                                    ownerEmail: flat.ownerEmail ?? '',
                                     ownerPhone: flat.ownerPhone,
                                     maintenanceAmount: String(flat.maintenanceAmount),
                                     statusCode: flat.statusCode || '',
@@ -714,8 +740,17 @@ export default function Flats() {
           </ModalFooter>
         </Modal>
       )}
+
+      {isAdmin && (
+        <ImportFlatsModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onSuccess={() => {
+            setShowImportModal(false);
+          }}
+        />
+      )}
       </div>
-      {/* Import CSV UI hidden. Export provided above. */}
     </DashboardLayout>
   );
 }

@@ -90,5 +90,6 @@ export function useDashboard(params?: DashboardParams) {
       return response.data.data;
     },
     enabled: !!getInMemoryAccessToken(),
+    staleTime: 0,
   });
 }

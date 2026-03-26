@@ -13,6 +13,7 @@ import { formatCurrency } from '../../lib/utils';
 import OpeningBalancePreviewModal from './OpeningBalancePreviewModal';
 import OpeningBalanceAlreadyApplied from './OpeningBalanceAlreadyApplied';
 import OpeningBalanceSuccess from './OpeningBalanceSuccess';
+import { logger } from '../../lib/logger';
 
 export default function OpeningBalanceEntry() {
   const navigate = useNavigate();
@@ -225,7 +226,7 @@ export default function OpeningBalanceEntry() {
       } else {
         setBackendError('An unexpected error occurred. Please try again.');
       }
-      console.error('Failed to submit opening balance:', axiosError?.response?.data ?? error);
+      logger.error('Failed to submit opening balance', { status: axiosError?.response?.status });
     }
   };
 

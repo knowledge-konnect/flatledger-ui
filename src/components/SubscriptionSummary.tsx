@@ -13,8 +13,6 @@ export const SubscriptionSummary: React.FC<SubscriptionSummaryProps> = ({ compac
   const navigate = useNavigate();
   const { status, trialDaysRemaining, planName, loading, error } = useSubscription();
 
-  console.log('🔍 [SubscriptionSummary] State:', { status, trialDaysRemaining, planName, loading, error });
-
   const getStatusIcon = () => {
     switch (status) {
       case 'active':

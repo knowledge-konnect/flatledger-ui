@@ -68,6 +68,7 @@ export function useSubmitOpeningBalance() {
       queryClient.invalidateQueries({ queryKey: ['opening-balance-status'] });
       queryClient.invalidateQueries({ queryKey: ['opening-balance-summary'] });
       queryClient.invalidateQueries({ queryKey: ['flats'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }

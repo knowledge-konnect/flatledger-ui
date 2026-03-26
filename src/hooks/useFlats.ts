@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { flatsApi, FlatDto, CreateFlatDto, UpdateFlatDto, FlatStatusDto, FlatFinancialSummaryDto, FlatLedgerDto } from '../api/flatsApi';
+import { flatsApi, FlatDto, CreateFlatDto, UpdateFlatDto, FlatStatusDto, FlatFinancialSummaryDto, FlatLedgerDto, BulkCreateFlatsPayload, BulkCreateFlatsResponse } from '../api/flatsApi';
 import { logger } from '../lib/logger';
 
 export function useFlats() {
@@ -47,6 +47,18 @@ export function useDeleteFlat() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['flats'] });
     }
+  });
+}
+
+export function useBulkCreateFlats() {
+  const qc = useQueryClient();
+  return useMutation<BulkCreateFlatsResponse, Error, BulkCreateFlatsPayload>({
+    mutationFn: async (payload: BulkCreateFlatsPayload) => {
+      return flatsApi.bulkCreateFlats(payload);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['flats'] });
+    },
   });
 }
 

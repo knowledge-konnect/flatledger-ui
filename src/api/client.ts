@@ -1,16 +1,12 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import { ApiError } from '../types/api';
+import { logger } from '../lib/logger';
 
 // Get API base URL from environment variables
 const _rawApiUrl: string = 
   (import.meta as any).env?.VITE_APP_API_URL ||
   (import.meta as any).env?.REACT_APP_API_URL ||
   (() => {
-    console.error(
-      '❌ VITE_APP_API_URL is not defined in environment variables.\n' +
-      'Please create a .env file with VITE_APP_API_URL=<your-api-url>\n' +
-      'See .env.example for reference.'
-    );
     throw new Error('API URL not configured. Please set VITE_APP_API_URL in your .env file.');
   })();
 
@@ -36,6 +32,14 @@ let refreshAccessTokenCallback: (() => Promise<string | null>) | null = null;
 // Export function to register the refresh callback from AuthProvider
 export const setRefreshTokenCallback = (callback: () => Promise<string | null>) => {
   refreshAccessTokenCallback = callback;
+};
+
+// Global toast callback — registered by ToastProvider so the interceptor can
+// show messages without depending on React context or hooks.
+type ToastType = 'error' | 'warning' | 'info' | 'success';
+let _showGlobalToast: ((message: string, type?: ToastType) => void) | null = null;
+export const setGlobalToastCallback = (fn: ((message: string, type?: ToastType) => void) | null) => {
+  _showGlobalToast = fn;
 };
 
 let isRefreshing = false;
@@ -100,13 +104,13 @@ apiClient.interceptors.response.use(
       const requestUrl = originalRequest.url || '';
       const isAuthEndpoint = UNAUTHENTICATED_PATHS.some(path => requestUrl.includes(path));
       if (isAuthEndpoint) {
-        console.log('[API Client] Auth endpoint returned 401, not retrying');
+        logger.log('[API Client] Auth endpoint returned 401, not retrying');
         return Promise.reject(error);
       }
 
       // Flag to prevent infinite retry loops - only retry once
       if ((originalRequest as any)._retry) {
-        console.log('[API Client] Request already retried, rejecting');
+        logger.log('[API Client] Request already retried, rejecting');
         return Promise.reject(error);
       }
 
@@ -115,7 +119,7 @@ apiClient.interceptors.response.use(
 
       // Check if refresh callback is registered
       if (!refreshAccessTokenCallback) {
-        console.warn('[API Client] No refresh token callback registered');
+        logger.warn('[API Client] No refresh token callback registered');
         return Promise.reject(error);
       }
 
@@ -123,14 +127,14 @@ apiClient.interceptors.response.use(
         isRefreshing = true;
 
         try {
-          console.log('[API Client] Attempting to refresh access token');
+          logger.log('[API Client] Attempting to refresh access token');
           
           // Attempt refreshAccessToken() from AuthProvider
           const newAccessToken = await refreshAccessTokenCallback();
           
           if (newAccessToken) {
             // Refresh succeeded — update in-memory token
-            console.log('[API Client] Token refreshed successfully');
+            logger.log('[API Client] Token refreshed successfully');
             setInMemoryAccessToken(newAccessToken);
             
             // Notify all waiting requests
@@ -146,7 +150,7 @@ apiClient.interceptors.response.use(
             isRefreshing = false;
             refreshSubscribers = [];
             
-            console.error('[API Client] Token refresh failed, logout initiated');
+            logger.error('[API Client] Token refresh failed, logout initiated');
             
             // Redirect to /login if not already there
             if (!isRedirecting && !window.location.pathname.includes('/login')) {
@@ -164,7 +168,7 @@ apiClient.interceptors.response.use(
           isRefreshing = false;
           refreshSubscribers = [];
           
-          console.error('[API Client] Exception during token refresh', refreshError);
+          logger.error('[API Client] Exception during token refresh', refreshError);
           
           // Redirect to /login
           if (!isRedirecting && !window.location.pathname.includes('/login')) {
@@ -188,7 +192,12 @@ apiClient.interceptors.response.use(
       });
     }
 
-    // Not a 401 error, reject normally
+    // Rate limit — show a global toast and let the caller decide further UI changes
+    if (error.response?.status === 429) {
+      _showGlobalToast?.('Too many attempts. Please wait a minute and try again.', 'error');
+    }
+
+    // Not a 401/429 error (or 429 already handled above), reject normally
     return Promise.reject(error);
   }
 );
