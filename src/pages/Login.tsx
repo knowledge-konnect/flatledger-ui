@@ -110,10 +110,10 @@ export default function Login() {
   };
 
   const features = [
-    { icon: <LayoutDashboard className="w-5 h-5" />, title: 'Live KPI Dashboard', desc: 'Real-time overview of billing, collections and flat occupancy.' },
-    { icon: <Building2 className="w-5 h-5" />, title: 'Flat & Resident Management', desc: 'Manage all flats, owners and tenants from one place.' },
-    { icon: <IndianRupee className="w-5 h-5" />, title: 'Maintenance Billing', desc: 'Generate monthly bills and record cash, UPI or cheque payments.' },
-    { icon: <BarChart3 className="w-5 h-5" />, title: '6 Built-in Reports', desc: 'Billing summary, defaulters, income vs expense, fund ledger & more.' },
+    { icon: <LayoutDashboard className="w-5 h-5" />, title: 'Live KPI Dashboard', desc: 'Collection rate, fund balance and pending dues — all on one screen, always current.' },
+    { icon: <Building2 className="w-5 h-5" />, title: 'Flat & Resident Management', desc: 'Manage flats, owners and tenants — import from your existing Excel sheet in minutes.' },
+    { icon: <IndianRupee className="w-5 h-5" />, title: 'Maintenance Billing', desc: 'One click generates bills for every flat and records cash, UPI, cheque or bank transfers.' },
+    { icon: <BarChart3 className="w-5 h-5" />, title: 'Built-in Reports', desc: 'Billing summary, outstanding dues, income vs expense and expenses by category.' },
   ];
 
   return (
@@ -138,7 +138,7 @@ export default function Login() {
             Everything your<br />society needs.
           </h2>
           <p className="text-emerald-100 text-lg leading-relaxed">
-            One platform to manage residents, billing,<br />maintenance, and more.
+            One place to manage billing, payments,<br />expenses and reports — no Excel, no WhatsApp.
           </p>
         </div>
 
@@ -180,7 +180,7 @@ export default function Login() {
               Welcome back
             </h1>
             <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">
-              Sign in to your society dashboard
+              Sign in to manage your society
             </p>
           </div>
 
