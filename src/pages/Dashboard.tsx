@@ -1,10 +1,8 @@
 ﻿import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  IndianRupee,
   AlertCircle,
   TrendingUp,
-  Landmark,
   ArrowDownCircle,
   ReceiptText,
   ChevronRight,
