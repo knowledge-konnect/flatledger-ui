@@ -143,9 +143,9 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
         onClick={() => setIsOpen((o) => !o)}
         aria-label="Open Help Chat"
         className={cn(
-          'hidden md:fixed md:bottom-24 md:right-6 md:z-50 md:w-14 md:h-14 md:rounded-full md:shadow-2xl md:flex md:items-center md:justify-center md:transition-all md:duration-300 md:focus:outline-none md:focus:ring-4 md:focus:ring-emerald-400/50',
+          'fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl hidden md:flex items-center justify-center transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-emerald-400/50',
           isOpen
-            ? 'bg-slate-700 dark:bg-slate-600 rotate-0 scale-95'
+            ? 'bg-slate-700 dark:bg-slate-600 scale-95'
             : 'bg-emerald-600 hover:bg-emerald-700 hover:scale-110',
         )}
       >
@@ -167,33 +167,33 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
       {isOpen && (
         <div
           className={cn(
-            'hidden md:fixed md:bottom-44 md:right-6 md:z-50 md:w-[360px] md:max-w-[calc(100vw-1.5rem)] md:rounded-2xl md:shadow-2xl md:border md:border-slate-200 md:dark:border-slate-700 md:flex md:flex-col md:overflow-hidden',
+            'fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-1.5rem)] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 hidden md:flex flex-col overflow-hidden',
             'bg-white dark:bg-slate-900',
             'animate-in slide-in-from-bottom-4 fade-in duration-300',
           )}
-          style={{ maxHeight: '560px' }}
+          style={{ maxHeight: 'min(480px, calc(100vh - 11rem))', minHeight: '300px' }}
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-4 py-3 flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-2.5">
+          <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-3 py-2 flex items-center justify-between flex-shrink-0">
+            <div className="flex items-center gap-2">
               {view !== 'home' && (
                 <button
                   onClick={handleBack}
-                  className="p-1 rounded-lg hover:bg-white/20 transition-colors text-white"
+                  className="p-0.5 rounded-lg hover:bg-white/20 transition-colors text-white"
                   aria-label="Go back"
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
               )}
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-base">
+              <div className="flex items-center gap-1.5">
+                <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-sm">
                   🤖
                 </div>
                 <div>
-                  <p className="text-white font-semibold text-sm leading-none">FlatLedger Guide</p>
-                  <p className="text-emerald-200 text-[11px] mt-0.5 flex items-center gap-1">
+                  <p className="text-white font-semibold text-xs leading-none">FlatLedger Guide</p>
+                  <p className="text-emerald-200 text-[10px] mt-0.5 flex items-center gap-1">
                     <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isOnline ? 'bg-emerald-400' : 'bg-slate-400'}`} />
-                    {isOnline ? 'Online · replies in minutes' : 'Offline · replies in 24h'}
+                    {isOnline ? 'Online' : 'Offline · replies in 24h'}
                   </p>
                 </div>
               </div>
@@ -202,22 +202,22 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
               <button
                 onClick={handleReset}
                 title="Start over"
-                className="p-1.5 rounded-lg hover:bg-white/20 transition-colors text-white text-xs font-medium"
+                className="p-1 rounded-lg hover:bg-white/20 transition-colors text-white text-xs font-medium"
               >
                 ↺
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-white/20 transition-colors text-white"
+                className="p-1 rounded-lg hover:bg-white/20 transition-colors text-white"
                 aria-label="Close"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0 bg-slate-50 dark:bg-slate-950">
+          <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0 bg-slate-50 dark:bg-slate-950" style={{ minHeight: '140px' }}>
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -227,13 +227,13 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                 )}
               >
                 {msg.type === 'bot' && (
-                  <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-sm flex-shrink-0 mr-2 mt-0.5">
+                  <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-xs flex-shrink-0 mr-1.5 mt-0.5">
                     🤖
                   </div>
                 )}
                 <div
                   className={cn(
-                    'max-w-[78%] px-3 py-2 rounded-2xl text-sm leading-relaxed',
+                    'max-w-[80%] px-2.5 py-1.5 rounded-xl text-xs leading-relaxed',
                     msg.type === 'user'
                       ? 'bg-emerald-600 text-white rounded-tr-sm'
                       : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-700 rounded-tl-sm shadow-sm',
@@ -246,10 +246,10 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
             {/* #7 — Typing indicator */}
             {isTyping && (
               <div className="flex justify-start">
-                <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-sm flex-shrink-0 mr-2 mt-0.5">
+                <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center text-xs flex-shrink-0 mr-1.5 mt-0.5">
                   🤖
                 </div>
-                <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-1">
+                <div className="px-3 py-2 rounded-xl rounded-tl-sm bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '0ms' }} />
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '150ms' }} />
                   <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -264,25 +264,25 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
           <div className="flex-shrink-0 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
             {/* HOME: search + categories */}
             {view === 'home' && (
-              <div className="p-3 space-y-2">
+              <div className="p-2 space-y-1.5">
                 {/* Search */}
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
                   <input
                     ref={searchRef}
                     type="text"
                     placeholder="Search a question..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    className="w-full pl-7 pr-3 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                   />
                 </div>
 
                 {/* Search results */}
                 {searchQuery.trim().length > 1 ? (
-                  <div className="space-y-1 max-h-52 overflow-y-auto">
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
                     {searchResults.length === 0 ? (
-                      <p className="text-xs text-slate-400 text-center py-3">No results found.</p>
+                      <p className="text-xs text-slate-400 text-center py-2">No results found.</p>
                     ) : (
                       searchResults.map(({ faq, cat }, idx) => (
                         <button
@@ -291,7 +291,7 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                             setSelectedCategory(cat);
                             handleFAQSelect(faq);
                           }}
-                          className="w-full text-left px-3 py-2 rounded-lg text-xs text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700 transition-colors"
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700 transition-colors"
                         >
                           <span className="text-emerald-500 font-medium">{cat.icon} {cat.label}</span>
                           <br />
@@ -302,15 +302,15 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                   </div>
                 ) : (
                   /* Category grid */
-                  <div className="grid grid-cols-3 gap-1.5">
+                  <div className="grid grid-cols-3 gap-1 overflow-y-auto" style={{ maxHeight: '200px' }}>
                     {ACTIVE_CATEGORIES.map((cat) => (
                       <button
                         key={cat.id}
                         onClick={() => handleCategorySelect(cat)}
-                        className="flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all text-center group"
+                        className="flex flex-col items-center gap-0.5 px-1 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all text-center group"
                       >
-                        <span className="text-xl group-hover:scale-110 transition-transform">{cat.icon}</span>
-                        <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 leading-tight">
+                        <span className="text-lg group-hover:scale-110 transition-transform">{cat.icon}</span>
+                        <span className="text-[10px] font-medium text-slate-700 dark:text-slate-300 leading-tight">
                           {cat.label}
                         </span>
                       </button>
@@ -322,28 +322,28 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
 
             {/* CATEGORY: list of questions */}
             {view === 'category' && selectedCategory && (
-              <div className="p-3 space-y-1.5 max-h-52 overflow-y-auto">
+              <div className="p-2 space-y-1 max-h-40 overflow-y-auto">
                 {/* Search within category */}
-                <div className="relative mb-2">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+                <div className="relative mb-1.5">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
                   <input
                     type="text"
                     placeholder="Filter questions..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                    className="w-full pl-7 pr-3 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                   />
                 </div>
                 {filteredFAQs.length === 0 ? (
-                  <p className="text-xs text-slate-400 text-center py-3">No questions match your search.</p>
+                  <p className="text-xs text-slate-400 text-center py-2">No questions match your search.</p>
                 ) : (
                   filteredFAQs.map((faq, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleFAQSelect(faq)}
-                      className="w-full text-left px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-700 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all text-xs text-slate-700 dark:text-slate-300 font-medium flex items-start gap-2"
+                      className="w-full text-left px-2.5 py-2 rounded-lg border border-slate-100 dark:border-slate-700 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all text-xs text-slate-700 dark:text-slate-300 font-medium flex items-start gap-1.5"
                     >
-                      <span className="text-emerald-400 font-bold mt-0.5 flex-shrink-0">Q</span>
+                      <span className="text-emerald-400 font-bold flex-shrink-0">Q</span>
                       {faq.question}
                     </button>
                   ))
@@ -353,18 +353,18 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
 
             {/* ANSWER: ask another question */}
             {view === 'answer' && (
-              <div className="p-3 space-y-2">
-                <p className="text-xs text-slate-500 dark:text-slate-400 text-center">Was this helpful?</p>
-                <div className="flex gap-2">
+              <div className="p-2 space-y-1.5">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 text-center">Was this helpful?</p>
+                <div className="flex gap-1.5">
                   <button
                     onClick={handleBack}
-                    className="flex-1 py-2 rounded-xl border border-emerald-200 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 text-xs font-medium hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors"
+                    className="flex-1 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 text-xs font-medium hover:bg-emerald-50 dark:hover:bg-slate-800 transition-colors"
                   >
-                    ← More in {selectedCategory?.label}
+                    ← More
                   </button>
                   <button
                     onClick={handleReset}
-                    className="flex-1 py-2 rounded-xl bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition-colors"
+                    className="flex-1 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition-colors"
                   >
                     Ask another
                   </button>

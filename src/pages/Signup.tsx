@@ -97,7 +97,7 @@ export default function Signup() {
   };
 
   const perks = [
-    { icon: <Users className="w-5 h-5" />, title: 'Role-based team access', desc: 'Assign Admin, Treasurer, Member or Viewer roles to your team.' },
+    { icon: <Users className="w-5 h-5" />, title: 'Role-based team access', desc: 'Give Society Admin or Viewer access to each committee member.' },
     { icon: <Settings2 className="w-5 h-5" />, title: 'Society & maintenance config', desc: 'Set monthly charges, due dates, late fees and grace periods.' },
     { icon: <FileDown className="w-5 h-5" />, title: 'CSV export for all data', desc: 'Export flats, payments, expenses and reports anytime.' },
   ];
@@ -105,7 +105,7 @@ export default function Signup() {
   const included = [
     'Unlimited flats & residents',
     'Monthly billing generation',
-    'Live KPI dashboard & 6 reports',
+    'Live KPI dashboard & reports',
     'Defaulter & outstanding tracking',
     'Expense tracking by category',
     'Role-based team access',
@@ -130,10 +130,10 @@ export default function Signup() {
             </span>
           </div>
           <h2 className="text-3xl font-bold text-white leading-snug mb-2">
-            Start managing<br />smarter today.
+            Replace Excel with<br />one simple app.
           </h2>
           <p className="text-emerald-100 text-base leading-relaxed">
-            Join hundreds of societies already running on FlatLedger.
+            Join 50+ housing societies across India already on FlatLedger.
           </p>
         </div>
 
@@ -175,7 +175,7 @@ export default function Signup() {
             <FlatLedgerIcon size={32} className="rounded-lg shadow-md" />
             <div className="text-left">
               <h1 className="text-xl font-semibold text-[#0F172A] dark:text-[#F8FAFC] leading-tight">Create your account</h1>
-              <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">Set up your society management in minutes</p>
+              <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">Up and running in under 30 minutes</p>
             </div>
           </div>
 

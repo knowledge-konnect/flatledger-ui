@@ -67,6 +67,7 @@ export interface DashboardResponse {
   expense_breakdown: ExpenseBreakdownItem[];
   top_defaulters: TopDefaulter[];
   recent_activity: RecentActivityItem[];
+  insights?: string[];
 }
 
 // ─── Params ───────────────────────────────────────────────────────────────────
