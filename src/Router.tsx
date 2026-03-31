@@ -31,6 +31,7 @@ const IncomeVsExpense = lazy(() => import('./pages/reports/IncomeVsExpense'));
 const FundLedger = lazy(() => import('./pages/reports/FundLedger'));
 const PaymentRegister = lazy(() => import('./pages/reports/PaymentRegister'));
 const ExpenseByCategory = lazy(() => import('./pages/reports/ExpenseByCategory'));
+const DownloadReports = lazy(() => import('./pages/reports/DownloadReports'));
 const Users = lazy(() => import('./pages/Users'));
 const Settings = lazy(() => import('./pages/Settings'));
 const SubscriptionManagement = lazy(() => import('./pages/SubscriptionManagement'));
@@ -105,6 +106,7 @@ function UserRoutes() {
           <Route path="/reports/fund-ledger" element={<ProtectedRoute><FundLedger /></ProtectedRoute>} />
           <Route path="/reports/payment-register" element={<ProtectedRoute><PaymentRegister /></ProtectedRoute>} />
           <Route path="/reports/expense-by-category" element={<ProtectedRoute><ExpenseByCategory /></ProtectedRoute>} />
+          <Route path="/reports/download-reports" element={<ProtectedRoute><DownloadReports /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><Users /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><Settings /></ProtectedRoute>} />
           <Route path="/settings/opening-balance" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><OpeningBalanceEntry /></ProtectedRoute>} />
