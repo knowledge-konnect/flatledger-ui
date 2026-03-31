@@ -192,6 +192,72 @@ const reportsApi = {
     );
     return res.data.data;
   },
+
+  downloadMonthlyReport: async (year: number, month: number): Promise<void> => {
+    const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    let blob: Blob;
+    try {
+      const res = await apiClient.get(
+        `/reports/download/monthly?year=${year}&month=${month}`,
+        { responseType: 'blob' }
+      );
+      blob = res.data as Blob;
+    } catch (err: any) {
+      // Parse error blob to extract backend message
+      const raw = err?.response?.data;
+      if (raw instanceof Blob) {
+        const text = await raw.text();
+        try {
+          const json = JSON.parse(text);
+          throw new Error(json?.message || 'Failed to download monthly report');
+        } catch {
+          throw new Error('Failed to download monthly report');
+        }
+      }
+      throw new Error(err?.response?.data?.message || err?.message || 'Failed to download monthly report');
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Monthly_Report_${MONTH_NAMES[month - 1]}_${year}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
+
+  downloadYearlyReport: async (year: number, yearType: 'financial' | 'calendar'): Promise<void> => {
+    let blob: Blob;
+    try {
+      const res = await apiClient.get(
+        `/reports/download/yearly?year=${year}&yearType=${yearType}`,
+        { responseType: 'blob' }
+      );
+      blob = res.data as Blob;
+    } catch (err: any) {
+      const raw = err?.response?.data;
+      if (raw instanceof Blob) {
+        const text = await raw.text();
+        try {
+          const json = JSON.parse(text);
+          throw new Error(json?.message || 'Failed to download yearly report');
+        } catch {
+          throw new Error('Failed to download yearly report');
+        }
+      }
+      throw new Error(err?.response?.data?.message || err?.message || 'Failed to download yearly report');
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = yearType === 'financial'
+      ? `Yearly_Report_FY_${year - 1}-${String(year).slice(2)}.xlsx`
+      : `Yearly_Report_${year}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
 };
 
 export default reportsApi;
