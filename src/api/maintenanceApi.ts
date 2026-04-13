@@ -35,6 +35,8 @@ export interface MaintenancePaymentDto {
   totalPaid?: number;
   allocations?: { billPublicId: string; allocatedAmount: number; period?: string | null }[];
   remainingAdvance?: number;
+  /** Flat's total outstanding immediately after this payment was applied (null for records created before this field was added) */
+  outstandingAfterPayment?: number | null;
 }
 
 /**
@@ -156,11 +158,13 @@ export const maintenanceApi = {
 
   /**
    * List all maintenance payments for the society
-   * GET /maintenance-payments
+   * GET /maintenance-payments?period=2026-03
+   * @param period Optional period filter in YYYY-MM format
    * @returns Promise<MaintenancePaymentDto[]>
    */
-  async listBySociety(): Promise<MaintenancePaymentDto[]> {
-    const response = await apiClient.get<ApiResponse<unknown>>('/maintenance-payments');
+  async listBySociety(period?: string): Promise<MaintenancePaymentDto[]> {
+    const params = period ? { period } : {};
+    const response = await apiClient.get<ApiResponse<unknown>>('/maintenance-payments', { params });
     return unwrapArrayData<MaintenancePaymentDto>(response.data.data, 'payments');
   },
 
