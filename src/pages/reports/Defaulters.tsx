@@ -9,7 +9,7 @@ import Pagination from '../../components/ui/Pagination';
 import { cn } from '../../lib/utils';
 import reportsApi, { DefaulterEntry } from '../../api/reportsApi';
 import {
-  ReportState, initialState, ReportLoading, ReportError, StatCard, NumberInput, formatCurrency, fmtPeriod,
+  ReportState, initialState, ReportLoading, ReportError, StatCard, NumberInput, formatCurrency, fmtPeriod
 } from './_shared';
 
 export default function DefaultersPage() {
@@ -119,8 +119,8 @@ export default function DefaultersPage() {
                           {allData.length === 0 ? 'No defaulters found' : 'No results on this page'}
                         </TableCell>
                       </TableRow>
-                    ) : paginatedData.map(d => (
-                      <TableRow key={d.flat_no} className={cn(rowClass(d.pending_months))}>
+                    ) : paginatedData.map((d, i) => (
+                      <TableRow key={d.flat_no ?? `${d.owner_name ?? d.contact_mobile ?? 'row'}-${i}`} className={cn(rowClass(d.pending_months))}>
                         <TableCell className="font-semibold">{d.flat_no}</TableCell>
                         <TableCell>{d.owner_name}</TableCell>
                         <TableCell>{d.contact_mobile}</TableCell>

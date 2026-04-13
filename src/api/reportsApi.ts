@@ -129,17 +129,52 @@ const reportsApi = {
     if (startPeriod) params.append('startPeriod', startPeriod);
     if (endPeriod) params.append('endPeriod', endPeriod);
     const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await apiClient.get<{ success: boolean; data: CollectionSummaryData }>(
+    const res = await apiClient.get<{ success: boolean; data?: CollectionSummaryData }>(
       `/reports/collection-summary${query}`
     );
-    return res.data.data;
+    const payload = res.data?.data ?? (res.data as unknown as CollectionSummaryData);
+    return payload;
   },
 
-  getDefaulters: async (minOutstanding = 0) => {
-    const res = await apiClient.get<{ success: boolean; data: DefaulterEntry[] }>(
-      `/reports/defaulters?minOutstanding=${minOutstanding}`
+  getDefaulters: async (minOutstanding = 0, startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    params.append('minOutstanding', String(minOutstanding));
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    const res = await apiClient.get<{ success: boolean; data?: DefaulterEntry[] }>(
+      `/reports/defaulters?${params.toString()}`
     );
-    return res.data.data;
+    // Backend may return multiple shapes:
+    // 1) { success: true, data: [ ...entries ] }
+    // 2) [ { get_defaulters_report: [ ...entries ] } ]
+    // 3) { success: true, data: [ { get_defaulters_report: [ ...entries ] } ] }
+    // 4) { data: { get_defaulters_report: [ ...entries ] } }
+    // 5) directly an array of entries
+    const raw = res.data as any;
+
+    const toEntries = (value: any): DefaulterEntry[] | undefined => {
+      if (!value) return undefined;
+
+      if (Array.isArray(value)) {
+        if (value.length === 0) return [];
+
+        // [{ get_defaulters_report: [...] }]
+        if (Array.isArray(value[0]?.get_defaulters_report)) {
+          return value[0].get_defaulters_report as DefaulterEntry[];
+        }
+
+        // Direct array of entries
+        return value as DefaulterEntry[];
+      }
+
+      if (Array.isArray(value?.get_defaulters_report)) {
+        return value.get_defaulters_report as DefaulterEntry[];
+      }
+
+      return undefined;
+    };
+
+    return toEntries(raw?.data) ?? toEntries(raw) ?? [];
   },
 
   getIncomeVsExpense: async (startDate?: string, endDate?: string) => {
@@ -147,10 +182,11 @@ const reportsApi = {
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await apiClient.get<{ success: boolean; data: IncomeVsExpenseData }>(
+    const res = await apiClient.get<{ success: boolean; data?: IncomeVsExpenseData }>(
       `/reports/income-vs-expense${query}`
     );
-    return res.data.data;
+    const payload = res.data?.data ?? (res.data as unknown as IncomeVsExpenseData);
+    return payload;
   },
 
   getFundLedger: async (startDate?: string, endDate?: string) => {
@@ -158,10 +194,11 @@ const reportsApi = {
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await apiClient.get<{ success: boolean; data: FundLedgerData }>(
+    const res = await apiClient.get<{ success: boolean; data?: FundLedgerData }>(
       `/reports/fund-ledger${query}`
     );
-    return res.data.data;
+    const payload = res.data?.data ?? (res.data as unknown as FundLedgerData);
+    return payload;
   },
 
   getPaymentRegister: async (startDate?: string, endDate?: string, page = 1, pageSize = 50): Promise<PaymentRegisterPage> => {
@@ -173,12 +210,18 @@ const reportsApi = {
     const res = await apiClient.get<{ success: boolean; data: any }>(
       `/reports/payment-register?${params.toString()}`
     );
-    const d = res.data.data;
+    const d = res.data?.data ?? res.data;
+    const entries: PaymentRegisterEntry[] = Array.isArray(d?.items)
+      ? d.items
+      : Array.isArray(d?.entries)
+      ? d.entries
+      : [];
+    const finalTotal = Number(d?.totalCount ?? d?.total ?? entries.length) || 0;
     return {
-      entries:  d.items,
-      total:    d.totalCount,
-      page:     d.page,
-      pageSize: d.pageSize,
+      entries,
+      total: finalTotal,
+      page: Number(d?.page ?? page) || page,
+      pageSize: Number(d?.pageSize ?? pageSize) || pageSize,
     };
   },
 
@@ -187,21 +230,27 @@ const reportsApi = {
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await apiClient.get<{ success: boolean; data: ExpenseByCategoryData }>(
+    const res = await apiClient.get<{ success: boolean; data?: ExpenseByCategoryData }>(
       `/reports/expense-by-category${query}`
     );
-    return res.data.data;
+    const payload = res.data?.data ?? (res.data as unknown as ExpenseByCategoryData);
+    return payload;
   },
 
-  downloadMonthlyReport: async (year: number, month: number): Promise<void> => {
-    const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  downloadMonthlyReport: async (year: number, month: number, filename?: string): Promise<void> => {
     let blob: Blob;
+    let resolvedFilename = filename || `Monthly_Report_${year}_${String(month).padStart(2, '0')}.xlsx`;
     try {
       const res = await apiClient.get(
         `/reports/download/monthly?year=${year}&month=${month}`,
         { responseType: 'blob' }
       );
       blob = res.data as Blob;
+      if (!filename) {
+        const disposition = res.headers?.['content-disposition'] as string | undefined;
+        const match = disposition?.match(/filename\*?=(?:UTF-8'')?"?([^"\n;]+)"?/i);
+        if (match?.[1]) resolvedFilename = decodeURIComponent(match[1].trim());
+      }
     } catch (err: any) {
       // Parse error blob to extract backend message
       const raw = err?.response?.data;
@@ -219,21 +268,29 @@ const reportsApi = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Monthly_Report_${MONTH_NAMES[month - 1]}_${year}.xlsx`;
+    a.download = resolvedFilename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   },
 
-  downloadYearlyReport: async (year: number, yearType: 'financial' | 'calendar'): Promise<void> => {
+  downloadYearlyReport: async (year: number, yearType: 'financial' | 'calendar', filename?: string): Promise<void> => {
     let blob: Blob;
+    let resolvedFilename = filename || (yearType === 'financial'
+      ? `Yearly_Report_FY_${year - 1}-${String(year).slice(2)}.xlsx`
+      : `Yearly_Report_${year}.xlsx`);
     try {
       const res = await apiClient.get(
         `/reports/download/yearly?year=${year}&yearType=${yearType}`,
         { responseType: 'blob' }
       );
       blob = res.data as Blob;
+      if (!filename) {
+        const disposition = res.headers?.['content-disposition'] as string | undefined;
+        const match = disposition?.match(/filename\*?=(?:UTF-8'')?"?([^"\n;]+)"?/i);
+        if (match?.[1]) resolvedFilename = decodeURIComponent(match[1].trim());
+      }
     } catch (err: any) {
       const raw = err?.response?.data;
       if (raw instanceof Blob) {
@@ -250,9 +307,7 @@ const reportsApi = {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = yearType === 'financial'
-      ? `Yearly_Report_FY_${year - 1}-${String(year).slice(2)}.xlsx`
-      : `Yearly_Report_${year}.xlsx`;
+    a.download = resolvedFilename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

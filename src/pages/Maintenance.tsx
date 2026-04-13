@@ -1,7 +1,7 @@
 ﻿import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueries } from '@tanstack/react-query';
-import { Plus, CreditCard, Search, Edit, Trash, IndianRupee, AlertCircle, TrendingUp, Info, Zap, Lock, Home, Calendar, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { Plus, CreditCard, Search, Edit, Trash, Eye, IndianRupee, AlertCircle, TrendingUp, Info, Zap, Lock, Home, Calendar, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import PageHeader from '../components/ui/PageHeader';
 import Tooltip from '../components/ui/Tooltip';
@@ -99,8 +99,12 @@ export default function Maintenance() {
   const [formError, setFormError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [allocationFilter, setAllocationFilter] = useState<'all' | 'current' | 'arrears'>('all');
+  const [flatFilter, setFlatFilter] = useState('all');
   const [sortField, setSortField] = useState<'paymentDate' | 'flatNumber' | 'amount'>('paymentDate');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 15;
 
   const toggleSort = (field: 'paymentDate' | 'flatNumber' | 'amount') => {
     if (sortField === field) {
@@ -120,6 +124,8 @@ export default function Maintenance() {
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewTarget, setViewTarget] = useState<any>(null);
   const [isRefreshingLedger, setIsRefreshingLedger] = useState(false);
   const [localSubmitting, setLocalSubmitting] = useState(false);
   const [lastAllocationSummary, setLastAllocationSummary] = useState<
@@ -135,7 +141,7 @@ export default function Maintenance() {
   const { showErrorToast } = useApiErrorToast();
 
   // Fetch data
-  const { data: payments = [], isLoading: paymentsLoading } = useMaintenancePayments();
+  const { data: payments = [], isLoading: paymentsLoading } = useMaintenancePayments(period);
   const { data: summary, isLoading: summaryLoading } = useMaintenanceSummary(period);
   const { data: billingStatus } = useBillingStatus();
   const { data: flats = [] } = useFlats();
@@ -150,15 +156,19 @@ export default function Maintenance() {
   const deletePayment = useDeleteMaintenancePayment();
 
   // Ensure arrays are always arrays
-  const safePayments = Array.isArray(payments) ? payments : [];
   const safeFlats = Array.isArray(flats) ? flats : [];
   const safePaymentModes = Array.isArray(paymentModes) ? paymentModes : [];
 
-  // Pre-built O(1) lookup: flatPublicId → ownerName
   const flatOwnerMap = useMemo(
     () => new Map(safeFlats.map(f => [f.publicId, f.ownerName])),
     [safeFlats]
   );
+
+  const formatPeriodLabel = (periodValue: string) => {
+    const [yr, mo] = periodValue.split('-').map(Number);
+    if (!yr || !mo) return periodValue;
+    return new Date(yr, mo - 1, 1).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+  };
 
   const { register, handleSubmit, formState: { errors, isSubmitting }, reset, watch, setValue } = useForm<PaymentFormData>({
     resolver: zodResolver(paymentSchema),
@@ -209,6 +219,119 @@ export default function Maintenance() {
     });
     return map;
   }, [flatSummaryResults, safeFlats]);
+
+  const paymentFlatIds = useMemo(
+    () => [...new Set(payments.map((p) => p.flatPublicId).filter(Boolean))],
+    [payments]
+  );
+
+  const paymentFlatSummaryResults = useQueries({
+    queries: paymentFlatIds.map((flatPublicId) => ({
+      // Must match the key invalidated by useCreateMaintenancePayment / useUpdateMaintenancePayment
+      // so the status column refreshes automatically after recording a payment.
+      queryKey: ['flat-financial-summary', flatPublicId],
+      queryFn: () => flatsApi.getFinancialSummary(flatPublicId),
+      staleTime: 0,
+      enabled: !!flatPublicId,
+    })),
+  });
+
+  const paymentFlatOutstandingNowMap = useMemo(() => {
+    const map = new Map<string, number>();
+    paymentFlatIds.forEach((flatPublicId, i) => {
+      const data = paymentFlatSummaryResults[i]?.data;
+      if (data) map.set(flatPublicId, data.totalOutstanding);
+    });
+    return map;
+  }, [paymentFlatIds, paymentFlatSummaryResults]);
+
+  const appliedBucketsByPayment = useMemo(() => {
+    return new Map(
+      payments.map((payment) => {
+        const bucket = new Map<string, number>();
+        (payment.allocations || []).forEach((allocation) => {
+          if (!allocation.period) return;
+          const prev = bucket.get(allocation.period) || 0;
+          bucket.set(allocation.period, prev + allocation.allocatedAmount);
+        });
+
+        if (bucket.size === 0 && payment.paymentDate) {
+          const derivedPeriod = payment.paymentDate.slice(0, 7);
+          bucket.set(derivedPeriod, payment.amount);
+        }
+
+        const entries = [...bucket.entries()]
+          .sort(([a], [b]) => b.localeCompare(a))
+          .map(([periodValue, amount]) => ({
+            period: periodValue,
+            label: formatPeriodLabel(periodValue),
+            amount,
+            kind: periodValue < period ? 'Arrear' : 'Current',
+          }));
+
+        return [payment.publicId, entries] as const;
+      })
+    );
+  }, [payments, period]);
+
+  const paymentBalanceById = useMemo(() => {
+    const grouped = new Map<string, any[]>();
+    payments.forEach((payment) => {
+      const list = grouped.get(payment.flatPublicId) || [];
+      list.push(payment);
+      grouped.set(payment.flatPublicId, list);
+    });
+
+    const result = new Map<string, { before: number; after: number; status: 'Cleared' | 'Unpaid' | 'Partial' }>();
+    grouped.forEach((flatPayments, flatPublicId) => {
+      const outstandingNow = paymentFlatOutstandingNowMap.get(flatPublicId);
+      if (outstandingNow == null) return;
+
+      const chronological = [...flatPayments].sort(
+        (a, b) => new Date(a.paymentDate).getTime() - new Date(b.paymentDate).getTime()
+      );
+
+      // Check if all payments in this group have the backend-supplied outstandingAfterPayment.
+      // If so, use it directly — it is the authoritative snapshot from the time of allocation.
+      const allHaveBackendValue = chronological.every(
+        (p) => p.outstandingAfterPayment != null
+      );
+
+      if (allHaveBackendValue) {
+        chronological.forEach((payment) => {
+          const after = payment.outstandingAfterPayment as number;
+          const before = after + (payment.amount || 0);
+          const status: 'Cleared' | 'Unpaid' | 'Partial' =
+            after === 0 ? 'Cleared' : after < before ? 'Partial' : 'Unpaid';
+          result.set(payment.publicId, { before, after, status });
+        });
+        return;
+      }
+
+      // Fallback: reconstruct balances from current outstanding (for older records
+      // created before outstandingAfterPayment was persisted by the backend).
+      const totalPaidInList = chronological.reduce((sum, p) => sum + (p.amount || 0), 0);
+      let runningDue = Math.max(outstandingNow + totalPaidInList, 0);
+
+      chronological.forEach((payment) => {
+        const before = runningDue;
+        const after = Math.max(before - (payment.amount || 0), 0);
+        // If the flat is now fully settled, every payment contributed to clearing it.
+        const status: 'Cleared' | 'Unpaid' | 'Partial' =
+          outstandingNow === 0
+            ? 'Cleared'
+            : after === 0
+            ? 'Cleared'
+            : after < before
+            ? 'Partial'
+            : 'Unpaid';
+        result.set(payment.publicId, { before, after, status });
+        runningDue = after;
+      });
+    });
+
+    return result;
+  }, [payments, paymentFlatOutstandingNowMap]);
 
   const onSubmit = async (data: PaymentFormData) => {
     if (localSubmitting) return;
@@ -365,22 +488,9 @@ export default function Maintenance() {
     }
   };
 
-  // Filter by period and search query
-  const periodFilteredPayments = safePayments.filter(p => {
-    // Fall back to parsing paymentDate in local time (API does not return a period field)
-    const paymentPeriod = (p as any).period
-      ? ((p as any).period as string).slice(0, 7)
-      : (() => {
-          const d = new Date(p.paymentDate);
-          const year = d.getFullYear();
-          const month = String(d.getMonth() + 1).padStart(2, '0');
-          return `${year}-${month}`;
-        })();
-    return paymentPeriod === period;
-  });
-
-  const filteredPayments = searchQuery
-    ? periodFilteredPayments.filter(p => {
+  // Filter by search query (period filtering now handled by backend)
+  const searchFilteredPayments = searchQuery
+    ? payments.filter(p => {
         const q = searchQuery.toLowerCase();
         return (
           (p.flatNumber || '').toLowerCase().includes(q) ||
@@ -390,7 +500,21 @@ export default function Maintenance() {
           (p.paymentModeName || '').toLowerCase().includes(q)
         );
       })
-    : periodFilteredPayments;
+    : payments;
+
+  const filteredPayments = searchFilteredPayments.filter((payment) => {
+    if (flatFilter !== 'all' && payment.flatPublicId !== flatFilter) return false;
+
+    if (allocationFilter === 'all') return true;
+
+    const applied = appliedBucketsByPayment.get(payment.publicId) || [];
+    const hasCurrent = applied.some((entry) => entry.kind === 'Current');
+    const hasArrear = applied.some((entry) => entry.kind === 'Arrear');
+
+    if (allocationFilter === 'current') return hasCurrent;
+    if (allocationFilter === 'arrears') return hasArrear;
+    return true;
+  });
 
   const sortedPayments = [...filteredPayments].sort((a, b) => {
     let cmp = 0;
@@ -404,6 +528,24 @@ export default function Maintenance() {
     return sortDir === 'asc' ? cmp : -cmp;
   });
 
+  const hasActiveFilters =
+    searchQuery.trim().length > 0 ||
+    allocationFilter !== 'all' ||
+    flatFilter !== 'all';
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setAllocationFilter('all');
+    setFlatFilter('all');
+    setCurrentPage(1);
+  };
+
+  // Reset to page 1 whenever filters or sort change
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, allocationFilter, flatFilter, sortField, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedPayments.length / PAGE_SIZE));
+  const pagedPayments = sortedPayments.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   return (
     <DashboardLayout title="Maintenance Payments">
       <div className="space-y-4 sm:space-y-6">
@@ -413,7 +555,7 @@ export default function Maintenance() {
           description="Track and manage maintenance fee payments"
           icon={CreditCard}
           actions={
-            isAdmin && (
+            isAdmin && period >= getCurrentMonth() && (
               <Button
                 size="md"
                 onClick={() => {
@@ -543,7 +685,7 @@ export default function Maintenance() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1">
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Member Opening Dues</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">Opening Dues</p>
                 <Tooltip content="Outstanding dues from members before system onboarding." side="top">
                   <Info className="w-3 h-3 text-slate-400 dark:text-slate-500 cursor-help flex-shrink-0" />
                 </Tooltip>
@@ -619,9 +761,16 @@ export default function Maintenance() {
             <div className="flex items-center gap-3">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Payment Records</h3>
               {!paymentsLoading && (
-                <span className="text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full">
-                  {filteredPayments.length} {filteredPayments.length === 1 ? 'entry' : 'entries'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full">
+                    {filteredPayments.length} {filteredPayments.length === 1 ? 'entry' : 'entries'}
+                  </span>
+                  {hasActiveFilters && (
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      of {payments.length}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
             <div className="flex items-center gap-3">
@@ -629,32 +778,74 @@ export default function Maintenance() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search flat, notes…"
+                  placeholder="Search flat, mode, notes..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="input pl-9 py-1.5 text-sm w-full"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    Clear
+                  </button>
+                )}
               </div>
-              {isAdmin && (
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setSelectedPayment(null);
-                    setLastAllocationSummary(null);
-                    reset({
-                      flatPublicId: '',
-                      amount: '',
-                      paymentModeId: '',
-                      paymentDate: new Date().toISOString().split('T')[0],
-                      referenceNumber: '',
-                    });
-                    setShowAddModal(true);
-                  }}
+
+            </div>
+          </div>
+
+          <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-5">
+              <div className="flex items-center gap-2 flex-wrap">
+                {[
+                  { key: 'all', label: 'All' },
+                  { key: 'current', label: 'Current Month' },
+                  { key: 'arrears', label: 'Arrears' },
+                ].map((filterItem) => (
+                  <button
+                    key={filterItem.key}
+                    type="button"
+                    onClick={() => setAllocationFilter(filterItem.key as 'all' | 'current' | 'arrears')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                      allocationFilter === filterItem.key
+                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700'
+                    }`}
+                  >
+                    {filterItem.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="hidden lg:block w-px h-5 bg-slate-200 dark:bg-slate-700" />
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">By Flat</span>
+                <select
+                  value={flatFilter}
+                  onChange={(e) => setFlatFilter(e.target.value)}
+                  className="min-w-[180px] max-w-[260px] w-full text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
                 >
-                  <Plus className="w-3.5 h-3.5 mr-1" />
-                  Record Payment
-                </Button>
+                  <option value="all">All Flats</option>
+                  {safeFlats.map((flat) => (
+                    <option key={flat.publicId} value={flat.publicId}>
+                      {flat.flatNo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:text-emerald-800 dark:hover:text-emerald-200 whitespace-nowrap"
+                >
+                  Clear filters
+                </button>
               )}
             </div>
           </div>
@@ -663,13 +854,27 @@ export default function Maintenance() {
             <div className="py-20">
               <LoadingSpinner centered />
             </div>
+          ) : filteredPayments.length === 0 && payments.length > 0 ? (
+            <div className="px-6 py-14 text-center space-y-3">
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                No records match the current filters
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Try changing search text, flat selection, or allocation type.
+              </p>
+              <div>
+                <Button size="sm" variant="outline" onClick={clearAllFilters}>
+                  Reset filters
+                </Button>
+              </div>
+            </div>
           ) : filteredPayments.length === 0 ? (
             <div className="py-16">
               <EmptyState
                 icon={CreditCard}
                 title="No payments found"
                 description="Record your first payment to get started"
-                action={isAdmin ? {
+                action={isAdmin && period >= getCurrentMonth() ? {
                   label: 'Record Payment',
                   onClick: () => {
                     setIsEditing(false);
@@ -689,151 +894,151 @@ export default function Maintenance() {
               />
             </div>
           ) : (
-            <div className="border border-slate-200 dark:border-slate-700 rounded-lg">
-              <table className="w-full">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[860px]">
                 <thead>
                   <tr className="bg-emerald-800 dark:bg-emerald-950 border-b border-emerald-700 dark:border-emerald-900 divide-x divide-emerald-700 dark:divide-emerald-900">
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors" onClick={() => toggleSort('paymentDate')}>
-                      <span className="inline-flex items-center">Date <SortIcon field="paymentDate" /></span>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-100 uppercase tracking-wider">
+                      <button
+                        type="button"
+                        onClick={() => toggleSort('flatNumber')}
+                        className="inline-flex items-center rounded focus:outline-none focus:ring-2 focus:ring-white/60"
+                        aria-label={`Sort by flat number (${sortField === 'flatNumber' && sortDir === 'asc' ? 'ascending' : 'descending'})`}
+                      >
+                        Flat <SortIcon field="flatNumber" />
+                      </button>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors" onClick={() => toggleSort('flatNumber')}>
-                      <span className="inline-flex items-center">Flat <SortIcon field="flatNumber" /></span>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-100 uppercase tracking-wider">Paid Date</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-100 uppercase tracking-wider">Owner</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-slate-100 uppercase tracking-wider">
+                      <button
+                        type="button"
+                        onClick={() => toggleSort('amount')}
+                        className="inline-flex items-center justify-end w-full rounded focus:outline-none focus:ring-2 focus:ring-white/60"
+                        aria-label={`Sort by amount (${sortField === 'amount' && sortDir === 'asc' ? 'ascending' : 'descending'})`}
+                      >
+                        Amount <SortIcon field="amount" />
+                      </button>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">Owner</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors" onClick={() => toggleSort('amount')}>
-                      <span className="inline-flex items-center justify-end w-full">Amount <SortIcon field="amount" /></span>
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">Payment Mode</th>
-                    {/* <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">Recorded By</th> */}
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">Paid For</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden lg:table-cell">Notes</th>
-                    {/* <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden lg:table-cell">Reference</th> */}
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-100 uppercase tracking-wider">Mode</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-100 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-100 uppercase tracking-wider">Applied To</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-100 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {sortedPayments.map((payment) => {
+                  {pagedPayments.map((payment) => {
                     const isToday = !!payment.paymentDate &&
                       new Date(payment.paymentDate).toDateString() === new Date().toDateString();
                     const ownerName = flatOwnerMap.get(payment.flatPublicId);
-                    const modeRaw = (payment.paymentModeCode || payment.paymentModeName || '').toLowerCase();
-                    const modeBadgeCls =
-                      modeRaw.includes('cash')
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800'
-                        : modeRaw.includes('upi')
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800'
-                        : modeRaw.includes('cheque') || modeRaw.includes('check')
-                        ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800'
-                        : modeRaw.includes('bank') || modeRaw.includes('neft') || modeRaw.includes('transfer')
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800'
-                        : 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+                    const balance = paymentBalanceById.get(payment.publicId);
                     return (
                     <tr
                       key={payment.publicId}
-                      className={`group transition-all duration-200 divide-x divide-slate-100 dark:divide-slate-700/60 ${
+                      onClick={() => { setViewTarget(payment); setShowViewModal(true); }}
+                      className={`group cursor-pointer transition-all duration-150 divide-x divide-slate-100 dark:divide-slate-700/60 even:bg-slate-50/40 dark:even:bg-slate-900/10 ${
                         isToday
-                          ? 'border-l-2 border-l-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/20'
-                          : 'hover:bg-gradient-to-r hover:from-emerald-50/50 hover:to-purple-50/50 dark:hover:from-emerald-950/20 dark:hover:to-purple-950/20'
+                          ? 'border-l-2 border-l-emerald-400 bg-emerald-50/30 dark:bg-emerald-950/10 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/20'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
                       }`}
                     >
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div>
-                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                            {formatDate(payment.paymentDate)}
-                          </span>
-                          {isToday && (
-                            <span className="ml-2 text-[10px] font-bold uppercase tracking-wide text-emerald-500 dark:text-emerald-400">Today</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-gradient-to-br from-emerald-500/10 to-purple-500/10 border border-emerald-200/50 dark:border-emerald-800/50">
-                          <span className="text-sm font-bold bg-gradient-to-r from-emerald-600 to-purple-600 bg-clip-text text-transparent">
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <div className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50">
+                          <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
                             {payment.flatNumber || '-'}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-3 whitespace-nowrap hidden sm:table-cell">
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        <div className="flex flex-col">
+                          <span className="text-sm text-slate-700 dark:text-slate-300">{formatDate(payment.paymentDate)}</span>
+                          {isToday && (
+                            <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Today</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-1.5 whitespace-nowrap">
                         {ownerName ? (
                           <span className="text-sm text-slate-700 dark:text-slate-300 truncate max-w-[130px] block">{ownerName}</span>
                         ) : (
                           <span className="text-sm text-slate-400">-</span>
                         )}
                       </td>
-                      <td className="px-6 py-3 whitespace-nowrap text-right">
+                      <td className="px-4 py-1.5 whitespace-nowrap text-right">
                         <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
                           {formatCurrency(payment.amount)}
                         </span>
                       </td>
-                      <td className="px-6 py-3 whitespace-nowrap hidden sm:table-cell">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${modeBadgeCls}`}>
-                          {payment.paymentModeName || 'N/A'}
+                      <td className="px-4 py-1.5 whitespace-nowrap">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          {payment.paymentModeName || '—'}
                         </span>
                       </td>
-                      <td className="px-6 py-3 whitespace-nowrap hidden md:table-cell">
+                      <td className="px-4 py-1.5 whitespace-nowrap">
                         {(() => {
-                          // Always render Paid For cell, even if empty, to keep alignment
-                          const allocs = payment.allocations || [];
-                          const periods = allocs
-                            .map(a => a.period)
-                            .filter((p): p is string => !!p);
-                          const uniquePeriods = [...new Set(periods)];
-                          if (!payment || (!uniquePeriods.length && !payment.paymentDate)) {
-                            return <span>-</span>;
-                          }
-                          if (uniquePeriods.length === 0) {
-                            // No allocation period info — derive from paymentDate
-                            const d = new Date(payment.paymentDate);
-                            const monthLabel = d.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
-                            return (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                                {monthLabel}
-                              </span>
-                            );
-                          }
-                          const currentPeriod = new Date().toISOString().slice(0, 7);
+                          const status = balance?.status || 'Unpaid';
+                          const statusClass =
+                            status === 'Cleared'
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                              : status === 'Partial'
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                              : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300';
+
+                          return (
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusClass}`}>
+                              {status}
+                            </span>
+                          );
+                        })()}
+                      </td>
+                      <td className="px-4 py-2">
+                        {(() => {
+                          const chips = appliedBucketsByPayment.get(payment.publicId) || [];
+                          if (!chips.length) return <span className="text-xs text-slate-400">—</span>;
+                          const visible = chips.slice(0, 2);
+                          const extra = chips.length - visible.length;
                           return (
                             <div className="flex flex-wrap gap-1">
-                              {uniquePeriods.map(p => {
-                                const [yr, mo] = p.split('-');
-                                const label = new Date(Number(yr), Number(mo) - 1, 1)
-                                  .toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
-                                const isArrear = p < currentPeriod;
-                                const isCurrent = p === currentPeriod;
-                                return (
-                                  <span
-                                    key={p}
-                                    title={isArrear ? `Cleared outstanding dues for ${label}` : undefined}
-                                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${
-                                      isArrear
-                                        ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800'
-                                        : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800'
-                                    }`}
-                                  >
-                                    {isArrear && <span className="mr-1 text-[9px] uppercase tracking-wide font-bold">Arrear</span>}
-                                    {isCurrent && <span className="mr-1 text-[9px] uppercase tracking-wide font-bold">Current</span>}
-                                    {label}
-                                  </span>
-                                );
-                              })}
+                              {visible.map((entry) => (
+                                <span
+                                  key={entry.period}
+                                  className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold whitespace-nowrap ${
+                                    entry.kind === 'Arrear'
+                                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                                      : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                  }`}
+                                >
+                                  {entry.label} · {entry.kind}
+                                </span>
+                              ))}
+                              {extra > 0 && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                  +{extra} more
+                                </span>
+                              )}
                             </div>
                           );
                         })()}
                       </td>
-                      <td className="px-6 py-3 hidden lg:table-cell">
-                        <span className="text-sm text-slate-500 dark:text-slate-400 truncate max-w-[180px] block">
-                          {payment.notes || '-'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap">
-                        {isAdmin && (
-                          <div className="flex gap-2 justify-center items-center">
+                      <td className="px-4 py-2 whitespace-nowrap" onClick={e => e.stopPropagation()}>
+                        <div className="flex gap-2 justify-center items-center">
+                            <button
+                              aria-label="View payment details"
+                              onClick={(e) => { e.stopPropagation(); setViewTarget(payment); setShowViewModal(true); }}
+                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
+                                         bg-slate-100 text-slate-600 hover:bg-slate-200 hover:scale-110
+                                         dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600
+                                         focus:outline-none focus:ring-2 focus:ring-slate-400/50"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                        {isAdmin && (<>
                             {(payment.allocations?.length ?? 0) > 0 || isPaymentLocked(payment) ? (
                               <Tooltip
                                 content={
                                   isPaymentLocked(payment)
                                     ? 'Payments older than 30 days cannot be edited.'
-                                    : 'Allocated payments cannot be edited. Delete and recreate.'
+                                    : 'This payment is linked to a bill. To edit, delete and recreate.'
                                 }
                                 side="top"
                               >
@@ -845,7 +1050,7 @@ export default function Maintenance() {
                             ) : (
                               <button
                                 aria-label="Edit payment"
-                                onClick={() => openEditModal(payment)}
+                                onClick={(e) => { e.stopPropagation(); openEditModal(payment); }}
                                 className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
                                            bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-110
                                            dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-900/50
@@ -857,7 +1062,8 @@ export default function Maintenance() {
                             <button
                               aria-label="Delete payment"
                               disabled={isPaymentLocked(payment)}
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 if (isPaymentLocked(payment)) {
                                   showToast('This payment is older than 30 days and cannot be deleted.', 'error');
                                   return;
@@ -874,14 +1080,67 @@ export default function Maintenance() {
                             >
                               <Trash className="w-4 h-4" />
                             </button>
-                          </div>
-                        )}
+                          </>)}
+                        </div>
                       </td>
                     </tr>
                     );
                   })}
                 </tbody>
               </table>
+              {/* Pagination bar */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between px-5 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, sortedPayments.length)} of {sortedPayments.length}
+                  </p>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label="Previous page"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                      .reduce<(number | '...')[]>((acc, p, i, arr) => {
+                        if (i > 0 && (p as number) - (arr[i - 1] as number) > 1) acc.push('...');
+                        acc.push(p);
+                        return acc;
+                      }, [])
+                      .map((item, i) =>
+                        item === '...' ? (
+                          <span key={`ellipsis-${i}`} className="px-1.5 text-xs text-slate-400">…</span>
+                        ) : (
+                          <button
+                            key={item}
+                            type="button"
+                            onClick={() => setCurrentPage(item as number)}
+                            className={`min-w-[28px] h-7 rounded-lg text-xs font-semibold transition-colors ${
+                              currentPage === item
+                                ? 'bg-emerald-600 text-white'
+                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                            }`}
+                          >
+                            {item}
+                          </button>
+                        )
+                      )}
+                    <button
+                      type="button"
+                      aria-label="Next page"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1249,6 +1508,202 @@ export default function Maintenance() {
         </form>
         </Modal>
       )}
+
+      {/* ── Payment Detail View Modal ──────────────────────────────────── */}
+      <Modal
+        isOpen={showViewModal}
+        onClose={() => { setShowViewModal(false); setViewTarget(null); }}
+        title="Payment Receipt"
+        size="md"
+      >
+        {viewTarget && (() => {
+          const vBalance = paymentBalanceById.get(viewTarget.publicId);
+          const vApplied = appliedBucketsByPayment.get(viewTarget.publicId) || [];
+          const vOwner = flatOwnerMap.get(viewTarget.publicId);
+          const vStatus = vBalance?.status || 'Unpaid';
+          const isToday = !!viewTarget.paymentDate &&
+            new Date(viewTarget.paymentDate).toDateString() === new Date().toDateString();
+
+          const statusConfig = {
+            Cleared: { bg: 'bg-emerald-50 dark:bg-emerald-950/30', text: 'text-emerald-700 dark:text-emerald-300', dot: 'bg-emerald-500', label: 'Fully Paid' },
+            Partial:  { bg: 'bg-amber-50  dark:bg-amber-950/30',   text: 'text-amber-700  dark:text-amber-300',  dot: 'bg-amber-400',  label: 'Partially Paid' },
+            Unpaid:   { bg: 'bg-rose-50   dark:bg-rose-950/30',    text: 'text-rose-700   dark:text-rose-300',   dot: 'bg-rose-500',   label: 'Still Unpaid' },
+          }[vStatus] ?? { bg: '', text: '', dot: '', label: vStatus };
+
+          return (
+            <div className="flex flex-col">
+
+              {/* ── Top hero card ─────────────────────────────────────── */}
+              <div className="px-6 pt-5 pb-5 bg-slate-50 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800">
+
+                {/* Amount + status */}
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mb-0.5">Amount Paid</p>
+                    <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                      {formatCurrency(viewTarget.amount)}
+                    </p>
+                  </div>
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold flex-shrink-0 mt-1 ${statusConfig.bg} ${statusConfig.text}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`} />
+                    {statusConfig.label}
+                  </span>
+                </div>
+
+                {/* Flat + owner pill row */}
+                <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                    <Home className="w-3.5 h-3.5" />{viewTarget.flatNumber || '—'}
+                  </span>
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{vOwner || viewTarget.ownerName || '—'}</span>
+                </div>
+
+                {/* Meta row */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-xs text-slate-500 dark:text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5" />
+                    {formatDate(viewTarget.paymentDate)}{isToday ? ' — Today' : ''}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CreditCard className="w-3.5 h-3.5" />
+                    {viewTarget.paymentModeName || '—'}
+                  </span>
+                  {viewTarget.referenceNumber && (
+                    <span className="font-mono text-slate-400 dark:text-slate-500">
+                      Ref: {viewTarget.referenceNumber}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Scrollable body ───────────────────────────────────── */}
+              <div className="overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800" style={{ maxHeight: '52vh' }}>
+
+                {/* How this payment settled the balance */}
+                {vBalance && (
+                  <div className="px-6 py-4 space-y-3">
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">How it settled the balance</p>
+                    <div className="grid grid-cols-3 items-center text-center gap-2">
+                      <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 px-3 py-3">
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-1">Balance before</p>
+                        <p className="text-base font-bold text-slate-700 dark:text-slate-200">{formatCurrency(vBalance.before)}</p>
+                      </div>
+                      <div className="flex flex-col items-center gap-1">
+                        <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                          <ChevronRight className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                          -{formatCurrency(viewTarget.amount)}
+                        </span>
+                      </div>
+                      <div className={`rounded-xl px-3 py-3 ${vBalance.after === 0 ? 'bg-emerald-50 dark:bg-emerald-950/30' : 'bg-orange-50 dark:bg-orange-950/20'}`}>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-1">Balance after</p>
+                        <p className={`text-base font-bold ${vBalance.after === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                          {vBalance.after === 0 ? 'All clear ✓' : formatCurrency(vBalance.after)}
+                        </p>
+                      </div>
+                    </div>
+                    {vBalance.before > 0 && (
+                      <div>
+                        <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-2 bg-emerald-500 rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min((viewTarget.amount / vBalance.before) * 100, 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5">
+                          This payment covered <strong>{Math.round(Math.min((viewTarget.amount / vBalance.before) * 100, 100))}%</strong> of the outstanding amount.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Which months this payment was used for */}
+                {vApplied.length > 0 && (() => {
+                  const arrears = vApplied.filter(e => e.kind === 'Arrear');
+                  const current = vApplied.filter(e => e.kind === 'Current');
+                  const arrearsTotal = arrears.reduce((s, e) => s + e.amount, 0);
+                  const currentTotal = current.reduce((s, e) => s + e.amount, 0);
+
+                  return (
+                    <div className="px-6 py-4 space-y-3">
+                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Which months this covered</p>
+
+                      {current.length > 0 && (
+                        <div className="rounded-xl border border-emerald-100 dark:border-emerald-900/40 overflow-hidden">
+                          <div className="flex items-center justify-between px-4 py-2 bg-emerald-50 dark:bg-emerald-950/20">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                              <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Current Month</span>
+                            </div>
+                            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">{formatCurrency(currentTotal)}</span>
+                          </div>
+                          <ul className="divide-y divide-emerald-50 dark:divide-emerald-900/20">
+                            {current.map(e => (
+                              <li key={e.period} className="flex items-center justify-between px-4 py-2 bg-white dark:bg-slate-900/40">
+                                <span className="text-sm text-slate-700 dark:text-slate-300">{e.label}</span>
+                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(e.amount)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {arrears.length > 0 && (
+                        <div className="rounded-xl border border-amber-100 dark:border-amber-900/40 overflow-hidden">
+                          <div className="flex items-center justify-between px-4 py-2 bg-amber-50 dark:bg-amber-950/20">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
+                              <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">Overdue Months (Arrears)</span>
+                            </div>
+                            <span className="text-xs font-bold text-amber-700 dark:text-amber-300">{formatCurrency(arrearsTotal)}</span>
+                          </div>
+                          <ul className="divide-y divide-amber-50 dark:divide-amber-900/20">
+                            {arrears.map(e => (
+                              <li key={e.period} className="flex items-center justify-between px-4 py-2 bg-white dark:bg-slate-900/40">
+                                <span className="text-sm text-slate-700 dark:text-slate-300">{e.label}</span>
+                                <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(e.amount)}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Notes */}
+                {viewTarget.notes && (
+                  <div className="px-6 py-4">
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Notes</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/40 rounded-lg px-4 py-3 leading-relaxed">{viewTarget.notes}</p>
+                  </div>
+                )}
+
+              </div>
+
+              {/* ── Footer ─────────────────────────────────────────────── */}
+              <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
+                {isAdmin && !isPaymentLocked(viewTarget) && (
+                  <Button size="sm" variant="outline"
+                    onClick={() => { setShowViewModal(false); setViewTarget(null); openEditModal(viewTarget); }}
+                  >
+                    <Edit className="w-3.5 h-3.5 mr-1.5" />
+                    Edit Payment
+                  </Button>
+                )}
+                <Button size="sm" variant="outline"
+                  onClick={() => { setShowViewModal(false); setViewTarget(null); }}
+                >
+                  Close
+                </Button>
+              </div>
+
+            </div>
+          );
+        })()}
+      </Modal>
 
       {isAdmin && (
         <Modal

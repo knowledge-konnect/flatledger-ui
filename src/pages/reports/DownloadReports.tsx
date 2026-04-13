@@ -42,20 +42,23 @@ export default function DownloadReportsPage() {
   const [selectedYear, setSelectedYear] = useState(CURRENT_YEAR);
   const [yearType, setYearType] = useState<'financial' | 'calendar'>('calendar');
   const [isYearlyLoading, setIsYearlyLoading] = useState(false);
-  const { user } = useAuth();
 
-  // Safe society name for filenames (fallback to 'Society')
-  const societyNameSafe = (user?.societyName || 'Society')
+  const { user } = useAuth();
+  const societyNameSafe = (user?.societyName || '')
     .trim()
     .replace(/\s+/g, '_')
     .replace(/[^A-Za-z0-9_-]/g, '')
-    .slice(0, 40);
+    .slice(0, 50);
 
   const handleMonthlyDownload = async () => {
     const [yearStr, monthStr] = monthValue.split('-');
+    const yr = parseInt(yearStr, 10);
+    const mo = parseInt(monthStr, 10);
+    const prefix = societyNameSafe ? `${societyNameSafe}_` : '';
+    const monthlyFilename = `${prefix}Monthly_Report_${MONTH_NAMES[mo - 1]}_${yr}.xlsx`;
     setIsMonthlyLoading(true);
     try {
-      await reportsApi.downloadMonthlyReport(parseInt(yearStr, 10), parseInt(monthStr, 10));
+      await reportsApi.downloadMonthlyReport(yr, mo, monthlyFilename);
       showToast('Monthly report download started', 'success');
     } catch (err: any) {
       showToast(err?.message || 'Failed to download monthly report', 'error');
@@ -65,9 +68,14 @@ export default function DownloadReportsPage() {
   };
 
   const handleYearlyDownload = async () => {
+    const prefix = societyNameSafe ? `${societyNameSafe}_` : '';
+    const yearlyTypeLabel = yearType === 'financial'
+      ? `FY_${selectedYear - 1}-${String(selectedYear).slice(2)}`
+      : `CY_${selectedYear}`;
+    const yearlyFilename = `${prefix}Yearly_Report_${yearlyTypeLabel}.xlsx`;
     setIsYearlyLoading(true);
     try {
-      await reportsApi.downloadYearlyReport(selectedYear, yearType);
+      await reportsApi.downloadYearlyReport(selectedYear, yearType, yearlyFilename);
       showToast('Yearly report download started', 'success');
     } catch (err: any) {
       showToast(err?.message || 'Failed to download yearly report', 'error');
@@ -87,13 +95,6 @@ export default function DownloadReportsPage() {
   const yearRangeLabel = yearType === 'financial'
     ? `April ${selectedYear - 1} – March ${selectedYear}`
     : `January ${selectedYear} – December ${selectedYear}`;
-
-  // File name previews
-  const monthlyFileName = selMonthStr
-    ? `Report_${societyNameSafe}_${MONTH_NAMES[parseInt(selMonthStr, 10) - 1]}_${selYearStr}.xlsx`.replace(/ /g, '_')
-    : '';
-  const yearlyTypeLabel = yearType === 'financial' ? `FY_${selectedYear - 1}-${String(selectedYear).slice(2)}` : `CY_${selectedYear}`;
-  const yearlyFileName = `Report_${societyNameSafe}_${yearlyTypeLabel}_${selectedYear}.xlsx`;
 
   // Tag tooltips
   const MONTHLY_TAG_TOOLTIPS: Record<string, string> = {
@@ -198,10 +199,6 @@ export default function DownloadReportsPage() {
                   
                 </div>
 
-                {monthlyFileName && (
-                  <p className="text-xs font-mono text-slate-600 dark:text-slate-400">{monthlyFileName}</p>
-                )}
-
                 <Button
                   variant="primary"
                   className="w-full h-10 shadow-md hover:shadow-lg transition-all duration-200"
@@ -256,10 +253,6 @@ export default function DownloadReportsPage() {
                   <span className="text-xs text-slate-500 dark:text-slate-400">•</span>
                   <span className="text-xs text-slate-500 dark:text-slate-400">{yearRangeLabel}</span>
                 </div>
-
-                {yearlyFileName && (
-                  <p className="text-xs font-mono text-slate-600 dark:text-slate-400">{yearlyFileName}</p>
-                )}
 
                 <Button
                   variant="primary"

@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Download, Upload, Edit, Trash, AlertCircle, Home, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { Plus, Search, Download, Upload, Edit, Trash, AlertCircle, Home, ChevronUp, ChevronDown, ChevronsUpDown, X } from 'lucide-react';
 import ImportFlatsModal from '../components/Flats/ImportFlatsModal';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Button from '../components/ui/Button';
@@ -42,8 +42,8 @@ import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { billingApi } from '../api/billingApi';
 
-// Component to fetch and display outstanding balance for a single flat
-function FlatOutstandingBalance({ publicId }: { publicId: string }) {
+// Component to fetch and display total due details for a single flat
+function FlatOutstandingBalance({ publicId, maintenanceAmount }: { publicId: string; maintenanceAmount: number }) {
   const { data: summary, isLoading } = useFlatFinancialSummary(publicId);
 
   if (isLoading) {
@@ -55,14 +55,41 @@ function FlatOutstandingBalance({ publicId }: { publicId: string }) {
   }
 
   const outstanding = summary?.totalOutstanding || 0;
-  const colorClass = outstanding > 0 
-    ? 'text-[#DC2626] dark:text-[#EF4444] font-bold' 
-    : 'text-[#16A34A] dark:text-[#22C55E] font-bold';
+  const previousDue = summary?.openingBalanceRemaining || 0;
+  const currentBill = summary?.billOutstanding || 0;
+  const epsilon = 0.01;
+  const status = outstanding <= epsilon
+    ? 'paid'
+    : Math.abs(outstanding - maintenanceAmount) <= epsilon
+      ? 'current'
+      : 'overdue';
+
+  const amountClass = status === 'paid'
+    ? 'text-emerald-700 dark:text-emerald-400'
+    : status === 'current'
+      ? 'text-amber-700 dark:text-amber-400'
+      : 'text-rose-700 dark:text-rose-400';
+
+  const monthsDueRaw = maintenanceAmount > 0 ? outstanding / maintenanceAmount : 0;
+  const monthsDue = Number.isInteger(monthsDueRaw)
+    ? String(monthsDueRaw)
+    : monthsDueRaw.toFixed(1);
+  const monthsDueText = maintenanceAmount > 0
+    ? `${monthsDue} ${Number(monthsDue) === 1 ? 'month' : 'months'} due`
+    : 'No monthly charge';
 
   return (
-    <span className={colorClass}>
-      {formatCurrency(outstanding)}
-    </span>
+    <div
+      className="flex flex-col items-end gap-0.5 leading-tight"
+      title={`Previous Due: ${formatCurrency(previousDue)} | Current Bill: ${formatCurrency(currentBill)}`}
+    >
+      <span className={`text-sm font-bold ${amountClass}`}>
+        {formatCurrency(outstanding)}
+      </span>
+      <span className="text-[10px] text-slate-500 dark:text-slate-400">
+        ({formatCurrency(previousDue)} prev + {formatCurrency(currentBill)} current) • {monthsDueText}
+      </span>
+    </div>
   );
 }
 
@@ -133,6 +160,31 @@ export default function Flats() {
   // Ensure arrays are always arrays (memoized to prevent infinite loop)
   const safeStatuses = useMemo(() => Array.isArray(statuses) ? statuses : [], [statuses]);
   const safeApiFlats = useMemo(() => Array.isArray(apiFlats) ? apiFlats : [], [apiFlats]);
+
+  const statusOptions = useMemo(() => {
+    const deduped = safeStatuses.filter(
+      (item, index, arr) => arr.findIndex((x) => x.code === item.code) === index
+    );
+    return deduped.map((s) => ({ value: s.code, label: s.displayName }));
+  }, [safeStatuses]);
+
+  const resolveStatusCode = (flat: UIFLat) => {
+    if (flat.statusCode) return flat.statusCode;
+
+    const byId = safeStatuses.find((s) => s.id === flat.statusId);
+    if (byId?.code) return byId.code;
+
+    const normalizedStatus = (flat.status || '').trim().toLowerCase();
+    const byDisplayName = safeStatuses.find(
+      (s) => s.displayName.trim().toLowerCase() === normalizedStatus
+    );
+    if (byDisplayName?.code) return byDisplayName.code;
+
+    const byCode = safeStatuses.find(
+      (s) => s.code.trim().toLowerCase() === normalizedStatus
+    );
+    return byCode?.code || '';
+  };
 
   // explicit empty form baseline
   const emptyForm: FlatFormData = {
@@ -343,7 +395,9 @@ export default function Flats() {
                   Flats
                 </h1>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                  {flats.length} {flats.length === 1 ? 'unit' : 'units'} • Manage your property portfolio
+                  {debouncedSearch.trim()
+                    ? `${processed.length} of ${flats.length} ${flats.length === 1 ? 'unit' : 'units'} match`
+                    : `${flats.length} ${flats.length === 1 ? 'unit' : 'units'} • Manage your property portfolio`}
                 </p>
               </div>
             </div>
@@ -360,7 +414,7 @@ export default function Flats() {
                 placeholder="Search flats, owners, contacts..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 text-sm 
+                className="w-full pl-10 pr-9 py-2.5 text-sm 
                          bg-white dark:bg-slate-900 
                          border border-slate-200 dark:border-slate-700 
                          rounded-xl shadow-sm
@@ -369,6 +423,16 @@ export default function Flats() {
                          focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500
                          transition-all duration-200"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
             
             {/* Action Buttons */}
@@ -442,9 +506,22 @@ export default function Flats() {
                 )}
               </EmptyState>
             </div>
+          ) : processed.length === 0 ? (
+            <div className="py-16">
+              <EmptyState
+                icon={Search}
+                title="No results found"
+                description={`No flats match "${debouncedSearch}"`}
+              >
+                <Button variant="outline" onClick={() => setSearchQuery('')} className="mt-4 h-10 px-4 font-medium">
+                  <X className="w-4 h-4 mr-2" />
+                  Clear search
+                </Button>
+              </EmptyState>
+            </div>
           ) : (
             <>
-              <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg">
+              <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-emerald-800 dark:bg-emerald-950 border-b border-emerald-700 dark:border-emerald-900 divide-x divide-emerald-700 dark:divide-emerald-900">
@@ -458,12 +535,22 @@ export default function Flats() {
                         Contact
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors" onClick={() => toggleSort('maintenanceAmount')}>
-                        <span className="inline-flex items-center justify-end w-full">Maintenance <SortIcon field="maintenanceAmount" /></span>
+                        <div className="flex flex-col items-end">
+                          <span className="inline-flex items-center justify-end w-full">Monthly Charge <SortIcon field="maintenanceAmount" /></span>
+                          <span className="text-[10px] font-medium normal-case tracking-normal text-emerald-100/90">
+                            Fixed amount per month
+                          </span>
+                        </div>
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden lg:table-cell">
-                        Outstanding
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">
+                        <div className="flex flex-col items-end">
+                          <span>Total Due</span>
+                          <span className="text-[10px] font-medium normal-case tracking-normal text-emerald-100/90">
+                            Includes previous pending + current bill
+                          </span>
+                        </div>
                       </th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">
                         Status
                       </th>
                       <th className="px-6 py-3 text-center text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">
@@ -477,14 +564,14 @@ export default function Flats() {
                         key={flat.publicId} 
                         className="group hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all duration-200 divide-x divide-slate-100 dark:divide-slate-800"
                       >
-                        <td className="px-6 py-3 whitespace-nowrap">
+                        <td className="px-6 py-3 whitespace-nowrap align-middle">
                           <div className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-200/50 dark:border-emerald-800/50">
                             <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
                               {flat.flatNumber}
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-3">
+                        <td className="px-6 py-3 align-middle">
                           <div className="flex flex-col">
                             <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                               {flat.ownerName}
@@ -496,7 +583,7 @@ export default function Flats() {
                             )}
                           </div>
                         </td>
-                        <td className="px-6 py-3 whitespace-nowrap hidden md:table-cell">
+                        <td className="px-6 py-3 whitespace-nowrap align-middle hidden md:table-cell">
                           <div className="flex items-center gap-1.5">
                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
                             <span className="text-sm text-slate-600 dark:text-slate-300 font-medium">
@@ -504,25 +591,24 @@ export default function Flats() {
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-3 whitespace-nowrap text-right">
+                        <td className="px-6 py-3 whitespace-nowrap text-right align-middle">
                           <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                             {formatCurrency(flat.maintenanceAmount)}
                           </span>
                         </td>
-                        <td className="px-6 py-3 whitespace-nowrap text-right hidden lg:table-cell">
-                          <FlatOutstandingBalance publicId={flat.publicId} />
+                        <td className="px-6 py-3 text-right align-middle">
+                          <FlatOutstandingBalance publicId={flat.publicId} maintenanceAmount={flat.maintenanceAmount} />
                         </td>
-                        <td className="px-6 py-3 whitespace-nowrap hidden sm:table-cell">
-                          <div className="flex justify-center">
-                            <StatusBadge code={flat.status} id={flat.statusId} label={flat.status} kind="flat" />
-                          </div>
+                        <td className="px-6 py-3 whitespace-nowrap align-middle hidden sm:table-cell">
+                          <StatusBadge code={flat.status} id={flat.statusId} label={flat.status} kind="flat" />
                         </td>
-                        <td className="px-6 py-3 whitespace-nowrap">
+                        <td className="px-6 py-3 whitespace-nowrap align-middle">
                           {isAdmin ? (
                             <div className="flex gap-2 justify-center items-center">
                               <button
                                 aria-label={`Edit ${flat.flatNumber}`}
                                 onClick={() => {
+                                  const resolvedStatusCode = resolveStatusCode(flat);
                                   setSelectedFlat(flat);
                                   reset({
                                     flatNumber: flat.flatNumber,
@@ -530,7 +616,7 @@ export default function Flats() {
                                     ownerEmail: flat.ownerEmail ?? '',
                                     ownerPhone: flat.ownerPhone,
                                     maintenanceAmount: String(flat.maintenanceAmount),
-                                    statusCode: flat.statusCode || '',
+                                    statusCode: resolvedStatusCode,
                                   });
                                   setIsEditing(true);
                                   setShowAddModal(true);
@@ -644,7 +730,7 @@ export default function Flats() {
                   label="Status"
                   options={[
                     { value: '', label: 'Select Status' },
-                    ...safeStatuses.map(s => ({ value: s.code, label: s.displayName })),
+                    ...statusOptions,
                   ]}
                   error={errors.statusCode?.message}
                   {...register('statusCode')}

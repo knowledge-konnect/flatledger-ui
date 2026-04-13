@@ -12,15 +12,17 @@ import { createActivityLog } from '../api/activityLogsApi';
 import { useAuth } from '../contexts/AuthProvider';
 import { logger } from '../lib/logger';
 
-export function useMaintenancePayments() {
+export function useMaintenancePayments(period?: string) {
   return useQuery({
-    queryKey: ['maintenance-payments'],
+    queryKey: ['maintenance-payments', period],
     queryFn: async (): Promise<MaintenancePaymentDto[]> => {
-      logger.log('[useMaintenancePayments] Fetching maintenance payments');
-      const result = await maintenanceApi.listBySociety();
+      logger.log(`[useMaintenancePayments] Fetching maintenance payments${period ? ` for period: ${period}` : ''}`);
+      const result = await maintenanceApi.listBySociety(period);
       logger.log(`[useMaintenancePayments] Loaded ${result.length} maintenance payments`);
       return result;
     },
+    staleTime: 0, // Always refetch when period changes
+    refetchOnWindowFocus: false,
   });
 }
 
