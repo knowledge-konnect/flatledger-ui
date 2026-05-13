@@ -39,6 +39,8 @@ export interface ApiResult<T> {
   traceId?: string;
 }
 
+
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;
@@ -54,4 +56,3 @@ export interface PaginationParams {
   order?: 'asc' | 'desc';
   search?: string;
 }
-

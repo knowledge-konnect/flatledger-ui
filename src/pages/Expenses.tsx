@@ -1,11 +1,12 @@
 ﻿import { useState, useMemo } from 'react';
-import { Plus, Zap, Droplet, Shield, Wrench, TrendingDown, Edit, Trash2, Search, X, AlertCircle, DollarSign, Lightbulb, Hammer, Home, BarChart2, Divide } from 'lucide-react';
+import { Plus, Zap, Droplet, Shield, Wrench, TrendingDown, TrendingUp, Edit, Trash2, Search, X, AlertCircle, IndianRupee, Lightbulb, Hammer, Home, BarChart2, Divide } from 'lucide-react';
 import ReactApexChart from 'react-apexcharts';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import PageHeader from '../components/ui/PageHeader';
 import Button from '../components/ui/Button';
 import { useAuth } from '../contexts/AuthProvider';
+import { useTheme } from '../contexts/ThemeContext';
 import { isAdminRole, collectUserRoles } from '../types/roles';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
@@ -29,42 +30,38 @@ const expenseSchema = z.object({
 
 type ExpenseFormData = z.infer<typeof expenseSchema>;
 
-// Default color palette for categories (fallback if DB doesn't provide colors)
-const defaultCategoryColors: Record<string, string> = {
-  electricity: '#F97316',    
-  water: '#0891B2',          
-  security: '#6366F1',       
-  repairs: '#DC2626',       
-  maintenance: '#8B5CF6',    
-  utilities: '#10B981',     
-  salary: '#0EA5E9',         
-  other: '#EC4899',          
-  others: '#EC4899',         
-  miscellaneous: '#EC4899',  
-};
-
-// Icon mapping for categories
-const defaultCategoryIcons: Record<string, any> = {
-  electricity: Lightbulb,
-  water: Droplet,
-  security: Shield,
-  repairs: Hammer,
-  maintenance: Wrench,
-  utilities: Zap,
-  salary: DollarSign,
-  other: Home,
-  others: Home,
-};
-
-// List of colors to cycle through for unmapped categories
+// Fallback palette — used only when a category has no color from the API
+// Ordered so consecutive picks are maximally different
 const colorPalette = [
-  '#F97316', '#0891B2', '#6366F1', '#DC2626', '#8B5CF6',
-  '#10B981', '#0EA5E9', '#EC4899', '#F59E0B', '#06B6D4',
-  '#A855F7', '#F43F5E', '#14B8A6', '#6366F1', '#D946EF',
+  '#F59E0B', '#06B6D4', '#F43F5E', '#84CC16', '#EC4899',
+  '#10B981', '#F97316', '#8B5CF6', '#2563EB', '#EAB308',
+  '#14B8A6', '#22C55E', '#A855F7', '#0EA5E9', '#D946EF',
 ];
+
+// Icon mapping for known category codes
+const defaultCategoryIcons: Record<string, any> = {
+  electricity:          Lightbulb,
+  water:                Droplet,
+  security:             Shield,
+  cctv_maintenance:     Shield,
+  repairs:              Hammer,
+  repair:               Hammer,
+  maintenance:          Wrench,
+  general_maintenance:  Wrench,
+  lift_maintenance:     Wrench,
+  utilities:            Zap,
+  internet_wifi:        Zap,
+  salary:               IndianRupee,
+  watchman_salary:      IndianRupee,
+  cleaning_salary:      IndianRupee,
+  other:                Home,
+  others:               Home,
+};
 
 export default function Expenses() {
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const isAdmin = isAdminRole(collectUserRoles(user));
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -81,7 +78,7 @@ export default function Expenses() {
   const [deleteTarget, setDeleteTarget] = useState<ExpenseResponse | null>(null);
 
   // API hooks
-  const { data: expensesData = [], isLoading, isError } = useExpenses();
+  const { data: expensesData = [], isLoading, isError, refetch } = useExpenses();
   const { data: categoriesData = [] } = useExpenseCategories();
   const createMutation = useCreateExpense();
   const updateMutation = useUpdateExpense();
@@ -97,18 +94,15 @@ export default function Expenses() {
      HELPER FUNCTIONS
   ===================================================== */
 
-  // Build dynamic color map from categories
+  // Build color map: API color takes priority, palette is last-resort fallback
   const categoryColorMap = useMemo(() => {
-    const map: Record<string, string> = { ...defaultCategoryColors };
-    
+    const map: Record<string, string> = {};
     categoriesData.forEach((category, index) => {
       const code = category.code.toLowerCase();
-      // Use default color if exists, otherwise pick from palette
-      if (!map[code]) {
-        map[code] = colorPalette[index % colorPalette.length];
-      }
+      // 1. Prefer color from API (seeded in DB)
+      // 2. Fall back to palette slot by index
+      map[code] = category.color ?? colorPalette[index % colorPalette.length];
     });
-    
     return map;
   }, [categoriesData]);
 
@@ -157,8 +151,10 @@ export default function Expenses() {
       // Search filter
       if (searchTerm) {
         const search = searchTerm.toLowerCase();
+        const categoryLabel = getCategoryLabel(expense.categoryCode).toLowerCase();
         if (!expense.vendor?.toLowerCase().includes(search) &&
-            !expense.description?.toLowerCase().includes(search)) {
+            !expense.description?.toLowerCase().includes(search) &&
+            !categoryLabel.includes(search)) {
           return false;
         }
       }
@@ -204,6 +200,92 @@ export default function Expenses() {
     color: getCategoryColor(categoryCode),
     categoryKey: categoryCode,
   }));
+
+  // Keep KPI comparisons aligned with the currently selected filter context.
+  const previousPeriodMetrics = useMemo(() => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) {
+      return { total: 0, start: '', end: '' };
+    }
+
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const periodLength = Math.floor((end.getTime() - start.getTime()) / DAY_MS) + 1;
+    const prevEnd = new Date(start.getTime() - DAY_MS);
+    const prevStart = new Date(prevEnd.getTime() - (periodLength - 1) * DAY_MS);
+
+    const formatDateInput = (date: Date) => {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
+    const prevStartStr = formatDateInput(prevStart);
+    const prevEndStr = formatDateInput(prevEnd);
+
+    const previousPeriodTotal = expensesData
+      .filter((expense) => {
+        const expenseDate = expense.dateIncurred.substring(0, 10);
+        if (expenseDate < prevStartStr || expenseDate > prevEndStr) return false;
+
+        if (searchTerm) {
+          const search = searchTerm.toLowerCase();
+          const categoryLabel = getCategoryLabel(expense.categoryCode).toLowerCase();
+          if (!expense.vendor?.toLowerCase().includes(search) &&
+              !expense.description?.toLowerCase().includes(search) &&
+              !categoryLabel.includes(search)) {
+            return false;
+          }
+        }
+
+        if (selectedCategoryFilter && expense.categoryCode !== selectedCategoryFilter) {
+          return false;
+        }
+
+        return true;
+      })
+      .reduce((sum, expense) => sum + expense.amount, 0);
+
+    return {
+      total: previousPeriodTotal,
+      start: prevStartStr,
+      end: prevEndStr,
+    };
+  }, [startDate, endDate, expensesData, searchTerm, selectedCategoryFilter, categoriesData]);
+
+  const monthOverMonthChangePct = previousPeriodMetrics.total > 0
+    ? ((totalExpenses - previousPeriodMetrics.total) / previousPeriodMetrics.total) * 100
+    : null;
+
+  const monthOverMonthDisplay = monthOverMonthChangePct !== null
+    ? {
+        value: `${monthOverMonthChangePct > 0 ? '+' : ''}${monthOverMonthChangePct.toFixed(1)}%`,
+        valueClass: monthOverMonthChangePct > 0
+          ? 'text-rose-600 dark:text-rose-400'
+          : 'text-emerald-600 dark:text-emerald-400',
+        subtitle: 'vs previous period',
+      }
+    : totalExpenses > 0
+      ? {
+          value: 'New',
+          valueClass: 'text-blue-600 dark:text-blue-400',
+          subtitle: 'No previous-period expenses',
+        }
+      : {
+          value: '0.0%',
+          valueClass: 'text-slate-900 dark:text-white',
+          subtitle: 'No expenses in both periods',
+        };
+
+  const topCategory = categoryData.reduce((max, category) => (
+    !max || category.value > max.value ? category : max
+  ), null as (typeof categoryData[number] | null));
+
+  const topCategorySharePct = totalExpenses > 0 && topCategory
+    ? (topCategory.value / totalExpenses) * 100
+    : 0;
 
   const onSubmit = async (data: ExpenseFormData) => {
     setFormError(null); // Reset error at start
@@ -290,6 +372,7 @@ export default function Expenses() {
   const handleCloseModal = () => {
     setShowAddModal(false);
     setSelectedExpense(null);
+    setFormError(null);
     reset();
   };
 
@@ -322,7 +405,10 @@ export default function Expenses() {
                 <AlertCircle className="w-5 h-5" />
                 <p className="font-semibold">Failed to load expenses</p>
               </div>
-              <p className="text-sm text-red-600 dark:text-red-400">Please try refreshing the page</p>
+              <p className="text-sm text-red-600 dark:text-red-400 mb-4">Please check your connection and try again.</p>
+              <Button onClick={() => refetch()} size="sm" variant="outline" className="w-full">
+                Try Again
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -379,47 +465,70 @@ export default function Expenses() {
         />
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {Array.from({ length: 3 }).map((_, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="h-28 rounded-2xl bg-slate-200 dark:bg-slate-700 animate-pulse" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-red-100 dark:border-red-900/40 shadow-sm flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Expenses (MTD)</p>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total Expenses</p>
                 <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/40 flex items-center justify-center flex-shrink-0">
                   <TrendingDown className="w-4 h-4 text-red-500 dark:text-red-400" />
                 </div>
               </div>
               <div>
                 <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{formatCurrency(totalExpenses)}</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{filteredAndSortedExpenses.length} transaction{filteredAndSortedExpenses.length !== 1 ? 's' : ''}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{filteredAndSortedExpenses.length} expense{filteredAndSortedExpenses.length !== 1 ? 's' : ''}</p>
               </div>
             </div>
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-emerald-100 dark:border-emerald-900/40 shadow-sm flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Active Categories</p>
-                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
-                  <BarChart2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-              </div>
-              <div>
-                <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{categoryData.length}</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{categoriesData.length} total categories</p>
-              </div>
-            </div>
+
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-teal-100 dark:border-teal-900/40 shadow-sm flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Avg Per Transaction</p>
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Expense Count</p>
                 <div className="w-8 h-8 rounded-lg bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center flex-shrink-0">
                   <Divide className="w-4 h-4 text-teal-600 dark:text-teal-400" />
                 </div>
               </div>
               <div>
-                <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{filteredAndSortedExpenses.length > 0 ? formatCurrency(totalExpenses / filteredAndSortedExpenses.length) : formatCurrency(0)}</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Based on {filteredAndSortedExpenses.length} expenses</p>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{filteredAndSortedExpenses.length}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Transactions in selected range</p>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-blue-100 dark:border-blue-900/40 shadow-sm flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Previous Period Change</p>
+                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center flex-shrink-0">
+                  {monthOverMonthChangePct !== null && monthOverMonthChangePct <= 0 ? (
+                    <TrendingDown className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  ) : (
+                    <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  )}
+                </div>
+              </div>
+              <div>
+                <p className={`text-2xl sm:text-3xl font-bold ${monthOverMonthDisplay.valueClass}`}>
+                  {monthOverMonthDisplay.value}
+                </p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{monthOverMonthDisplay.subtitle}</p>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-emerald-100 dark:border-emerald-900/40 shadow-sm flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Top Category Share</p>
+                <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0">
+                  <BarChart2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+              </div>
+              <div>
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{topCategorySharePct.toFixed(0)}%</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                  {topCategory ? `${topCategory.name} leads` : 'No category data'}
+                </p>
               </div>
             </div>
           </div>
@@ -470,42 +579,24 @@ export default function Expenses() {
                       },
                       labels: categoryData.map((d: any) => d.name),
                       colors: categoryData.map((d: any) => d.color),
-                      legend: { position: 'bottom', fontSize: '12px' },
+                      theme: { mode: isDark ? 'dark' : 'light' },
+                      legend: {
+                        position: 'bottom',
+                        fontSize: '12px',
+                        labels: { colors: isDark ? '#94a3b8' : '#475569' },
+                      },
                       dataLabels: {
                         enabled: true,
                         formatter: (val: number) => `${val.toFixed(0)}%`,
+                        style: { fontSize: '11px', colors: ['#fff'] },
+                        dropShadow: { enabled: false },
                       },
-                      plotOptions: { pie: { donut: { size: '55%' } } },
-                      tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
+                      plotOptions: { pie: { donut: { size: '65%', labels: { show: true, total: { show: true, label: 'Total', fontSize: '13px', fontWeight: '600', color: isDark ? '#94a3b8' : '#64748b', formatter: () => formatCurrency(totalExpenses) }, value: { color: isDark ? '#f1f5f9' : '#0f172a', fontSize: '16px', fontWeight: '700' } } } } },
+                      tooltip: { y: { formatter: (v: number) => formatCurrency(v) }, theme: isDark ? 'dark' : 'light' },
                     }}
                   />
-                  <div className="mt-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-700 text-center">
-                    <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">💡 Click on a slice to filter expenses</p>
-                  </div>
+                  <p className="mt-3 text-center text-[11px] text-slate-400 dark:text-slate-500">Click a slice to filter the table below</p>
 
-                  {/* Quick Stats Below Chart */}
-                  {filteredAndSortedExpenses.length > 0 && (
-                    <div className="mt-6 grid grid-cols-3 gap-3">
-                      <div className="p-3 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg border border-purple-200 dark:border-purple-700">
-                        <p className="text-xs font-semibold text-purple-700 dark:text-purple-300 mb-1">Highest</p>
-                        <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
-                          {formatCurrency(Math.max(...filteredAndSortedExpenses.map(e => e.amount)))}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-900/20 dark:to-cyan-800/20 rounded-lg border border-cyan-200 dark:border-cyan-700">
-                        <p className="text-xs font-semibold text-cyan-700 dark:text-cyan-300 mb-1">Average</p>
-                        <p className="text-sm font-bold text-cyan-900 dark:text-cyan-100">
-                          {formatCurrency(totalExpenses / filteredAndSortedExpenses.length)}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 rounded-lg border border-amber-200 dark:border-amber-700">
-                        <p className="text-xs font-semibold text-amber-700 dark:text-amber-300 mb-1">Count</p>
-                        <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
-                          {filteredAndSortedExpenses.length}
-                        </p>
-                      </div>
-                    </div>
-                  )}
                 </>
               ) : (
                 <div className="flex items-center justify-center h-[320px]">
@@ -534,7 +625,13 @@ export default function Expenses() {
                     <div key={i} className="h-8 bg-slate-200 dark:bg-slate-700 rounded-lg animate-pulse"></div>
                   ))
                 ) : categoriesData.length > 0 ? (
-                  categoriesData.map((category) => {
+                  [...categoriesData]
+                    .sort((a, b) => {
+                      const amtA = categoryData.find(d => d.categoryKey === a.code)?.value || 0;
+                      const amtB = categoryData.find(d => d.categoryKey === b.code)?.value || 0;
+                      return amtB - amtA;
+                    })
+                    .map((category) => {
                     const amount = categoryData.find(d => d.categoryKey === category.code)?.value || 0;
                     const pct = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
                     const isSelected = selectedCategoryFilter === category.code;
@@ -542,8 +639,8 @@ export default function Expenses() {
                     return (
                       <div
                         key={category.code}
-                        onClick={() => setSelectedCategoryFilter(isSelected ? '' : category.code)}
-                        className={`flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer transition-all duration-150 border ${
+                        onClick={() => amount > 0 ? setSelectedCategoryFilter(isSelected ? '' : category.code) : undefined}
+                        className={`flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-150 border ${amount === 0 ? 'opacity-40 cursor-default' : 'cursor-pointer'} ${
                           isSelected
                             ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700'
                             : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-slate-200 dark:hover:border-slate-700'
@@ -588,11 +685,20 @@ export default function Expenses() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                       type="text"
-                      placeholder="Search vendor, notes..."
+                      placeholder="Search vendor, description, category..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                      className="w-full pl-10 pr-8 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
                     />
+                    {searchTerm && (
+                      <button
+                        onClick={() => setSearchTerm('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
+                        aria-label="Clear search"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                   <Select
                     options={[
@@ -690,7 +796,15 @@ export default function Expenses() {
                           <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{formatDate(expense.dateIncurred)}</span>
                         </td>
                         <td className="px-6 py-3 whitespace-nowrap">
-                          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{getCategoryLabel(expense.categoryCode)}</span>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+                              style={{ backgroundColor: `${getCategoryColor(expense.categoryCode)}22` }}
+                            >
+                              {renderCategoryIcon(expense.categoryCode, 'sm')}
+                            </div>
+                            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{getCategoryLabel(expense.categoryCode)}</span>
+                          </div>
                         </td>
                         <td className="px-6 py-3">
                           <div className="text-sm font-medium text-slate-700 dark:text-slate-300">{expense.vendor}</div>
@@ -852,7 +966,7 @@ export default function Expenses() {
           title="🗑️ Delete Expense"
           size="sm"
         >
-          <div className="space-y-4 p-4 sm:p-6 pb-20">
+          <div className="space-y-4 p-4 sm:p-6">
             {deleteTarget && (
               <>
                 <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">

@@ -13,12 +13,15 @@ import NotFound from './pages/NotFound';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 
-// Lazy load all pages for better performance
+// Lazy-load all page-level components so each route is code-split into its own
+// chunk. This keeps the initial bundle small and only loads a page's JS when
+// the user first navigates to it.
 const Subscription = lazy(() => import('./pages/Subscription'));
 const FreeTrial = lazy(() => import('./pages/FreeTrial'));
 const Login = lazy(() => import('./pages/Login'));
 const Signup = lazy(() => import('./pages/Signup'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const ChangePassword = lazy(() => import('./pages/ChangePassword'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Flats = lazy(() => import('./pages/Flats'));
@@ -30,7 +33,6 @@ const Defaulters = lazy(() => import('./pages/reports/Defaulters'));
 const IncomeVsExpense = lazy(() => import('./pages/reports/IncomeVsExpense'));
 const FundLedger = lazy(() => import('./pages/reports/FundLedger'));
 const PaymentRegister = lazy(() => import('./pages/reports/PaymentRegister'));
-const ExpenseByCategory = lazy(() => import('./pages/reports/ExpenseByCategory'));
 const DownloadReports = lazy(() => import('./pages/reports/DownloadReports'));
 const Users = lazy(() => import('./pages/Users'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -39,7 +41,10 @@ const OpeningBalanceEntry = lazy(() => import('./components/OpeningBalance/Openi
 const Setup = lazy(() => import('./pages/Setup'));
 const Unauthorized = lazy(() => import('./pages/Unauthorized'));
 
-// Loading fallback component
+/**
+ * Full-screen loading indicator shown while a lazy-loaded page chunk is being
+ * fetched. Memoized to prevent unnecessary re-renders during Suspense fallback.
+ */
 const PageLoader = memo(function PageLoader() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-white dark:bg-slate-950">
@@ -49,12 +54,20 @@ const PageLoader = memo(function PageLoader() {
   );
 });
 
-// All user-facing routes, must be rendered inside <AuthProvider>
+/**
+ * All user-facing routes. Must be rendered inside <AuthProvider> so that
+ * useAuth() is available to ProtectedRoute and page components.
+ *
+ * Auth flow:
+ * 1. While auth state is loading, show PageLoader on protected paths.
+ * 2. If the user has forcePasswordChange set, lock them to /change-password.
+ * 3. Unauthenticated access to protected paths redirects to / with a reason param.
+ */
 function UserRoutes() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const { pathname } = useLocation();
 
-  const publicPaths = ['/', '/privacy', '/terms', '/subscription', '/free-trial', '/login', '/signup', '/forgot-password'];
+  const publicPaths = ['/', '/privacy', '/terms', '/subscription', '/free-trial', '/login', '/signup', '/forgot-password', '/reset-password'];
   const protectedPaths = [
     '/dashboard', '/flats', '/maintenance', '/expenses', '/reports', '/users', '/settings', '/setup', '/premium-dashboard', '/subscription/manage', '/flats/', '/reports/'
   ];
@@ -63,7 +76,8 @@ function UserRoutes() {
     return <PageLoader />;
   }
 
-  // If not authenticated, not loading, and on a protected route, redirect to login
+  // Redirect unauthenticated users away from protected paths.
+  // Using startsWith handles nested routes like /flats/:id/ledger.
   const isProtected = protectedPaths.some(p => pathname === p || pathname.startsWith(p + '/') );
   if (!isAuthenticated && !isLoading && isProtected) {
     return <Navigate to="/?reason=session_expired" replace />;
@@ -88,6 +102,7 @@ function UserRoutes() {
           <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
           <Route path="/signup" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
@@ -105,7 +120,6 @@ function UserRoutes() {
           <Route path="/reports/income-vs-expense" element={<ProtectedRoute><IncomeVsExpense /></ProtectedRoute>} />
           <Route path="/reports/fund-ledger" element={<ProtectedRoute><FundLedger /></ProtectedRoute>} />
           <Route path="/reports/payment-register" element={<ProtectedRoute><PaymentRegister /></ProtectedRoute>} />
-          <Route path="/reports/expense-by-category" element={<ProtectedRoute><ExpenseByCategory /></ProtectedRoute>} />
           <Route path="/reports/download-reports" element={<ProtectedRoute><DownloadReports /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><Users /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><Settings /></ProtectedRoute>} />
@@ -124,9 +138,12 @@ function UserRoutes() {
 export default function Router() {
   return (
     <Routes>
-      {/* Admin panel — has its own AdminAuthProvider and admin ErrorBoundary */}
+      {/* Admin panel — isolated with its own AdminAuthProvider and error boundary */}
       <Route path="/admin/*" element={<AdminApp />} />
-      {/* All other routes — wrapped in AuthProvider and society ErrorBoundary */}
+      {/*
+       * All society-facing routes — wrapped in AuthProvider so auth state is
+       * available throughout the tree, and in ErrorBoundary to catch render errors.
+       */}
       <Route
         path="/*"
         element={

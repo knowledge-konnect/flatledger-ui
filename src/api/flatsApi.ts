@@ -15,6 +15,7 @@ export interface FlatDto {
   contactMobile: string;
   contactEmail: string;
   maintenanceAmount: number;
+  totalOutstanding?: number; // Included in list response
   statusId: number; // Numeric status ID (1, 2, 3, etc.)
   statusName: string; // Display name (e.g., "Owner Occupied", "Tenant Occupied")
   createdAt: string;
@@ -31,7 +32,7 @@ export interface CreateFlatDto {
   contactMobile?: string;
   contactEmail?: string;
   maintenanceAmount?: number; // Default: 0
-  statusCode?: string; // 'occupied', 'vacant', 'rented'
+  statusCode?: string; // Valid values: 'owner_occupied' | 'tenant_occupied' | 'vacant' | 'under_maintenance'
 }
 
 /**
@@ -45,7 +46,7 @@ export interface UpdateFlatDto {
   contactMobile?: string;
   contactEmail?: string;
   maintenanceAmount?: number;
-  statusCode?: string; // 'occupied', 'vacant', 'rented'
+  statusCode?: string; // Valid values: 'owner_occupied' | 'tenant_occupied' | 'vacant' | 'under_maintenance'
 }
 
 /**
@@ -61,17 +62,18 @@ export interface FlatStatusDto {
 /**
  * Financial Summary for a flat
  * GET /flats/{publicId}/financial-summary
+ * Matches backend FlatFinancialSummaryResponse exactly.
  */
 export interface FlatFinancialSummaryDto {
-  flatPublicId: string; // UUID
-  flatNo: string;
+  /** Flat public UUID — populated by getBulkFinancialSummary from the response map key */
+  flatPublicId?: string;
   openingBalanceRemaining: number;
   billOutstanding: number;
+  /** Positive = member owes society; Negative = society owes member (advance) */
   totalOutstanding: number;
   totalCharges: number;
   totalPayments: number;
-  lastPaymentDate?: string | null; // ISO 8601 date
-  lastPaymentAmount?: number | null;
+  balance_sign_legend?: string;
 }
 
 export interface FlatLedgerBillDto {
@@ -80,8 +82,9 @@ export interface FlatLedgerBillDto {
   amount: number;
   paidAmount: number;
   balanceAmount: number;
-  status: string;
-  statusCode?: string;
+  statusCode: string;
+  /** @deprecated use statusCode */
+  status?: string;
 }
 
 /**
@@ -103,6 +106,7 @@ export interface FlatLedgerDto {
  */
 export interface BulkCreateFlatsPayload {
   flats: CreateFlatDto[];
+  skipBilling?: boolean; // If true, skip bill generation for these flats
 }
 
 /**
@@ -207,20 +211,38 @@ export const flatsApi = {
   },
 
   /**
+   * Bulk financial summary for multiple flats
+   * POST /flats/financial-summary/bulk
+   * @param flatPublicIds Array of flat UUIDs
+   * @returns Promise<FlatFinancialSummaryDto[]>
+   */
+  async getBulkFinancialSummary(flatPublicIds: string[]): Promise<(FlatFinancialSummaryDto & { flatPublicId: string })[]> {
+    const response = await apiClient.post<ApiResponse<Record<string, FlatFinancialSummaryDto>>>(
+      '/flats/financial-summary/bulk',
+      { flatPublicIds }
+    );
+    return Object.entries(response.data.data || {}).map(([flatPublicId, summary]) => ({
+      ...summary,
+      flatPublicId,
+    }));
+  },
+
+  /**
    * Bulk create flats
    * POST /flats/bulk
    * @param payload BulkCreateFlatsPayload
    * @returns Promise<BulkCreateFlatsResponse>
    */
   async bulkCreateFlats(payload: BulkCreateFlatsPayload): Promise<BulkCreateFlatsResponse> {
-    const response = await apiClient.post<BulkCreateFlatsResponse>('/flats/bulk', payload);
-    return response.data;
+    const response = await apiClient.post<ApiResponse<BulkCreateFlatsResponse>>('/flats/bulk', payload);
+    const data = response.data.data;
+    return {
+      succeeded: data?.succeeded ?? [],
+      failed: data?.failed ?? [],
+    };
   },
 
   /**
-   * Get maintenance ledger for a specific flat
-   * GET /flats/{publicId}/ledger
-   * Returns complete transaction history with running balance
    * @param publicId UUID of the flat
    * @param startDate Optional start date filter (ISO 8601)
    * @param endDate Optional end date filter (ISO 8601)

@@ -1,61 +1,27 @@
+/**
+ * Thin hook wrappers around authApi for the direct password reset flow.
+ * NOTE: Login and signup are handled by AuthProvider (src/contexts/AuthProvider.tsx).
+ */
 import { useMutation } from '@tanstack/react-query';
-import apiClient from '../api/client';
+import { authApi } from '../api/authApi';
 
-interface LoginData {
-  email: string;
-  password: string;
-}
-
-interface SignupData {
-  name: string;
-  email: string;
-  password: string;
-  societyName: string;
-  societyAddress: string;
-}
-
-interface AuthResponse {
-  token: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-    societyId: string;
-  };
-}
-
-export function useLogin() {
+/**
+ * Step 1 — verify the email exists before showing the new-password form.
+ * POST /auth/check-email
+ */
+export function useCheckEmail() {
   return useMutation({
-    mutationFn: async (data: LoginData): Promise<AuthResponse> => {
-      const response = await apiClient.post('/auth/login', data);
-      return response.data;
-    },
-    onSuccess: (data) => {
-      localStorage.setItem('auth_token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-    },
+    mutationFn: (email: string) => authApi.checkEmail(email),
   });
 }
 
-export function useSignup() {
+/**
+ * Step 2 — reset the password directly by email (no token required).
+ * POST /auth/reset-password-direct
+ */
+export function useResetPasswordDirect() {
   return useMutation({
-    mutationFn: async (data: SignupData): Promise<AuthResponse> => {
-      const response = await apiClient.post('/auth/signup', data);
-      return response.data;
-    },
-    onSuccess: (data) => {
-      localStorage.setItem('auth_token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-    },
-  });
-}
-
-export function useForgotPassword() {
-  return useMutation({
-    mutationFn: async (email: string) => {
-      const response = await apiClient.post('/auth/forgot-password', { email });
-      return response.data;
-    },
+    mutationFn: (payload: { email: string; newPassword: string; confirmPassword: string }) =>
+      authApi.resetPasswordDirect(payload),
   });
 }

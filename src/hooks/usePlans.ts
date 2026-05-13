@@ -1,49 +1,53 @@
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import apiClient from '../api/client';
 
 export interface Plan {
   id: string;
   name: string;
-  monthlyAmount: number;
+  // Keep pricing fields but mark as read-only server values. Frontend must not compute pricing.
+  price: number;
   currency: string;
   isActive?: boolean;
   description?: string;
+  durationMonths: number;
+  maxFlats?: number;
+  planGroup?: string;
+  isPopular?: boolean;
+  discountPercentage?: number | null;
+  displayOrder?: number;
+  // legacy alias kept for backward compat
+  monthlyAmount?: number;
+}
+
+async function fetchPlans(): Promise<Plan[]> {
+  const response = await apiClient.get('/plans');
+  const body = response.data;
+
+  // Expected shape: { succeeded: true, data: { plans: [...] } }
+  if (body?.data?.plans && Array.isArray(body.data.plans)) {
+    return body.data.plans;
+  }
+  // Fallback: { succeeded: true, data: [...] }
+  if (Array.isArray(body?.data)) {
+    return body.data;
+  }
+  // Fallback: root-level array
+  if (Array.isArray(body)) {
+    return body;
+  }
+
+  console.error('[usePlans] Unexpected /plans response shape:', body);
+  throw new Error('Invalid plans data format');
 }
 
 export function usePlans() {
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [plansLoading, setPlansLoading] = useState(true);
-  const [plansError, setPlansError] = useState<string | null>(null);
+  const { data: plans = [], isLoading: plansLoading, error } = useQuery({
+    queryKey: ['plans'],
+    queryFn: fetchPlans,
+    staleTime: 5 * 60_000,
+  });
 
-  useEffect(() => {
-    const fetchPlans = async () => {
-      try {
-        setPlansLoading(true);
-        setPlansError(null);
-        const response = await apiClient.get('/plans');
-        const result = response.data;
-        if (result.succeeded && result.data) {
-          // Handle nested structure: result.data.plans
-          const plansArray = result.data.plans || result.data;
-          if (Array.isArray(plansArray)) {
-            setPlans(plansArray);
-          } else {
-            setPlansError('Invalid plans data format');
-            setPlans([]);
-          }
-        } else {
-          setPlansError('Failed to load plans');
-          setPlans([]);
-        }
-      } catch (error) {
-        setPlansError('Failed to load plans');
-        setPlans([]);
-      } finally {
-        setPlansLoading(false);
-      }
-    };
-    fetchPlans();
-  }, []);
+  const plansError = error ? (error as Error).message || 'Failed to load plans' : null;
 
   return { plans, plansLoading, plansError };
 }

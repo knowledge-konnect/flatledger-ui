@@ -50,6 +50,8 @@ export default function Users() {
   const [formError, setFormError] = useState<string | null>(null);
   // Per-field inline errors
   const [nameError, setNameError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [mobileError, setMobileError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -92,6 +94,39 @@ export default function Users() {
     label: `${flat.ownerName} (${flat.flatNo})`
   }));
 
+  const normalizeMobile = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2);
+    return digits;
+  };
+
+  const applyApiFieldErrors = (errors: Array<{ field?: string; messages?: string[] }> | undefined) => {
+    if (!errors?.length) return false;
+    let hasFieldError = false;
+
+    errors.forEach((err) => {
+      const field = (err.field || '').toLowerCase();
+      const message = err.messages?.[0];
+      if (!message) return;
+
+      if (field.includes('name')) {
+        setNameError(message);
+        hasFieldError = true;
+      } else if (field.includes('email')) {
+        setEmailError(message);
+        hasFieldError = true;
+      } else if (field.includes('mobile')) {
+        setMobileError(message);
+        hasFieldError = true;
+      } else if (field.includes('password')) {
+        setPasswordError(message);
+        hasFieldError = true;
+      }
+    });
+
+    return hasFieldError;
+  };
+
   /* =====================================================
      CREATE USER
   ===================================================== */
@@ -99,6 +134,8 @@ export default function Users() {
   async function createUser() {
     setFormError(null);
     setNameError(null);
+    setEmailError(null);
+    setMobileError(null);
     setPasswordError(null);
     if (!name.trim()) {
       setNameError('Full name is required.');
@@ -113,6 +150,12 @@ export default function Users() {
       return;
     }
 
+    const normalizedMobile = normalizeMobile(mobile || '');
+    if (normalizedMobile && normalizedMobile.length !== 10) {
+      setMobileError('Mobile number must be a valid 10-digit number.');
+      return;
+    }
+
     const enteredPassword = password.trim();
     const enteredUsername = username.trim();
     try {
@@ -120,7 +163,7 @@ export default function Users() {
         name,
         email: email.trim() || undefined,
         username: enteredUsername || undefined,
-        mobile: mobile || undefined,
+        mobile: normalizedMobile || undefined,
         roleCode: selectedRoleCode,
         password: enteredPassword,
       });
@@ -143,8 +186,8 @@ export default function Users() {
       setShowCredentialsModal(true);
     } catch (error: any) {
       if (error?.response?.data) {
-        // If there are no fieldErrors, treat as general error, show only in modal
-        if (!error.response.data.errors || error.response.data.errors.length === 0) {
+        const hasFieldError = applyApiFieldErrors(error.response.data.errors);
+        if (!hasFieldError) {
           setFormError(error.response.data.message || AlertMessages.error.userCreationFailed);
         }
         // Do NOT show toast for form errors to avoid duplicate messages
@@ -162,10 +205,23 @@ export default function Users() {
   async function handleEditUser() {
     setFormError(null);
     setNameError(null);
+    setEmailError(null);
+    setMobileError(null);
     if (!selectedUser) return;
 
     if (!name.trim()) {
       setNameError('Full name is required.');
+      return;
+    }
+
+    if (!email.trim()) {
+      setEmailError('Email is required for updating a user.');
+      return;
+    }
+
+    const normalizedMobile = normalizeMobile(mobile || '');
+    if (normalizedMobile && normalizedMobile.length !== 10) {
+      setMobileError('Mobile number must be a valid 10-digit number.');
       return;
     }
 
@@ -174,10 +230,9 @@ export default function Users() {
       await usersApi.updateUser(selectedUser.publicId, {
         publicId: selectedUser.publicId,
         name,
-        email: email.trim() || undefined,
-        mobile: mobile || '',
+        email: email.trim(),
+        mobile: normalizedMobile || undefined,
         roleCode: selectedRoleCode,
-        isActive: selectedUser.isActive,
       });
 
       showToast(AlertMessages.success.userUpdated, 'success');
@@ -196,7 +251,8 @@ export default function Users() {
       setSelectedFlatPublicId('');
     } catch (error: any) {
       if (error?.response?.data) {
-        if (!error.response.data.errors || error.response.data.errors.length === 0) {
+        const hasFieldError = applyApiFieldErrors(error.response.data.errors);
+        if (!hasFieldError) {
           setFormError(error.response.data.message || AlertMessages.error.userUpdateFailed);
         }
         // Do NOT show toast for form errors to avoid duplicate messages
@@ -399,7 +455,7 @@ export default function Users() {
               },
               {
                 label: 'Admins',
-                value: users.filter(u => u.roleDisplayName === RoleDisplayName.SOCIETY_ADMIN || u.roleDisplayName === RoleDisplayName.ADMIN).length,
+                value: users.filter(u => u.roleDisplayName === RoleDisplayName.SOCIETY_ADMIN).length,
                 sub: 'Admin access',
                 icon: ShieldCheck,
                 iconBg: 'bg-red-100 dark:bg-red-900/40',
@@ -590,6 +646,7 @@ export default function Users() {
           }}
           title={isEditing ? 'Edit User' : 'Add User'}
         >
+          <form onSubmit={(e) => { e.preventDefault(); isEditing ? handleEditUser() : createUser(); }}>
           <div className="p-4 sm:p-6 space-y-4">
             {/* ── General/Business Rule Error Banner ── */}
             {formError && (
@@ -622,7 +679,8 @@ export default function Users() {
                 label="Email Address"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(null); }}
+                error={emailError ?? undefined}
                 readOnly={!isEditing && selectedFlatPublicId !== ''}
                 placeholder={!isEditing ? 'user@example.com' : ''}
               />
@@ -631,7 +689,8 @@ export default function Users() {
                 label="Mobile Number (Optional)"
                 type="tel"
                 value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
+                onChange={(e) => { setMobile(e.target.value); if (mobileError) setMobileError(null); }}
+                error={mobileError ?? undefined}
                 placeholder="+91 XXXXX XXXXX"
                 readOnly={!isEditing && selectedFlatPublicId !== ''}
               />
@@ -693,13 +752,15 @@ export default function Users() {
                 setSelectedRoleCode(RoleCode.VIEWER);
                 setFormError(null);
                 setNameError(null);
+                setEmailError(null);
+                setMobileError(null);
                 setPasswordError(null);
               }}
             >
               Cancel
             </Button>
             <Button
-              onClick={isEditing ? handleEditUser : createUser}
+              type="submit"
               disabled={createUserMutation.isPending || isUpdating}
             >
               {isEditing
@@ -708,6 +769,7 @@ export default function Users() {
               }
             </Button>
           </ModalFooter>
+          </form>
         </Modal>
       )}
 

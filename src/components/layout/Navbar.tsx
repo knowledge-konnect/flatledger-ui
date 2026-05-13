@@ -10,11 +10,22 @@ interface NavbarProps {
   variant?: 'landing' | 'dashboard';
 }
 
+/**
+ * Component: Navbar
+ * Purpose: Top navigation bar for public-facing pages (landing, pricing, etc.).
+ * Supports a 'landing' variant with section links and a 'dashboard' variant
+ * (currently returns null — the dashboard uses DashboardLayout's header instead).
+ *
+ * Props:
+ *   variant: 'landing' | 'dashboard' (default: 'landing')
+ */
 export default function Navbar({ variant = 'landing' }: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Smooth-scroll to a landing page section. If the user is on a different page,
+  // navigate to '/' first and then scroll after a short delay for the DOM to settle.
   const scrollToSection = (id: string) => (e?: React.MouseEvent) => {
     e?.preventDefault();
     const setHashAndScroll = () => {
@@ -35,11 +46,12 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
     setTimeout(setHashAndScroll, 120);
   };
 
-  // Track hash in state
+  // Track the active URL hash to highlight the correct nav link
   const [activeHash, setActiveHash] = React.useState(
     typeof window !== 'undefined' ? window.location.hash : ''
   );
 
+  // Keep activeHash in sync with browser hash changes (e.g. back/forward navigation)
   React.useEffect(() => {
     const onHashChange = () => setActiveHash(window.location.hash);
     window.addEventListener('hashchange', onHashChange);
@@ -47,7 +59,8 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
   }, []);
 
 
-  // --- Scroll-based hash update for highlighting ---
+  // Update the URL hash as the user scrolls to highlight the most visible section.
+  // Uses the section with the greatest visible height to handle overlapping sections.
   React.useEffect(() => {
     if (variant !== 'landing') return;
     const sectionIds = ['features', 'pricing', 'faq'];

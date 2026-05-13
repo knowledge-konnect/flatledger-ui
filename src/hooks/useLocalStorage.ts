@@ -1,7 +1,11 @@
 import { useState } from 'react';
 
 /**
- * Syncs state with localStorage
+ * Hook: useLocalStorage
+ * Purpose: Keeps a piece of state in sync with localStorage so it persists
+ * across page reloads. Falls back to initialValue if the key is missing or
+ * if localStorage is unavailable (e.g. private browsing with strict settings).
+ *
  * @param key - localStorage key
  * @param initialValue - Initial value if key doesn't exist
  */
@@ -11,6 +15,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       const item = window.localStorage.getItem(key);
       return item ? JSON.parse(item) : initialValue;
     } catch {
+      // localStorage may be unavailable in some browser environments
       return initialValue;
     }
   });
@@ -21,6 +26,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
       setStoredValue(valueToStore);
       window.localStorage.setItem(key, JSON.stringify(valueToStore));
     } catch {
+      // Silently ignore write failures (e.g. storage quota exceeded)
     }
   };
 

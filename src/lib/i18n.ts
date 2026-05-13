@@ -9,13 +9,19 @@ const resources = {
   te: { translation: te },
 };
 
+/**
+ * i18n configuration for FlatLedger.
+ * Supported languages: English (en), Telugu (te).
+ * The active language is persisted in localStorage under the 'lng' key so
+ * the user's preference survives page reloads.
+ */
 i18n
   .use(initReactI18next)
   .init({
     resources,
     lng: localStorage.getItem('lng') || 'en',
     fallbackLng: 'en',
-    interpolation: { escapeValue: false },
+    interpolation: { escapeValue: false }, // React already escapes values
   });
 
 export default i18n;

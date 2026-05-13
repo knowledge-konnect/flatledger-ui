@@ -7,13 +7,23 @@ import { useAuth } from '../../contexts/AuthProvider';
 import { useToast } from '../ui/Toast';
 import { cn } from '../../lib/utils';
 import { AlertMessages } from '../../lib/alertMessages';
-import ChatBot from '../chatbot/ChatBot';
+import { getPrimaryRoleLabel } from '../../types/roles';
 
 interface DashboardLayoutProps {
   children: ReactNode;
   title?: string;
 }
 
+/**
+ * Component: DashboardLayout
+ * Purpose: Shared layout wrapper for all authenticated pages. Renders the
+ * collapsible sidebar, sticky top navbar (with theme toggle, notifications,
+ * and profile menu), and the main content area.
+ *
+ * Props:
+ *   children: Page content to render inside the main area
+ *   title: Optional page title shown in the navbar breadcrumb
+ */
 export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
@@ -23,6 +33,8 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  // Initialise sidebar open state based on viewport width.
+  // On desktop (≥1024px) the sidebar is open by default; on mobile it starts closed.
   useEffect(() => {
     const checkWidth = () => {
       if (typeof window !== 'undefined') {
@@ -119,7 +131,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                     {user?.name?.split(' ')[0] || 'User'}
                   </p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                    {user?.roleDisplayName || user?.role || 'Member'}
+                    {getPrimaryRoleLabel(user)}
                   </p>
                 </div>
               </button>
@@ -177,8 +189,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
         </main>
       </div>
 
-      {/* In-app Guidance ChatBot */}
-      <ChatBot />
+      {/* In-app Guidance ChatBot hidden for now */}
     </div>
   );
 }

@@ -28,14 +28,15 @@ export interface CollectionSummaryData {
 ===================================================== */
 export interface DefaulterEntry {
   flat_no: string;
-  owner_name: string;
-  contact_mobile: string;
+  owner_name: string | null;
+  contact_mobile: string | null;
   total_billed: number;
   total_paid: number;
   total_outstanding: number;
   pending_months: number;
-  oldest_due_period: string;
-  latest_due_period: string;
+  total_months: number;
+  oldest_due_period: string | null;
+  latest_due_period: string | null;
 }
 
 /* =====================================================
@@ -53,6 +54,7 @@ export interface IncomeVsExpenseData {
   total_expense: number;
   net_balance: number;
   months: IncomeExpenseMonth[];
+  categories: ExpenseCategory[];
 }
 
 /* =====================================================
@@ -113,6 +115,7 @@ export interface ExpenseCategory {
   total_entries: number;
   first_expense_date: string;
   last_expense_date: string;
+  color: string | null;
 }
 
 export interface ExpenseByCategoryData {
@@ -129,19 +132,17 @@ const reportsApi = {
     if (startPeriod) params.append('startPeriod', startPeriod);
     if (endPeriod) params.append('endPeriod', endPeriod);
     const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await apiClient.get<{ success: boolean; data?: CollectionSummaryData }>(
+    const res = await apiClient.get<{ succeeded: boolean; data?: CollectionSummaryData }>(
       `/reports/collection-summary${query}`
     );
     const payload = res.data?.data ?? (res.data as unknown as CollectionSummaryData);
     return payload;
   },
 
-  getDefaulters: async (minOutstanding = 0, startDate?: string, endDate?: string) => {
+  getDefaulters: async (minOutstanding = 0) => {
     const params = new URLSearchParams();
     params.append('minOutstanding', String(minOutstanding));
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    const res = await apiClient.get<{ success: boolean; data?: DefaulterEntry[] }>(
+    const res = await apiClient.get<{ succeeded: boolean; data?: DefaulterEntry[] }>(
       `/reports/defaulters?${params.toString()}`
     );
     // Backend may return multiple shapes:
@@ -182,7 +183,7 @@ const reportsApi = {
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await apiClient.get<{ success: boolean; data?: IncomeVsExpenseData }>(
+    const res = await apiClient.get<{ succeeded: boolean; data?: IncomeVsExpenseData }>(
       `/reports/income-vs-expense${query}`
     );
     const payload = res.data?.data ?? (res.data as unknown as IncomeVsExpenseData);
@@ -194,7 +195,7 @@ const reportsApi = {
     if (startDate) params.append('startDate', startDate);
     if (endDate) params.append('endDate', endDate);
     const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await apiClient.get<{ success: boolean; data?: FundLedgerData }>(
+    const res = await apiClient.get<{ succeeded: boolean; data?: FundLedgerData }>(
       `/reports/fund-ledger${query}`
     );
     const payload = res.data?.data ?? (res.data as unknown as FundLedgerData);
@@ -207,7 +208,7 @@ const reportsApi = {
     if (endDate) params.append('endDate', endDate);
     params.append('page', String(page));
     params.append('pageSize', String(pageSize));
-    const res = await apiClient.get<{ success: boolean; data: any }>(
+    const res = await apiClient.get<{ succeeded: boolean; data: any }>(
       `/reports/payment-register?${params.toString()}`
     );
     const d = res.data?.data ?? res.data;
@@ -223,18 +224,6 @@ const reportsApi = {
       page: Number(d?.page ?? page) || page,
       pageSize: Number(d?.pageSize ?? pageSize) || pageSize,
     };
-  },
-
-  getExpenseByCategory: async (startDate?: string, endDate?: string) => {
-    const params = new URLSearchParams();
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await apiClient.get<{ success: boolean; data?: ExpenseByCategoryData }>(
-      `/reports/expense-by-category${query}`
-    );
-    const payload = res.data?.data ?? (res.data as unknown as ExpenseByCategoryData);
-    return payload;
   },
 
   downloadMonthlyReport: async (year: number, month: number, filename?: string): Promise<void> => {

@@ -1,12 +1,12 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
-import { usePlans } from '../hooks/usePlans';
+import { useNavigate, Link } from 'react-router-dom';
+import { motion, useInView } from 'framer-motion';
+import Navbar from "../components/layout/Navbar";
 import {
   ArrowRight, IndianRupee, BarChart3, Users, Zap,
   Receipt, PieChart, CheckCircle2, ChevronRight, Star,
 } from "lucide-react";
-import { Link } from 'react-router-dom';
-import { motion, useInView } from 'framer-motion';
-import Navbar from "../components/layout/Navbar";
+import { PricingSection } from '../components/pricing/PricingSection';
 
 // Static data — defined outside component to avoid recreation on every render
 const planFeatures = [
@@ -40,34 +40,12 @@ function AnimatedNumber({ to, prefix = '', suffix = '', active }: { to: number; 
 }
 
 const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [announcementVisible, setAnnouncementVisible] = useState(true);
 
-  const { plans, plansLoading, plansError } = usePlans();
-
-  const sortedPlans = (Array.isArray(plans) ? [...plans] : []).sort((a, b) => {
-    if (a.name.includes("Monthly")) return -1;
-    if (b.name.includes("Monthly")) return 1;
-    return 0;
-  });
-
-  const monthlyPlan = sortedPlans.find(p => p.name.includes("Monthly"));
-  const yearlyPlan = sortedPlans.find(p => p.name.includes("Yearly"));
-  const yearlySaving = monthlyPlan && yearlyPlan
-    ? (monthlyPlan.monthlyAmount * 12) - yearlyPlan.monthlyAmount
-    : null;
-
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const mockRef = useRef<HTMLDivElement>(null);
   const mockInView = useInView(mockRef, { once: true, margin: '-80px' });
-
-  useEffect(() => {
-    if (sortedPlans.length) {
-      const recommended = sortedPlans.find(p => p.name.includes("Yearly"));
-      const monthly = sortedPlans.find(p => p.name.includes("Monthly"));
-      setSelectedPlanId((recommended || monthly || sortedPlans[0]).id);
-    }
-  }, [plans]);
 
   return (
     <div className="min-h-screen pb-24 md:pb-0 bg-white dark:bg-slate-950">
@@ -111,11 +89,11 @@ const LandingPage: React.FC = () => {
               Stop chasing payments on WhatsApp and managing bills in Excel. FlatLedger automates everything in one place.
             </p>
 
-            <p className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400 animate-slide-in-up" style={{ animationDelay: '0.15s' }}>
-              Trusted by 50+ housing societies across India.
+            <p className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold text-center animate-fade-in" style={{ animationDelay: '0.15s' }}>
+              Built for Apartment &amp; Housing Society Treasurers and Secretaries
             </p>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 pt-4 animate-slide-in-up" style={{ animationDelay: '0.3s' }}>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 pt-4 animate-slide-in-up" style={{ animationDelay: '0.2s' }}>
               <Link
                 to="/signup"
                 className="w-full sm:w-auto px-8 py-4 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:shadow-xl hover:bg-emerald-700 hover:-translate-y-1 active:translate-y-0 active:scale-[0.99] transition-all duration-300 flex items-center justify-center gap-2 group focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900"
@@ -127,13 +105,13 @@ const LandingPage: React.FC = () => {
               <a
                 href="#pricing"
                 className="w-full sm:w-auto px-8 py-4 border-2 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg font-semibold bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-400 dark:hover:border-slate-600 active:scale-[0.99] transition-all duration-300 text-center focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200 dark:focus-visible:ring-slate-800"
-                aria-label="View Pricing"
+                aria-label="See Pricing Plans"
               >
-                View Pricing
+                See Pricing Plans
               </a>
             </div>
 
-            <p className="text-sm text-slate-500 dark:text-slate-400 animate-fade-in text-center" style={{ animationDelay: '0.35s' }}>No setup. No training required.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 animate-fade-in text-center" style={{ animationDelay: '0.35s' }}>No setup. No training. Works from day one.</p>
 
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-2 text-sm text-slate-600 dark:text-slate-400 animate-fade-in font-medium" style={{ animationDelay: '0.4s' }}>
               <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> 30-day free trial</span>
@@ -264,8 +242,18 @@ const LandingPage: React.FC = () => {
               </div>
             ))}
           </div>
-          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
-            Join <span className="font-semibold text-slate-700 dark:text-slate-300">50+ housing societies</span> across India already simplifying their society finances with FlatLedger.
+
+        </div>
+      </section>
+
+      {/* ── PROBLEM → SOLUTION ──────────────────────────────────────────── */}
+      <section className="py-8 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
+        <div className="max-w-3xl mx-auto text-center space-y-3">
+          <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+            Managing society finances shouldn't take hours every month. Between Excel sheets, WhatsApp reminders, and manual tracking — things get messy fast.
+          </p>
+          <p className="text-lg font-semibold text-slate-900 dark:text-white">
+            FlatLedger simplifies everything into one easy system.
           </p>
         </div>
       </section>
@@ -344,9 +332,9 @@ const LandingPage: React.FC = () => {
             <Link
               to="/signup"
               className="inline-flex items-center gap-2 px-7 py-3.5 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:bg-emerald-700 hover:-translate-y-0.5 transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900"
-              aria-label="Start Your Free Trial Today in 2 Minutes"
+              aria-label="Get Started Free"
             >
-              Start Your Free Trial Today in 2 Minutes
+              Get Started Free
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -355,125 +343,17 @@ const LandingPage: React.FC = () => {
       {/* ── PRICING ──────────────────────────────────────────────────────── */}
       <section id="pricing" className="py-10 md:py-12 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8 space-y-3">
+          <div className="text-center mb-8 space-y-2">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white animate-slide-in-up">
               Simple Pricing —{" "}
-              <span className="bg-gradient-to-r from-emerald-500 to-emerald-700 bg-clip-text text-transparent">Less Than ₹2 Per Flat Per Month</span>
+              <span className="bg-gradient-to-r from-emerald-500 to-emerald-700 bg-clip-text text-transparent">Less Than ₹5 Per Flat Per Month</span>
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
-              Start with a free 30-day trial. No credit card required.
-            </p>
-            <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
-              Costs less than one cup of tea per flat ☕ — perfect for societies with 10–200 flats.
-            </p>
             <p className="text-sm text-slate-500 dark:text-slate-400">No hidden fees. No setup cost. Cancel anytime. Your data is always yours.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Works out to less than ₹3 per flat per month</p>
           </div>
-
-          <div className="grid md:grid-cols-2 gap-8 max-w-2xl mx-auto">
-            {plansLoading ? (
-              <div className="col-span-2 text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4"></div>
-                <p className="text-slate-600 dark:text-slate-400">Loading pricing...</p>
-              </div>
-            ) : plansError ? (
-              <div className="col-span-2 text-center py-12">
-                <p className="text-red-600 dark:text-red-400">{plansError}</p>
-                <p className="text-slate-600 dark:text-slate-400 mt-2">Plans start below ₹5 per flat per month. Please try again later for live pricing.</p>
-              </div>
-            ) : (
-              sortedPlans.map((plan, index) => {
-                const isRecommended = plan.name.includes("Yearly");
-                const isSelected = selectedPlanId === plan.id;
-                return (
-                <label
-                  key={plan.id}
-                  className={`relative cursor-pointer pt-10 pb-8 px-8 rounded-2xl border-2 transition-all duration-300 animate-slide-in-up flex flex-col gap-4 focus-within:ring-4 focus-within:ring-emerald-100 dark:focus-within:ring-emerald-900/40 ${
-                    isSelected && isRecommended
-                      ? "border-emerald-500 shadow-2xl bg-emerald-50 dark:bg-emerald-900/20 scale-[1.03]"
-                      : isSelected
-                        ? "border-emerald-600 shadow-2xl bg-white dark:bg-slate-900"
-                        : isRecommended
-                          ? "border-emerald-500 dark:border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 shadow-2xl scale-[1.03] hover:-translate-y-1"
-                          : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-emerald-300 dark:hover:border-emerald-600 shadow-md hover:shadow-xl hover:-translate-y-1"
-                  }`}
-                  style={{ animationDelay: `${0.1 * (index + 1)}s` }}
-                  tabIndex={0}
-                  onClick={() => setSelectedPlanId(plan.id)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedPlanId(plan.id); }}
-                >
-                  {plan.name.includes("Yearly") && (
-                    <span className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-emerald-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">
-                      ⭐ Most Popular
-                    </span>
-                  )}
-                  <input
-                    type="radio"
-                    name="plan"
-                    value={plan.id}
-                    checked={selectedPlanId === plan.id}
-                    onChange={() => setSelectedPlanId(plan.id)}
-                    className="absolute top-4 right-4 w-5 h-5 accent-emerald-600"
-                    aria-label={`Select ${plan.name} plan`}
-                  />
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{plan.name}</h3>
-                    {plan.name.includes("Yearly") && yearlySaving && (
-                      <span className="inline-block px-3 py-1 bg-emerald-200 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 rounded-full text-xs font-semibold">
-                        Save ₹{yearlySaving} (2 months free)
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                      ₹{plan.name.includes("Yearly") ? Math.round(plan.monthlyAmount / 12) : plan.monthlyAmount}
-                    </span>
-                    <span className="text-slate-600 dark:text-slate-400 text-lg font-medium">/ month</span>
-                  </div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 -mt-2">
-                    {plan.name.includes("Monthly") ? "Billed monthly" : `Billed as ₹${plan.monthlyAmount}/year`}
-                  </p>
-                  <ul className="space-y-2 mt-2">
-                    {[
-                      "Generate bills in seconds",
-                      "Track payments instantly",
-                      "View financial reports",
-                      "See full society finances",
-                    ].map((benefit, i) => (
-                      <li key={i} className="flex items-start gap-2 text-slate-700 dark:text-slate-300">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
-                        <span className="text-sm font-medium">{benefit}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="border-t border-slate-100 dark:border-slate-700 pt-3">
-                    <p className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-                      Cancel anytime
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className={`mt-1 px-6 py-3 rounded-lg font-bold shadow-lg hover:shadow-xl transition-all duration-300 text-center hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900 ${
-                      plan.name.includes("Yearly")
-                        ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700"
-                    }`}
-                    aria-label={`Start Free Trial for ${plan.name}`}
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = '/signup'; }}
-                  >
-                    Start Free Trial
-                  </button>
-                </label>
-                );
-              })
-            )}
-          </div>
-
-          {!plansLoading && !plansError && (
-            <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
-              No setup fee. No payment required to start. Cancel anytime.
-            </p>
-          )}
+          <PricingSection
+            onChoosePlan={(planId) => navigate(`/signup?plan=${planId}`)}
+          />
         </div>
       </section>
 
@@ -486,13 +366,14 @@ const LandingPage: React.FC = () => {
           </div>
           <div className="divide-y divide-slate-200 dark:divide-slate-800 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
             {[
-              { q: "Can we migrate from Excel?", a: "Yes. You can enter your flat list and opening balances directly, or copy them from your existing Excel sheet. Most societies are set up and billing within 30 minutes. We provide a setup checklist to make the move smooth." },
-              { q: "Is FlatLedger easy for non-technical users?", a: "Yes. FlatLedger is designed for treasurers and secretaries, not IT professionals. If you can use WhatsApp, you can use FlatLedger. No technical training needed — but we do provide help guides and email support." },
+              { q: "Can we migrate from Excel?", a: "Yes. You can enter your flat list and opening balances directly, or copy them from your existing Excel sheet. Most societies are set up and billing within 30 minutes." },
+              { q: "Is FlatLedger easy for non-technical users?", a: "Yes. FlatLedger is designed for treasurers and secretaries, not IT professionals. If you can use WhatsApp, you can use FlatLedger. No technical training needed." },
               { q: "Do you support UPI or online payments?", a: "FlatLedger supports offline payment recording — you record cash, UPI, cheque, and bank transfer payments that residents make directly to the society account. It keeps things simple and fully under your committee's control." },
-              { q: "What if the internet is slow or unavailable?", a: "FlatLedger is lightweight and works reliably on standard mobile data. The app loads fast even on slow connections. You can note payments offline and enter them when connected." },
+              { q: "How many flats can I manage?", a: "The Starter plan supports up to 50 flats at ₹149/month. The Growth plan supports up to 100 flats at ₹249/month. Both include all features — bills, payments, reports, and expenses." },
               { q: "Is our society's data secure?", a: "Yes. FlatLedger uses encrypted data storage, role-based access control, and regular backups. Only your committee members can access your society's data. We do not share data with any third party." },
-              { q: "Will our committee get training or support?", a: "Yes. We provide onboarding guidance for treasurer and committee members, step-by-step help documentation, and email support for everyday questions." },
+              { q: "What does the free trial include?", a: "The 30-day free trial gives you full access to all features — billing, payments, expenses, reports, and user management. No credit card required. You only pay if you choose to continue after the trial." },
               { q: "Can we export our data anytime?", a: "Yes. Bills, payment records, and reports can be exported to CSV at any time. Your data is always yours — you are never locked in." },
+              { q: "What happens if we stop using FlatLedger?", a: "You can export all your data — bills, payments, and reports — as CSV files at any time. There is no lock-in. If you cancel, your data remains accessible for 30 days for export." },
             ].map((item, i) => (
               <div key={item.q} className="bg-white dark:bg-slate-900">
                 <button
@@ -529,25 +410,20 @@ const LandingPage: React.FC = () => {
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="p-6 md:p-10 bg-gradient-to-br from-emerald-600 to-emerald-900 rounded-2xl shadow-2xl text-center space-y-3">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-white animate-slide-in-up">
-              Stop Managing Your Society Finances on Excel.
+              Stop spending hours on billing every month. Start managing your society in minutes.
             </h2>
             <p className="text-lg text-white/90 animate-slide-in-up max-w-xl mx-auto" style={{ animationDelay: '0.1s' }}>
-              Join 50+ housing societies across India who've switched to FlatLedger — and never looked back. Start your free 30-day trial today, no credit card required.
+              Start your free 30-day trial today — no credit card, no setup, no Excel.
             </p>
             <Link
               to="/signup"
               className="px-8 py-4 bg-white text-emerald-600 rounded-lg font-bold shadow-lg hover:shadow-xl hover:bg-slate-50 hover:-translate-y-1 active:translate-y-0 active:scale-[0.99] transition-all duration-300 inline-flex w-fit items-center justify-center gap-2 mx-auto group animate-slide-in-up focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
               style={{ animationDelay: '0.2s' }}
-              aria-label="Start Your Free Trial Today in 2 Minutes"
+              aria-label="Get Started Free"
             >
-              Start Your Free Trial Today in 2 Minutes
+              Get Started Free
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
             </Link>
-            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 pt-2 text-white/70 text-sm">
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-white/80" /> 30-day free trial</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-white/80" /> No credit card required</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-white/80" /> Cancel anytime</span>
-            </div>
           </div>
         </div>
       </section>
@@ -563,12 +439,12 @@ const LandingPage: React.FC = () => {
           </div>
           <div className="flex flex-wrap justify-center gap-8 mb-4">
             <a href="/" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Home</a>
+            <a href="#features" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Features</a>
+            <a href="#pricing" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Pricing</a>
+            <a href="#faq" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">FAQ</a>
             <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Privacy Policy</a>
             <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Terms</a>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl text-center mb-3">
-            FlatLedger helps housing societies in India manage maintenance billing, payment records, expenses, and financial reports without relying on spreadsheets.
-          </p>
           <div className="pt-4 border-t border-slate-200 dark:border-slate-800 w-full text-center text-sm text-slate-600 dark:text-slate-400">
             <p>&copy; 2026 FlatLedger. All rights reserved.</p>
           </div>
@@ -579,6 +455,7 @@ const LandingPage: React.FC = () => {
       {/* ── MOBILE STICKY CTA ───────────────────────────────────────────── */}
       <div className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
         <div className="px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <p className="text-xs text-slate-500 dark:text-slate-400 text-center mb-1.5">Start in under 2 minutes</p>
           <Link
             to="/signup"
             className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:bg-emerald-700 active:scale-[0.99] transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900"
@@ -592,12 +469,11 @@ const LandingPage: React.FC = () => {
 
 
       {/* ── WHATSAPP SUPPORT BUTTON ───────────────────────────────────────── */}
-      {/* TODO: Replace the phone number below with your actual WhatsApp support number */}
       <a
-        href="https://wa.me/919999999999?text=Hi%2C%20I%20have%20a%20question%20about%20FlatLedger"
+        href={`https://wa.me/${import.meta.env.VITE_SUPPORT_WHATSAPP ?? '919999999999'}?text=Hi%2C%20I%20have%20a%20question%20about%20FlatLedger`}
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-5 right-5 z-50 w-14 h-14 bg-[#25D366] hover:bg-[#1ebe5d] text-white rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:-translate-y-1 hover:shadow-green-400/40 md:bottom-5 md:right-5"
+        className="fixed bottom-20 left-4 z-50 md:bottom-5 md:left-auto md:right-5 w-14 h-14 bg-[#25D366] hover:bg-[#1ebe5d] text-white rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:-translate-y-1 hover:shadow-green-400/40"
         aria-label="Chat with us on WhatsApp"
         title="Chat with us on WhatsApp"
       >

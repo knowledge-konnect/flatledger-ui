@@ -28,6 +28,8 @@ export interface DashboardSnapshot {
   period_fund_outflow?: number;
   closing_fund_balance?: number;
   present_balance?: number;
+  /** Total count of flats with any outstanding dues (all-time). Added in dashboard v2. */
+  pending_flats_count?: number;
 }
 
 export interface TrendMeta {
@@ -77,8 +79,17 @@ interface DashboardParams {
   endDate?: string;
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
-
+/**
+ * Hook: useDashboard
+ * Purpose: Fetches the society's financial dashboard snapshot for a given date range.
+ * Includes KPIs, income/expense trends, expense breakdown, top defaulters, and recent activity.
+ *
+ * enabled: only fires when an access token is present — prevents 401s on the
+ * landing page or during the initial auth loading phase.
+ *
+ * staleTime: 0 — dashboard data should always reflect the latest state since
+ * payments and expenses can change frequently.
+ */
 export function useDashboard(params?: DashboardParams) {
   return useQuery({
     queryKey: ['dashboard', params?.startDate, params?.endDate],
@@ -91,6 +102,8 @@ export function useDashboard(params?: DashboardParams) {
       return response.data.data;
     },
     enabled: !!getInMemoryAccessToken(),
-    staleTime: 0,
+    // Mutations already invalidate this cache when data changes.
+    // 30s prevents spurious refetches on every tab-switch.
+    staleTime: 30_000,
   });
 }

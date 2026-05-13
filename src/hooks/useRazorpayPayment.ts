@@ -2,6 +2,7 @@
 import { useToast } from '../components/ui/Toast';
 import { paymentApi } from '../api/paymentApi';
 import { openRazorpayCheckout, RazorpayPaymentResponse } from '../lib/razorpay';
+import { BRAND_NAME } from '../config/branding';
 
 interface UseRazorpayPaymentState {
   isLoading: boolean;
@@ -15,8 +16,17 @@ interface UseRazorpayPaymentReturn extends UseRazorpayPaymentState {
 }
 
 /**
- * Custom hook for Razorpay payment integration
- * Handles order creation, payment modal, and verification
+ * Hook: useRazorpayPayment
+ * Purpose: Orchestrates the full Razorpay subscription payment flow:
+ * 1. Creates a Razorpay order via the backend
+ * 2. Opens the Razorpay checkout modal
+ * 3. Verifies the payment signature with the backend on success
+ *
+ * Exposes loading/processing states so the UI can show appropriate feedback
+ * at each stage of the multi-step flow.
+ *
+ * @param onPaymentSuccess - Called after successful backend verification
+ * @param onPaymentError - Optional callback for payment failures or cancellations
  */
 export const useRazorpayPayment = (
   onPaymentSuccess: () => void,
@@ -35,9 +45,12 @@ export const useRazorpayPayment = (
 
   const initiatePayment = useCallback(
     async (planId: string) => {
+      // Guard against double-click: bail out if a payment flow is already in progress.
+      if (state.isLoading || state.isProcessing) return;
+
       setState(prev => ({ ...prev, isLoading: true, error: null }));
       try {
-        // Step 1: Create Razorpay order from backend (send only planId)
+        // Step 1: Create Razorpay order on backend (planId only — pricing is server-driven)
         const orderResponse = await paymentApi.createOrder({ planId });
         setState(prev => ({ ...prev, isLoading: false, isProcessing: true }));
 
@@ -48,7 +61,7 @@ export const useRazorpayPayment = (
             order_id: orderResponse.orderId,
             amount: orderResponse.amount * 100, // Razorpay expects paise
             currency: orderResponse.currency,
-            name: 'Society Ledger',
+            name: BRAND_NAME,
             description: 'Subscription Payment',
             notes: { planId },
           },

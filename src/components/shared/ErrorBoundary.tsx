@@ -32,6 +32,18 @@ interface State {
   error: Error | null;
 }
 
+/**
+ * Component: ErrorBoundary
+ * Purpose: Catches unhandled render errors in the React tree and displays a
+ * user-friendly fallback UI instead of a blank screen. Supports two variants:
+ * - 'society': for the main app, redirects to /dashboard on reset
+ * - 'admin': for the admin panel, redirects to /admin/dashboard on reset
+ *
+ * Props:
+ *   children: The component tree to protect
+ *   fallback: Optional custom fallback UI (overrides the default error screen)
+ *   variant: 'society' | 'admin' — controls redirect path and styling
+ */
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
     hasError: false,
@@ -42,7 +54,10 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(_error: Error, _errorInfo: ErrorInfo) {
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Always log to console — render errors are worth surfacing even in production
+    console.error('[ErrorBoundary] Uncaught render error:', error, errorInfo);
+    // TODO: integrate error tracking (e.g. Sentry.captureException(error, { extra: errorInfo }))
   }
 
   private handleReset = () => {
@@ -70,7 +85,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="text-slate-600 dark:text-slate-400 mb-6">
               We're sorry for the inconvenience. The error has been logged and we'll look into it.
             </p>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {import.meta.env.DEV && this.state.error && (
               <div className="mb-6 p-4 bg-slate-100 dark:bg-slate-800 rounded-lg text-left">
                 <p className="text-xs text-slate-600 dark:text-slate-400 font-mono break-all">
                   {this.state.error.message}

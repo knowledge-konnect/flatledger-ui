@@ -223,5 +223,35 @@ export const authApi = {
       logger.error(`[authApi.changePassword] Failed to change password`, error);
       throw error;
     }
-  }
+  },
+
+  /**
+   * Check if an email exists in the system (step 1 of direct password reset)
+   * POST /auth/check-email
+   * Returns 200 { email } if found, 404 ErrorResponse if not found.
+   */
+  async checkEmail(email: string): Promise<{ email: string }> {
+    const response = await apiClient.post<ApiResponse<{ email: string }>>('/auth/check-email', { email });
+    return response.data.data;
+  },
+
+  /**
+   * Reset password directly by email — no token required (step 2 of direct password reset)
+   * POST /auth/reset-password-direct
+   * Body: { email, newPassword, confirmPassword }
+   * Returns: { ok, accessToken, accessTokenExpiresAt }
+   */
+  async resetPasswordDirect(payload: {
+    email: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Promise<{ ok: boolean; accessToken?: string; accessTokenExpiresAt?: string; message?: string }> {
+    const response = await apiClient.post<ApiResponse<{
+      ok: boolean;
+      accessToken?: string;
+      accessTokenExpiresAt?: string;
+      message?: string;
+    }>>('/auth/reset-password-direct', payload);
+    return response.data.data;
+  },
 };

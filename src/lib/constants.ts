@@ -102,10 +102,9 @@ export const VALIDATION = {
   MIN_PASSWORD_LENGTH: 8,
 };
 
-// Local Storage Keys
+// Local Storage Keys — UI preferences only.
+// Auth tokens are NEVER stored in localStorage (see AuthProvider.tsx).
 export const STORAGE_KEYS = {
-  ACCESS_TOKEN: 'accessToken',
-  USER: 'user',
-  SOCIETY_ID: 'societyId',
   THEME: 'theme',
+  LANGUAGE: 'lng',
 };

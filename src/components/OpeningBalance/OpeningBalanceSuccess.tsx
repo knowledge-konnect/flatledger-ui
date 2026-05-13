@@ -24,12 +24,12 @@ export default function OpeningBalanceSuccess() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-emerald-50 to-teal-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
       <Card className="max-w-2xl w-full p-8 text-center">
         {/* Success Icon */}
         <div className="relative inline-flex items-center justify-center mb-6">
-          <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
-          <div className="relative bg-gradient-to-br from-green-400 to-emerald-500 rounded-full p-4">
+          <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-pulse" />
+          <div className="relative bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full p-4">
             <CheckCircle className="w-16 h-16 text-white" />
           </div>
         </div>
@@ -43,31 +43,31 @@ export default function OpeningBalanceSuccess() {
         </p>
 
         {/* Features List */}
-        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 mb-8 text-left">
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">
+        <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-xl p-6 mb-8 text-left">
+          <h3 className="font-semibold text-emerald-900 dark:text-emerald-100 mb-4">
             What happens next?
           </h3>
           <ul className="space-y-3">
             <li className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
               <span className="text-sm text-slate-600 dark:text-slate-400">
                 <strong className="text-slate-900 dark:text-slate-100">Society Opening Fund:</strong> Your bank balance is now set and will be tracked going forward
               </span>
             </li>
             <li className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
               <span className="text-sm text-slate-600 dark:text-slate-400">
                 <strong className="text-slate-900 dark:text-slate-100">Member Migration Dues:</strong> Outstanding and advance payments are recorded for each flat
               </span>
             </li>
             <li className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
               <span className="text-sm text-slate-600 dark:text-slate-400">
                 <strong className="text-slate-900 dark:text-slate-100">Financial Reports:</strong> All reports will now include opening balances in calculations
               </span>
             </li>
             <li className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
               <span className="text-sm text-slate-600 dark:text-slate-400">
                 <strong className="text-slate-900 dark:text-slate-100">Immutable Record:</strong> Opening balances are locked and cannot be changed
               </span>
@@ -85,7 +85,7 @@ export default function OpeningBalanceSuccess() {
           <Button
             onClick={() => navigate('/dashboard')}
             size="lg"
-            className="min-w-[180px]"
+            className="min-w-[180px] bg-emerald-600 hover:bg-emerald-700 text-white"
           >
             Go to Dashboard
             <ArrowRight className="w-4 h-4 ml-2" />

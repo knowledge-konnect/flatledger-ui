@@ -70,7 +70,7 @@ export default function Tooltip({ content, side = 'top', children }: TooltipProp
         role="tooltip"
         style={baseStyle}
         className={`pointer-events-none absolute z-50 ${posClass}
-          w-max max-w-[min(240px,calc(100vw-1rem))] whitespace-normal break-words
+          w-max max-w-[min(280px,calc(100vw-1rem))] whitespace-normal break-words
           bg-slate-900 dark:bg-slate-700 text-white text-xs font-medium
           rounded-md px-2.5 py-1.5 shadow-lg
           transition-all duration-150

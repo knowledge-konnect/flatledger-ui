@@ -1,3 +1,8 @@
+/**
+ * ⚠️  NOT YET IMPLEMENTED ON BACKEND
+ * All functions in this file will return 404 until the backend
+ * endpoints are built. Do not use in production UI flows.
+ */
 import { ApiResponse } from '../types/api';
 import { ActivityLog } from '../types';
 import { unwrapArrayData } from './responseUtils';
@@ -50,7 +55,7 @@ export const getActivityLogs = async (params: GetActivityLogsParams = {}): Promi
       offset: params.offset || 0,
     },
   });
-  return unwrapArrayData(response);
+  return unwrapArrayData<ActivityLog>(response.data.data);
 };
 
 /**

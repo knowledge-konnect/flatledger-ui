@@ -13,12 +13,21 @@ import {
   ReportState, initialState, ReportLoading, ReportError, StatCard,
   QuickPeriodPresets, currentYearMonth, formatCurrency, fmtPeriod, PeriodPresetKey,
 } from './_shared';
+import { useSocietyPeriodBounds } from '../../hooks/useSocietyPeriodBounds';
 
 export default function CollectionSummaryPage() {
   const [startPeriod, setStartPeriod] = useState(currentYearMonth());
   const [endPeriod, setEndPeriod] = useState(currentYearMonth());
   const [activePeriodPreset, setActivePeriodPreset] = useState<PeriodPresetKey | null>('thisMonth');
   const [state, setState] = useState<ReportState<CollectionSummaryData>>(initialState());
+  const { minMonth, maxMonth, clampMonth } = useSocietyPeriodBounds();
+
+  useEffect(() => {
+    const nextStart = clampMonth(startPeriod);
+    const nextEnd = clampMonth(endPeriod);
+    if (nextStart !== startPeriod) setStartPeriod(nextStart);
+    if (nextEnd !== endPeriod) setEndPeriod(nextEnd);
+  }, [startPeriod, endPeriod, clampMonth]);
 
   const fetchData = useCallback((sp: string, ep: string) => {
     setState({ loading: true, error: null, data: null });
@@ -37,10 +46,12 @@ export default function CollectionSummaryPage() {
   }, []);
 
   const applyPreset = (preset: PeriodPresetKey, sp: string, ep: string) => {
+    const safeStart = clampMonth(sp);
+    const safeEnd = clampMonth(ep);
     setActivePeriodPreset(preset);
-    setStartPeriod(sp);
-    setEndPeriod(ep);
-    fetchData(sp, ep);
+    setStartPeriod(safeStart);
+    setEndPeriod(safeEnd);
+    fetchData(safeStart, safeEnd);
   };
 
   const periodsAsc = [...(state.data?.periods ?? [])].sort((a, b) => a.period.localeCompare(b.period));
@@ -50,15 +61,20 @@ export default function CollectionSummaryPage() {
     name: fmtPeriod(p.period),
     Billed: p.total_billed,
     Collected: p.total_collected,
-    Outstanding: p.total_outstanding,
   }));
+
+  // Totals for footer row
+  const footerBilled      = periodsAsc.reduce((s, p) => s + p.total_billed,      0);
+  const footerCollected   = periodsAsc.reduce((s, p) => s + p.total_collected,   0);
+  const footerOutstanding = periodsAsc.reduce((s, p) => s + p.total_outstanding, 0);
+  const footerRate        = footerBilled > 0 ? (footerCollected / footerBilled) * 100 : 0;
 
   return (
     <DashboardLayout title="Reports">
       <div className="space-y-5">
         <PageHeader
-          title="Billing Summary"
-          description="Period-wise billing, collections, and outstanding balances"
+          title="Collection Summary"
+          description="Period-wise maintenance collections and outstanding dues"
           icon={BarChart2}
         />
 
@@ -69,21 +85,25 @@ export default function CollectionSummaryPage() {
             <input
               type="month"
               value={startPeriod}
-              onChange={e => { setStartPeriod(e.target.value); setActivePeriodPreset(null); }}
+              min={minMonth}
+              max={maxMonth}
+              onChange={e => { setStartPeriod(clampMonth(e.target.value)); setActivePeriodPreset(null); }}
               className="h-8 px-2.5 text-xs font-medium rounded-md border border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
             <span className="text-slate-500 dark:text-slate-400 text-sm select-none">–</span>
             <input
               type="month"
               value={endPeriod}
-              onChange={e => { setEndPeriod(e.target.value); setActivePeriodPreset(null); }}
+              min={minMonth}
+              max={maxMonth}
+              onChange={e => { setEndPeriod(clampMonth(e.target.value)); setActivePeriodPreset(null); }}
               className="h-8 px-2.5 text-xs font-medium rounded-md border border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
           </div>
           <div className="w-px h-5 bg-slate-300 dark:bg-slate-600 self-center" />
           <QuickPeriodPresets onSelect={applyPreset} activeKey={activePeriodPreset} />
           <div className="flex-1" />
-          <Button variant="primary" size="sm" onClick={() => fetchData(startPeriod, endPeriod)} disabled={state.loading}>
+          <Button variant="primary" size="sm" onClick={() => fetchData(clampMonth(startPeriod), clampMonth(endPeriod))} disabled={state.loading}>
             {state.loading
               ? <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Loading…</>
               : <><RefreshCw className="w-3 h-3 mr-1" /> Apply</>}
@@ -134,13 +154,12 @@ export default function CollectionSummaryPage() {
               <CardContent>
                 <div className="overflow-visible">
                 <ReactApexChart
-                  type="line"
+                  type="bar"
                   height={260}
                   series={[
-                    { name: 'Billed', type: 'column', data: chartData.map((d: any) => d.Billed ?? 0) },
-                    { name: 'Collected', type: 'column', data: chartData.map((d: any) => d.Collected ?? 0) },
-                    { name: 'Outstanding', type: 'line', data: chartData.map((d: any) => d.Outstanding ?? 0) },
-                  ] as any}
+                    { name: 'Billed',    data: chartData.map((d: any) => d.Billed    ?? 0) },
+                    { name: 'Collected', data: chartData.map((d: any) => d.Collected ?? 0) },
+                  ]}
                   options={{
                     ...baseChartOptions,
                     chart: {
@@ -148,16 +167,17 @@ export default function CollectionSummaryPage() {
                       parentHeightOffset: 0,
                       offsetX: 0,
                     },
-                    colors: ['#3B82F6', '#10B981', '#EF4444'],
-                    stroke: { width: [0, 0, 2.5], curve: 'smooth' },
-                    markers: { size: [0, 0, 4] },
+                    colors: ['#3B82F6', '#10B981'],
                     xaxis: { categories: chartData.map((d: any) => d.name), labels: { style: axisLabelStyle } },
-                    yaxis: { labels: { formatter: (v: number) => currencyK(v), style: axisLabelStyle } },
+                    yaxis: {
+                      labels: { formatter: (v: number) => currencyK(v), style: axisLabelStyle },
+                    },
                     legend: { position: 'top', fontSize: '12px' },
                     tooltip: {
+                      shared: true,
+                      intersect: false,
                       y: { formatter: (v: number) => currencyTooltip(v) },
                       theme: 'light',
-                      followCursor: true,
                     },
                     plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
                     grid: baseGrid,
@@ -179,8 +199,9 @@ export default function CollectionSummaryPage() {
                       <TableHead className="text-right">Billed</TableHead>
                       <TableHead className="text-right">Collected</TableHead>
                       <TableHead className="text-right">Outstanding</TableHead>
-                      <TableHead className="text-right">Collection %</TableHead>
-                      <TableHead className="text-right">Paid Flats</TableHead>
+                      <TableHead className="text-right min-w-[160px]">Collection %</TableHead>
+                      <TableHead className="text-right">Flats</TableHead>
+                      <TableHead className="text-right">Paid</TableHead>
                       <TableHead className="text-right">Partial</TableHead>
                       <TableHead className="text-right">Unpaid</TableHead>
                     </TableRow>
@@ -188,12 +209,17 @@ export default function CollectionSummaryPage() {
                   <TableBody>
                     {periodsDesc.length === 0 ? (
                       <TableRow>
-                        <TableCell className="text-center py-8 text-slate-400" colSpan={8}>
+                        <TableCell className="text-center py-8 text-slate-400" colSpan={9}>
                           No data available
                         </TableCell>
                       </TableRow>
                     ) : periodsDesc.map(p => {
                       const rate = p.total_billed > 0 ? (p.total_collected / p.total_billed) * 100 : 0;
+                      const barColor = rate >= 80 ? 'bg-emerald-500' : rate >= 50 ? 'bg-amber-500' : 'bg-red-500';
+                      const badgeClass = rate >= 80
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : rate >= 50 ? 'text-amber-700 dark:text-amber-400'
+                        : 'text-red-700 dark:text-red-400';
                       return (
                         <TableRow key={p.period}>
                           <TableCell className="font-medium whitespace-nowrap">{fmtPeriod(p.period)}</TableCell>
@@ -203,22 +229,58 @@ export default function CollectionSummaryPage() {
                             {formatCurrency(p.total_outstanding)}
                           </TableCell>
                           <TableCell className="text-right">
-                            <span className={cn(
-                              'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold',
-                              rate >= 80 ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400'
-                                : rate >= 50 ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
-                                : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'
-                            )}>
-                              {rate.toFixed(1)}%
-                            </span>
+                            <div className="flex items-center gap-2 justify-end">
+                              <div className="w-20 h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden flex-shrink-0">
+                                <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(rate, 100)}%` }} />
+                              </div>
+                              <span className={`text-xs font-semibold tabular-nums w-11 text-right ${badgeClass}`}>{rate.toFixed(1)}%</span>
+                            </div>
                           </TableCell>
-                          <TableCell className="text-right tabular-nums">{p.flats_paid}</TableCell>
-                          <TableCell className="text-right tabular-nums">{p.flats_partial}</TableCell>
-                          <TableCell className="text-right tabular-nums">{p.flats_unpaid}</TableCell>
+                          <TableCell className="text-right tabular-nums text-slate-500">{p.flats_billed}</TableCell>
+                          <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400">{p.flats_paid}</TableCell>
+                          <TableCell className="text-right tabular-nums text-amber-600 dark:text-amber-400">{p.flats_partial}</TableCell>
+                          <TableCell className="text-right tabular-nums text-red-600 dark:text-red-400">{p.flats_unpaid}</TableCell>
                         </TableRow>
                       );
                     })}
                   </TableBody>
+                  {periodsDesc.length > 1 && (
+                    <tfoot>
+                      <tr className="border-t-2 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/60 font-semibold text-slate-700 dark:text-slate-200">
+                        <td className="px-4 py-3 text-xs uppercase tracking-wide">Total</td>
+                        <td className="px-4 py-3 text-right tabular-nums text-sm">{formatCurrency(footerBilled)}</td>
+                        <td className="px-4 py-3 text-right tabular-nums text-sm text-green-600 dark:text-green-400">{formatCurrency(footerCollected)}</td>
+                        <td className={cn('px-4 py-3 text-right tabular-nums text-sm', footerOutstanding > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-500')}>
+                          {formatCurrency(footerOutstanding)}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center gap-2 justify-end">
+                            <div className="w-20 h-1.5 bg-slate-200 dark:bg-slate-600 rounded-full overflow-hidden flex-shrink-0">
+                              <div
+                                className={`h-full rounded-full ${footerRate >= 80 ? 'bg-emerald-500' : footerRate >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+                                style={{ width: `${Math.min(footerRate, 100)}%` }}
+                              />
+                            </div>
+                            <span className={`text-xs font-bold tabular-nums w-11 text-right ${footerRate >= 80 ? 'text-emerald-700 dark:text-emerald-400' : footerRate >= 50 ? 'text-amber-700 dark:text-amber-400' : 'text-red-700 dark:text-red-400'}`}>
+                              {footerRate.toFixed(1)}%
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums text-sm text-slate-500">
+                          {periodsDesc.reduce((s, p) => s + p.flats_billed, 0)}
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums text-sm text-emerald-600 dark:text-emerald-400">
+                          {periodsDesc.reduce((s, p) => s + p.flats_paid, 0)}
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums text-sm text-amber-600 dark:text-amber-400">
+                          {periodsDesc.reduce((s, p) => s + p.flats_partial, 0)}
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums text-sm text-red-600 dark:text-red-400">
+                          {periodsDesc.reduce((s, p) => s + p.flats_unpaid, 0)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  )}
                 </Table>
               </CardContent>
             </Card>

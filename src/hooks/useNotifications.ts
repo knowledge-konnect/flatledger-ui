@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { notificationsApi, NotificationPreference, UpdateNotificationPreferenceDto } from '../api/notificationsApi';
 
+/**
+ * Hook: useNotifications
+ * Purpose: Fetches the current user's notification preferences.
+ */
 export const useNotifications = () => {
   return useQuery<NotificationPreference>({
     queryKey: ['notifications-preferences'],
@@ -8,6 +12,10 @@ export const useNotifications = () => {
   });
 };
 
+/**
+ * Hook: useUpdateNotifications
+ * Purpose: Updates notification preferences and refreshes the cached preferences.
+ */
 export const useUpdateNotifications = () => {
   const queryClient = useQueryClient();
   

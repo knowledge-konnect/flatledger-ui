@@ -17,7 +17,7 @@ import type { AdminPlanDto } from '../types/adminTypes';
 
 const planSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  monthlyAmount: z.string().refine(
+  price: z.string().refine(
     (v) => !isNaN(Number(v)) && Number(v) > 0,
     'Must be a positive number',
   ),
@@ -26,6 +26,10 @@ const planSchema = z.object({
     (v) => !isNaN(Number(v)) && Number.isInteger(Number(v)) && Number(v) >= 1,
     'Must be a whole number ≥ 1',
   ),
+  planGroup: z.string().optional(),
+  displayOrder: z.string().optional(),
+  isPopular: z.boolean().optional(),
+  discountPercentage: z.string().optional(),
 });
 type PlanFormData = z.infer<typeof planSchema>;
 
@@ -62,7 +66,7 @@ export default function AdminPlans() {
   const totalCount = data?.data.data.totalCount ?? 0;
 
   const createMutation = useMutation({
-    mutationFn: (body: { name: string; monthlyAmount: number; currency: string; durationMonths: number }) =>
+    mutationFn: (body: { name: string; price: number; currency: string; durationMonths: number }) =>
       adminPlansApi.create(body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_plans'] });
@@ -74,7 +78,7 @@ export default function AdminPlans() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: { name: string; monthlyAmount: number; currency: string; durationMonths: number } }) =>
+    mutationFn: ({ id, body }: { id: string; body: { name: string; price: number; currency: string; durationMonths: number } }) =>
       adminPlansApi.update(id, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_plans'] });
@@ -88,7 +92,7 @@ export default function AdminPlans() {
     mutationFn: (plan: AdminPlanDto) =>
       adminPlansApi.update(plan.id, {
         name: plan.name,
-        monthlyAmount: plan.monthlyAmount,
+        price: plan.price,
         currency: plan.currency,
         durationMonths: plan.durationMonths,
         isActive: false,
@@ -106,16 +110,20 @@ export default function AdminPlans() {
   });
 
   const openCreate = () => {
-    reset({ name: '', monthlyAmount: '', currency: 'INR', durationMonths: '' });
+    reset({ name: '', price: '', currency: 'INR', durationMonths: '', planGroup: '', displayOrder: '', isPopular: false, discountPercentage: '' });
     setCreateOpen(true);
   };
 
   const openEdit = (plan: AdminPlanDto) => {
     reset({
       name: plan.name,
-      monthlyAmount: String(plan.monthlyAmount),
+      price: String(plan.price),
       currency: plan.currency,
       durationMonths: String(plan.durationMonths),
+      planGroup: plan.planGroup ?? '',
+      displayOrder: plan.displayOrder != null ? String(plan.displayOrder) : '',
+      isPopular: plan.isPopular ?? false,
+      discountPercentage: plan.discountPercentage != null ? String(plan.discountPercentage) : '',
     });
     setEditTarget(plan);
   };
@@ -125,9 +133,13 @@ export default function AdminPlans() {
   const onSubmit = (formData: PlanFormData) => {
     const body = {
       name: formData.name,
-      monthlyAmount: Number(formData.monthlyAmount),
+      price: Number(formData.price),
       currency: formData.currency,
       durationMonths: Number(formData.durationMonths),
+      ...(formData.planGroup ? { planGroup: formData.planGroup } : {}),
+      ...(formData.displayOrder !== '' && formData.displayOrder != null ? { displayOrder: Number(formData.displayOrder) } : {}),
+      isPopular: formData.isPopular ?? false,
+      ...(formData.discountPercentage !== '' && formData.discountPercentage != null ? { discountPercentage: Number(formData.discountPercentage) } : { discountPercentage: null }),
     };
     if (editTarget) {
       updateMutation.mutate({ id: editTarget.id, body });
@@ -146,13 +158,20 @@ export default function AdminPlans() {
       cell: (row) => <span className="font-medium text-slate-900 dark:text-white">{row.name}</span>,
     },
     {
-      key: 'monthlyAmount',
-      header: 'Amount',
+      key: 'price',
+      header: 'Price',
       cell: (row) =>
-        `${row.currency} ${row.monthlyAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+        `${row.currency} ${Number(row.price ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+    },
+    {
+      key: 'maxFlats',
+      header: 'Max Flats',
+      cell: (row: AdminPlanDto) => row.maxFlats != null ? String(row.maxFlats) : '—',
     },
     { key: 'currency', header: 'Currency' },
-    { key: 'durationMonths', header: 'Duration', cell: (row) => `${row.durationMonths} mo` },
+    { key: 'durationMonths', header: 'Duration', cell: (row: AdminPlanDto) => `${row.durationMonths} mo` },
+    { key: 'planGroup', header: 'Group', cell: (row: AdminPlanDto) => row.planGroup ?? '—' },
+    { key: 'displayOrder', header: 'Order', cell: (row: AdminPlanDto) => row.displayOrder ?? '—' },
     {
       key: 'isActive',
       header: 'Status',
@@ -243,15 +262,20 @@ export default function AdminPlans() {
           <DrawerSection title="Plan Details">
             <DrawerField label="Name" value={viewTarget.name} />
             <DrawerField
-              label="Monthly Amount"
+              label="Price"
               value={
                 <span className="font-semibold">
-                  {`${viewTarget.currency} ${viewTarget.monthlyAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
+                  {`${viewTarget.currency} ${Number(viewTarget.price ?? 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`}
                 </span>
               }
             />
             <DrawerField label="Currency" value={viewTarget.currency} />
+            <DrawerField label="Max Flats" value={viewTarget.maxFlats != null ? String(viewTarget.maxFlats) : '—'} />
             <DrawerField label="Duration" value={`${viewTarget.durationMonths} month${viewTarget.durationMonths !== 1 ? 's' : ''}`} />
+            <DrawerField label="Group" value={viewTarget.planGroup ?? '—'} />
+            <DrawerField label="Display Order" value={viewTarget.displayOrder != null ? String(viewTarget.displayOrder) : '—'} />
+            <DrawerField label="Popular" value={viewTarget.isPopular ? 'Yes' : 'No'} />
+            <DrawerField label="Discount" value={viewTarget.discountPercentage != null ? `${viewTarget.discountPercentage}%` : '—'} />
             <DrawerField
               label="Status"
               value={
@@ -305,9 +329,9 @@ export default function AdminPlans() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <FieldLabel>Monthly Amount</FieldLabel>
-                  <input {...register('monthlyAmount')} type="number" step="0.01" placeholder="999.00" className={inputCls} />
-                  {errors.monthlyAmount && <p className="mt-1 text-xs text-red-500">{errors.monthlyAmount.message}</p>}
+                  <FieldLabel>Price</FieldLabel>
+                  <input {...register('price')} type="number" step="0.01" placeholder="999.00" className={inputCls} />
+                  {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price.message}</p>}
                 </div>
                 <div>
                   <FieldLabel>Currency</FieldLabel>
@@ -320,6 +344,30 @@ export default function AdminPlans() {
                 <FieldLabel>Duration (months)</FieldLabel>
                 <input {...register('durationMonths')} type="number" placeholder="12" className={inputCls} />
                 {errors.durationMonths && <p className="mt-1 text-xs text-red-500">{errors.durationMonths.message}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <FieldLabel>Plan Group</FieldLabel>
+                  <input {...register('planGroup')} placeholder="e.g. 50_FLATS" className={inputCls} />
+                  <p className="mt-1 text-xs text-slate-400">Groups monthly + yearly into one pricing card</p>
+                </div>
+                <div>
+                  <FieldLabel>Display Order</FieldLabel>
+                  <input {...register('displayOrder')} type="number" placeholder="1" className={inputCls} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <FieldLabel>Discount %</FieldLabel>
+                  <input {...register('discountPercentage')} type="number" step="0.01" placeholder="15" className={inputCls} />
+                  <p className="mt-1 text-xs text-slate-400">Shown on yearly card (e.g. Save 15%)</p>
+                </div>
+                <div className="flex items-center gap-2 pt-5">
+                  <input type="checkbox" id="isPopular" {...register('isPopular')} className="accent-indigo-600 w-4 h-4" />
+                  <label htmlFor="isPopular" className="text-sm font-medium text-slate-700 dark:text-slate-300">Mark as Most Popular</label>
+                </div>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">

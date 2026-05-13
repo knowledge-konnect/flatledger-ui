@@ -13,6 +13,7 @@ import {
   ReportState, initialState, ReportLoading, ReportError, StatCard,
   QuickDatePresets, startOfMonth, today, fmtDate, formatCurrency, DatePresetKey,
 } from './_shared';
+import { useSocietyPeriodBounds } from '../../hooks/useSocietyPeriodBounds';
 
 export default function FundLedgerPage() {
   const [startDate, setStartDate] = useState(startOfMonth());
@@ -21,6 +22,14 @@ export default function FundLedgerPage() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [state, setState] = useState<ReportState<FundLedgerData>>(initialState());
+  const { minDate, maxDate, clampDate } = useSocietyPeriodBounds();
+
+  useEffect(() => {
+    const nextStart = clampDate(startDate);
+    const nextEnd = clampDate(endDate);
+    if (nextStart !== startDate) setStartDate(nextStart);
+    if (nextEnd !== endDate) setEndDate(nextEnd);
+  }, [startDate, endDate, clampDate]);
 
   const fetchData = useCallback((sd: string, ed: string) => {
     setState({ loading: true, error: null, data: null });
@@ -39,11 +48,13 @@ export default function FundLedgerPage() {
   }, []);
 
   const applyPreset = (preset: DatePresetKey, sd: string, ed: string) => {
+    const safeStart = clampDate(sd);
+    const safeEnd = clampDate(ed);
     setActiveDatePreset(preset);
-    setStartDate(sd);
-    setEndDate(ed);
+    setStartDate(safeStart);
+    setEndDate(safeEnd);
     setPage(0);
-    fetchData(sd, ed);
+    fetchData(safeStart, safeEnd);
   };
 
   const d = state.data;
@@ -88,21 +99,25 @@ export default function FundLedgerPage() {
             <input
               type="date"
               value={startDate}
-              onChange={e => { setStartDate(e.target.value); setActiveDatePreset(null); }}
+              min={minDate}
+              max={maxDate}
+              onChange={e => { setStartDate(clampDate(e.target.value)); setActiveDatePreset(null); }}
               className="h-8 px-2.5 text-xs font-medium rounded-md border border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
             <span className="text-slate-500 dark:text-slate-400 text-sm select-none">–</span>
             <input
               type="date"
               value={endDate}
-              onChange={e => { setEndDate(e.target.value); setActiveDatePreset(null); }}
+              min={minDate}
+              max={maxDate}
+              onChange={e => { setEndDate(clampDate(e.target.value)); setActiveDatePreset(null); }}
               className="h-8 px-2.5 text-xs font-medium rounded-md border border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
           </div>
           <div className="w-px h-5 bg-slate-300 dark:bg-slate-600 self-center" />
           <QuickDatePresets onSelect={applyPreset} activeKey={activeDatePreset} />
           <div className="flex-1" />
-          <Button variant="primary" size="sm" onClick={() => { setPage(0); fetchData(startDate, endDate); }} disabled={state.loading}>
+          <Button variant="primary" size="sm" onClick={() => { setPage(0); fetchData(clampDate(startDate), clampDate(endDate)); }} disabled={state.loading}>
             {state.loading
               ? <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Loading…</>
               : <><RefreshCw className="w-3 h-3 mr-1" /> Apply</>}

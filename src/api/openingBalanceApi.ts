@@ -47,7 +47,7 @@ function normalizeStatus(raw: any): OpeningBalanceStatus {
   const summary = pickSummarySource(raw);
   return {
     isApplied: Boolean(src.isApplied ?? src.is_applied ?? false),
-    appliedAt: src.appliedAt ?? src.applied_at ?? null,
+    appliedAt: src.appliedAt ?? src.transactionDate ?? src.applied_at ?? null,
     appliedBy: src.appliedBy ?? src.applied_by ?? null,
     societyOpeningAmount: firstDefinedNumber(
       src.societyOpeningAmount,

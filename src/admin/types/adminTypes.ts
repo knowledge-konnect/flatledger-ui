@@ -42,26 +42,40 @@ export interface AdminUser {
 export interface AdminPlanDto {
   id: string;
   name: string;
-  monthlyAmount: number;
+  price: number;
   currency: string;
   isActive?: boolean;
   durationMonths: number;
+  maxFlats?: number;
+  planGroup?: string;
+  displayOrder?: number;
+  isPopular?: boolean;
+  discountPercentage?: number | null;
+  description?: string;
   createdAt?: string;
 }
 
 export interface AdminPlanCreateRequest {
   name: string;
-  monthlyAmount: number;
+  price: number;
   currency: string;
   durationMonths: number;
+  planGroup?: string;
+  displayOrder?: number;
+  isPopular?: boolean;
+  discountPercentage?: number | null;
 }
 
 export interface AdminPlanUpdateRequest {
   name: string;
-  monthlyAmount: number;
+  price: number;
   currency: string;
   durationMonths: number;
   isActive?: boolean;
+  planGroup?: string;
+  displayOrder?: number;
+  isPopular?: boolean;
+  discountPercentage?: number | null;
 }
 
 export type PlanListParams = {

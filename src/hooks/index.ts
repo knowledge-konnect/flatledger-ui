@@ -6,9 +6,3 @@ export { useClickOutside } from './useClickOutside';
 export { usePrevious } from './usePrevious';
 export { useIntersectionObserver } from './useIntersectionObserver';
 export { useCopyToClipboard } from './useCopyToClipboard';
-export {
-  useOptimisticUpdate,
-  useOptimisticCreate,
-  useOptimisticDelete,
-  useOptimisticToggle,
-} from './useOptimisticUpdate';

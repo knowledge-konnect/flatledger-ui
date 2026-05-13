@@ -1,5 +1,4 @@
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
 import { z } from 'zod';
 import { CreateFlatDto } from '../api/flatsApi';
 
@@ -24,7 +23,31 @@ export interface ParsedFlatRow {
 // Zod schema for a single import row
 // ---------------------------------------------------------------------------
 
-const VALID_STATUS_CODES = ['Owner occupied', 'vacant', 'rented', 'under_maintenance'] as const;
+const VALID_STATUS_CODES = ['owner_occupied', 'vacant', 'rented', 'under_maintenance'] as const;
+
+// Maps human-readable / display-name variants (lowercased) → API code
+const STATUS_ALIASES: Record<string, string> = {
+  'owner occupied':      'owner_occupied',
+  'owner_occupied':      'owner_occupied',
+  'owneroccupied':       'owner_occupied',
+  'owner':               'owner_occupied',
+  'occupied':            'owner_occupied',
+  'vacant':              'vacant',
+  'empty':               'vacant',
+  'unoccupied':          'vacant',
+  'rented':              'rented',
+  'tenant':              'rented',
+  'on rent':             'rented',
+  'on_rent':             'rented',
+  'under maintenance':   'under_maintenance',
+  'under_maintenance':   'under_maintenance',
+  'maintenance':         'under_maintenance',
+  'in maintenance':      'under_maintenance',
+};
+
+function normalizeStatusCode(raw: string): string {
+  return STATUS_ALIASES[raw.trim().toLowerCase()] ?? raw.trim();
+}
 
 const rowSchema = z.object({
   flatNo: z.string().min(1, 'Flat number is required'),
@@ -47,7 +70,7 @@ const rowSchema = z.object({
     .optional()
     .refine(
       v => !v || VALID_STATUS_CODES.includes(v as typeof VALID_STATUS_CODES[number]),
-        `Must be one of: Owner occupied, vacant, rented, under_maintenance`
+        `Must be one of: owner_occupied, vacant, rented, under_maintenance`
     ),
 });
 
@@ -144,7 +167,7 @@ function validateRow(normalized: Record<string, string>, rowIndex: number): Pars
     contactMobile: normalized['contactMobile'] ?? '',
     maintenanceAmount: rawAmount || undefined,
     contactEmail: normalized['contactEmail'] || undefined,
-    statusCode: normalized['statusCode'] || undefined,
+    statusCode: normalized['statusCode'] ? normalizeStatusCode(normalized['statusCode']) : undefined,
   });
 
   if (amountError) {
@@ -172,7 +195,7 @@ function validateRow(normalized: Record<string, string>, rowIndex: number): Pars
         contactEmail: d.contactEmail,
         // Only include if explicitly provided — backend uses its config when absent
         ...(rawAmount ? { maintenanceAmount: Number(rawAmount) } : {}),
-        statusCode: d.statusCode ?? 'Owner occupied',
+        statusCode: d.statusCode ?? 'owner_occupied',
       },
     };
   }
@@ -230,8 +253,9 @@ function parseCsv(file: File): Promise<Record<string, string>[]> {
 function parseExcel(file: File): Promise<Record<string, string>[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = e => {
+    reader.onload = async e => {
       try {
+        const XLSX = await import('xlsx');
         const data = e.target?.result;
         const workbook = XLSX.read(data, { type: 'array' });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -250,18 +274,23 @@ function parseExcel(file: File): Promise<Record<string, string>[]> {
 }
 
 
-export function downloadImportTemplate(): void {
+export async function downloadImportTemplate(): Promise<void> {
+  const XLSX = await import('xlsx');
   const wb = XLSX.utils.book_new();
+
+  // Status display names — used in dropdown and sample rows
+  // The parser normalises these to API codes via STATUS_ALIASES
+  const STATUS_OPTIONS = ['Owner Occupied', 'Vacant', 'Rented', 'Under Maintenance'];
 
   // ── Sheet 1: Flats Data ────────────────────────────────────────────────
   const dataRows = [
     // Column header row — matches alias map exactly
     ['Flat No', 'Owner Name', 'Mobile', 'Email', 'Status'],
 
-    // Sample rows — replace with your data
-    ['101', 'Ramesh Kumar', '9876543210', 'ramesh@example.com', 'Owner occupied'],
-    ['102', 'Sunita Mehta', '9123456789', '', 'vacant'],
-    ['103', 'Arjun Patel', '9988776655', '', ''],
+    // Sample rows using display names (natural for users)
+    ['101', 'Ramesh Kumar', '9876543210', 'ramesh@example.com', 'Owner Occupied'],
+    ['102', 'Sunita Mehta', '9123456789', '', 'Vacant'],
+    ['103', 'Arjun Patel', '9988776655', '', 'Rented'],
   ];
 
   const ws1 = XLSX.utils.aoa_to_sheet(dataRows);
@@ -275,6 +304,21 @@ export function downloadImportTemplate(): void {
     { wch: 22 }, // Status
   ];
 
+  // ── Dropdown validation on column E (Status) rows 2–1001 ──────────────
+  // Uses an inline list so no hidden sheet is needed. Excel/LibreOffice will
+  // show a picker; the importer also accepts free-typed values via STATUS_ALIASES.
+  const dropdownFormula = `"${STATUS_OPTIONS.join(',')}"`;
+  if (!ws1['!dataValidations']) ws1['!dataValidations'] = [];
+  (ws1['!dataValidations'] as object[]).push({
+    type: 'list',
+    sqref: 'E2:E1001',
+    formula1: dropdownFormula,
+    showDropDown: false,   // false = show arrow button in Excel
+    showErrorMessage: true,
+    errorTitle: 'Invalid Status',
+    error: `Choose from: ${STATUS_OPTIONS.join(', ')}`,
+  });
+
   XLSX.utils.book_append_sheet(wb, ws1, 'Flats Data');
 
   // ── Sheet 2: Instructions ──────────────────────────────────────────────
@@ -286,12 +330,13 @@ export function downloadImportTemplate(): void {
     ['Owner Name', 'YES', 'Full name of the flat owner', 'Ramesh Kumar'],
     ['Mobile',     'YES', 'Contact mobile number (min 10 digits)', '9876543210'],
     ['Email',      'No',  'Owner email address', 'owner@example.com'],
-    ['Status',     'No',  'One of: Owner occupied, vacant, rented, under_maintenance. Defaults to "Owner occupied" if blank.', 'Owner occupied'],
+    ['Status',     'No',  `Choose from dropdown: ${STATUS_OPTIONS.join(', ')}. Defaults to "Owner Occupied" if blank.`, 'Owner Occupied'],
     [],
     ['NOTE: Maintenance Amount'],
     ['Maintenance amount is configured automatically from your society settings. You do not need to include it in the file.'],
     [],
     ['RULES'],
+    ['• The Status column has a dropdown — click the cell and pick a value (no typing required).'],
     ['• Delete the 3 sample rows (rows 2-4) before filling in your own data — or replace them directly.'],
     ['• Columns are case-insensitive — "Flat No", "flat no", "flatNo" all work.'],
     ['• Do NOT rename the "Flats Data" sheet; the importer reads the first sheet.'],
@@ -300,9 +345,27 @@ export function downloadImportTemplate(): void {
   ];
 
   const ws2 = XLSX.utils.aoa_to_sheet(instrRows);
-  ws2['!cols'] = [{ wch: 24 }, { wch: 12 }, { wch: 50 }, { wch: 30 }];
+  ws2['!cols'] = [{ wch: 24 }, { wch: 12 }, { wch: 55 }, { wch: 30 }];
 
   XLSX.utils.book_append_sheet(wb, ws2, 'Instructions');
+
+  // ── Sheet 3: Status Codes Reference ───────────────────────────────────
+  const statusRows: (string | null)[][] = [
+    ['STATUS OPTIONS REFERENCE'],
+    [],
+    ['Display Name (use in file)', 'Internal Code'],
+    ['Owner Occupied',  'owner_occupied'],
+    ['Vacant',          'vacant'],
+    ['Rented',          'rented'],
+    ['Under Maintenance','under_maintenance'],
+    [],
+    ['The Status column in "Flats Data" has a dropdown — just pick a value.'],
+    ['If left blank, "Owner Occupied" is used by default.'],
+  ];
+
+  const ws3 = XLSX.utils.aoa_to_sheet(statusRows);
+  ws3['!cols'] = [{ wch: 28 }, { wch: 22 }];
+  XLSX.utils.book_append_sheet(wb, ws3, 'Status Options');
 
   // ── Download ───────────────────────────────────────────────────────────
   XLSX.writeFile(wb, 'flats_import_template.xlsx');

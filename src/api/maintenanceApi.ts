@@ -35,6 +35,8 @@ export interface MaintenancePaymentDto {
   totalPaid?: number;
   allocations?: { billPublicId: string; allocatedAmount: number; period?: string | null }[];
   remainingAdvance?: number;
+  /** Bill's current status: 'unpaid' | 'partial' | 'paid' | 'overdue'. Null for advance/OB rows. */
+  billStatus?: string | null;
   /** Flat's total outstanding immediately after this payment was applied (null for records created before this field was added) */
   outstandingAfterPayment?: number | null;
 }
@@ -44,12 +46,14 @@ export interface MaintenancePaymentDto {
  * POST /maintenance-payments
  */
 export interface CreateMaintenancePaymentDto {
-  flatPublicId: string; // UUID - required
-  amount: number; // Required, must be > 0
-  paymentDate: string; // ISO 8601 DateTime format
-  paymentModeId: string; // Required: payment mode code/id
-  paymentModeCode?: string; // Backward compatibility for validators expecting paymentModeCode
-  referenceNumber?: string; // Transaction/cheque reference
+  flatPublicId: string;
+  amount: number;
+  paymentDate: string;
+  paymentModeId: string;
+  paymentModeCode?: string;
+  referenceNumber?: string;
+  receiptUrl?: string;  // URL to receipt/proof
+  notes?: string;
 }
 
 export interface PaymentAllocationDto {
@@ -113,7 +117,11 @@ export const maintenanceApi = {
    * @returns Promise<CreateMaintenancePaymentResponse>
    */
   async createPayment(payload: CreateMaintenancePaymentDto, idempotencyKey?: string): Promise<CreateMaintenancePaymentResponse> {
-    const response = await apiClient.post<ApiResponse<CreateMaintenancePaymentResponse>>('/maintenance-payments', payload, {
+    const body = {
+      ...payload,
+      paymentModeCode: payload.paymentModeCode ?? payload.paymentModeId,
+    };
+    const response = await apiClient.post<ApiResponse<CreateMaintenancePaymentResponse>>('/maintenance-payments', body, {
       headers: idempotencyKey
         ? {
             'Idempotency-Key': idempotencyKey,
@@ -157,13 +165,19 @@ export const maintenanceApi = {
   },
 
   /**
-   * List all maintenance payments for the society
-   * GET /maintenance-payments?period=2026-03
-   * @param period Optional period filter in YYYY-MM format
+   * List all maintenance payments for the society (paginated)
+   * GET /maintenance-payments?period=2026-03&page=1&pageSize=50
+   * @param period Optional period filter in YYYY-MM format (must match /^\d{4}-\d{2}$/)
+   * @param page Page number (default 1)
+   * @param pageSize Page size (default 50, max 200)
    * @returns Promise<MaintenancePaymentDto[]>
    */
-  async listBySociety(period?: string): Promise<MaintenancePaymentDto[]> {
-    const params = period ? { period } : {};
+  async listBySociety(period?: string, page = 1, pageSize = 50): Promise<MaintenancePaymentDto[]> {
+    if (period && !/^\d{4}-\d{2}$/.test(period)) {
+      throw new Error('Period must be in YYYY-MM format (e.g., 2026-04)');
+    }
+    const params: Record<string, string | number> = { page, pageSize };
+    if (period) params.period = period;
     const response = await apiClient.get<ApiResponse<unknown>>('/maintenance-payments', { params });
     return unwrapArrayData<MaintenancePaymentDto>(response.data.data, 'payments');
   },
