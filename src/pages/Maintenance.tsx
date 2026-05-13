@@ -92,6 +92,13 @@ function isPaymentLocked(payment: any): boolean {
   return new Date(payment.paymentDate) < cutoff;
 }
 
+function MtSortIcon({ field, sortField, sortDir }: { field: 'paymentDate' | 'flatNumber' | 'amount'; sortField: string; sortDir: string }) {
+  if (sortField !== field) return <ChevronsUpDown className="w-3 h-3 ml-1 opacity-40" />;
+  return sortDir === 'asc'
+    ? <ChevronUp className="w-3 h-3 ml-1" />
+    : <ChevronDown className="w-3 h-3 ml-1" />;
+}
+
 export default function Maintenance() {
   const { minMonth, clampMonth } = useSocietyPeriodBounds();
   const [showAddModal, setShowAddModal] = useState(false);
@@ -124,12 +131,7 @@ export default function Maintenance() {
     }
   };
 
-  const SortIcon = ({ field }: { field: 'paymentDate' | 'flatNumber' | 'amount' }) => {
-    if (sortField !== field) return <ChevronsUpDown className="w-3 h-3 ml-1 opacity-40" />;
-    return sortDir === 'asc'
-      ? <ChevronUp className="w-3 h-3 ml-1" />
-      : <ChevronDown className="w-3 h-3 ml-1" />;
-  };
+  // SortIcon is defined at module level as MtSortIcon — see above
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
@@ -521,44 +523,56 @@ export default function Maintenance() {
   };
 
   // Filter by search query (period filtering now handled by backend)
-  const searchFilteredPayments = searchQuery
-    ? payments.filter(p => {
-        const q = searchQuery.toLowerCase();
-        return (
-          (p.flatNumber || '').toLowerCase().includes(q) ||
-          (p.recordedByName || '').toLowerCase().includes(q) ||
-          (p.notes || '').toLowerCase().includes(q) ||
-          (p.referenceNumber || '').toLowerCase().includes(q) ||
-          (p.paymentModeName || '').toLowerCase().includes(q)
-        );
-      })
-    : payments;
+  const searchFilteredPayments = useMemo(
+    () =>
+      searchQuery
+        ? payments.filter(p => {
+            const q = searchQuery.toLowerCase();
+            return (
+              (p.flatNumber || '').toLowerCase().includes(q) ||
+              (p.recordedByName || '').toLowerCase().includes(q) ||
+              (p.notes || '').toLowerCase().includes(q) ||
+              (p.referenceNumber || '').toLowerCase().includes(q) ||
+              (p.paymentModeName || '').toLowerCase().includes(q)
+            );
+          })
+        : payments,
+    [payments, searchQuery]
+  );
 
-  const filteredPayments = searchFilteredPayments.filter((payment) => {
-    if (flatFilter !== 'all' && payment.flatPublicId !== flatFilter) return false;
+  const filteredPayments = useMemo(
+    () =>
+      searchFilteredPayments.filter((payment) => {
+        if (flatFilter !== 'all' && payment.flatPublicId !== flatFilter) return false;
 
-    if (allocationFilter === 'all') return true;
+        if (allocationFilter === 'all') return true;
 
-    const applied = appliedBucketsByPayment.get(payment.publicId) || [];
-    const hasCurrent = applied.some((entry) => entry.kind === 'Current');
-    const hasArrear = applied.some((entry) => entry.kind === 'Arrear');
+        const applied = appliedBucketsByPayment.get(payment.publicId) || [];
+        const hasCurrent = applied.some((entry) => entry.kind === 'Current');
+        const hasArrear = applied.some((entry) => entry.kind === 'Arrear');
 
-    if (allocationFilter === 'current') return hasCurrent;
-    if (allocationFilter === 'arrears') return hasArrear;
-    return true;
-  });
+        if (allocationFilter === 'current') return hasCurrent;
+        if (allocationFilter === 'arrears') return hasArrear;
+        return true;
+      }),
+    [searchFilteredPayments, flatFilter, allocationFilter, appliedBucketsByPayment]
+  );
 
-  const sortedPayments = [...filteredPayments].sort((a, b) => {
-    let cmp = 0;
-    if (sortField === 'paymentDate') {
-      cmp = new Date(a.paymentDate).getTime() - new Date(b.paymentDate).getTime();
-    } else if (sortField === 'flatNumber') {
-      cmp = (a.flatNumber || '').localeCompare(b.flatNumber || '', undefined, { numeric: true });
-    } else if (sortField === 'amount') {
-      cmp = a.amount - b.amount;
-    }
-    return sortDir === 'asc' ? cmp : -cmp;
-  });
+  const sortedPayments = useMemo(
+    () =>
+      [...filteredPayments].sort((a, b) => {
+        let cmp = 0;
+        if (sortField === 'paymentDate') {
+          cmp = new Date(a.paymentDate).getTime() - new Date(b.paymentDate).getTime();
+        } else if (sortField === 'flatNumber') {
+          cmp = (a.flatNumber || '').localeCompare(b.flatNumber || '', undefined, { numeric: true });
+        } else if (sortField === 'amount') {
+          cmp = a.amount - b.amount;
+        }
+        return sortDir === 'asc' ? cmp : -cmp;
+      }),
+    [filteredPayments, sortField, sortDir]
+  );
 
   const hasActiveFilters =
     searchQuery.trim().length > 0 ||
@@ -910,7 +924,7 @@ export default function Maintenance() {
                         className="inline-flex items-center rounded focus:outline-none focus:ring-2 focus:ring-white/60"
                         aria-label={`Sort by flat number (${sortField === 'flatNumber' && sortDir === 'asc' ? 'ascending' : 'descending'})`}
                       >
-                        Flat <SortIcon field="flatNumber" />
+                        Flat <MtSortIcon field="flatNumber" sortField={sortField} sortDir={sortDir} />
                       </button>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-100 uppercase tracking-wider">Paid Date</th>
@@ -922,7 +936,7 @@ export default function Maintenance() {
                         className="inline-flex items-center justify-end w-full rounded focus:outline-none focus:ring-2 focus:ring-white/60"
                         aria-label={`Sort by amount (${sortField === 'amount' && sortDir === 'asc' ? 'ascending' : 'descending'})`}
                       >
-                        Amount <SortIcon field="amount" />
+                        Amount <MtSortIcon field="amount" sortField={sortField} sortDir={sortDir} />
                       </button>
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-100 uppercase tracking-wider">Mode</th>

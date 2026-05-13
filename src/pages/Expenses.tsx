@@ -187,19 +187,27 @@ export default function Expenses() {
     return filtered;
   }, [startDate, endDate, searchTerm, sortBy, selectedCategoryFilter, expensesData]);
 
-  const totalExpenses = filteredAndSortedExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalExpenses = useMemo(
+    () => filteredAndSortedExpenses.reduce((sum, e) => sum + e.amount, 0),
+    [filteredAndSortedExpenses]
+  );
 
-  const categoryData = Object.entries(
-    filteredAndSortedExpenses.reduce((acc, expense) => {
-      acc[expense.categoryCode] = (acc[expense.categoryCode] || 0) + expense.amount;
-      return acc;
-    }, {} as Record<string, number>)
-  ).map(([categoryCode, value]) => ({
-    name: getCategoryLabel(categoryCode),
-    value,
-    color: getCategoryColor(categoryCode),
-    categoryKey: categoryCode,
-  }));
+  const categoryData = useMemo(
+    () =>
+      Object.entries(
+        filteredAndSortedExpenses.reduce((acc, expense) => {
+          acc[expense.categoryCode] = (acc[expense.categoryCode] || 0) + expense.amount;
+          return acc;
+        }, {} as Record<string, number>)
+      ).map(([categoryCode, value]) => ({
+        name: getCategoryLabel(categoryCode),
+        value,
+        color: getCategoryColor(categoryCode),
+        categoryKey: categoryCode,
+      })),
+    // getCategoryLabel depends on categoriesData; getCategoryColor depends on categoryColorMap
+    [filteredAndSortedExpenses, categoriesData, categoryColorMap]
+  );
 
   // Keep KPI comparisons aligned with the currently selected filter context.
   const previousPeriodMetrics = useMemo(() => {
@@ -255,37 +263,41 @@ export default function Expenses() {
     };
   }, [startDate, endDate, expensesData, searchTerm, selectedCategoryFilter, categoriesData]);
 
-  const monthOverMonthChangePct = previousPeriodMetrics.total > 0
-    ? ((totalExpenses - previousPeriodMetrics.total) / previousPeriodMetrics.total) * 100
-    : null;
+  const { monthOverMonthChangePct, monthOverMonthDisplay } = useMemo(() => {
+    const changePct = previousPeriodMetrics.total > 0
+      ? ((totalExpenses - previousPeriodMetrics.total) / previousPeriodMetrics.total) * 100
+      : null;
 
-  const monthOverMonthDisplay = monthOverMonthChangePct !== null
-    ? {
-        value: `${monthOverMonthChangePct > 0 ? '+' : ''}${monthOverMonthChangePct.toFixed(1)}%`,
-        valueClass: monthOverMonthChangePct > 0
-          ? 'text-rose-600 dark:text-rose-400'
-          : 'text-emerald-600 dark:text-emerald-400',
-        subtitle: 'vs previous period',
-      }
-    : totalExpenses > 0
+    const display = changePct !== null
       ? {
-          value: 'New',
-          valueClass: 'text-blue-600 dark:text-blue-400',
-          subtitle: 'No previous-period expenses',
+          value: `${changePct > 0 ? '+' : ''}${changePct.toFixed(1)}%`,
+          valueClass: changePct > 0
+            ? 'text-rose-600 dark:text-rose-400'
+            : 'text-emerald-600 dark:text-emerald-400',
+          subtitle: 'vs previous period',
         }
-      : {
-          value: '0.0%',
-          valueClass: 'text-slate-900 dark:text-white',
-          subtitle: 'No expenses in both periods',
-        };
+      : totalExpenses > 0
+        ? {
+            value: 'New',
+            valueClass: 'text-blue-600 dark:text-blue-400',
+            subtitle: 'No previous-period expenses',
+          }
+        : {
+            value: '0.0%',
+            valueClass: 'text-slate-900 dark:text-white',
+            subtitle: 'No expenses in both periods',
+          };
 
-  const topCategory = categoryData.reduce((max, category) => (
-    !max || category.value > max.value ? category : max
-  ), null as (typeof categoryData[number] | null));
+    return { monthOverMonthChangePct: changePct, monthOverMonthDisplay: display };
+  }, [previousPeriodMetrics.total, totalExpenses]);
 
-  const topCategorySharePct = totalExpenses > 0 && topCategory
-    ? (topCategory.value / totalExpenses) * 100
-    : 0;
+  const { topCategory, topCategorySharePct } = useMemo(() => {
+    const top = categoryData.reduce((max, category) => (
+      !max || category.value > max.value ? category : max
+    ), null as (typeof categoryData[number] | null));
+    const pct = totalExpenses > 0 && top ? (top.value / totalExpenses) * 100 : 0;
+    return { topCategory: top, topCategorySharePct: pct };
+  }, [categoryData, totalExpenses]);
 
   const onSubmit = async (data: ExpenseFormData) => {
     setFormError(null); // Reset error at start
@@ -420,27 +432,7 @@ export default function Expenses() {
      EMPTY STATE COMPONENT
   ===================================================== */
 
-  const EmptyState = () => (
-    <div className="flex flex-col items-center justify-center py-16">
-      <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-        <TrendingDown className="w-8 h-8 text-slate-400 dark:text-slate-500" />
-      </div>
-      <p className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No expenses found</p>
-      <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 max-w-sm text-center">
-        {searchTerm ? 'No expenses match your search. Try adjusting your filters.' : 'Start tracking expenses to get insights into your spending patterns.'}
-      </p>
-      {!searchTerm && isAdmin && (
-        <Button onClick={() => {
-          setSelectedExpense(null);
-          reset();
-          setShowAddModal(true);
-        }}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Your First Expense
-        </Button>
-      )}
-    </div>
-  );
+
 
   return (
     <DashboardLayout title="Expenses">
@@ -775,7 +767,25 @@ export default function Expenses() {
                 </table>
               </div>
             ) : filteredAndSortedExpenses.length === 0 ? (
-              <EmptyState />
+              <div className="flex flex-col items-center justify-center py-16">
+                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                  <TrendingDown className="w-8 h-8 text-slate-400 dark:text-slate-500" />
+                </div>
+                <p className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No expenses found</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 max-w-sm text-center">
+                  {searchTerm ? 'No expenses match your search. Try adjusting your filters.' : 'Start tracking expenses to get insights into your spending patterns.'}
+                </p>
+                {!searchTerm && isAdmin && (
+                  <Button onClick={() => {
+                    setSelectedExpense(null);
+                    reset();
+                    setShowAddModal(true);
+                  }}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Your First Expense
+                  </Button>
+                )}
+              </div>
             ) : (
               <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg">
                 <table className="w-full">

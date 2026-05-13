@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react';
+﻿import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
@@ -9,7 +9,7 @@ import {
   Clock,
   Info,
 } from 'lucide-react';
-import ReactApexChart from 'react-apexcharts';
+const ReactApexChart = lazy(() => import('react-apexcharts'));
 import DashboardLayout from '../components/layout/DashboardLayout';
 import { SubscriptionSummary } from '../components/SubscriptionSummary';
 import SetupBanner from '../components/dashboard/SetupBanner';
@@ -435,6 +435,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               ) : (
+                <Suspense fallback={<ChartSkeleton height={260} />}>
                 <ReactApexChart
                   type="bar"
                   height={260}
@@ -468,6 +469,7 @@ export default function Dashboard() {
                     { name: 'Expense', data: visibleTrends.map((t: any) => t.expense ?? 0) },
                   ]}
                 />
+                </Suspense>
               )}
             </Card>
 
@@ -495,6 +497,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div>
+                  <Suspense fallback={<ChartSkeleton height={200} />}>
                   <ReactApexChart
                     type="donut"
                     height={200}
@@ -510,6 +513,7 @@ export default function Dashboard() {
                     }}
                     series={expBreakdown.map((e: any) => e.amount)}
                   />
+                  </Suspense>
                   <ul className="w-full mt-3 space-y-2">
                     {expBreakdown.slice(0, 5).map((item: any, i: number) => (
                       <li key={i} className="flex items-center justify-between text-xs">
