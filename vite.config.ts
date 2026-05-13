@@ -34,13 +34,31 @@ export default defineConfig(({ mode }) => ({
     dedupe: ['react', 'react-dom', '@tanstack/react-query'],
   },
   build: {
+    // Target modern browsers — allows smaller output (no legacy transforms)
+    target: 'es2020',
+    // Split CSS per chunk so each route only loads the CSS it needs
+    cssCodeSplit: true,
     rollupOptions: {
       output: {
+        // Give chunks stable, content-hashed names for long-term caching
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash][extname]',
         manualChunks: {
+          // Core React runtime — tiny, cached forever
           vendor: ['react', 'react-dom', 'react-router-dom'],
+          // Data-fetching — stable, rarely changes
           query: ['@tanstack/react-query'],
+          // Charts — largest library (~400KB), only needed on chart pages
           charts: ['apexcharts', 'react-apexcharts'],
+          // Animation — only used on public/landing pages
           motion: ['framer-motion'],
+          // Icons — large tree-shakeable lib; isolated so it benefits from caching
+          icons: ['lucide-react'],
+          // Forms — used across many pages but not on initial load
+          forms: ['react-hook-form', '@hookform/resolvers', 'zod'],
+          // i18n — only needed after app initialises
+          i18n: ['i18next', 'react-i18next'],
         },
       },
     },

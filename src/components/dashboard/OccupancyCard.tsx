@@ -1,4 +1,5 @@
-﻿import { Building2 } from 'lucide-react';
+﻿import { memo } from 'react';
+import { Building2 } from 'lucide-react';
 import Card from '../ui/Card';
 import { FlatDto } from '../../api/flatsApi';
 
@@ -31,7 +32,7 @@ function getOccupancyGroups(flats: FlatDto[]): StatusGroup[] {
   ];
 }
 
-export function OccupancyCard({ flats, loading = false }: OccupancyCardProps) {
+export const OccupancyCard = memo(function OccupancyCard({ flats, loading = false }: OccupancyCardProps) {
   if (loading) {
     return (
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm animate-pulse">
@@ -123,4 +124,4 @@ export function OccupancyCard({ flats, loading = false }: OccupancyCardProps) {
       )}
     </Card>
   );
-}
+});

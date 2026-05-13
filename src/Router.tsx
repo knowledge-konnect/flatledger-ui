@@ -5,17 +5,17 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth, AuthProvider } from './contexts/AuthProvider';
 import { FlatLedgerIcon } from './components/ui/FlatLedgerIcon';
 import { RoleCode } from './types/roles';
-import { AdminApp } from './admin/AdminApp';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
 
-import LandingPage from './pages/LandingPage';
-import NotFound from './pages/NotFound';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfService from './pages/TermsOfService';
+// Every top-level component is lazy-loaded so its code is NOT part of the
+// initial JS bundle. This keeps the entry chunk small and only loads each
+// module on first navigation to that route.
+const AdminApp = lazy(() => import('./admin/AdminApp').then(m => ({ default: m.AdminApp })));
 
-// Lazy-load all page-level components so each route is code-split into its own
-// chunk. This keeps the initial bundle small and only loads a page's JS when
-// the user first navigates to it.
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const Subscription = lazy(() => import('./pages/Subscription'));
 const FreeTrial = lazy(() => import('./pages/FreeTrial'));
 const Login = lazy(() => import('./pages/Login'));

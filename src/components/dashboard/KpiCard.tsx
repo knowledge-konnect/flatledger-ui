@@ -1,4 +1,5 @@
-﻿import { ChevronRight } from 'lucide-react';
+﻿import { memo } from 'react';
+import { ChevronRight } from 'lucide-react';
 
 export type KpiColorVariant =
   | 'green'
@@ -30,7 +31,7 @@ const colorMap: Record<KpiColorVariant, { bg: string; icon: string; bar: string;
   emerald: { bg: 'bg-[#DCFCE7] dark:bg-emerald-950/30',  icon: 'text-[#059669] dark:text-emerald-400',  bar: 'bg-[#10B981]',   border: 'border-[#10B981]/30',   borderL: 'border-l-[#10B981]',   watermark: 'text-emerald-100 dark:text-emerald-900/40' },
 };
 
-export function KpiCard({ label, value, color, sub, progress, progressLabel, loading = false, onClick }: KpiCardProps) {
+export const KpiCard = memo(function KpiCard({ label, value, color, sub, progress, progressLabel, loading = false, onClick }: KpiCardProps) {
   const c = colorMap[color];
   const pct = Math.min(100, Math.max(0, progress ?? 0));
 
@@ -91,4 +92,4 @@ export function KpiCard({ label, value, color, sub, progress, progressLabel, loa
       )}
     </div>
   );
-}
+});

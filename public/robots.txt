@@ -1,0 +1,19 @@
+User-agent: *
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /settings
+Disallow: /flats
+Disallow: /maintenance
+Disallow: /expenses
+Disallow: /reports
+Disallow: /users
+Disallow: /setup
+Disallow: /payment
+Disallow: /subscription
+Allow: /
+Allow: /login
+Allow: /signup
+Allow: /privacy-policy
+Allow: /terms-of-service
+
+Sitemap: https://flat-ledger-ui.vercel.app/sitemap.xml
