@@ -1,4 +1,4 @@
-﻿import { ReactNode, useState, useEffect } from 'react';
+﻿import { ReactNode, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Moon, Sun, Bell, LogOut, Settings, Menu, X } from 'lucide-react';
 import Sidebar from './Sidebar';
@@ -31,20 +31,21 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
   const { showToast } = useToast();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Read window width eagerly so the sidebar is already open on desktop before
+  // first paint, preventing a 256 px layout shift (CLS) on large screens.
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : false
+  );
 
-  // Initialise sidebar open state based on viewport width.
-  // On desktop (≥1024px) the sidebar is open by default; on mobile it starts closed.
-  useEffect(() => {
-    const checkWidth = () => {
-      if (typeof window !== 'undefined') {
-        setIsSidebarOpen(window.innerWidth >= 1024);
-      }
-    };
-    checkWidth();
-    window.addEventListener('resize', checkWidth);
-    return () => window.removeEventListener('resize', checkWidth);
+  // Keep sidebar in sync when user resizes the window.
+  const handleResize = useCallback(() => {
+    setIsSidebarOpen(window.innerWidth >= 1024);
   }, []);
+
+  useEffect(() => {
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [handleResize]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);

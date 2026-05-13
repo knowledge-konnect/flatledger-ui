@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 
@@ -24,7 +25,7 @@ function formatActivityDate(dateStr: string): string {
   }
 }
 
-export function ActivityItem({ type, description, amount, date }: ActivityItemProps) {
+export const ActivityItem = memo(function ActivityItem({ type, description, amount, date }: ActivityItemProps) {
   const isPayment = type === 'payment';
 
   return (
@@ -60,4 +61,4 @@ export function ActivityItem({ type, description, amount, date }: ActivityItemPr
       </span>
     </div>
   );
-}
+});
