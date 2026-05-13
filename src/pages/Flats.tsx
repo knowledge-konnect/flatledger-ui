@@ -81,6 +81,13 @@ type UIFLat = {
   createdAt?: string;
 };
 
+function FlatSortIcon({ field, sortBy, sortDir }: { field: 'flatNumber' | 'ownerName' | 'maintenanceAmount'; sortBy: string; sortDir: string }) {
+  if (sortBy !== field) return <ChevronsUpDown className="w-3 h-3 ml-1 opacity-40" />;
+  return sortDir === 'asc'
+    ? <ChevronUp className="w-3 h-3 ml-1" />
+    : <ChevronDown className="w-3 h-3 ml-1" />;
+}
+
 export default function Flats() {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 250);
@@ -98,12 +105,7 @@ export default function Flats() {
     }
   };
 
-  const SortIcon = ({ field }: { field: 'flatNumber' | 'ownerName' | 'maintenanceAmount' }) => {
-    if (sortBy !== field) return <ChevronsUpDown className="w-3 h-3 ml-1 opacity-40" />;
-    return sortDir === 'asc'
-      ? <ChevronUp className="w-3 h-3 ml-1" />
-      : <ChevronDown className="w-3 h-3 ml-1" />;
-  };
+  // FlatSortIcon is defined at module level — see above
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -299,30 +301,33 @@ export default function Flats() {
   }, [safeApiFlats, safeStatuses]);
 
   // Filter, sort and paginate
-  const processed = flats.filter(flat => {
-    const q = debouncedSearch.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      flat.flatNumber.toLowerCase().includes(q) ||
-      flat.ownerName.toLowerCase().includes(q) ||
-      (flat.ownerEmail || '').toLowerCase().includes(q) ||
-      (flat.ownerPhone || '').toLowerCase().includes(q)
-    );
-  }).sort((a, b) => {
-    let cmp = 0;
-    if (sortBy === 'flatNumber') {
-      cmp = a.flatNumber.localeCompare(b.flatNumber, undefined, { numeric: true });
-    } else if (sortBy === 'ownerName') {
-      cmp = a.ownerName.localeCompare(b.ownerName);
-    } else if (sortBy === 'maintenanceAmount') {
-      cmp = a.maintenanceAmount - b.maintenanceAmount;
-    }
-    return sortDir === 'asc' ? cmp : -cmp;
-  });
+  const processed = useMemo(() =>
+    flats.filter(flat => {
+      const q = debouncedSearch.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        flat.flatNumber.toLowerCase().includes(q) ||
+        flat.ownerName.toLowerCase().includes(q) ||
+        (flat.ownerEmail || '').toLowerCase().includes(q) ||
+        (flat.ownerPhone || '').toLowerCase().includes(q)
+      );
+    }).sort((a, b) => {
+      let cmp = 0;
+      if (sortBy === 'flatNumber') {
+        cmp = a.flatNumber.localeCompare(b.flatNumber, undefined, { numeric: true });
+      } else if (sortBy === 'ownerName') {
+        cmp = a.ownerName.localeCompare(b.ownerName);
+      } else if (sortBy === 'maintenanceAmount') {
+        cmp = a.maintenanceAmount - b.maintenanceAmount;
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
+    }),
+    [flats, debouncedSearch, sortBy, sortDir]
+  );
 
   const total = processed.length;
   const start = page * pageSize;
-  const paged = processed.slice(start, start + pageSize);
+  const paged = useMemo(() => processed.slice(start, start + pageSize), [processed, start, pageSize]);
 
   const exportCsv = () => {
     // Export all currently filtered/sorted rows (not just the current page)
@@ -493,16 +498,16 @@ export default function Flats() {
                   <thead>
                     <tr className="bg-emerald-800 dark:bg-emerald-950 border-b border-emerald-700 dark:border-emerald-900 divide-x divide-emerald-700 dark:divide-emerald-900">
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors" onClick={() => toggleSort('flatNumber')}>
-                        <span className="inline-flex items-center">Flat <SortIcon field="flatNumber" /></span>
+                        <span className="inline-flex items-center">Flat <FlatSortIcon field="flatNumber" sortBy={sortBy} sortDir={sortDir} /></span>
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors" onClick={() => toggleSort('ownerName')}>
-                        <span className="inline-flex items-center">Owner <SortIcon field="ownerName" /></span>
+                        <span className="inline-flex items-center">Owner <FlatSortIcon field="ownerName" sortBy={sortBy} sortDir={sortDir} /></span>
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">
                         Contact
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors whitespace-nowrap" onClick={() => toggleSort('maintenanceAmount')}>
-                        <span className="inline-flex items-center justify-end w-full">Monthly Charge <SortIcon field="maintenanceAmount" /></span>
+                        <span className="inline-flex items-center justify-end w-full">Monthly Charge <FlatSortIcon field="maintenanceAmount" sortBy={sortBy} sortDir={sortDir} /></span>
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider whitespace-nowrap">
                         <span className="inline-flex items-center justify-end gap-1">
