@@ -21,6 +21,7 @@ import { logger } from '../lib/logger';
 export function useActivityLogs(params: GetActivityLogsParams = {}) {
   return useQuery({
     queryKey: ['activityLogs', params],
+    staleTime: 30_000,
     queryFn: async (): Promise<ActivityLog[]> => {
       logger.log('[useActivityLogs] Fetching activity logs', params);
       const result = await getActivityLogs(params);

@@ -4,6 +4,7 @@ import { rolesApi, Role } from '../api/rolesApi';
 export const useRoles = () => {
   return useQuery<Role[]>({
     queryKey: ['roles'],
+    staleTime: Infinity, // Role definitions are static
     queryFn: () => rolesApi.getRoles()
   });
 };

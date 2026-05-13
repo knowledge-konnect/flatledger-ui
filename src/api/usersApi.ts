@@ -24,21 +24,22 @@ export interface User {
  * Create User Request
  * POST /users
  * Admin-only operation
+ * Backend: CreateUserDto(Name, Email?, Username?, Mobile?, RoleCode?, Password [required])
  */
 export interface CreateUserDto {
-  name: string; // Required
-  email?: string; // Optional, must be unique if provided
-  username?: string; // Optional, custom login username; auto-generated if omitted
-  mobile?: string; // Optional
-  roleCode: string; // Required: use RoleCode enum — 'society_admin' | 'admin' | 'treasurer' | 'secretary' | 'manager' | 'viewer'
-  password?: string; // Optional: if provided, used as initial password; otherwise backend auto-generates one
+  name: string;
+  email?: string;
+  username?: string;
+  mobile?: string;
+  roleCode: string;
+  password: string; // Required — admin must set the initial password
 }
 
 /**
  * Create User Response
  */
 export interface CreateUserResponse {
-  publicId: string; // UUID
+  publicId: string;
   email: string;
   message: string;
 }
@@ -47,14 +48,15 @@ export interface CreateUserResponse {
  * Update User Request
  * PUT /users/{publicId}
  * Admin-only operation
+ * Backend: UpdateUserDto(PublicId, Name, Email [required], Mobile?, RoleCode)
+ * Note: isActive cannot be changed via this endpoint — use DELETE to deactivate.
  */
 export interface UpdateUserDto {
-  publicId: string; 
+  publicId: string;
   name: string;
-  email?: string; 
+  email: string; // Required by backend
   mobile?: string;
-  roleCode: string; 
-  isActive: boolean;
+  roleCode: string;
 }
 
 /**

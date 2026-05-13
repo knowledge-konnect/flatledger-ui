@@ -19,6 +19,7 @@ export const adminApi = {
     return response.data.data;
   },
 
+  /** ⚠️  Backend endpoint does not exist yet. This will 404. */
   async impersonateUser(societyId: string): Promise<{ accessToken: string }> {
     const response = await apiClient.post<ApiResponse<{ accessToken: string }>>(
       `/admin/societies/${societyId}/impersonate`

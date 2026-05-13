@@ -2,7 +2,7 @@
 /** Numeric DB primary key for each role */
 export enum RoleId {
   SOCIETY_ADMIN = 1,
-  VIEWER        = 6,
+  VIEWER        = 2,
 }
 
 /** Short code stored in the JWT / API payloads */
@@ -47,6 +47,32 @@ export const ROLE_DESCRIPTIONS: Record<RoleCode, string> = {
   [RoleCode.SOCIETY_ADMIN]: 'Full access to all features',
   [RoleCode.VIEWER]:        'Read-only access',
 };
+
+/**
+ * Converts role values like 'society_admin' into user-facing labels.
+ * Supports RoleCode, RoleDisplayName, and unknown custom strings.
+ */
+export function formatRoleLabel(role: string | null | undefined): string {
+  if (!role) return 'Member';
+
+  const trimmed = role.trim();
+  if (!trimmed) return 'Member';
+
+  const lowered = trimmed.toLowerCase();
+  if ((Object.values(RoleCode) as string[]).includes(lowered)) {
+    return ROLE_LABELS[lowered as RoleCode];
+  }
+
+  if ((Object.values(RoleDisplayName) as string[]).includes(trimmed)) {
+    return trimmed;
+  }
+
+  return trimmed
+    .replace(/[_-]+/g, ' ')
+    .split(/\s+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
 
 // ---------------------------------------------------------------------------
 // Permission groups (only two roles now)
@@ -96,4 +122,9 @@ export function collectUserRoles(user: { roles?: string[] | null; role?: string 
     ...(user?.role ? [user.role] : []),
     ...(user?.roleDisplayName ? [user.roleDisplayName] : []),
   ].filter(Boolean) as string[];
+}
+
+/** Returns the best display label for the current user role. */
+export function getPrimaryRoleLabel(user: { roles?: string[] | null; role?: string | null; roleDisplayName?: string | null } | null | undefined): string {
+  return formatRoleLabel(user?.roleDisplayName || user?.roles?.[0] || user?.role || 'Member');
 }

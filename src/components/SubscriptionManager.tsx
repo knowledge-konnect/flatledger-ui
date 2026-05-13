@@ -18,7 +18,6 @@ export const SubscriptionManager: React.FC = () => {
     trialEnd,
     loading,
     error,
-    subscribe,
     cancelSubscription,
     refreshStatus,
     clearError,
@@ -38,13 +37,14 @@ export const SubscriptionManager: React.FC = () => {
   const [subscribing, setSubscribing] = useState(false);
   const handleSubscribe = async () => {
     if (!selectedPlanId) return;
-    const plan = plans.find((p) => p.id === selectedPlanId);
+    const plan = plans.find((p: any) => p.id === selectedPlanId);
     if (!plan) return;
     setSubscribing(true);
     try {
-      await subscribe(plan.id, plan.monthlyAmount, 'razorpay', 'demo_ref');
-      showToast('Subscription successful!', 'success');
-      refreshStatus();
+      // Redirect to SubscriptionManagement page which handles the Razorpay flow.
+      // SubscriptionManager is a lightweight widget — full payment is in /subscription/manage.
+      // We still call refreshStatus after the user returns.
+      window.location.href = '/subscription/manage';
     } catch (error) {
       showToast('Subscription failed. Please try again.', 'error');
     } finally {
@@ -129,7 +129,7 @@ export const SubscriptionManager: React.FC = () => {
                     className={`flex-1 cursor-pointer p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-start min-w-[160px] ${selectedPlanId === plan.id ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-emerald-300 dark:hover:border-emerald-600'}`}
                     tabIndex={0}
                     onClick={() => setSelectedPlanId(plan.id)}
-                    onKeyPress={e => { if (e.key === 'Enter') setSelectedPlanId(plan.id); }}
+                    onKeyDown={e => { if (e.key === 'Enter') setSelectedPlanId(plan.id); }}
                   >
                     <input
                       type="radio"
@@ -141,7 +141,8 @@ export const SubscriptionManager: React.FC = () => {
                       aria-label={`Select ${plan.name} plan`}
                     />
                     <span className="font-bold text-lg text-slate-900 dark:text-white">{plan.name}</span>
-                    <span className="text-emerald-700 dark:text-emerald-300 font-bold text-xl">₹{plan.monthlyAmount}{plan.name.toLowerCase().includes('year') ? '/year' : '/month'}</span>
+                    {/* Use plan.price from backend for display — DO NOT compute pricing on frontend */}
+                    <span className="text-emerald-700 dark:text-emerald-300 font-bold text-xl">₹{plan.price ?? plan.monthlyAmount}{plan.name.toLowerCase().includes('year') ? '/year' : '/month'}</span>
                     <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">{plan.description}</span>
                   </label>
                 ))}

@@ -1,3 +1,8 @@
+/**
+ * ⚠️  NOT YET IMPLEMENTED ON BACKEND
+ * All functions in this file will return 404 until the backend
+ * endpoints are built. Do not use in production UI flows.
+ */
 import { PaginatedResponse, PaginationParams, ApiResponse } from '../types/api';
 import apiClient from './client';
 

@@ -1,7 +1,14 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { setGlobalToastCallback } from '../../api/client';
+import { setGlobalToastFn } from '../../lib/toastBridge';
+
+// Prevent Vite HMR from partially replacing this module. A new ToastContext
+// would be created while lazy-loaded consumers still reference the old instance,
+// causing "useToast must be used within ToastProvider". Full reload is safer.
+if (import.meta.hot) {
+  import.meta.hot.invalidate();
+}
 
 type ToastType = 'success' | 'error' | 'info' | 'warning';
 
@@ -31,8 +38,17 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   // Register with the Axios interceptor so 429s (and similar) can surface toasts
   // without depending on React context or hooks.
   useEffect(() => {
-    setGlobalToastCallback(showToast);
-    return () => setGlobalToastCallback(null);
+    setGlobalToastFn(showToast);
+    return () => setGlobalToastFn(null);
+  }, [showToast]);
+
+  // Listen for session-expiring event dispatched by AuthProvider
+  useEffect(() => {
+    const handleSessionExpiring = () => {
+      showToast('Your session expires in 2 minutes. Save your work.', 'warning');
+    };
+    window.addEventListener('flatledger:session-expiring', handleSessionExpiring);
+    return () => window.removeEventListener('flatledger:session-expiring', handleSessionExpiring);
   }, [showToast]);
 
   const removeToast = (id: string) => {

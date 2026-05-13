@@ -1,27 +1,18 @@
 ﻿"use client"
 
 import Navbar from '../components/layout/Navbar'
-import { useState, useEffect } from 'react'
-import { usePlans } from '../hooks/usePlans';
+import { useState } from 'react'
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
-import { CheckCircle, ArrowRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { BRAND_NAME } from '../config/branding';
+import { PricingSection } from '../components/pricing/PricingSection';
 
 export default function Subscription() {
   const navigate = useNavigate();
   const [isActivating, setIsActivating] = useState(false);
   const { showToast } = useToast();
   const { showErrorToast } = useApiErrorToast();
-  const { plans, plansLoading, plansError } = usePlans();
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-
-  // Set default selected plan when plans load
-  useEffect(() => {
-    if (plans.length > 0 && !selectedPlanId) {
-      setSelectedPlanId(plans[0].id);
-    }
-  }, [plans, selectedPlanId]);
 
   const handleStartTrial = async () => {
     setIsActivating(true);
@@ -58,84 +49,28 @@ export default function Subscription() {
     <div className="min-h-screen bg-white dark:bg-slate-950">
       <Navbar variant="landing" />
 
-      {/* Hero Section - Dynamic by selected plan */}
+      {/* Hero Section */}
       <section className="pt-12 md:pt-20 pb-6 md:pb-10 px-2 sm:px-4 lg:px-6 relative overflow-hidden bg-white dark:bg-slate-950">
         <div className="max-w-4xl mx-auto text-center space-y-6">
           <div className="inline-block px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30 rounded-full border border-emerald-200 dark:border-emerald-700 animate-fade-in">
             <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">✨ 30-Day Free Trial • No Credit Card Required</p>
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold text-slate-900 dark:text-white text-balance animate-slide-in-up leading-tight tracking-tight">
-            {selectedPlanId && plans.length > 0 ? `Choose the ${plans.find(p => p.id === selectedPlanId)?.name} Plan` : 'Start Your Free Trial Today'}
+            Choose the Right Plan for Your Society
           </h1>
           <p className="text-xl md:text-2xl text-slate-700 dark:text-slate-200 max-w-2xl mx-auto leading-relaxed animate-slide-in-up font-medium" style={{ animationDelay: '0.1s' }}>
-            {selectedPlanId && plans.length > 0
-              ? plans.find(p => p.id === selectedPlanId)?.description || 'Get 30 days completely free. Manage flats, create bills, record payments, and generate reports. No credit card required.'
-              : 'Get 30 days completely free. Manage flats, create bills, record payments, and generate reports. No credit card required.'}
+            Get 30 days completely free. Manage flats, create bills, record payments, and generate reports. No credit card required.
           </p>
-          {selectedPlanId && plans.length > 0 && (
-            <div className="flex justify-center items-center gap-2 pt-2">
-              <span className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">₹{plans.find(p => p.id === selectedPlanId)?.monthlyAmount}</span>
-              <span className="text-lg text-slate-600 dark:text-slate-400">/month</span>
-            </div>
-          )}
         </div>
       </section>
 
-      {/* Pricing Plan */}
+      {/* Pricing Plans */}
       <section className="py-8 md:py-12 px-2 sm:px-4 lg:px-6">
-        <div className="max-w-3xl mx-auto">
-          {plansLoading ? (
-            <div className="text-center py-8 text-slate-600 dark:text-slate-400">Loading plans...</div>
-          ) : plansError ? (
-            <div className="text-center py-8 text-red-600 dark:text-red-400">{plansError}</div>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-4">
-              {plans.map(plan => (
-                <div key={plan.id} className={`rounded-2xl border-2 transition-all duration-300 shadow-xl overflow-hidden bg-white dark:bg-slate-900 ${selectedPlanId === plan.id ? 'border-emerald-600 dark:border-emerald-500' : 'border-slate-200 dark:border-slate-800'}`}>
-                  <div className="p-6 md:p-8 space-y-6">
-                    <div className="space-y-2">
-                      <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">{plan.name}</h3>
-                      <p className="text-base font-medium text-emerald-600 dark:text-emerald-400">{plan.description}</p>
-                    </div>
-                    <div className="space-y-1 border-t border-b border-slate-200 dark:border-slate-800 py-4">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-4xl font-bold text-slate-900 dark:text-white">₹{plan.monthlyAmount}</span>
-                        <span className="text-lg text-slate-600 dark:text-slate-400">/month</span>
-                      </div>
-                      <p className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold">30-Day Free Trial • No Credit Card Required</p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 pt-1">Then cancel anytime, no lock-in.</p>
-                    </div>
-                    <ul className="space-y-2">
-                      {['Unlimited Flats & Residents', 'Secure Data Storage', 'Team Collaboration', 'Advanced Reports', 'Payment Recording', 'Email Support'].map((feature: string, i: number) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
-                          <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <button
-                      onClick={() => { setSelectedPlanId(plan.id); handleStartTrial(); }}
-                      disabled={isActivating}
-                      className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:shadow-lg hover:-translate-y-1 shadow-lg disabled:opacity-70 hover:from-emerald-700 hover:to-emerald-600 dark:from-emerald-600 dark:to-emerald-500 ${selectedPlanId === plan.id ? '' : 'opacity-70'}`}
-                      aria-label={`Start Free Trial for ${plan.name}`}
-                    >
-                      {isActivating && selectedPlanId === plan.id ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                          Redirecting...
-                        </>
-                      ) : (
-                        <>
-                          Start Your Free Trial
-                          <ArrowRight className="w-5 h-5" />
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="max-w-5xl mx-auto">
+          <PricingSection
+            onChoosePlan={(planId) => navigate(`/payment?plan=${planId}`)}
+            isBusy={isActivating}
+          />
         </div>
       </section>
 
@@ -143,11 +78,9 @@ export default function Subscription() {
       <section className="py-8 md:py-12 px-2 sm:px-4 lg:px-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-6 space-y-2">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground">What's included in {selectedPlanId && plans.length > 0 ? plans.find(p => p.id === selectedPlanId)?.name : 'the plan'}</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground">What's included in every plan</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              {selectedPlanId && plans.length > 0
-                ? plans.find(p => p.id === selectedPlanId)?.description || 'Everything you need to manage your society effectively'
-                : 'Everything you need to manage your society effectively'}
+              Everything you need to manage your society effectively
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -255,18 +188,16 @@ export default function Subscription() {
       {/* CTA Footer */}
       <section className="py-8 px-2 sm:px-4 lg:px-6 bg-gradient-to-br from-emerald-600 to-emerald-700 dark:from-emerald-600 dark:to-emerald-700">
         <div className="max-w-4xl mx-auto text-center space-y-3">
-          <h2 className="text-3xl md:text-4xl font-bold text-white">Ready to get started with {selectedPlanId && plans.length > 0 ? plans.find(p => p.id === selectedPlanId)?.name : 'your plan'}?</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-white">Ready to get started?</h2>
           <p className="text-lg text-white/90 max-w-2xl mx-auto">
-            {selectedPlanId && plans.length > 0
-              ? `Start your free trial for the ${plans.find(p => p.id === selectedPlanId)?.name} plan. Get 30 days free. No credit card required.`
-              : 'Start your free trial now. Get 30 days completely free to manage your society. No credit card required.'}
+            Start your free trial today. Get 30 days completely free to manage your society. No credit card required.
           </p>
           <button
             onClick={handleStartTrial}
             disabled={isActivating}
             className="inline-block px-8 py-4 bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 rounded-xl font-semibold shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border border-emerald-200 dark:border-emerald-700 disabled:opacity-70"
           >
-            {isActivating ? 'Redirecting...' : `Start Free Trial for ${selectedPlanId && plans.length > 0 ? plans.find(p => p.id === selectedPlanId)?.name : 'Plan'}`}
+            {isActivating ? 'Redirecting…' : 'Start Your Free Trial'}
           </button>
         </div>
       </section>
@@ -286,7 +217,7 @@ export default function Subscription() {
             </a>
           </div>
           <div className="pt-4 border-t border-slate-200 dark:border-slate-800 w-full text-center text-sm text-slate-600 dark:text-slate-400">
-            <p>&copy; 2025 FlatLedger. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} {BRAND_NAME}. All rights reserved.</p>
           </div>
         </div>
       </footer>

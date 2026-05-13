@@ -1,28 +1,19 @@
 import { ApiResponse } from '../types/api';
 import apiClient from './client';
 
-/* =====================================================
-   TYPES & INTERFACES (Following API Documentation)
-===================================================== */
-
-/**
- * Subscription Status Response
- * GET /subscriptions/status
- */
+// ── Response types (match backend SubscriptionStatusResponse) ────────────────
 export interface SubscriptionStatusData {
-  status: 'trial' | 'active' | 'expired' | 'cancelled';
+  status: 'trial' | 'active' | 'expired' | 'cancelled' | 'none';
   trialDaysRemaining?: number | null;
   trialEndDate?: string | null;
   accessAllowed: boolean;
   planName?: string | null;
   monthlyAmount?: number | null;
+  subscribedAmount?: number | null;
   currency?: string | null;
+  currentPeriodEnd?: string | null;
 }
 
-/**
- * Trial Creation Response
- * POST /subscriptions/trial
- */
 export interface TrialData {
   status: 'trial';
   trialDaysRemaining: number;
@@ -30,110 +21,101 @@ export interface TrialData {
   accessAllowed: boolean;
 }
 
-/**
- * Subscribe Request
- * POST /subscriptions/subscribe
- */
-export interface SubscribeRequest {
-  planId: string; // UUID - plan's public identifier
-  razorpayOrderId: string; // Razorpay order ID
-  razorpayPaymentId: string; // Razorpay payment ID
-  razorpaySignature: string; // Razorpay signature for verification
-}
-
-/**
- * Subscribe Response
- * POST /subscriptions/subscribe
- */
-export interface SubscribeData {
-  subscriptionId: string; // UUID
-  planName: string;
-  status: 'active';
-  startDate: string; // ISO 8601 date
-  endDate: string; // ISO 8601 date
+export interface SubscribeResponse {
+  subscriptionId: string;
+  invoiceId: string;
+  status: string;
   amount: number;
-  currency: string;
+  currency?: string;
+  invoiceNumber?: string;
+  paymentUrl?: string | null;
+  orderId?: string;
+  keyId?: string;
 }
 
 /**
  * Cancel Subscription Request
  * POST /subscriptions/cancel
+ * Backend: CancelSubscriptionRequest { Reason?, CancelImmediately: bool = false }
  */
 export interface CancelSubscriptionRequest {
-  reason: string; // Required cancellation reason
-  feedback?: string; // Optional feedback
+  reason: string;
+  cancelImmediately?: boolean; // false = cancel at period end (default); true = cancel now
 }
 
-/* =====================================================
-   API SERVICE (Following API Documentation Endpoints)
-===================================================== */
-
-/**
- * Subscriptions API Service
- * Manages trial and paid subscriptions for users
- */
 export const subscriptionApi = {
   /**
-   * Create a 30-day free trial subscription
+   * Create a 30-day free trial.
    * POST /subscriptions/trial
-   * Automatically called on first user registration/login
-   * @returns Promise<TrialData>
    */
   async createTrial(): Promise<TrialData> {
     const response = await apiClient.post<ApiResponse<TrialData>>('/subscriptions/trial');
-    
     if (!response.data.succeeded) {
       throw new Error(response.data.message || 'Failed to create trial subscription');
     }
-    
     return response.data.data;
   },
 
   /**
-   * Get current user's subscription status
+   * Get subscription status for the authenticated user's society.
    * GET /subscriptions/status
-   * Call on app load or feature access to check permissions
-   * @returns Promise<SubscriptionStatusData>
    */
   async getStatus(): Promise<SubscriptionStatusData> {
     const response = await apiClient.get<ApiResponse<SubscriptionStatusData>>('/subscriptions/status');
-    
     if (!response.data.succeeded) {
       throw new Error(response.data.message || 'Failed to get subscription status');
     }
-    
     return response.data.data;
   },
 
   /**
-   * Subscribe to a plan after successful payment
-   * POST /subscriptions/subscribe
-   * Call after Razorpay payment verification
-   * @param request SubscribeRequest with payment details
-   * @returns Promise<SubscribeData>
+   * Get current subscription (society-scoped).
+   * GET /subscriptions/current?societyId=
+   * societyId is accepted by the backend for client compatibility but
+   * society isolation is always enforced server-side via JWT.
    */
-  async subscribe(request: SubscribeRequest): Promise<SubscribeData> {
-    const response = await apiClient.post<ApiResponse<SubscribeData>>('/subscriptions/subscribe', request);
-    
+  async getCurrent(societyId?: string): Promise<SubscriptionStatusData | null> {
+    const query = societyId ? `?societyId=${encodeURIComponent(societyId)}` : '';
+    const response = await apiClient.get<ApiResponse<SubscriptionStatusData>>(
+      `/subscriptions/current${query}`
+    );
+    if (!response.data.succeeded) return null;
+    const d = response.data.data;
+    if (!d || d.status === 'none') return null;
+    return d;
+  },
+
+  /**
+   * Subscribe to a plan after Razorpay payment.
+   * POST /subscriptions/subscribe
+   * paymentMethod defaults to "razorpay" on the backend when omitted,
+   * but we send it explicitly to be safe.
+   * paymentReference is for offline payments (bank_transfer, cheque, etc.)
+   */
+  async subscribe(request: {
+    planId: string;
+    paymentMethod?: string;
+    paymentReference?: string;
+  }): Promise<SubscribeResponse> {
+    const response = await apiClient.post<ApiResponse<SubscribeResponse>>('/subscriptions/subscribe', {
+      planId: request.planId,
+      paymentMethod: request.paymentMethod ?? 'razorpay',
+      ...(request.paymentReference ? { paymentReference: request.paymentReference } : {}),
+    });
     if (!response.data.succeeded) {
       throw new Error(response.data.message || 'Failed to create subscription');
     }
-    
     return response.data.data;
   },
 
   /**
-   * Cancel the current active subscription
+   * Cancel the current active subscription.
    * POST /subscriptions/cancel
-   * Call from settings page after user confirmation
-   * @param request CancelSubscriptionRequest with reason
-   * @returns Promise<void>
    */
   async cancel(request: CancelSubscriptionRequest): Promise<void> {
     const response = await apiClient.post<ApiResponse<null>>('/subscriptions/cancel', request);
-    
     if (!response.data.succeeded) {
       throw new Error(response.data.message || 'Failed to cancel subscription');
     }
-  }
+  },
 };

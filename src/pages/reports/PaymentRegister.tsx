@@ -12,6 +12,7 @@ import {
   ReportState, initialState, ReportLoading, ReportError,
   QuickDatePresets, startOfMonth, today, fmtDate, fmtPeriod, CHART_COLORS, formatCurrency, DatePresetKey,
 } from './_shared';
+import { useSocietyPeriodBounds } from '../../hooks/useSocietyPeriodBounds';
 
 /* ─── Payment Register helpers ─── */
 
@@ -82,6 +83,14 @@ export default function PaymentRegisterPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [state, setState] = useState<ReportState<PaymentRegisterPage>>(initialState());
+  const { minDate, maxDate, clampDate } = useSocietyPeriodBounds();
+
+  useEffect(() => {
+    const nextStart = clampDate(startDate);
+    const nextEnd = clampDate(endDate);
+    if (nextStart !== startDate) setStartDate(nextStart);
+    if (nextEnd !== endDate) setEndDate(nextEnd);
+  }, [startDate, endDate, clampDate]);
 
   const fetchData = useCallback((sd: string, ed: string, pg = 1, ps = 50) => {
     setState({ loading: true, error: null, data: null });
@@ -100,14 +109,16 @@ export default function PaymentRegisterPage() {
   }, []);
 
   const applyPreset = (preset: DatePresetKey, sd: string, ed: string) => {
+    const safeStart = clampDate(sd);
+    const safeEnd = clampDate(ed);
     setActiveDatePreset(preset);
-    setStartDate(sd);
-    setEndDate(ed);
+    setStartDate(safeStart);
+    setEndDate(safeEnd);
     setPage(1);
-    fetchData(sd, ed, 1, pageSize);
+    fetchData(safeStart, safeEnd, 1, pageSize);
   };
-  const goToPage = (p: number) => { setPage(p); fetchData(startDate, endDate, p, pageSize); };
-  const changePageSize = (ps: number) => { setPageSize(ps); setPage(1); fetchData(startDate, endDate, 1, ps); };
+  const goToPage = (p: number) => { setPage(p); fetchData(clampDate(startDate), clampDate(endDate), p, pageSize); };
+  const changePageSize = (ps: number) => { setPageSize(ps); setPage(1); fetchData(clampDate(startDate), clampDate(endDate), 1, ps); };
 
   const entries = [...(state.data?.entries ?? [])].sort((a, b) => {
     const dateCmp = (b.date_paid ?? '').localeCompare(a.date_paid ?? '');
@@ -165,21 +176,25 @@ export default function PaymentRegisterPage() {
             <input
               type="date"
               value={startDate}
-              onChange={e => { setStartDate(e.target.value); setActiveDatePreset(null); }}
+              min={minDate}
+              max={maxDate}
+              onChange={e => { setStartDate(clampDate(e.target.value)); setActiveDatePreset(null); }}
               className="h-8 px-2.5 text-xs font-medium rounded-md border border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
             <span className="text-slate-500 dark:text-slate-400 text-sm select-none">–</span>
             <input
               type="date"
               value={endDate}
-              onChange={e => { setEndDate(e.target.value); setActiveDatePreset(null); }}
+              min={minDate}
+              max={maxDate}
+              onChange={e => { setEndDate(clampDate(e.target.value)); setActiveDatePreset(null); }}
               className="h-8 px-2.5 text-xs font-medium rounded-md border border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
             />
           </div>
           <div className="w-px h-5 bg-slate-300 dark:bg-slate-600 self-center" />
           <QuickDatePresets onSelect={applyPreset} activeKey={activeDatePreset} />
           <div className="flex-1" />
-          <Button variant="primary" size="sm" onClick={() => { setPage(1); fetchData(startDate, endDate, 1, pageSize); }} disabled={state.loading}>
+          <Button variant="primary" size="sm" onClick={() => { setPage(1); fetchData(clampDate(startDate), clampDate(endDate), 1, pageSize); }} disabled={state.loading}>
             {state.loading
               ? <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Loading…</>
               : <><RefreshCw className="w-3 h-3 mr-1" /> Apply</>}
@@ -187,7 +202,7 @@ export default function PaymentRegisterPage() {
         </div>
 
         {state.loading && <ReportLoading label="Payment Register" />}
-        {state.error && <ReportError message={state.error} onRetry={() => fetchData(startDate, endDate, page, pageSize)} />}
+        {state.error && <ReportError message={state.error} onRetry={() => fetchData(clampDate(startDate), clampDate(endDate), page, pageSize)} />}
         {state.data && (
           <div className="space-y-3">
             {/* Label filter */}

@@ -14,7 +14,6 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import { SubscriptionSummary } from '../components/SubscriptionSummary';
 import SetupBanner from '../components/dashboard/SetupBanner';
 import { useSetupProgress } from '../hooks/useSetupProgress';
-import { SETUP_REDIRECTED_KEY } from './Setup';
 import WelcomeModal, { WELCOME_MODAL_SEEN_KEY } from '../components/setup/WelcomeModal';
 import Card from '../components/ui/Card';
 import { KpiCard } from '../components/dashboard/KpiCard';
@@ -27,13 +26,15 @@ import { useBillingStatus, useGenerateBilling } from '../hooks/useBillingStatus'
 import BillingReminderBanner from '../components/dashboard/BillingReminderBanner';
 import { formatCurrency, cn } from '../lib/utils';
 import { axisLabelStyle, baseChartOptions, baseGrid, currencyK, currencyTooltip } from '../lib/chartOptions';
+import { useDebounce } from '../hooks/useDebounce';
+import { useSocietyPeriodBounds } from '../hooks/useSocietyPeriodBounds';
 
 const dashboardAxisLabelStyle = {
   ...axisLabelStyle,
   colors: '#0F172A',
 };
 
-// ─── Chart color palette ──────────────────────────────────────────────────────
+// ─── Chart color palette — consistent across all dashboard charts ─────────────
 const CHART_COLORS = ['#10B981', '#F59E0B', '#6366F1', '#EF4444', '#14B8A6', '#EC4899', '#3B82F6'];
 
 // ─── Skeleton helpers ─────────────────────────────────────────────────────────
@@ -77,7 +78,9 @@ function ListSkeleton({ rows = 5 }: { rows?: number }) {
   );
 }
 
-// ─── Insight classifier ──────────────────────────────────────────────────────
+// ─── Insight classifier ───────────────────────────────────────────────────────
+// Maps AI-generated insight text to a visual style (color + icon) based on
+// whether the insight is positive, negative, or neutral.
 function getInsightStyle(text: string) {
   const lower = text.toLowerCase();
   if (/outstanding|overdue|pending|unpaid|deficit|shortfall|behind|low collect/i.test(lower)) {
@@ -125,11 +128,13 @@ function getLastMonthRange() {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { minDate, minMonth, maxMonth, clampDate } = useSocietyPeriodBounds();
   // ...existing code...
   const navigate = useNavigate();
   const { isComplete: setupComplete, isLoading: setupLoading, steps: setupSteps } = useSetupProgress();
 
-  // Show welcome modal on first visit when setup is not yet complete
+  // Show welcome modal on first visit when setup is not yet complete.
+  // Stored in localStorage so it only shows once per browser.
   const [showWelcome, setShowWelcome] = useState(() => {
     try {
       return localStorage.getItem(WELCOME_MODAL_SEEN_KEY) !== 'true';
@@ -138,15 +143,12 @@ export default function Dashboard() {
     }
   });
 
-  // Auto-redirect brand-new users to the dedicated setup page (once only),
-  // but wait until the welcome modal has been dismissed first.
+  // Always redirect to /setup when setup is not yet complete, after the welcome
+  // modal is dismissed.
   useEffect(() => {
-    if (setupLoading) return; // wait for data before deciding
-    if (showWelcome && !setupComplete) return; // show welcome modal first
-    const alreadyRedirected = (() => {
-      try { return sessionStorage.getItem(SETUP_REDIRECTED_KEY) === 'true'; } catch { return false; }
-    })();
-    if (!alreadyRedirected && !setupComplete && setupSteps.length > 0) {
+    if (setupLoading) return; // Wait for setup data before deciding
+    if (showWelcome && !setupComplete) return; // Let the welcome modal show first
+    if (!setupComplete && setupSteps.length > 0) {
       navigate('/setup', { replace: true });
     }
   }, [setupComplete, setupLoading, setupSteps, navigate, showWelcome]);
@@ -154,24 +156,44 @@ export default function Dashboard() {
   const [periodTab, setPeriodTab] = useState<PeriodTab>('this-month');
   const [startDate, setStartDate] = useState(() => getThisMonthRange().start);
   const [endDate, setEndDate] = useState(() => getThisMonthRange().end);
+  const canUseLastMonth = !minMonth || minMonth < maxMonth;
+
+  useEffect(() => {
+    const nextStart = clampDate(startDate);
+    const nextEnd = clampDate(endDate);
+    if (nextStart !== startDate) setStartDate(nextStart);
+    if (nextEnd !== endDate) setEndDate(nextEnd);
+  }, [startDate, endDate, clampDate]);
+
+  // Debounce custom date inputs to prevent an API call on every keystroke
+  const debouncedStart = useDebounce(startDate, 600);
+  const debouncedEnd = useDebounce(endDate, 600);
 
   const handlePeriodTab = (tab: PeriodTab) => {
+    if (tab === 'last-month' && !canUseLastMonth) {
+      tab = 'this-month';
+    }
     setPeriodTab(tab);
     if (tab === 'this-month') {
       const r = getThisMonthRange();
-      setStartDate(r.start);
+      setStartDate(clampDate(r.start));
       setEndDate(r.end);
     } else if (tab === 'last-month') {
       const r = getLastMonthRange();
-      setStartDate(r.start);
-      setEndDate(r.end);
+      setStartDate(clampDate(r.start));
+      setEndDate(clampDate(r.end));
     }
   };
 
   const { data: dashboardData, isLoading } = useDashboard(
-    startDate && endDate ? { startDate, endDate } : undefined
+    debouncedStart?.length === 10 && debouncedEnd?.length === 10
+      ? { startDate: debouncedStart, endDate: debouncedEnd }
+      : undefined
   );
 
+  // Prefer flat_summary from the dashboard response to avoid a separate /flats API call.
+  // Fall back to useFlats for OccupancyCard until the backend includes flat_summary.
+  const flatSummary = (dashboardData as any)?.flat_summary;
   const { data: flats = [], isLoading: flatsLoading } = useFlats();
 
   const {
@@ -183,8 +205,13 @@ export default function Dashboard() {
   // Billing generation is now handled by backend service. Manual trigger removed.
 
   const zeroAmountFlatsCount = useMemo(
-    () => !billingStatus?.isGenerated ? (flats as any[]).filter(f => !f.maintenanceAmount || f.maintenanceAmount === 0).length : 0,
-    [flats, billingStatus?.isGenerated]
+    () => {
+      if (billingStatus?.isGenerated) return 0;
+      // Prefer flat_summary from the dashboard API to avoid an extra network call
+      if (flatSummary) return flatSummary.zero_amount_count ?? 0;
+      return (flats as any[]).filter(f => !f.maintenanceAmount || f.maintenanceAmount === 0).length;
+    },
+    [flats, flatSummary, billingStatus?.isGenerated]
   );
 
   const billingMonthLabel = useMemo(() => {
@@ -211,7 +238,7 @@ export default function Dashboard() {
   const totalBilled = snap?.total_billed ?? 0;
   const totalCollected = snap?.total_collected ?? 0;
   const currentBillCoverage = totalBilled > 0 ? (Math.min(totalCollected, totalBilled) / totalBilled) * 100 : 0;
-  const pendingFlatsCount = topDefaulters?.length ?? 0;
+  const pendingFlatsCount = snap?.pending_flats_count ?? topDefaulters?.length ?? 0;
 
   const allTimeOutstanding = snap?.all_time_member_outstanding ?? snap?.total_member_outstanding ?? 0;
   const presentBalance = snap?.present_balance ?? snap?.closing_fund_balance ?? snap?.bank_balance ?? 0;
@@ -224,6 +251,11 @@ export default function Dashboard() {
   });
 
   const collectionColor = currentBillCoverage >= 80 ? 'green' : currentBillCoverage >= 50 ? 'amber' : 'red' as any;
+
+  // Return null while checking setup status to prevent dashboard flash before redirect to /setup
+  if (setupLoading || (!setupComplete && setupSteps.length > 0)) {
+    return null;
+  }
 
   return (
     <DashboardLayout title="Dashboard">
@@ -246,15 +278,16 @@ export default function Dashboard() {
               {/* Period Tabs */}
               <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 gap-0.5">
                 {([
-                  { key: 'this-month', label: 'This Month' },
-                  { key: 'last-month', label: 'Last Month' },
-                  { key: 'custom',     label: 'Custom' },
-                ] as { key: PeriodTab; label: string }[]).map(({ key, label }) => (
+                  { key: 'this-month', label: 'This Month', disabled: false },
+                  { key: 'last-month', label: 'Last Month', disabled: !canUseLastMonth },
+                  { key: 'custom',     label: 'Custom', disabled: false },
+                ] as { key: PeriodTab; label: string; disabled: boolean }[]).map(({ key, label, disabled }) => (
                   <button
                     key={key}
                     onClick={() => handlePeriodTab(key)}
+                    disabled={disabled}
                     className={cn(
-                      'px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 whitespace-nowrap',
+                      'px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed',
                       periodTab === key
                         ? 'bg-white dark:bg-slate-700 text-[#0F172A] dark:text-white shadow-sm'
                         : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
@@ -296,7 +329,8 @@ export default function Dashboard() {
                 <input
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) => setStartDate(clampDate(e.target.value))}
+                  min={minDate}
                   className="input input-sm flex-1"
                 />
               </div>
@@ -305,7 +339,8 @@ export default function Dashboard() {
                 <input
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) => setEndDate(clampDate(e.target.value))}
+                  min={minDate}
                   className="input input-sm flex-1"
                 />
               </div>
@@ -333,7 +368,7 @@ export default function Dashboard() {
             ) : (
               <>
                 <KpiCard
-                  label="Cash Received (This Period)"
+                  label="Payments Received"
                   value={formatCurrency(totalCollected)}
                   color={collectionColor}
                   progress={currentBillCoverage}
@@ -345,7 +380,7 @@ export default function Dashboard() {
                   value={formatCurrency(allTimeOutstanding)}
                   color={allTimeOutstanding > 0 ? 'red' : 'emerald'}
                   sub={`${pendingFlatsCount} flat${pendingFlatsCount !== 1 ? 's' : ''} pending`}
-                  onClick={() => navigate('/maintenance')}
+                  onClick={() => navigate('/reports/defaulters')}
                 />
                 <KpiCard
                   label="Society Expenses"
@@ -354,7 +389,7 @@ export default function Dashboard() {
                   onClick={() => navigate('/expenses')}
                 />
                 <KpiCard
-                  label="Present Fund Balance"
+                  label="Current Fund Balance"
                   value={formatCurrency(presentBalance)}
                   color={presentBalance >= 0 ? 'emerald' : 'red'}
                   onClick={() => navigate('/reports/fund-ledger')}
@@ -396,7 +431,7 @@ export default function Dashboard() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-slate-600 dark:text-slate-400">No trend data yet</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Appears once billing is generated</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Appears once bills are created</p>
                   </div>
                 </div>
               ) : (
@@ -510,7 +545,7 @@ export default function Dashboard() {
                       return (
                         <li
                           key={d.flat_no}
-                          onClick={() => navigate('/maintenance')}
+                          onClick={() => navigate('/reports/defaulters')}
                           className={cn(
                             'flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-colors duration-150 group',
                             isTop
@@ -537,7 +572,7 @@ export default function Dashboard() {
                   </ul>
                   <div className="mt-3 flex items-center gap-2">
                     <button
-                      onClick={() => navigate('/maintenance')}
+                      onClick={() => navigate('/reports/defaulters')}
                       className="flex-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 flex items-center justify-center gap-1 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors"
                     >
                       View all dues <ChevronRight className="w-3.5 h-3.5" />
@@ -546,7 +581,7 @@ export default function Dashboard() {
                       onClick={() => navigate('/maintenance')}
                       className="flex-1 text-xs font-medium text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 flex items-center justify-center gap-1 py-2 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-colors"
                     >
-                      Send Reminder →
+                      Record Payment →
                     </button>
                   </div>
                 </>

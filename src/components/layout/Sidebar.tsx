@@ -1,18 +1,17 @@
 ﻿import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Wrench, IndianRupee, BarChart3, Users, Settings, LogOut, X, ChevronDown, BarChart2, AlertTriangle, TrendingUp, PieChart, FileDown } from 'lucide-react';
+import { LayoutDashboard, Building2, Wrench, IndianRupee, BarChart3, Users, Settings, LogOut, X, ChevronDown, BarChart2, AlertTriangle, TrendingUp, FileDown } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthProvider';
-import { isAdminRole, collectUserRoles, RoleDisplayName } from '../../types/roles';
+import { isAdminRole, collectUserRoles, getPrimaryRoleLabel } from '../../types/roles';
 import { useToast } from '../ui/Toast';
 import { cn } from '../../lib/utils';
 import { AlertMessages } from '../../lib/alertMessages';
 
 const reportsSubItems = [
-  { name: 'Billing Summary',      href: '/reports/collection-summary', icon: BarChart2 },
-  { name: 'Outstanding Dues',     href: '/reports/defaulters',          icon: AlertTriangle },
-  { name: 'Income & Expenses',    href: '/reports/income-vs-expense',  icon: TrendingUp },
-  { name: 'Expenses by Category', href: '/reports/expense-by-category', icon: PieChart },
-  { name: 'Download Reports',     href: '/reports/download-reports',    icon: FileDown },
+  { name: 'Billing Summary',   href: '/reports/collection-summary', icon: BarChart2 },
+  { name: 'Outstanding Dues',  href: '/reports/defaulters',          icon: AlertTriangle },
+  { name: 'Income & Expenses', href: '/reports/income-vs-expense',  icon: TrendingUp },
+  { name: 'Download Reports',  href: '/reports/download-reports',    icon: FileDown },
 ];
 
 const navGroups = [
@@ -40,13 +39,28 @@ const navGroups = [
   },
 ];
 
+/**
+ * Component: Sidebar
+ * Purpose: Primary navigation sidebar for the authenticated app. Supports
+ * both controlled (mobileOpen/setMobileOpen props) and uncontrolled modes.
+ * The Reports item renders as a collapsible sub-menu.
+ *
+ * Props:
+ *   mobileOpen: Controlled open state (optional)
+ *   setMobileOpen: Setter for controlled open state (optional)
+ *
+ * Note: adminOnly nav items are hidden for non-admin users to prevent
+ * accidental access attempts that would result in 403 errors.
+ */
 export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean; setMobileOpen?: (v: boolean) => void }) {
   const [internalMobileOpen, setInternalMobileOpen] = useState(false);
+  // Support both controlled (parent manages state) and uncontrolled (internal state) modes
   const controlled = typeof mobileOpen !== 'undefined' && typeof setMobileOpen === 'function';
   const isMobileOpen = controlled ? mobileOpen : internalMobileOpen;
   const setIsMobileOpen = controlled ? setMobileOpen! : setInternalMobileOpen;
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { pathname: currentPath } = useLocation();
+  // Initialise the Reports sub-menu as open if the user is already on a reports page
   const [reportsOpen, setReportsOpen] = useState(() => currentPath.startsWith('/reports'));
   const { logout, user } = useAuth();
   const { showToast } = useToast();
@@ -59,8 +73,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
     return words.map(w => w[0]).slice(0, 2).join('').toUpperCase();
   })(user?.name || user?.email || 'U');
 
-  const rawRole = String(user?.roleDisplayName || user?.roles?.[0] || user?.role || RoleDisplayName.VIEWER);
-  const userRole = rawRole.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  const userRole = getPrimaryRoleLabel(user);
 
   return (
     <>

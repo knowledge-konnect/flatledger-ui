@@ -1,4 +1,5 @@
-﻿// Entry point for v0 preview - renders the full Vite React app
+﻿"use client"
+// Entry point for v0 preview - renders the full Vite React app
 import React from 'react'
 
 // Import the complete app with all providers and routing

@@ -2,14 +2,29 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { flatsApi, FlatDto, CreateFlatDto, UpdateFlatDto, FlatStatusDto, FlatFinancialSummaryDto, FlatLedgerDto, BulkCreateFlatsPayload, BulkCreateFlatsResponse } from '../api/flatsApi';
 import { logger } from '../lib/logger';
 
+/**
+ * Hook: useFlats
+ * Purpose: Fetches all flats registered under the current society.
+ * Handles legacy 404 responses gracefully — the API now returns an empty array
+ * for societies with no flats, but older backend versions may still return 404.
+ */
 export function useFlats() {
   return useQuery({
     queryKey: ['flats'],
+    staleTime: 60_000, // Flat list changes only on CRUD; mutations invalidate this cache
     queryFn: async (): Promise<FlatDto[]> => {
-      logger.log('[useFlats] Fetching flats');
-      const result = await flatsApi.listBySociety();
-      logger.log(`[useFlats] Loaded ${result.length} flats`);
-      return result;
+      try {
+        const result = await flatsApi.listBySociety();
+        return result;
+      } catch (err: any) {
+        // Guard against legacy 404 responses during the API transition period.
+        // New API returns 200 + empty array; old API returned 404 for empty societies.
+        if (err?.response?.status === 404) {
+          logger.log('[useFlats] 404 treated as empty flats list');
+          return [];
+        }
+        throw err;
+      }
     },
   });
 }
@@ -50,6 +65,12 @@ export function useDeleteFlat() {
   });
 }
 
+/**
+ * Hook: useBulkCreateFlats
+ * Purpose: Creates multiple flats in a single API call (e.g. from CSV import).
+ * Uses onSettled (instead of onSuccess) to ensure the flats list is refreshed
+ * even if the bulk operation partially fails.
+ */
 export function useBulkCreateFlats() {
   const qc = useQueryClient();
   return useMutation<BulkCreateFlatsResponse, Error, BulkCreateFlatsPayload>({
@@ -57,6 +78,7 @@ export function useBulkCreateFlats() {
       return flatsApi.bulkCreateFlats(payload);
     },
     onSettled: () => {
+      // Refresh regardless of partial success/failure so the list stays accurate
       qc.invalidateQueries({ queryKey: ['flats'] });
     },
   });
@@ -65,12 +87,21 @@ export function useBulkCreateFlats() {
 export function useFlatStatuses() {
   return useQuery({
     queryKey: ['flat-statuses'],
+    staleTime: Infinity, // Status enum is static — never changes at runtime
     queryFn: async (): Promise<FlatStatusDto[]> => {
       return flatsApi.getStatuses();
     }
   });
 }
 
+/**
+ * Hook: useFlatFinancialSummary
+ * Purpose: Fetches the financial summary for a single flat (outstanding balance,
+ * opening balance remaining, bill outstanding). Used in the payment modal to
+ * show accurate figures before recording a payment.
+ *
+ * staleTime: 0 — figures must be fresh since they directly influence payment amounts.
+ */
 export function useFlatFinancialSummary(publicId?: string) {
   return useQuery({
     queryKey: ['flat-financial-summary', publicId],
@@ -78,9 +109,7 @@ export function useFlatFinancialSummary(publicId?: string) {
       if (!publicId) {
         throw new Error('Flat public ID is required');
       }
-      logger.log(`[useFlatFinancialSummary] Fetching financial summary for publicId: ${publicId}`);
       const result = await flatsApi.getFinancialSummary(publicId);
-      logger.log(`[useFlatFinancialSummary] Loaded summary:`, result);
       return result;
     },
     enabled: !!publicId,
@@ -88,6 +117,11 @@ export function useFlatFinancialSummary(publicId?: string) {
   });
 }
 
+/**
+ * Hook: useFlatLedger
+ * Purpose: Fetches the full billing ledger for a flat, including all bills
+ * and their payment status. Used in the MaintenanceLedger page.
+ */
 export function useFlatLedger(publicId?: string) {
   return useQuery({
     queryKey: ['flat-ledger', publicId],
@@ -95,9 +129,7 @@ export function useFlatLedger(publicId?: string) {
       if (!publicId) {
         throw new Error('Flat public ID is required');
       }
-      logger.log(`[useFlatLedger] Fetching ledger for publicId: ${publicId}`);
       const result = await flatsApi.getLedger(publicId);
-      logger.log(`[useFlatLedger] Loaded ledger with ${result.bills.length} bills`);
       return result;
     },
     enabled: !!publicId,

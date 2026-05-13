@@ -227,6 +227,7 @@ module.exports = {
         'slide-down': 'slideDown 0.3s ease-out',
         'scale-in': 'scaleIn 0.2s ease-out',
         'spin-slow': 'spin 1.5s linear infinite',
+        'shimmer': 'shimmer 1.4s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -244,6 +245,10 @@ module.exports = {
         scaleIn: {
           '0%': { opacity: '0', transform: 'scale(0.95)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        shimmer: {
+          '0%':   { transform: 'translateX(-150%)' },
+          '100%': { transform: 'translateX(350%)' },
         },
       },
       transitionDuration: {

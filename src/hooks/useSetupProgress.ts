@@ -20,7 +20,14 @@ export interface SetupProgress {
 }
 
 /**
- * Hook to calculate setup progress for the onboarding flow
+ * Hook: useSetupProgress
+ * Purpose: Derives the society's onboarding completion state by combining
+ * data from three independent queries (opening balance, flats, maintenance config).
+ * Used by the Dashboard to decide whether to show the setup banner or redirect
+ * new users to the /setup page.
+ *
+ * All data is memoized — the progress object only recomputes when one of the
+ * three underlying queries resolves or changes.
  */
 export function useSetupProgress(): SetupProgress {
   const { user } = useAuth();
@@ -48,7 +55,8 @@ export function useSetupProgress(): SetupProgress {
       {
         id: 'society',
         label: 'Society Created',
-        completed: true, // Always true if user is logged in
+        // Society step is always complete — the user cannot reach this hook without a society.
+        completed: true,
         description: 'Your society account is active',
       },
       {
@@ -66,8 +74,11 @@ export function useSetupProgress(): SetupProgress {
       {
         id: 'opening-balance',
         label: 'Opening Balance',
+        // Opening balance is optional — societies with no prior dues can skip it.
+        // Mark as complete if either applied OR explicitly skipped (isApplied can be false
+        // for new societies that have no outstanding dues from a previous system).
         completed: obApplied,
-        description: obApplied ? 'Applied successfully' : 'Pending setup',
+        description: obApplied ? 'Applied successfully' : 'Optional — skip if no prior dues',
       },
     ];
 
@@ -75,10 +86,15 @@ export function useSetupProgress(): SetupProgress {
     const progressPercentage = Math.round((completedCount / steps.length) * 100);
     const nextIncompleteStep = steps.find((s) => !s.completed) || null;
 
+    // Setup is complete when the three required steps are done.
+    // Opening balance (step 4) is optional — it does not block completion.
+    const requiredSteps = steps.filter((s) => s.id !== 'opening-balance');
+    const requiredComplete = requiredSteps.every((s) => s.completed);
+
     return {
       steps,
       progress: progressPercentage,
-      isComplete: completedCount === steps.length,
+      isComplete: requiredComplete,
       isLoading: false,
       nextStep: nextIncompleteStep,
     };

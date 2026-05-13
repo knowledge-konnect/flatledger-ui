@@ -1,5 +1,5 @@
-﻿import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, Download, Upload, Edit, Trash, AlertCircle, Home, ChevronUp, ChevronDown, ChevronsUpDown, X } from 'lucide-react';
+﻿import { useState, useMemo } from 'react';
+import { Plus, Search, Download, Upload, Edit, Trash, AlertCircle, Home, ChevronUp, ChevronDown, ChevronsUpDown, X, Info } from 'lucide-react';
 import ImportFlatsModal from '../components/Flats/ImportFlatsModal';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Button from '../components/ui/Button';
@@ -10,7 +10,7 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useDebounce } from '../hooks/useDebounce';
 import { exportCsv as exportCsvLib } from '../lib/exportCsv';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
-import { useFlatStatuses, useFlatFinancialSummary } from '../hooks/useFlats';
+import { useFlatStatuses } from '../hooks/useFlats';
 import { useMaintenanceConfig } from '../hooks/useSocieties';
 import Modal, { ModalFooter } from '../components/ui/Modal';
 import Input from '../components/ui/Input';
@@ -20,6 +20,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { logger } from '../lib/logger';
+import { SignedBalanceDisplay } from '../components/ui/SignedBalanceDisplay';
+import Tooltip from '../components/ui/Tooltip';
 
 const flatSchema = z.object({
   flatNumber: z.string().min(1, 'Flat number is required'),
@@ -42,54 +44,22 @@ import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { billingApi } from '../api/billingApi';
 
-// Component to fetch and display total due details for a single flat
-function FlatOutstandingBalance({ publicId, maintenanceAmount }: { publicId: string; maintenanceAmount: number }) {
-  const { data: summary, isLoading } = useFlatFinancialSummary(publicId);
-
-  if (isLoading) {
-    return (
-      <span className="text-slate-400 dark:text-slate-500 text-xs animate-pulse">
-        Loading...
-      </span>
-    );
-  }
-
-  const outstanding = summary?.totalOutstanding || 0;
-  const previousDue = summary?.openingBalanceRemaining || 0;
-  const currentBill = summary?.billOutstanding || 0;
-  const epsilon = 0.01;
-  const status = outstanding <= epsilon
-    ? 'paid'
-    : Math.abs(outstanding - maintenanceAmount) <= epsilon
-      ? 'current'
-      : 'overdue';
-
-  const amountClass = status === 'paid'
-    ? 'text-emerald-700 dark:text-emerald-400'
-    : status === 'current'
-      ? 'text-amber-700 dark:text-amber-400'
-      : 'text-rose-700 dark:text-rose-400';
-
-  const monthsDueRaw = maintenanceAmount > 0 ? outstanding / maintenanceAmount : 0;
-  const monthsDue = Number.isInteger(monthsDueRaw)
-    ? String(monthsDueRaw)
-    : monthsDueRaw.toFixed(1);
-  const monthsDueText = maintenanceAmount > 0
-    ? `${monthsDue} ${Number(monthsDue) === 1 ? 'month' : 'months'} due`
-    : 'No monthly charge';
-
+/**
+ * Component: FlatOutstandingBalance
+ * Purpose: Displays the outstanding balance for a single flat using the signed balance display component.
+ *
+ * Props:
+ *   outstandingBalance: preloaded outstanding total from the flats list response
+ *   maintenanceAmount: The flat's fixed monthly charge (used for context)
+ */
+function FlatOutstandingBalance({ outstandingBalance }: { outstandingBalance: number; maintenanceAmount: number }) {
+  // Use SignedBalanceDisplay component for consistent styling and color-coding
   return (
-    <div
-      className="flex flex-col items-end gap-0.5 leading-tight"
-      title={`Previous Due: ${formatCurrency(previousDue)} | Current Bill: ${formatCurrency(currentBill)}`}
-    >
-      <span className={`text-sm font-bold ${amountClass}`}>
-        {formatCurrency(outstanding)}
-      </span>
-      <span className="text-[10px] text-slate-500 dark:text-slate-400">
-        ({formatCurrency(previousDue)} prev + {formatCurrency(currentBill)} current) • {monthsDueText}
-      </span>
-    </div>
+    <SignedBalanceDisplay 
+      amount={outstandingBalance} 
+      size="compact"
+      showLabel={true}
+    />
   );
 }
 
@@ -139,7 +109,6 @@ export default function Flats() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedFlat, setSelectedFlat] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [flats, setFlats] = useState<UIFLat[]>([]);
   const [formError, setFormError] = useState<string | null>(null); // For business rule errors
   const { user } = useAuth();
   const isAdmin = isAdminRole(collectUserRoles(user));
@@ -157,7 +126,7 @@ export default function Flats() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<UIFLat | null>(null);
 
-  // Ensure arrays are always arrays (memoized to prevent infinite loop)
+  // Ensure arrays are always arrays (memoized to prevent infinite re-render loops)
   const safeStatuses = useMemo(() => Array.isArray(statuses) ? statuses : [], [statuses]);
   const safeApiFlats = useMemo(() => Array.isArray(apiFlats) ? apiFlats : [], [apiFlats]);
 
@@ -168,6 +137,8 @@ export default function Flats() {
     return deduped.map((s) => ({ value: s.code, label: s.displayName }));
   }, [safeStatuses]);
 
+  // Resolve the status code for a flat, trying multiple fallback strategies
+  // since the API may return statusId, statusName, or statusCode depending on the endpoint
   const resolveStatusCode = (flat: UIFLat) => {
     if (flat.statusCode) return flat.statusCode;
 
@@ -273,15 +244,15 @@ export default function Flats() {
 
         logger.log('[Flats] createFlat response:', created);
 
-        // Trigger billing generation for the new flat
+        // Trigger billing generation for the newly created flat so it appears
+        // in the current period's billing cycle immediately
         if (created?.publicId) {
           logger.log('[Flats] Triggering billing generation for flatPublicId:', created.publicId);
           try {
             await billingApi.generateForFlat({ flatPublicId: created.publicId });
-            logger.log('[Flats] Billing generation succeeded');
           } catch (billingErr) {
+            // Billing generation failure is non-critical — the flat was created successfully
             logger.log('[Flats] Billing generation failed:', billingErr);
-            // Billing generation failure is non-critical; flat was created successfully
           }
         } else {
           logger.log('[Flats] Skipping billing generation — no publicId on created object:', created);
@@ -302,17 +273,15 @@ export default function Flats() {
     }
   };
 
-  // Map API flats to UI model whenever apiFlats or statuses change
-  useEffect(() => {
-    if (!safeApiFlats || !Array.isArray(safeApiFlats)) return;
-    logger.log(`[Flats] Mapping ${safeApiFlats.length} API flats to UI model with ${safeStatuses.length} available statuses`);
-    const mapped = safeApiFlats.map((f) => {
+  // Map API flats to the UI model — derived directly from server state, no local copy needed.
+  // Resolves the status display name by matching statusId or statusName against the statuses list.
+  const flats = useMemo<UIFLat[]>(() => {
+    if (!safeApiFlats.length) return [];
+    logger.log(`[Flats] Mapping ${safeApiFlats.length} API flats to UI model`);
+    return safeApiFlats.map((f) => {
       const matchingStatus = safeStatuses.find(
         (s) => s.id === f.statusId || s.displayName === f.statusName
       );
-      const statusCode = matchingStatus?.code;
-      const statusDisplay = f.statusName || matchingStatus?.displayName || '';
-
       return {
         publicId: f.publicId,
         flatNumber: f.flatNo,
@@ -320,15 +289,13 @@ export default function Flats() {
         ownerEmail: f.contactEmail ?? '',
         ownerPhone: f.contactMobile,
         maintenanceAmount: f.maintenanceAmount,
-        outstandingBalance: 0, // Will be fetched separately per flat
-        status: statusDisplay,
-        statusCode: statusCode, // Store the code for editing
+        outstandingBalance: f.totalOutstanding ?? 0,
+        status: f.statusName || matchingStatus?.displayName || '',
+        statusCode: matchingStatus?.code,
         statusId: f.statusId,
         createdAt: (f as any).createdAt,
       } as UIFLat;
     });
-    logger.log(`[Flats] Successfully mapped ${mapped.length} UI flats`);
-    setFlats(mapped);
   }, [safeApiFlats, safeStatuses]);
 
   // Filter, sort and paginate
@@ -358,19 +325,19 @@ export default function Flats() {
   const paged = processed.slice(start, start + pageSize);
 
   const exportCsv = () => {
-    // Export all currently processed (filtered/sorted/paged) rows
+    // Export all currently filtered/sorted rows (not just the current page)
     const rows = processed;
     if (!rows || rows.length === 0) {
       showToast('No flats to export', 'info');
       return;
     }
-    const headers = ['Flat Number','Owner Name','Contact Mobile','Contact Email','Maintenance Amount','Status','Public ID','Created At'];
+    const headers = ['Flat Number','Owner Name','Contact Mobile','Contact Email','Monthly Charge','Status','Public ID','Created At'];
     const rowsData = rows.map(r => ({
       'Flat Number': r.flatNumber,
       'Owner Name': r.ownerName,
       'Contact Mobile': r.ownerPhone,
       'Contact Email': r.ownerEmail,
-      'Maintenance Amount': r.maintenanceAmount,
+      'Monthly Charge': r.maintenanceAmount,
       'Status': r.status,
       'Public ID': r.publicId ?? '',
       'Created At': r.createdAt ?? '',
@@ -381,7 +348,7 @@ export default function Flats() {
   };
 
   return (
-    <DashboardLayout title="Flats Management">
+    <DashboardLayout title="Flats">
       <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950">
         <div className="space-y-4 sm:space-y-6 relative">{/* Modern Premium Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-2">
@@ -534,21 +501,24 @@ export default function Flats() {
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">
                         Contact
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors" onClick={() => toggleSort('maintenanceAmount')}>
-                        <div className="flex flex-col items-end">
-                          <span className="inline-flex items-center justify-end w-full">Monthly Charge <SortIcon field="maintenanceAmount" /></span>
-                          <span className="text-[10px] font-medium normal-case tracking-normal text-emerald-100/90">
-                            Fixed amount per month
-                          </span>
-                        </div>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors whitespace-nowrap" onClick={() => toggleSort('maintenanceAmount')}>
+                        <span className="inline-flex items-center justify-end w-full">Monthly Charge <SortIcon field="maintenanceAmount" /></span>
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider">
-                        <div className="flex flex-col items-end">
-                          <span>Total Due</span>
-                          <span className="text-[10px] font-medium normal-case tracking-normal text-emerald-100/90">
-                            Includes previous pending + current bill
-                          </span>
-                        </div>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider whitespace-nowrap">
+                        <span className="inline-flex items-center justify-end gap-1">
+                          Total Due
+                          <Tooltip
+                            side="bottom"
+                            content={
+                              <div className="flex flex-col gap-0.5 text-[11px] leading-snug">
+                                <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0"></span><span className="text-rose-300 font-medium">+</span><span className="text-slate-200"> owes society</span></div>
+                                <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></span><span className="text-emerald-300 font-medium">−</span><span className="text-slate-200"> advance paid</span></div>
+                              </div>
+                            }
+                          >
+                            <Info className="w-3.5 h-3.5 text-slate-300 hover:text-white cursor-help transition-colors" />
+                          </Tooltip>
+                        </span>
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">
                         Status
@@ -597,7 +567,7 @@ export default function Flats() {
                           </span>
                         </td>
                         <td className="px-6 py-3 text-right align-middle">
-                          <FlatOutstandingBalance publicId={flat.publicId} maintenanceAmount={flat.maintenanceAmount} />
+                          <FlatOutstandingBalance outstandingBalance={flat.outstandingBalance} maintenanceAmount={flat.maintenanceAmount} />
                         </td>
                         <td className="px-6 py-3 whitespace-nowrap align-middle hidden sm:table-cell">
                           <StatusBadge code={flat.status} id={flat.statusId} label={flat.status} kind="flat" />
@@ -654,6 +624,8 @@ export default function Flats() {
               <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 px-6 py-3">
                 <Pagination page={page} pageSize={pageSize} total={total} onPageChange={(p) => setPage(p)} onPageSizeChange={(s) => { setPageSize(s); setPage(0); }} />
               </div>
+
+
             </>
           )}
         </div>
@@ -716,7 +688,7 @@ export default function Flats() {
 
               <div className="md:col-span-2">
                 <Input
-                  label="Maintenance Amount"
+                  label="Monthly Charge"
                   type="number"
                   placeholder="5000"
                   step="0.01"

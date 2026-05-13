@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 
 /**
- * Tracks whether a media query matches
+ * Hook: useMediaQuery
+ * Purpose: Reactively tracks whether a CSS media query matches.
+ * Handles both modern (addEventListener) and legacy (addListener) browser APIs.
+ *
  * @param query - Media query string (e.g., '(min-width: 768px)')
  */
 export function useMediaQuery(query: string): boolean {
@@ -16,12 +19,12 @@ export function useMediaQuery(query: string): boolean {
 
     const listener = (e: MediaQueryListEvent) => setMatches(e.matches);
     
-    // Modern browsers
+    // Use the modern addEventListener API where available
     if (media.addEventListener) {
       media.addEventListener('change', listener);
       return () => media.removeEventListener('change', listener);
     } else {
-      // Fallback for older browsers
+      // Fallback for Safari < 14 and older browsers
       media.addListener(listener);
       return () => media.removeListener(listener);
     }
@@ -30,7 +33,7 @@ export function useMediaQuery(query: string): boolean {
   return matches;
 }
 
-// Convenience hooks for common breakpoints
+// Convenience hooks for the app's standard Tailwind breakpoints
 export const useIsMobile = () => useMediaQuery('(max-width: 767px)');
 export const useIsTablet = () => useMediaQuery('(min-width: 768px) and (max-width: 1023px)');
 export const useIsDesktop = () => useMediaQuery('(min-width: 1024px)');

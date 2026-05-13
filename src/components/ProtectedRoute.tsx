@@ -7,10 +7,21 @@ interface ProtectedRouteProps {
   roles?: string[]; // Optional roles - if provided, user must have at least one of these roles
 }
 
+/**
+ * Component: ProtectedRoute
+ * Purpose: Guards a route behind authentication and optional role checks.
+ * Renders a loading spinner while auth state is resolving, redirects to the
+ * landing page if unauthenticated, and to /unauthorized if the user lacks
+ * the required role.
+ *
+ * Props:
+ *   children: The protected page/component to render
+ *   roles: Optional list of allowed role codes. If omitted, any authenticated user can access.
+ */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
 
-  // 1. If authLoading is true: show loading spinner
+  // Show a spinner while the auth state is being resolved (e.g. on page refresh)
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -22,14 +33,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles 
     );
   }
 
-  // 2. If not authenticated: redirect to login page
+  // Redirect unauthenticated users to the landing page with a session-expired hint
   if (!isAuthenticated) {
     return <Navigate to="/?reason=session_expired" replace />;
   }
 
-  // 3. Support optional roles prop: If user.role not in allowed roles, redirect to /unauthorized
+  // Role-based access control: check both the roles array and the legacy role string
   if (roles && roles.length > 0) {
-    // Check if user has at least one of the required roles
     const hasRequiredRole = user?.roles?.some(userRole => roles.includes(userRole)) || 
                            (user?.role && roles.includes(user.role));
     
@@ -38,19 +48,29 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles 
     }
   }
 
-  // 4. Ensure no protected component renders before auth check completes
-  // Auth check is complete at this point (isLoading = false, isAuthenticated = true, role check passed)
   return <>{children}</>;
 };
 
+/**
+ * Component: RequireRole
+ * Purpose: Inline role guard for rendering UI elements conditionally.
+ * Unlike ProtectedRoute (which guards full pages), this wraps smaller
+ * sections that should only be visible to specific roles — e.g. hiding
+ * a button for non-admins. Returns null (renders nothing) when the role
+ * check fails so the rest of the page is unaffected.
+ *
+ * Props:
+ *   children: Content to render if the role check passes
+ *   roles: List of role codes that are allowed to see the children
+ */
 export const RequireRole: React.FC<{
   children: React.ReactNode;
   roles: string[];
 }> = ({ children, roles }) => {
   const { user } = useAuth();
 
-  if (!user || !roles.some(role => user.roles.includes(role))) {
-    return <Navigate to="/unauthorized" replace />;
+  if (!user || !roles.some(role => user.roles?.includes(role) || user.role === role)) {
+    return null;
   }
 
   return <>{children}</>;

@@ -20,7 +20,7 @@ import { useNotifications, useUpdateNotifications } from "../hooks/useNotificati
 import { useToast } from "../components/ui/Toast"
 import { cn } from "../lib/utils"
 import { useOpeningBalanceStatus } from "../hooks/useOpeningBalance"
-import { isAdminRole, collectUserRoles } from "../types/roles"
+import { isAdminRole, collectUserRoles, getPrimaryRoleLabel } from "../types/roles"
 
 const NAV_SECTIONS: { label: string; items: { id: string; label: string; icon: React.ElementType; description: string; adminOnly?: boolean; href?: string }[] }[] = [
   {
@@ -54,7 +54,7 @@ const NAV_SECTIONS: { label: string; items: { id: string; label: string; icon: R
 ]
 
 export default function SettingsPageRedesigned() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState(() => searchParams.get('section') || 'profile')
   const [isDark, setIsDark] = useState(document.documentElement.classList.contains('dark'))
   const { user, logout } = useAuth()
@@ -86,9 +86,21 @@ export default function SettingsPageRedesigned() {
   const notifications = useNotifications()
   const updateNotifications = useUpdateNotifications()
   const subscription = useSubscription()
-  const { cancelSubscription: cancelSub, refreshStatus } = useSubscription()
+  const { cancelSubscription: cancelSub, refreshStatus } = subscription
 
   const [isCancelling, setIsCancelling] = useState(false)
+
+  const handleSectionChange = (sectionId: string) => {
+    setActiveSection(sectionId)
+    const next = new URLSearchParams(searchParams)
+    next.set('section', sectionId)
+    setSearchParams(next, { replace: true })
+  }
+
+  useEffect(() => {
+    const sectionFromUrl = searchParams.get('section') || 'profile'
+    setActiveSection(prev => (prev === sectionFromUrl ? prev : sectionFromUrl))
+  }, [searchParams])
 
   const handleCancelSubscription = async () => {
     if (!window.confirm('Are you sure you want to cancel your subscription?')) return
@@ -149,6 +161,24 @@ export default function SettingsPageRedesigned() {
   }
 
   const handleSaveMaintenanceConfig = async () => {
+    // Validation
+    if (!maintenanceForm.defaultMonthlyCharge || maintenanceForm.defaultMonthlyCharge <= 0) {
+      showToast("Default monthly charge must be greater than ₹0", "error")
+      return
+    }
+    if (!maintenanceForm.dueDayOfMonth || maintenanceForm.dueDayOfMonth < 1 || maintenanceForm.dueDayOfMonth > 28) {
+      showToast("Due day of month must be between 1 and 28", "error")
+      return
+    }
+    if (maintenanceForm.lateFeePerMonth < 0) {
+      showToast("Late fee cannot be negative", "error")
+      return
+    }
+    if (maintenanceForm.gracePeriodDays < 0) {
+      showToast("Grace period cannot be negative", "error")
+      return
+    }
+
     try {
       setIsSaving(true)
       await updateMaintenanceConfig.mutateAsync(maintenanceForm)
@@ -280,7 +310,7 @@ export default function SettingsPageRedesigned() {
                         <button
                           key={item.id}
                           onClick={() => {
-                            if (item.href) { navigate(item.href) } else { setActiveSection(item.id) }
+                            if (item.href) { navigate(item.href) } else { handleSectionChange(item.id) }
                           }}
                           className={cn(
                             'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 text-left group',
@@ -332,7 +362,7 @@ export default function SettingsPageRedesigned() {
                     <p className="text-white font-bold text-lg">{displayName || 'Loading...'}</p>
                     <p className="text-emerald-100 text-sm">{displayEmail}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">{user?.role || user?.roles?.[0] || 'Member'}</span>
+                      <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">{getPrimaryRoleLabel(user)}</span>
                       {user?.societyName && (
                         <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">{user.societyName}</span>
                       )}
@@ -461,7 +491,7 @@ export default function SettingsPageRedesigned() {
                 <CardContent className="p-6 space-y-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-semibold text-slate-800 dark:text-slate-200">Maintenance Charges</h3>
+                      <h3 className="font-semibold text-slate-800 dark:text-slate-200">Monthly Charges</h3>
                       <p className="text-xs text-slate-400 mt-0.5">Set the monthly maintenance fee per flat and billing rules applied when generating bills</p>
                     </div>
                     <span className="text-xs px-2 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300 font-medium">Treasurer / Admin</span>
@@ -478,8 +508,8 @@ export default function SettingsPageRedesigned() {
                             <input
                               className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                               placeholder="e.g. 2000" type="number" min={0}
-                              value={maintenanceForm.defaultMonthlyCharge}
-                              onChange={e => setMaintenanceForm(p => ({ ...p, defaultMonthlyCharge: Number(e.target.value) }))}
+                              value={maintenanceForm.defaultMonthlyCharge || ''}
+                              onChange={e => setMaintenanceForm(p => ({ ...p, defaultMonthlyCharge: e.target.value === '' ? 0 : Number(e.target.value) }))}
                             />
                           </div>
                           <p className="text-xs text-slate-400 mt-1">Standard amount charged to each flat per month</p>
@@ -489,8 +519,8 @@ export default function SettingsPageRedesigned() {
                           <input
                             className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             placeholder="e.g. 5" type="number" min={1} max={28}
-                            value={maintenanceForm.dueDayOfMonth}
-                            onChange={e => setMaintenanceForm(p => ({ ...p, dueDayOfMonth: Number(e.target.value) }))}
+                            value={maintenanceForm.dueDayOfMonth || ''}
+                            onChange={e => setMaintenanceForm(p => ({ ...p, dueDayOfMonth: e.target.value === '' ? 5 : Number(e.target.value) }))}
                           />
                           <p className="text-xs text-slate-400 mt-1">Bills become due on this day each month (e.g. 5 = 5th)</p>
                         </div>
@@ -501,8 +531,8 @@ export default function SettingsPageRedesigned() {
                             <input
                               className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                               placeholder="e.g. 100" type="number" min={0}
-                              value={maintenanceForm.lateFeePerMonth}
-                              onChange={e => setMaintenanceForm(p => ({ ...p, lateFeePerMonth: Number(e.target.value) }))}
+                              value={maintenanceForm.lateFeePerMonth || ''}
+                              onChange={e => setMaintenanceForm(p => ({ ...p, lateFeePerMonth: e.target.value === '' ? 0 : Number(e.target.value) }))}
                             />
                           </div>
                           <p className="text-xs text-slate-400 mt-1">Extra charge added each month after the grace period if unpaid</p>
@@ -512,13 +542,18 @@ export default function SettingsPageRedesigned() {
                           <input
                             className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                             placeholder="e.g. 5" type="number" min={0}
-                            value={maintenanceForm.gracePeriodDays}
-                            onChange={e => setMaintenanceForm(p => ({ ...p, gracePeriodDays: Number(e.target.value) }))}
+                            value={maintenanceForm.gracePeriodDays || ''}
+                            onChange={e => setMaintenanceForm(p => ({ ...p, gracePeriodDays: e.target.value === '' ? 0 : Number(e.target.value) }))}
                           />
                           <p className="text-xs text-slate-400 mt-1">Days after the due date before late fees start applying</p>
                         </div>
                       </div>
-                      <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveMaintenanceConfig} disabled={isSaving}>
+                      <Button 
+                        variant="primary" 
+                        className="flex items-center gap-2" 
+                        onClick={handleSaveMaintenanceConfig} 
+                        disabled={isSaving || !maintenanceForm.defaultMonthlyCharge || maintenanceForm.defaultMonthlyCharge <= 0 || !maintenanceForm.dueDayOfMonth || maintenanceForm.dueDayOfMonth < 1 || maintenanceForm.dueDayOfMonth > 28 || maintenanceForm.lateFeePerMonth < 0 || maintenanceForm.gracePeriodDays < 0}
+                      >
                         {isSaving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         {isSaving ? 'Saving...' : 'Save Configuration'}
                       </Button>
@@ -632,8 +667,11 @@ export default function SettingsPageRedesigned() {
                         <div>
                           <p className="text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-1">Current Plan</p>
                           <p className="text-white text-2xl font-bold">{subscription.planName || 'No Active Plan'}</p>
-                          {subscription.monthlyAmount && (
-                            <p className="text-emerald-100 text-sm mt-1">₹{subscription.monthlyAmount}<span className="text-emerald-300">/month</span></p>
+                          {(subscription.subscribedAmount ?? subscription.monthlyAmount) && (
+                            <>
+                              {/* Use subscribedAmount (locked price) for active subscription; fall back to monthlyAmount for trial/legacy */}
+                              <p className="text-emerald-100 text-sm mt-1">₹{subscription.subscribedAmount ?? subscription.monthlyAmount}<span className="text-emerald-300">/month</span></p>
+                            </>
                           )}
                         </div>
                         <div className="flex flex-col items-end gap-2">

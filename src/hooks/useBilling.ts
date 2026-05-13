@@ -12,20 +12,37 @@ import { createActivityLog } from '../api/activityLogsApi';
 import { useAuth } from '../contexts/AuthProvider';
 import { logger } from '../lib/logger';
 
-export function useMaintenancePayments(period?: string) {
+/**
+ * Hook: useMaintenancePayments
+ * Purpose: Fetches paginated maintenance payments for the current society,
+ * optionally filtered by billing period.
+ *
+ * staleTime: 0 — payments are financial records that must always reflect the
+ * latest server state, especially after a create/update/delete mutation.
+ */
+export function useMaintenancePayments(
+  period?: string,
+  page = 1,
+  pageSize = 50,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
-    queryKey: ['maintenance-payments', period],
+    queryKey: ['maintenance-payments', period, page, pageSize],
     queryFn: async (): Promise<MaintenancePaymentDto[]> => {
-      logger.log(`[useMaintenancePayments] Fetching maintenance payments${period ? ` for period: ${period}` : ''}`);
-      const result = await maintenanceApi.listBySociety(period);
-      logger.log(`[useMaintenancePayments] Loaded ${result.length} maintenance payments`);
+      const result = await maintenanceApi.listBySociety(period, page, pageSize);
       return result;
     },
-    staleTime: 0, // Always refetch when period changes
+    staleTime: 0, // Always refetch when period/page changes
     refetchOnWindowFocus: false,
+    enabled: options?.enabled !== undefined ? options.enabled : true,
   });
 }
 
+/**
+ * Hook: useMaintenanceSummary
+ * Purpose: Fetches aggregated billing stats (total charges, collected, outstanding)
+ * for a given YYYY-MM period. Disabled when no period is provided.
+ */
 export function useMaintenanceSummary(period?: string) {
   return useQuery({
     queryKey: ['maintenance-summary', period],
@@ -33,15 +50,19 @@ export function useMaintenanceSummary(period?: string) {
       if (!period) {
         throw new Error('Period is required for maintenance summary');
       }
-      logger.log(`[useMaintenanceSummary] Fetching summary for period: ${period}`);
       const result = await maintenanceApi.getSummary(period);
-      logger.log(`[useMaintenanceSummary] Loaded summary:`, result);
       return result;
     },
     enabled: !!period,
   });
 }
 
+/**
+ * Hook: useCreateMaintenancePayment
+ * Purpose: Records a new maintenance payment and invalidates all related caches.
+ * Supports idempotency keys to prevent duplicate payments on network retries.
+ * Also writes an activity log entry for audit trail purposes.
+ */
 export function useCreateMaintenancePayment() {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -56,13 +77,15 @@ export function useCreateMaintenancePayment() {
       return maintenanceApi.createPayment(payload, idempotencyKey);
     },
     onSuccess: async (data, variables) => {
+      // Invalidate all queries that display payment or financial data
       qc.invalidateQueries({ queryKey: ['maintenance-payments'] });
       qc.invalidateQueries({ queryKey: ['maintenance-summary'] });
       qc.invalidateQueries({ queryKey: ['flat-ledger', variables.payload.flatPublicId] });
       qc.invalidateQueries({ queryKey: ['flat-financial-summary', variables.payload.flatPublicId] });
+      // Invalidate the bulk summary cache so the modal dropdown reflects the new balance on next open
+      qc.invalidateQueries({ queryKey: ['flat-financial-summary-bulk'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       
-      // Log activity
       if (user) {
         try {
           await createActivityLog({
@@ -79,6 +102,7 @@ export function useCreateMaintenancePayment() {
             }`,
           });
         } catch (error) {
+          // Activity log failure is non-critical — do not block the UI
           logger.error('[useCreateMaintenancePayment] Failed to log activity:', error);
         }
       }
@@ -86,6 +110,11 @@ export function useCreateMaintenancePayment() {
   });
 }
 
+/**
+ * Hook: useUpdateMaintenancePayment
+ * Purpose: Updates an existing payment record and refreshes all affected caches,
+ * including the flat's ledger and financial summary.
+ */
 export function useUpdateMaintenancePayment() {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -100,7 +129,6 @@ export function useUpdateMaintenancePayment() {
       qc.invalidateQueries({ queryKey: ['flat-ledger', data.flatPublicId] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       
-      // Log activity
       if (user) {
         try {
           await createActivityLog({
@@ -122,6 +150,12 @@ export function useUpdateMaintenancePayment() {
   });
 }
 
+/**
+ * Hook: useDeleteMaintenancePayment
+ * Purpose: Soft-deletes a payment and invalidates all related caches.
+ * Uses broad invalidation (no flatPublicId) since the deleted payment's flat
+ * context is not available in the onSuccess callback.
+ */
 export function useDeleteMaintenancePayment() {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -132,11 +166,11 @@ export function useDeleteMaintenancePayment() {
     onSuccess: async (_, publicId) => {
       qc.invalidateQueries({ queryKey: ['maintenance-payments'] });
       qc.invalidateQueries({ queryKey: ['maintenance-summary'] });
+      // Broad invalidation — flat context is unavailable after deletion
       qc.invalidateQueries({ queryKey: ['flat-financial-summary'] });
       qc.invalidateQueries({ queryKey: ['flat-ledger'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       
-      // Log activity
       if (user) {
         try {
           await createActivityLog({
@@ -156,32 +190,38 @@ export function useDeleteMaintenancePayment() {
   });
 }
 
+/**
+ * Hook: usePaymentModes
+ * Purpose: Fetches available payment modes (cash, UPI, cheque, NEFT, etc.)
+ * for use in payment form dropdowns.
+ */
 export function usePaymentModes() {
   return useQuery({
     queryKey: ['payment-modes'],
+    staleTime: Infinity, // Payment modes (Cash, UPI, etc.) are static reference data
     queryFn: async (): Promise<PaymentModeDto[]> => {
-      logger.log(`[usePaymentModes] Fetching payment modes`);
       const result = await maintenanceApi.getPaymentModes();
-      logger.log(`[usePaymentModes] Loaded ${result.length} payment modes`);
       return result;
     }
   });
 }
 
+/**
+ * Hook: useRestorePayment
+ * Purpose: Restores a previously soft-deleted payment by sending an empty
+ * update payload. The backend interprets this as an undelete operation.
+ */
 export function useRestorePayment() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (publicId: string) => {
-      logger.log(`[useRestorePayment] Restoring payment: ${publicId}`);
       return maintenanceApi.updatePayment(publicId, {});
     },
     onSuccess: async (data) => {
-      logger.log('[useRestorePayment] Success - invalidating payments query');
       qc.invalidateQueries({ queryKey: ['maintenance-payments'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       
-      // Log activity
       if (user) {
         try {
           await createActivityLog({

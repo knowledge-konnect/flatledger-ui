@@ -3,7 +3,6 @@ import { ArrowLeft, FileText } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card, { CardContent } from '../components/ui/Card';
 import PageHeader from '../components/ui/PageHeader';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
 import Button from '../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import Badge from '../components/ui/Badge';
@@ -38,15 +37,17 @@ export default function MaintenanceLedger() {
 
   if (isLoading) {
     return (
-      <DashboardLayout title="Maintenance Ledger">
-        <LoadingSpinner centered />
+      <DashboardLayout title="Bill History">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="w-10 h-10 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+        </div>
       </DashboardLayout>
     );
   }
 
   if (error || !ledger) {
     return (
-      <DashboardLayout title="Maintenance Ledger">
+      <DashboardLayout title="Bill History">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <FileText className="w-16 h-16 text-slate-400 mx-auto mb-4" />
@@ -74,7 +75,7 @@ export default function MaintenanceLedger() {
   const sortedBills = [...ledger.bills].sort((a, b) => a.period.localeCompare(b.period));
 
   return (
-    <DashboardLayout title="Maintenance Ledger">
+    <DashboardLayout title="Bill History">
       <div className="space-y-6">
         {/* Page Header */}
         <PageHeader
@@ -93,7 +94,7 @@ export default function MaintenanceLedger() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="hover:shadow-md transition-all duration-200">
             <CardContent className="p-6">
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Total Member Outstanding</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Total Unpaid</p>
               <p className={`text-2xl font-bold ${ledger.totalOutstanding > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                 {formatCurrency(ledger.totalOutstanding || 0)}
               </p>

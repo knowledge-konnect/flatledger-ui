@@ -6,7 +6,8 @@ import './index.css';
 import i18n from './lib/i18n';
 import { I18nextProvider } from 'react-i18next';
 
-// Unregister any previously installed service workers
+// Proactively unregister any stale service workers from previous PWA builds.
+// This prevents users from being served outdated cached assets after a deployment.
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     for (const registration of registrations) {

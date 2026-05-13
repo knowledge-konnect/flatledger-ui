@@ -13,7 +13,7 @@ export interface RegisterCredentials {
 
 export interface AuthResponse {
   accessToken: string;
-  roles: (string | { id?: number; code?: string; displayName?: string; name?: string })[];
+  roles: (string | { id?: number; code?: string; displayName?: string })[];
   accessTokenExpiresAt?: string;
   // refreshToken and refreshTokenExpiresAt are no longer in the response body.
   // The backend sets refreshToken as an httpOnly cookie automatically.

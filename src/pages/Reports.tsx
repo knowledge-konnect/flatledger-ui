@@ -3,7 +3,7 @@ import ReactApexChart from 'react-apexcharts';
 import {
   FileText, TrendingUp, TrendingDown, Wallet, Users,
   Receipt, BarChart2, RefreshCw, AlertCircle, Loader2,
-  BookOpen, CreditCard, PieChart as PieChartIcon, Percent,
+  BookOpen, CreditCard, Percent,
 } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
@@ -13,8 +13,8 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 import Pagination from '../components/ui/Pagination';
 import { formatCurrency, cn } from '../lib/utils';
 import reportsApi, {
-  CollectionSummaryData, DefaulterEntry, IncomeVsExpenseData,
-  FundLedgerData, PaymentRegisterEntry, PaymentRegisterPage, ExpenseByCategoryData,
+  CollectionSummaryData, DefaulterEntry, IncomeVsExpenseData, ExpenseCategory,
+  FundLedgerData, PaymentRegisterEntry, PaymentRegisterPage,
 } from '../api/reportsApi';
 
 /* ─────────────────────────────────────────────────── */
@@ -491,9 +491,15 @@ function DefaultersReport({
   if (state.error) return <ReportError message={state.error} onRetry={() => onFetch(minOutstanding)} />;
   if (!state.data) return <ReportLoading label="Defaulters" />;
 
-  const allData = state.data!;
+  const allData = [...state.data].sort((a, b) => {
+    const pendingDiff = b.pending_months - a.pending_months;
+    if (pendingDiff !== 0) return pendingDiff;
+    const outstandingDiff = b.total_outstanding - a.total_outstanding;
+    if (outstandingDiff !== 0) return outstandingDiff;
+    return a.flat_no.localeCompare(b.flat_no);
+  });
   const totalOutstanding = allData.reduce((s, d) => s + d.total_outstanding, 0);
-  
+
   // Paginate the data
   const startIndex = page * pageSize;
   const endIndex = startIndex + pageSize;
@@ -558,14 +564,15 @@ function DefaultersReport({
                 <TableHead>Paid</TableHead>
                 <TableHead>Outstanding</TableHead>
                 <TableHead>% of Total</TableHead>
-                <TableHead>Pending Months</TableHead>
+                <TableHead>Overdue / Total</TableHead>
                 <TableHead>Since</TableHead>
+                <TableHead>Latest</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedData.length === 0 ? (
                 <TableRow>
-                  <TableCell className="text-center py-8 text-slate-400" colSpan={9}>
+                  <TableCell className="text-center py-8 text-slate-400" colSpan={10}>
                     {allData.length === 0 ? 'No defaulters found' : 'No results on this page'}
                   </TableCell>
                 </TableRow>
@@ -582,8 +589,15 @@ function DefaultersReport({
                   <TableCell className="text-slate-500 tabular-nums">
                     {totalOutstanding > 0 ? ((d.total_outstanding / totalOutstanding) * 100).toFixed(1) + '%' : '—'}
                   </TableCell>
-                  <TableCell>{d.pending_months}</TableCell>
+                  <TableCell className="whitespace-nowrap tabular-nums">
+                    {d.pending_months > 0
+                      ? <span className={d.pending_months > 3 ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-amber-600 dark:text-amber-400 font-semibold'}>
+                          {d.pending_months}{d.total_months ? ` / ${d.total_months}` : ''} mo
+                        </span>
+                      : <span className="text-slate-400">0{d.total_months ? ` / ${d.total_months}` : ''} mo</span>}
+                  </TableCell>
                   <TableCell className="whitespace-nowrap">{d.oldest_due_period ? fmtPeriod(d.oldest_due_period) : '—'}</TableCell>
+                  <TableCell className="whitespace-nowrap">{d.latest_due_period ? fmtPeriod(d.latest_due_period) : '—'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -639,12 +653,16 @@ function IncomeVsExpenseReport({
   if (!state.data) return <ReportLoading label="Income vs Expense" />;
 
   const d = state.data!;
-  const chartData = d.months.map(m => ({
+  const expRatio = d.total_income > 0 ? (d.total_expense / d.total_income) * 100 : 0;
+  const monthsAsc  = [...d.months].sort((a, b) => a.month.localeCompare(b.month));
+  const monthsDesc = [...monthsAsc].reverse();
+  const chartData = monthsAsc.map(m => ({
     name: fmtPeriod(m.month),
     Income: m.income,
     Expense: m.expense,
-    Net: m.net,
   }));
+  const catSorted = [...(d.categories ?? [])].sort((a: ExpenseCategory, b: ExpenseCategory) => b.total_amount - a.total_amount);
+  const catTotal  = d.total_expense || catSorted.reduce((s: number, c: ExpenseCategory) => s + c.total_amount, 0);
 
   return (
     <div className="space-y-3">
@@ -653,8 +671,8 @@ function IncomeVsExpenseReport({
         <div className="px-4 py-2.5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/40 border-b border-green-200 dark:border-green-800">
           <div className="flex items-center gap-2">
             <span className="text-lg">💰</span>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Income vs Expense Analysis</h3>
-            <span className="text-xs text-slate-500 dark:text-slate-400">• Track financial health</span>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Income & Expenses</h3>
+            <span className="text-xs text-slate-500 dark:text-slate-400">• Monthly income, expenses and category breakdown</span>
           </div>
         </div>
         <div className="p-3">
@@ -673,10 +691,11 @@ function IncomeVsExpenseReport({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <StatCard label="Total Income" value={formatCurrency(d.total_income)} icon={TrendingUp}
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatCard label="Total Received" value={formatCurrency(d.total_income)} icon={TrendingUp}
           colorClass="bg-green-50 dark:bg-green-950/30" iconColorClass="text-green-600 dark:text-green-400" />
-        <StatCard label="Total Expense" value={formatCurrency(d.total_expense)} icon={TrendingDown}
+        <StatCard label="Total Spent" value={formatCurrency(d.total_expense)} icon={TrendingDown}
           colorClass="bg-red-50 dark:bg-red-950/30" iconColorClass="text-red-600 dark:text-red-400" />
         <StatCard
           label="Net Surplus / (Deficit)"
@@ -685,8 +704,16 @@ function IncomeVsExpenseReport({
           colorClass={d.net_balance >= 0 ? 'bg-green-50 dark:bg-green-950/30' : 'bg-red-50 dark:bg-red-950/30'}
           iconColorClass={d.net_balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}
         />
+        <StatCard
+          label="Expense Ratio"
+          value={`${expRatio.toFixed(1)}%`}
+          icon={Percent}
+          colorClass={expRatio > 100 ? 'bg-red-50 dark:bg-red-950/30' : expRatio > 75 ? 'bg-amber-50 dark:bg-amber-950/30' : 'bg-blue-50 dark:bg-blue-950/30'}
+          iconColorClass={expRatio > 100 ? 'text-red-600 dark:text-red-400' : expRatio > 75 ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}
+        />
       </div>
 
+      {/* Monthly bar chart */}
       <Card>
         <CardHeader>
           <CardTitle className="text-sm font-semibold">Monthly Comparison</CardTitle>
@@ -696,7 +723,7 @@ function IncomeVsExpenseReport({
             type="bar"
             height={240}
             series={[
-              { name: 'Income', data: chartData.map((d: any) => d.Income ?? 0) },
+              { name: 'Income',  data: chartData.map((d: any) => d.Income  ?? 0) },
               { name: 'Expense', data: chartData.map((d: any) => d.Expense ?? 0) },
             ]}
             options={{
@@ -704,8 +731,8 @@ function IncomeVsExpenseReport({
               colors: ['#10B981', '#EF4444'],
               plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
               dataLabels: { enabled: false },
-              xaxis: { categories: chartData.map((d: any) => d.name), labels: { style: { fontSize: '11px', colors: '#1e293b' } } },
-              yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px', colors: '#1e293b' } } },
+              xaxis: { categories: chartData.map((d: any) => d.name), labels: { style: { fontSize: '11px' } } },
+              yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px' } } },
               tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
               legend: { position: 'top', fontSize: '12px' },
               grid: { borderColor: '#E2E8F0' },
@@ -714,63 +741,98 @@ function IncomeVsExpenseReport({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold">Net Balance Trend</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ReactApexChart
-            type="line"
-            height={180}
-            series={[{ name: 'Net', data: chartData.map((d: any) => d.Net ?? 0) }]}
-            options={{
-              chart: { toolbar: { show: false }, background: 'transparent' },
-              colors: ['#10B981'],
-              stroke: { width: 2, curve: 'smooth' },
-              markers: { size: 3 },
-              dataLabels: { enabled: false },
-              xaxis: { categories: chartData.map((d: any) => d.name), labels: { style: { fontSize: '11px', colors: '#1e293b' } } },
-              yaxis: { labels: { formatter: (v: number) => `₹${(v / 1000).toFixed(0)}k`, style: { fontSize: '11px', colors: '#1e293b' } } },
-              tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
-              legend: { show: false },
-              grid: { borderColor: '#E2E8F0' },
-            }}
-          />
-        </CardContent>
-      </Card>
-
+      {/* Monthly detail table with totals footer */}
       <Card>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Month</TableHead>
-                <TableHead>Income</TableHead>
-                <TableHead>Expense</TableHead>
-                <TableHead>Net</TableHead>
+                <TableHead className="text-right">Income</TableHead>
+                <TableHead className="text-right">Expense</TableHead>
+                <TableHead className="text-right">Net</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {d.months.length === 0 ? (
+              {monthsDesc.length === 0 ? (
                 <TableRow>
-                  <TableCell className="text-center py-8 text-slate-400" colSpan={4}>
-                    No data available
-                  </TableCell>
+                  <TableCell className="text-center py-8 text-slate-400" colSpan={4}>No data available</TableCell>
                 </TableRow>
-              ) : d.months.map(m => (
+              ) : monthsDesc.map(m => (
                 <TableRow key={m.month}>
                   <TableCell className="font-medium whitespace-nowrap">{fmtPeriod(m.month)}</TableCell>
-                  <TableCell className="text-green-600 dark:text-green-400">{formatCurrency(m.income)}</TableCell>
-                  <TableCell className="text-red-600 dark:text-red-400">{formatCurrency(m.expense)}</TableCell>
-                  <TableCell className={cn('font-semibold', m.net >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')}>
+                  <TableCell className="text-right tabular-nums text-green-600 dark:text-green-400">{formatCurrency(m.income)}</TableCell>
+                  <TableCell className="text-right tabular-nums text-red-600 dark:text-red-400">{formatCurrency(m.expense)}</TableCell>
+                  <TableCell className={cn('text-right font-semibold tabular-nums', m.net >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400')}>
                     {m.net >= 0 ? '+' : ''}{formatCurrency(m.net)}
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
+            {monthsDesc.length > 1 && (
+              <tfoot>
+                <TableRow className="bg-slate-50 dark:bg-slate-800/50 border-t-2 border-slate-200 dark:border-slate-600">
+                  <TableCell className="font-semibold text-slate-700 dark:text-slate-300">Total</TableCell>
+                  <TableCell className="text-right tabular-nums font-semibold text-green-700 dark:text-green-400">{formatCurrency(d.total_income)}</TableCell>
+                  <TableCell className="text-right tabular-nums font-semibold text-red-700 dark:text-red-400">{formatCurrency(d.total_expense)}</TableCell>
+                  <TableCell className={cn('text-right font-semibold tabular-nums', d.net_balance >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400')}>
+                    {d.net_balance >= 0 ? '+' : ''}{formatCurrency(d.net_balance)}
+                  </TableCell>
+                </TableRow>
+              </tfoot>
+            )}
           </Table>
         </CardContent>
       </Card>
+
+      {/* Category breakdown table */}
+      {catSorted.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold">Expenses by Category</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Category</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>% of Total</TableHead>
+                  <TableHead className="text-right">Entries</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {catSorted.map((c: ExpenseCategory, i: number) => {
+                  const pct = catTotal > 0 ? (c.total_amount / catTotal) * 100 : 0;
+                  return (
+                    <TableRow key={c.category_code}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: c.color ?? CHART_COLORS[i % CHART_COLORS.length] }} />
+                          <span className="font-medium">{c.category}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-red-600 dark:text-red-400 font-medium">
+                        {formatCurrency(c.total_amount)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-20 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full bg-red-400 dark:bg-red-500" style={{ width: `${Math.min(pct, 100)}%` }} />
+                          </div>
+                          <span className="text-xs font-semibold tabular-nums text-slate-700 dark:text-slate-300">{pct.toFixed(1)}%</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-slate-600 dark:text-slate-400">{c.total_entries}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
@@ -1485,189 +1547,15 @@ function PaymentRegisterReport({
 }
 
 /* ─────────────────────────────────────────────────── */
-/*  TAB 6 — Expense by Category                       */
-/* ─────────────────────────────────────────────────── */
-
-function ExpenseByCategoryReport({
-  state, onFetch,
-}: {
-  state: ReportState<ExpenseByCategoryData>;
-  onFetch: (sd: string, ed: string) => void;
-}) {
-  const [startDate, setStartDate] = useState(startOfMonth());
-  const [endDate, setEndDate] = useState(today());
-  const [activeDatePreset, setActiveDatePreset] = useState<DatePresetKey | null>('thisMonth');
-  const didFetch = useRef(false);
-  useEffect(() => {
-    if (!didFetch.current && !state.data && !state.loading) {
-      didFetch.current = true;
-      onFetch(startOfMonth(), today());
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const applyPreset = (preset: DatePresetKey, sd: string, ed: string) => {
-    setActiveDatePreset(preset);
-    setStartDate(sd);
-    setEndDate(ed);
-    onFetch(sd, ed);
-  };
-
-  if (state.loading) return <ReportLoading label="Expense by Category" />;
-  if (state.error) return <ReportError message={state.error} onRetry={() => onFetch(startDate, endDate)} />;
-  if (!state.data) return <ReportLoading label="Expense by Category" />;
-
-  const d = state.data!;
-  const pieData = d.categories.map(c => ({ name: c.category, value: c.total_amount }));
-
-  return (
-    <div className="space-y-3">
-      {/* Combined Filter & Description Block */}
-      <div className="bg-white dark:bg-slate-900 rounded-lg border-2 border-rose-200 dark:border-rose-800 shadow-sm">
-        <div className="px-4 py-2.5 bg-gradient-to-r from-rose-50 to-red-50 dark:from-rose-950/40 dark:to-red-950/40 border-b border-rose-200 dark:border-rose-800">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🏷️</span>
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Category-wise Expense Analysis</h3>
-            <span className="text-xs text-slate-500 dark:text-slate-400">• Spending analysis</span>
-          </div>
-        </div>
-        <div className="p-3">
-          <div className="flex flex-wrap items-end gap-2">
-            <DateInput label="From Date" value={startDate} onChange={(v) => { setStartDate(v); setActiveDatePreset(null); }} />
-            <DateInput label="To Date" value={endDate} onChange={(v) => { setEndDate(v); setActiveDatePreset(null); }} />
-            <div className="flex-1 min-w-[200px]">
-              <QuickDatePresets onSelect={applyPreset} activeKey={activeDatePreset} />
-            </div>
-            <Button variant="primary" size="sm" onClick={() => onFetch(startDate, endDate)} disabled={state.loading} className="h-[34px]">
-              {state.loading
-                ? <><Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> Loading…</>
-                : <><RefreshCw className="w-3.5 h-3.5 mr-1" /> Apply</>}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <StatCard label="Total Expense" value={formatCurrency(d.total_expense)} icon={TrendingDown}
-          colorClass="bg-red-50 dark:bg-red-950/30" iconColorClass="text-red-600 dark:text-red-400" />
-        <StatCard label="Categories" value={d.categories.length} icon={PieChartIcon}
-          colorClass="bg-purple-50 dark:bg-purple-950/30" iconColorClass="text-purple-600 dark:text-purple-400" />
-      </div>
-
-      {pieData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-semibold">Spend by Category</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row items-center gap-6">
-              <div className="flex-shrink-0 w-[220px]">
-                <ReactApexChart
-                  type="donut"
-                  width={220}
-                  height={220}
-                  series={pieData.map((d: any) => d.value)}
-                  options={{
-                    chart: { background: 'transparent' },
-                    labels: pieData.map((d: any) => d.name),
-                    colors: CHART_COLORS,
-                    legend: { show: false },
-                    dataLabels: { formatter: (_: any, opts: any) => `${opts.w.globals.series[opts.seriesIndex] > 0 ? ((opts.w.globals.series[opts.seriesIndex] / opts.w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0)) * 100).toFixed(0) : 0}%` },
-                    plotOptions: { pie: { donut: { size: '60%' } } },
-                    tooltip: { y: { formatter: (v: number) => formatCurrency(v) } },
-                  }}
-                />
-              </div>
-              <div className="flex flex-col gap-2 flex-1">
-                {d.categories.map((c: any, i: number) => (
-                  <div key={c.category_code} className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                    <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{c.category}</span>
-                    <span className="text-sm font-semibold text-slate-900 dark:text-white ml-auto pl-2 flex-shrink-0">
-                      {formatCurrency(c.total_amount)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Category</TableHead>
-                <TableHead>Code</TableHead>
-                <TableHead>Total Amount</TableHead>
-                <TableHead>% Share</TableHead>
-                <TableHead>No. of Entries</TableHead>
-                <TableHead>First Expense</TableHead>
-                <TableHead>Last Expense</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {d.categories.length === 0 ? (
-                <TableRow>
-                  <TableCell className="text-center py-8 text-slate-400" colSpan={7}>
-                    No data available
-                  </TableCell>
-                </TableRow>
-              ) : d.categories.map((c, i) => {
-                const pct = d.total_expense > 0 ? (c.total_amount / d.total_expense) * 100 : 0;
-                return (
-                <TableRow key={c.category_code}>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                      <span className="font-medium">{c.category}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-mono text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
-                      {c.category_code}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-red-600 dark:text-red-400 font-medium">
-                    {formatCurrency(c.total_amount)}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="w-16 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div className="h-full rounded-full bg-red-400 dark:bg-red-500" style={{ width: `${Math.min(pct, 100)}%` }} />
-                      </div>
-                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 tabular-nums">{pct.toFixed(1)}%</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{c.total_entries}</TableCell>
-                  <TableCell className="text-slate-500">{c.first_expense_date}</TableCell>
-                  <TableCell className="text-slate-500">{c.last_expense_date}</TableCell>
-                </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────── */
 /*  Tab definitions                                    */
 /* ─────────────────────────────────────────────────── */
 
 const TABS = [
   { key: 'collectionSummary', label: 'Billing & Collections Overview', icon: BarChart2 },
   { key: 'defaulters',        label: 'Outstanding Dues Report',         icon: Users },
-  { key: 'incomeVsExpense',   label: 'Income vs Expense Analysis',  icon: TrendingUp },
-  { key: 'fundLedger',        label: 'Fund Transaction History',        icon: BookOpen },
-  { key: 'paymentRegister',   label: 'Payment Receipts Register',   icon: CreditCard },
-  { key: 'expenseByCategory', label: 'Category-wise Expense Analysis', icon: PieChartIcon },
+  { key: 'incomeVsExpense',   label: 'Income & Expenses',           icon: TrendingUp },
+  { key: 'fundLedger',        label: 'Fund Transaction History',     icon: BookOpen },
+  { key: 'paymentRegister',   label: 'Payment Receipts Register',    icon: CreditCard },
 ] as const;
 
 type TabKey = typeof TABS[number]['key'];
@@ -1682,7 +1570,6 @@ interface AllReports {
   incomeVsExpense: ReportState<IncomeVsExpenseData>;
   fundLedger: ReportState<FundLedgerData>;
   paymentRegister: ReportState<PaymentRegisterPage>;
-  expenseByCategory: ReportState<ExpenseByCategoryData>;
 }
 
 export default function Reports() {
@@ -1694,7 +1581,6 @@ export default function Reports() {
     incomeVsExpense: initialState(),
     fundLedger: initialState(),
     paymentRegister: initialState(),
-    expenseByCategory: initialState(),
   });
 
   const setLoading = useCallback((key: keyof AllReports) => {
@@ -1742,13 +1628,6 @@ export default function Reports() {
     reportsApi.getPaymentRegister(startDate, endDate, page, pageSize)
       .then(d => setSuccess('paymentRegister', d))
       .catch(e => setError('paymentRegister', e?.response?.data?.message || e?.message || 'Failed to load'));
-  }, [setLoading, setSuccess, setError]);
-
-  const fetchExpenseByCategory = useCallback((startDate = startOfMonth(), endDate = today()) => {
-    setLoading('expenseByCategory');
-    reportsApi.getExpenseByCategory(startDate, endDate)
-      .then(d => setSuccess('expenseByCategory', d))
-      .catch(e => setError('expenseByCategory', e?.response?.data?.message || e?.message || 'Failed to load'));
   }, [setLoading, setSuccess, setError]);
 
   // Reports are lazy-loaded: each tab component fetches on first mount.
@@ -1815,9 +1694,7 @@ export default function Reports() {
           {activeTab === 'paymentRegister' && (
             <PaymentRegisterReport state={reports.paymentRegister} onFetch={fetchPaymentRegister} />
           )}
-          {activeTab === 'expenseByCategory' && (
-            <ExpenseByCategoryReport state={reports.expenseByCategory} onFetch={fetchExpenseByCategory} />
-          )}
+
         </div>
       </div>
     </DashboardLayout>

@@ -12,69 +12,83 @@ import { logger } from '../lib/logger';
 
 /* =====================================================
    QUERIES
+   Expense queries are scoped to the current society via the JWT token.
+   The backend enforces society isolation — no explicit societyId is needed.
 ===================================================== */
 
+/**
+ * Hook: useExpenses
+ * Purpose: Fetches all expenses for the current society.
+ */
 export function useExpenses() {
   return useQuery({
     queryKey: ['expenses'],
     queryFn: async (): Promise<ExpenseResponse[]> => {
-      logger.log('[useExpenses] Fetching expenses');
       const result = await expensesApi.listExpenses();
-      logger.log(`[useExpenses] Loaded ${result.length} expenses`);
       return result;
     },
   });
 }
 
+/**
+ * Hook: useExpenseByPublicId
+ * Purpose: Fetches a single expense by its public UUID. Disabled when no ID is provided.
+ */
 export function useExpenseByPublicId(publicId?: string) {
   return useQuery({
     queryKey: ['expenses', publicId],
     queryFn: async (): Promise<ExpenseResponse> => {
       if (!publicId) throw new Error('Public ID is required');
-      logger.log(`[useExpenseByPublicId] Fetching expense: ${publicId}`);
       const result = await expensesApi.getExpenseByPublicId(publicId);
-      logger.log(`[useExpenseByPublicId] Loaded expense: ${result.publicId}`);
       return result;
     },
     enabled: !!publicId,
   });
 }
 
+/**
+ * Hook: useExpensesByDateRange
+ * Purpose: Fetches expenses within a specific date range. Used in report pages.
+ * Disabled until both startDate and endDate are provided.
+ */
 export function useExpensesByDateRange(startDate?: string, endDate?: string) {
   return useQuery({
     queryKey: ['expenses', 'dateRange', startDate, endDate],
     queryFn: async (): Promise<ExpenseResponse[]> => {
       if (!startDate || !endDate) throw new Error('Start date and end date are required');
-      logger.log(`[useExpensesByDateRange] Fetching expenses from ${startDate} to ${endDate}`);
       const result = await expensesApi.getExpensesByDateRange(startDate, endDate);
-      logger.log(`[useExpensesByDateRange] Loaded ${result.length} expenses`);
       return result;
     },
     enabled: !!startDate && !!endDate,
   });
 }
 
+/**
+ * Hook: useExpensesByCategory
+ * Purpose: Fetches expenses filtered by category code. Used in the expense breakdown report.
+ */
 export function useExpensesByCategory(categoryCode?: string) {
   return useQuery({
     queryKey: ['expenses', 'category', categoryCode],
     queryFn: async (): Promise<ExpenseResponse[]> => {
       if (!categoryCode) throw new Error('Category code is required');
-      logger.log(`[useExpensesByCategory] Fetching expenses for category: ${categoryCode}`);
       const result = await expensesApi.getExpensesByCategory(categoryCode);
-      logger.log(`[useExpensesByCategory] Loaded ${result.length} expenses`);
       return result;
     },
     enabled: !!categoryCode,
   });
 }
 
+/**
+ * Hook: useExpenseCategories
+ * Purpose: Fetches the list of available expense categories for form dropdowns.
+ */
 export function useExpenseCategories() {
   return useQuery({
     queryKey: ['expenses', 'categories'],
+    staleTime: 5 * 60_000, // Categories rarely change
     queryFn: async (): Promise<ExpenseCategory[]> => {
-      logger.log('[useExpenseCategories] Fetching expense categories');
       const result = await expensesApi.getCategories();
-      logger.log(`[useExpenseCategories] Loaded ${result.length} categories`);
       return result;
     },
   });
@@ -84,20 +98,22 @@ export function useExpenseCategories() {
    MUTATIONS
 ===================================================== */
 
+/**
+ * Hook: useCreateExpense
+ * Purpose: Creates a new expense and refreshes the expenses list and dashboard.
+ * Also writes an activity log entry for audit trail purposes.
+ */
 export function useCreateExpense() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (payload: CreateExpenseRequest) => {
-      logger.log('[useCreateExpense] Creating expense');
       return expensesApi.createExpense(payload);
     },
     onSuccess: async (data) => {
-      logger.log('[useCreateExpense] Success - invalidating expenses query');
       qc.invalidateQueries({ queryKey: ['expenses'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       
-      // Log activity
       if (user) {
         try {
           await createActivityLog({
@@ -112,6 +128,7 @@ export function useCreateExpense() {
             details: `Created expense of ₹${data.amount} for ${data.categoryCode}`,
           });
         } catch (error) {
+          // Activity log failure is non-critical — do not block the UI
           logger.error('[useCreateExpense] Failed to log activity:', error);
         }
       }
@@ -119,25 +136,28 @@ export function useCreateExpense() {
   });
 }
 
+/**
+ * Hook: useUpdateExpense
+ * Purpose: Updates an expense record. Detects status changes (approved/rejected)
+ * to write a more descriptive activity log entry.
+ */
 export function useUpdateExpense() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
     mutationFn: async ({ publicId, payload }: { publicId: string; payload: UpdateExpenseRequest }) => {
-      logger.log(`[useUpdateExpense] Updating expense: ${publicId}`);
       return expensesApi.updateExpense(publicId, payload);
     },
     onSuccess: async (data, variables) => {
-      logger.log('[useUpdateExpense] Success - invalidating expenses query');
       qc.invalidateQueries({ queryKey: ['expenses'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       
-      // Log activity based on status change
       if (user) {
         try {
           let action: 'updated' | 'approved' | 'rejected' = 'updated';
           let details = `Updated expense details`;
           
+          // Use a more specific action label when the status is explicitly changed
           if ((variables.payload as any).status === 'APPROVED') {
             action = 'approved';
             details = `Approved expense of ₹${data.amount}`;
@@ -165,20 +185,21 @@ export function useUpdateExpense() {
   });
 }
 
+/**
+ * Hook: useDeleteExpense
+ * Purpose: Soft-deletes an expense and refreshes the expenses list and dashboard.
+ */
 export function useDeleteExpense() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
     mutationFn: async (publicId: string) => {
-      logger.log(`[useDeleteExpense] Deleting expense: ${publicId}`);
       return expensesApi.deleteExpense(publicId);
     },
     onSuccess: async (_, publicId) => {
-      logger.log('[useDeleteExpense] Success - invalidating expenses query');
       qc.invalidateQueries({ queryKey: ['expenses'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
       
-      // Log activity
       if (user) {
         try {
           await createActivityLog({
@@ -198,36 +219,20 @@ export function useDeleteExpense() {
   });
 }
 
+/**
+ * Hook: useRestoreExpense
+ * Purpose: Restores a previously soft-deleted expense.
+ * NOTE: restoreExpense is not yet implemented in expensesApi — this hook is a placeholder.
+ */
 export function useRestoreExpense() {
   const qc = useQueryClient();
-  const { user } = useAuth();
   return useMutation({
-    mutationFn: async (publicId: string) => {
-      logger.log(`[useRestoreExpense] Restoring expense: ${publicId}`);
-      return expensesApi.restoreExpense(publicId);
+    mutationFn: async (_publicId: string): Promise<never> => {
+      throw new Error('Restore expense is not supported by the API yet.');
     },
-    onSuccess: async (data) => {
-      logger.log('[useRestoreExpense] Success - invalidating expenses query');
+    onSuccess: async (_data: never, _publicId: string) => {
       qc.invalidateQueries({ queryKey: ['expenses'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
-      
-      // Log activity
-      if (user) {
-        try {
-          await createActivityLog({
-            userId: user.id,
-            userName: user.name,
-            action: 'updated',
-            entityType: 'expense',
-            entityId: data.publicId,
-            entityName: `${data.vendor} - ${data.description}`,
-            societyId: user.societyId,
-            details: 'Restored deleted expense',
-          });
-        } catch (error) {
-          logger.error('[useRestoreExpense] Failed to log activity:', error);
-        }
-      }
     },
   });
 }

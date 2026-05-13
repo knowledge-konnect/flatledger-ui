@@ -6,8 +6,11 @@ import Navbar from '../components/layout/Navbar'
 import { useAuth } from '../contexts/AuthProvider'
 import { ArrowLeft, CheckCircle, AlertCircle, Loader } from 'lucide-react'
 import { paymentApi, PaymentPlan } from '@/api/paymentApi'
+import { subscriptionApi } from '../api/subscriptionApi'
 import { useToast } from '../components/ui/Toast'
 import { useApiErrorToast } from '../hooks/useApiErrorHandler'
+import { loadRazorpayScript } from '../lib/razorpay'
+import { BRAND_NAME } from '../config/branding'
 
 declare global {
   interface Window {
@@ -27,22 +30,19 @@ export default function Payment() {
 
   const planId = searchParams.get('plan') || 'standard'
 
+  // invoiceAmount is fetched from backend order — frontend never computes pricing
+  const [invoiceAmount, setInvoiceAmount] = useState<number | null>(null)
+
   useEffect(() => {
     paymentApi.getPlanById(planId)
       .then(setPlan)
       .catch(() => paymentApi.getPlanById('standard').then(setPlan))
   }, [planId])
 
-  // Load Razorpay script
   useEffect(() => {
-    const script = document.createElement('script')
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-    script.async = true
-    document.body.appendChild(script)
-
-    return () => {
-      document.body.removeChild(script)
-    }
+    loadRazorpayScript().catch(() => {
+      setError('Razorpay failed to load. Please refresh and try again.')
+    })
   }, [])
 
   const handleRazorpayPayment = async () => {
@@ -55,16 +55,20 @@ export default function Payment() {
     setError(null)
 
     try {
-      // Call backend to create order using paymentApi
-      const orderData = await paymentApi.createOrder({ planId })
+      // Step 1: Create subscription/order on backend — backend determines price
+      const orderData = await subscriptionApi.subscribe({ planId })
       const { orderId, amount, currency, keyId } = orderData
+
+      // Capture the invoice amount from backend order response (source of truth)
+      const backendAmount = typeof amount === 'number' ? amount : Number(amount)
+      setInvoiceAmount(backendAmount)
 
       const options = {
         key: keyId,
         amount,
         currency,
         order_id: orderId,
-        name: 'FlatLedger',
+        name: BRAND_NAME,
         description: `${plan?.name ?? planId} Plan Subscription`,
         handler: async (response: any) => {
           try {
@@ -75,7 +79,11 @@ export default function Payment() {
               signature: response.razorpay_signature,
             })
 
-            // Payment successful
+              // Payment successful — refresh subscription state before navigating
+              try {
+                await subscriptionApi.getStatus()
+              } catch { /* non-critical */ }
+
             showToast('Your subscription has been activated.', 'success')
             navigate('/payment-success', { state: { planId, orderId: response.razorpay_order_id } })
           } catch (err: any) {
@@ -170,7 +178,7 @@ export default function Payment() {
                     <div>
                       <h3 className="text-2xl font-bold text-foreground">{plan?.name} Plan</h3>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {plan?.features.slice(0, 2).join(' • ')}
+                        {plan?.description ?? ''}
                       </p>
                     </div>
                   </div>
@@ -178,7 +186,8 @@ export default function Payment() {
                   <div className="border-t border-border pt-4 mt-4">
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-muted-foreground">Monthly subscription</span>
-                      <span className="font-semibold text-foreground">₹{plan?.monthlyAmount}</span>
+                      {/* Amount comes from backend invoice — never computed on frontend */}
+                      <span className="font-semibold text-foreground">{invoiceAmount != null ? `₹${invoiceAmount}` : plan?.name ? 'See checkout' : '—'}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm text-muted-foreground">
                       <span>Tax & fees</span>
@@ -190,7 +199,8 @@ export default function Payment() {
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-foreground">Total due today</span>
                       <span className="text-3xl font-bold text-primary-600 dark:text-primary-400">
-                        ₹{plan?.monthlyAmount}
+                        {/* Total from backend order response — NOT plan.monthlyAmount */}
+                        {invoiceAmount != null ? `₹${invoiceAmount}` : plan?.name ? 'See checkout' : '—'}
                       </span>
                     </div>
                   </div>
@@ -251,7 +261,8 @@ export default function Payment() {
                   ) : (
                     <>
                       <CheckCircle className="w-5 h-5" />
-                      Pay ₹{plan?.monthlyAmount} & Activate Subscription
+                      {/* Show backend-confirmed amount in CTA — do NOT use plan.monthlyAmount */}
+                      {invoiceAmount != null ? `Pay ₹${invoiceAmount} & Activate Subscription` : 'Pay & Activate Subscription'}
                     </>
                   )}
                 </button>

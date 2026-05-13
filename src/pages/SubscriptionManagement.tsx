@@ -11,6 +11,7 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import Button from '../components/ui/Button';
 import { Alert, AlertDescription } from '../components/ui/Alert';
 import { useSubscription } from '../hooks/useSubscription';
+import { useCurrentSubscription } from '../hooks/useCurrentSubscription';
 import { useRazorpayPayment } from '../hooks/useRazorpayPayment';
 import { usePlans } from '../hooks/usePlans';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +20,7 @@ import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { cn, formatCurrency } from '../lib/utils';
 import { useAuth } from '../contexts/AuthProvider';
 import { isAdminRole, collectUserRoles } from '../types/roles';
+import { SUPPORT_EMAIL } from '../config/branding';
 
 const PLAN_FEATURES = [
   { icon: Building2,     label: 'Unlimited flats & residents' },
@@ -45,6 +47,7 @@ export default function SubscriptionManagement() {
     trialDaysRemaining,
     planName,
     monthlyAmount,
+    subscribedAmount: legacySubscribedAmount,
     trialEnd,
     loading,
     error,
@@ -53,6 +56,12 @@ export default function SubscriptionManagement() {
     refreshStatus,
     clearError,
   } = useSubscription();
+
+  // Society-scoped subscription — source of truth for subscribedAmount / currentPeriodEnd
+  // RULE: use currentSub.subscribedAmount for price display; never use plan.price for active subs
+  const currentSub = useCurrentSubscription();
+  const subscribedAmount = currentSub.subscribedAmount ?? legacySubscribedAmount ?? monthlyAmount;
+  const currentPeriodEnd = currentSub.currentPeriodEnd;
 
   const { plans } = usePlans();
 
@@ -64,7 +73,8 @@ export default function SubscriptionManagement() {
   const { isLoading: isPaymentLoading, isProcessing, initiatePayment } = useRazorpayPayment(
     () => {
       setPaymentError(null);
-      refreshStatus().then(() => {
+      // Refresh both legacy and society-scoped subscription state after payment
+      Promise.all([refreshStatus(), currentSub.refresh()]).then(() => {
         showToast('Payment successful! Your subscription is now active.', 'success');
         navigate('/dashboard');
       });
@@ -74,7 +84,7 @@ export default function SubscriptionManagement() {
 
   const handleRefreshStatus = async () => {
     setIsRefreshing(true);
-    try { await refreshStatus(); } finally { setIsRefreshing(false); }
+    try { await Promise.all([refreshStatus(), currentSub.refresh()]); } finally { setIsRefreshing(false); }
   };
 
   const handleCreateTrial = async () => {
@@ -147,16 +157,19 @@ export default function SubscriptionManagement() {
 
   const StatusIcon = cfg.icon;
   const trialProgress = trialDaysRemaining !== null ? Math.max(0, Math.min(100, (trialDaysRemaining / 30) * 100)) : null;
-  const monthlyPlan = plans.find(p => p.name === 'Monthly');
-  const yearlyPlan  = plans.find(p => p.name === 'Yearly');
+  // Sort all plans by price ascending — no hardcoded name matching
+  const sortedPlans = [...plans].sort((a, b) =>
+    Number(a.price ?? a.monthlyAmount ?? 0) - Number(b.price ?? b.monthlyAmount ?? 0)
+  );
 
-  // Auto-select yearly (best value) once plans load
-  const resolvedSelectedId = selectedPlanId ?? yearlyPlan?.id ?? monthlyPlan?.id ?? null;
-  const resolvedSelectedPlan = plans.find(p => p.id === resolvedSelectedId) ?? null;
+  // Default: select the popular plan, else the cheapest
+  const resolvedSelectedId = selectedPlanId ?? sortedPlans.find(p => p.isPopular)?.id ?? sortedPlans[0]?.id ?? null;
+  const resolvedSelectedPlan = sortedPlans.find(p => p.id === resolvedSelectedId) ?? null;
 
   const handleSubscribe = async () => {
     if (!resolvedSelectedPlan) return;
     try {
+      // Only send planId — pricing is handled by backend
       await initiatePayment(resolvedSelectedPlan.id);
     } catch (err: any) {
       setPaymentError('Something went wrong. Please contact support.');
@@ -175,6 +188,26 @@ export default function SubscriptionManagement() {
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>{paymentError || error}</AlertDescription>
               <Button variant="ghost" size="sm" onClick={() => { clearError(); setPaymentError(null); }} className="ml-auto">✕</Button>
+            </Alert>
+          )}
+
+          {/* ── No subscription warning ───────────────────────────────────── */}
+          {status === null && !loading && (
+            <Alert variant="warning">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Your society has no active subscription. Start a free trial or subscribe to a plan to unlock all features.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* ── Expired subscription warning ──────────────────────────────── */}
+          {status === 'expired' && !loading && (
+            <Alert variant="error">
+              <XCircle className="h-4 w-4" />
+              <AlertDescription>
+                Your subscription has expired. Reactivate below to restore full access.
+              </AlertDescription>
             </Alert>
           )}
 
@@ -212,13 +245,27 @@ export default function SubscriptionManagement() {
               <h3 className="text-3xl font-bold leading-tight">
                 {planName ? `${planName} Plan` : status === 'trial' ? '30-Day Free Trial' : 'No Active Plan'}
               </h3>
-              {monthlyAmount ? (
+              {subscribedAmount ? (
+                // RULE: for active subscriptions always show subscribed_amount (locked price)
+                <p className="text-white/75 text-sm mt-1">
+                  {formatCurrency(subscribedAmount)} / {status === 'active' && planName === 'Yearly' ? 'year' : 'month'}
+                  {status === 'active' && (
+                    <span className="ml-2 text-xs text-white/60">🔒 Your price is locked</span>
+                  )}
+                </p>
+              ) : monthlyAmount ? (
                 <p className="text-white/75 text-sm mt-1">
                   {formatCurrency(monthlyAmount)} / {planName === 'Yearly' ? 'year' : 'month'}
                 </p>
               ) : status === 'trial' ? (
                 <p className="text-white/75 text-sm mt-1">Free — no credit card required</p>
               ) : null}
+              {/* Next billing date from society-scoped subscription */}
+              {currentPeriodEnd && status === 'active' && (
+                <p className="text-white/60 text-xs mt-1">
+                  Next billing: {new Date(currentPeriodEnd).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </p>
+              )}
             </div>
 
             {/* Trial countdown bar */}
@@ -310,15 +357,12 @@ export default function SubscriptionManagement() {
                 <Crown className="w-10 h-10 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
               </div>
 
-              {/* Plan selector cards */}
+              {/* Plan selector cards — one card per plan, sorted by price */}
               <div className="mt-5 grid sm:grid-cols-2 gap-3">
-                {[monthlyPlan, yearlyPlan].filter(Boolean).map((plan) => {
-                  if (!plan) return null;
+                {sortedPlans.map((plan) => {
                   const isSelected = resolvedSelectedId === plan.id;
-                  const isYearly = plan.name === 'Yearly';
-                  const saving = monthlyPlan && yearlyPlan
-                    ? (monthlyPlan.monthlyAmount * 12) - yearlyPlan.monthlyAmount
-                    : null;
+                  // Use plan.price (server value); never compute pricing on frontend
+                  const displayPrice = Number(plan.price ?? plan.monthlyAmount ?? 0);
                   return (
                     <button
                       key={plan.id}
@@ -331,13 +375,13 @@ export default function SubscriptionManagement() {
                           : 'border-emerald-200 dark:border-emerald-900 hover:border-emerald-400 dark:hover:border-emerald-700 bg-white/90 dark:bg-emerald-950/20'
                       )}
                     >
-                      {/* Plan name + badge + radio */}
+                      {/* Plan name + popular badge + radio */}
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">{plan.name}</p>
-                          {isYearly && (
-                            <span className="px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full whitespace-nowrap">
-                              BEST VALUE · 2 MONTHS FREE
+                          {plan.isPopular && (
+                            <span className="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-bold rounded-full whitespace-nowrap">
+                              ⭐ Most Popular
                             </span>
                           )}
                         </div>
@@ -350,18 +394,20 @@ export default function SubscriptionManagement() {
                           {isSelected && <span className="block w-full h-full rounded-full scale-50 bg-white" />}
                         </span>
                       </div>
+                      {/* Price — from backend plan.price; do NOT compute */}
                       <p className="text-2xl font-bold text-emerald-950 dark:text-emerald-50">
-                        {formatCurrency(plan.monthlyAmount)}
-                        <span className="text-sm font-normal text-emerald-700/80 dark:text-emerald-200/80">
-                          {isYearly ? ' / year' : ' / month'}
-                        </span>
+                        {formatCurrency(displayPrice)}
+                        <span className="text-sm font-normal text-emerald-700/80 dark:text-emerald-200/80"> / month</span>
                       </p>
-                      {isYearly && saving && monthlyPlan && (
+                      {/* Per-flat metric (display only) */}
+                      {plan.maxFlats && displayPrice ? (
                         <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">
-                          ≈ ₹{Math.round(plan.monthlyAmount / 12)}/mo · saves ₹{saving}
+                          ≈ ₹{(displayPrice / Number(plan.maxFlats)).toFixed(1)} per flat/month
                         </p>
-                      )}
-                      {!isYearly && (
+                      ) : null}
+                      {plan.maxFlats ? (
+                        <p className="text-xs text-emerald-700/80 dark:text-emerald-200/80 mt-1">Up to {plan.maxFlats} flats · cancel anytime</p>
+                      ) : (
                         <p className="text-xs text-emerald-700/80 dark:text-emerald-200/80 mt-1">Billed monthly · cancel anytime</p>
                       )}
                     </button>
@@ -370,6 +416,7 @@ export default function SubscriptionManagement() {
               </div>
 
               {/* Single pay button */}
+              {/* Subscribe CTA — only plan id is sent; backend determines price */}
               <button
                 onClick={handleSubscribe}
                 disabled={loading || isPaymentLoading || isProcessing || !resolvedSelectedPlan}
@@ -379,7 +426,7 @@ export default function SubscriptionManagement() {
                 {isPaymentLoading || isProcessing
                   ? 'Processing...'
                   : resolvedSelectedPlan
-                    ? `Subscribe — ${formatCurrency(resolvedSelectedPlan.monthlyAmount)} / ${resolvedSelectedPlan.name === 'Yearly' ? 'year' : 'month'}`
+                    ? `Subscribe — ${resolvedSelectedPlan.name}`
                     : 'Select a plan'}
               </button>
 
@@ -440,11 +487,11 @@ export default function SubscriptionManagement() {
               Having trouble with billing or your subscription? We're here to help.
             </p>
             <a
-              href="mailto:support@FlatLedger.com"
+              href={`mailto:${SUPPORT_EMAIL}`}
               className="inline-flex items-center gap-2 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
             >
               <Mail className="w-4 h-4" />
-              support@FlatLedger.com
+              {SUPPORT_EMAIL}
             </a>
             <p className="text-xs text-emerald-700/70 dark:text-emerald-200/70 mt-1">We reply within 24 hours on business days.</p>
           </div>

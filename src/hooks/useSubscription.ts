@@ -1,26 +1,34 @@
 import { useState, useEffect, useCallback } from 'react';
-import { subscriptionApi, SubscriptionStatusData, TrialData, SubscribeData } from '../api/subscriptionApi';
-
-// Type aliases for backward compatibility
-type TrialResponse = TrialData;
-type SubscribeResponse = SubscribeData;
-type CancelSubscriptionResponse = { succeeded: boolean };
+import {
+  subscriptionApi,
+  SubscriptionStatusData,
+  TrialData,
+  SubscribeResponse,
+} from '../api/subscriptionApi';
 
 interface SubscriptionState {
   accessAllowed: boolean;
-  status: 'trial' | 'active' | 'expired' | 'cancelled' | null;
+  status: 'trial' | 'active' | 'expired' | 'cancelled' | 'none' | null;
   trialDaysRemaining: number | null;
   planName: string | null;
+  subscribedAmount: number | null;
+  /** @deprecated use subscribedAmount */
   monthlyAmount: number | null;
   trialEnd: string | null;
+  currentPeriodEnd: string | null;
   loading: boolean;
   error: string | null;
 }
 
 interface UseSubscriptionReturn extends SubscriptionState {
-  createTrial: () => Promise<TrialResponse | null>;
-  subscribe: (planId: string, amount: number, paymentMethod: string, paymentReference: string) => Promise<SubscribeResponse | null>;
-  cancelSubscription: (reason: string) => Promise<CancelSubscriptionResponse | null>;
+  createTrial: () => Promise<TrialData | null>;
+  subscribe: (
+    planId: string,
+    razorpayOrderId: string,
+    razorpayPaymentId: string,
+    razorpaySignature: string
+  ) => Promise<SubscribeResponse | null>;
+  cancelSubscription: (reason: string) => Promise<boolean>;
   refreshStatus: () => Promise<void>;
   clearError: () => void;
 }
@@ -30,157 +38,117 @@ const initialState: SubscriptionState = {
   status: null,
   trialDaysRemaining: null,
   planName: null,
+  subscribedAmount: null,
   monthlyAmount: null,
   trialEnd: null,
+  currentPeriodEnd: null,
   loading: false,
   error: null,
 };
 
-/**
- * Custom hook for managing user subscription state
- * Handles trial creation, status checking, subscription management
- * Integrates with subscription API and manages loading/error states
- */
+function mapStatusToState(data: SubscriptionStatusData): Partial<SubscriptionState> {
+  return {
+    accessAllowed: data.accessAllowed,
+    status: data.status as SubscriptionState['status'],
+    trialDaysRemaining: data.trialDaysRemaining ?? null,
+    planName: data.planName ?? null,
+    subscribedAmount: data.subscribedAmount ?? data.monthlyAmount ?? null,
+    monthlyAmount: data.monthlyAmount ?? null,
+    trialEnd: data.trialEndDate ?? null,
+    currentPeriodEnd: data.currentPeriodEnd ?? null,
+    loading: false,
+    error: null,
+  };
+}
+
 export function useSubscription(): UseSubscriptionReturn {
   const [state, setState] = useState<SubscriptionState>(initialState);
 
-  /**
-   * Update subscription state from API response
-   */
-  const updateSubscriptionState = useCallback((data: SubscriptionStatusData) => {
-    setState(prev => ({
-      ...prev,
-      accessAllowed: data.accessAllowed,
-      status: data.status,
-      trialDaysRemaining: data.trialDaysRemaining || null,
-      planName: data.planName || null,
-      monthlyAmount: data.monthlyAmount || null,
-      loading: false,
-      error: null,
-    }));
-  }, []);
-
-  /**
-   * Handle API errors with retry logic for 500 errors.
-   * NOTE: 401 errors are intentionally NOT handled here.
-   * The axios interceptor in client.ts already handles 401 by refreshing the
-   * access token and retrying the request. If the refresh fails, AuthProvider
-   * calls logout() and navigates to /login via React Router. A second hard
-   * redirect here would race with that and cause full page reloads on every
-   * page navigation.
-   */
-  const handleApiError = useCallback(async (error: any, retryFn?: () => Promise<any>, maxRetries = 3): Promise<any> => {
-    // 401 — silently clear loading state; the auth interceptor handles redirect
-    if (error.response?.status === 401) {
-      setState(prev => ({ ...prev, loading: false }));
-      return null;
-    }
-
-    if (error.response?.status >= 500 && retryFn && maxRetries > 0) {
-      // Retry logic for server errors
-      setState(prev => ({ ...prev, loading: true, error: 'Retrying...' }));
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-      return handleApiError(await retryFn(), retryFn, maxRetries - 1);
-    }
-
-    const errorMessage = error.response?.data?.message || error.message || 'An error occurred';
-    setState(prev => ({ ...prev, loading: false, error: errorMessage }));
-    return null;
-  }, []);
-
-  /**
-   * Refresh subscription status from API
-   */
   const refreshStatus = useCallback(async () => {
     setState(prev => ({ ...prev, loading: true, error: null }));
-
     try {
       const data = await subscriptionApi.getStatus();
-      updateSubscriptionState(data);
+      setState(prev => ({ ...prev, ...mapStatusToState(data) }));
     } catch (error: any) {
-      await handleApiError(error, refreshStatus);
+      // 401 is handled globally by the axios interceptor — just clear loading
+      if (error?.response?.status === 401) {
+        setState(prev => ({ ...prev, loading: false }));
+        return;
+      }
+      const msg = error?.response?.data?.message ?? error?.message ?? 'Failed to load subscription';
+      setState(prev => ({ ...prev, loading: false, error: msg }));
     }
-  }, [updateSubscriptionState, handleApiError]);
+  }, []);
 
-  /**
-   * Create trial subscription
-   * Automatically called on user registration
-   */
-  const createTrial = useCallback(async (): Promise<TrialResponse | null> => {
+  const createTrial = useCallback(async (): Promise<TrialData | null> => {
     setState(prev => ({ ...prev, loading: true, error: null }));
-
     try {
       const data = await subscriptionApi.createTrial();
-      setState(prev => ({
-        ...prev,
-        trialEnd: data.trialEndDate,
-        loading: false,
-        error: null
-      }));
-      // Refresh status to get updated state
       await refreshStatus();
       return data;
     } catch (error: any) {
-      await handleApiError(error);
+      if (error?.response?.status === 401) {
+        setState(prev => ({ ...prev, loading: false }));
+        return null;
+      }
+      const msg = error?.response?.data?.message ?? error?.message ?? 'Failed to start trial';
+      setState(prev => ({ ...prev, loading: false, error: msg }));
       return null;
     }
-  }, [refreshStatus, handleApiError]);
+  }, [refreshStatus]);
 
   /**
-   * Subscribe to a plan after payment
+   * Activates a paid subscription after Razorpay payment verification.
+   * Calls POST /subscriptions/subscribe with planId + paymentMethod: "razorpay".
+   * The razorpay IDs are passed for context but the backend derives the subscription
+   * from the planId — payment verification is handled separately via /payments/verify-payment.
    */
-  const subscribe = useCallback(async (
-    planId: string,
-    _amount: number,
-    _paymentMethod: string,
-    paymentReference: string
-  ): Promise<SubscribeResponse | null> => {
+  const subscribe = useCallback(
+    async (
+      planId: string,
+      _razorpayOrderId: string,
+      _razorpayPaymentId: string,
+      _razorpaySignature: string
+    ): Promise<SubscribeResponse | null> => {
+      setState(prev => ({ ...prev, loading: true, error: null }));
+      try {
+        const data = await subscriptionApi.subscribe({ planId, paymentMethod: 'razorpay' });
+        await refreshStatus();
+        return data;
+      } catch (error: any) {
+        if (error?.response?.status === 401) {
+          setState(prev => ({ ...prev, loading: false }));
+          return null;
+        }
+        const msg = error?.response?.data?.message ?? error?.message ?? 'Failed to activate subscription';
+        setState(prev => ({ ...prev, loading: false, error: msg }));
+        return null;
+      }
+    },
+    [refreshStatus]
+  );
+
+  const cancelSubscription = useCallback(async (reason: string): Promise<boolean> => {
     setState(prev => ({ ...prev, loading: true, error: null }));
-
-    try {
-      const data = await subscriptionApi.subscribe({
-        planId,
-        razorpayOrderId: paymentReference,
-        razorpayPaymentId: paymentReference,
-        razorpaySignature: paymentReference,
-      });
-      
-      setState(prev => ({ ...prev, loading: false, error: null }));
-      // Refresh status to get updated subscription info
-      await refreshStatus();
-      return data;
-    } catch (error: any) {
-      await handleApiError(error);
-      return null;
-    }
-  }, [refreshStatus, handleApiError]);
-
-  /**
-   * Cancel current subscription
-   */
-  const cancelSubscription = useCallback(async (reason: string): Promise<CancelSubscriptionResponse | null> => {
-    setState(prev => ({ ...prev, loading: true, error: null }));
-
     try {
       await subscriptionApi.cancel({ reason });
-      setState(prev => ({ ...prev, loading: false, error: null }));
-      // Refresh status to reflect cancellation
       await refreshStatus();
-      return { succeeded: true }; // API returns void, return success object for compatibility
+      return true;
     } catch (error: any) {
-      await handleApiError(error);
-      return null;
+      if (error?.response?.status === 401) {
+        setState(prev => ({ ...prev, loading: false }));
+        return false;
+      }
+      const msg = error?.response?.data?.message ?? error?.message ?? 'Failed to cancel subscription';
+      setState(prev => ({ ...prev, loading: false, error: msg }));
+      return false;
     }
-  }, [refreshStatus, handleApiError]);
+  }, [refreshStatus]);
 
-  /**
-   * Clear error state
-   */
   const clearError = useCallback(() => {
     setState(prev => ({ ...prev, error: null }));
   }, []);
 
-  // Load subscription status on mount
   useEffect(() => {
     refreshStatus();
   }, [refreshStatus]);
@@ -195,48 +163,27 @@ export function useSubscription(): UseSubscriptionReturn {
   };
 }
 
-// Legacy interface for backward compatibility
+// ── Legacy compatibility ──────────────────────────────────────────────────────
 export interface SubscriptionStatus {
-  hasAccess: boolean
-  status: 'trial' | 'active' | 'expired' | 'past_due' | 'cancelled'
-  trialDaysRemaining: number
-  subscriptionEndDate?: Date
-  nextBillingDate?: Date
-  planName?: string
-  monthlyAmount?: number
+  hasAccess: boolean;
+  status: 'trial' | 'active' | 'expired' | 'past_due' | 'cancelled';
+  trialDaysRemaining: number;
+  planName?: string;
+  subscribedAmount?: number;
+  /** @deprecated use subscribedAmount */
+  monthlyAmount?: number;
 }
 
-export interface UserSubscription {
-  id: string
-  trial_start_date?: string
-  trial_ends_date?: string
-  subscription_status: string
-  subscription_start_date?: string
-  next_billing_date?: string
-  subscription_plan?: string
-  monthly_amount?: number
-}
-
-/**
- * Legacy hook for backward compatibility
- * @deprecated Use useSubscription instead
- */
+/** @deprecated Use useSubscription instead */
 export const useSubscriptionCheck = (_userId?: string) => {
-  const subscription = useSubscription();
-
-  // Map new state to legacy interface
+  const sub = useSubscription();
   const subscriptionStatus: SubscriptionStatus = {
-    hasAccess: subscription.accessAllowed,
-    status: (subscription.status as any) || 'trial',
-    trialDaysRemaining: subscription.trialDaysRemaining || 0,
-    planName: subscription.planName || undefined,
-    monthlyAmount: subscription.monthlyAmount || undefined,
+    hasAccess: sub.accessAllowed,
+    status: (sub.status as any) || 'trial',
+    trialDaysRemaining: sub.trialDaysRemaining ?? 0,
+    planName: sub.planName ?? undefined,
+    subscribedAmount: sub.subscribedAmount ?? undefined,
+    monthlyAmount: sub.monthlyAmount ?? undefined,
   };
-
-  return {
-    subscriptionStatus,
-    loading: subscription.loading,
-    error: subscription.error,
-    refetch: subscription.refreshStatus,
-  };
+  return { subscriptionStatus, loading: sub.loading, error: sub.error, refetch: sub.refreshStatus };
 };

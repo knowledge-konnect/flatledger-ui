@@ -6,19 +6,22 @@ import apiClient from './client';
 ===================================================== */
 
 /**
- * Subscription Plan
- * GET /plans
+ * Subscription Plan — matches backend PlanResponse
+ * GET /plans  (public, no auth required)
  */
 export interface PaymentPlan {
-  id: string; // UUID - plan's public identifier
+  id: string;           // UUID
   name: string;
-  description?: string;
-  monthlyAmount: number;
-  yearlyAmount: number;
-  currency: string; // 'INR', 'USD', etc.
-  features: string[];
-  isActive: boolean;
-  popular?: boolean; // For UI display
+  description?: string | null;
+  price: number;        // Single price field (backend has no monthlyAmount/yearlyAmount)
+  currency: string;
+  durationMonths: number;
+  maxFlats: number;
+  planGroup: string;
+  isActive?: boolean;
+  isPopular: boolean;
+  discountPercentage?: number | null;
+  displayOrder: number;
 }
 
 /**

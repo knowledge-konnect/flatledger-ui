@@ -42,6 +42,7 @@ export const SubscriptionSummary: React.FC<SubscriptionSummaryProps> = ({ compac
   };
 
   const getActionButton = () => {
+    if (status === 'active') return null;
     return (
       <button
         onClick={() => navigate('/subscription/manage')}
