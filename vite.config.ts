@@ -38,6 +38,8 @@ export default defineConfig(({ mode }) => ({
     target: 'es2020',
     // Split CSS per chunk so each route only loads the CSS it needs
     cssCodeSplit: true,
+    // xlsx and apexcharts are large but already lazy-loaded; suppress the noise
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         // Give chunks stable, content-hashed names for long-term caching

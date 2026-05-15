@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../api/client';
+import { logger } from '../lib/logger';
 
 export interface Plan {
   id: string;
@@ -36,7 +37,7 @@ async function fetchPlans(): Promise<Plan[]> {
     return body;
   }
 
-  console.error('[usePlans] Unexpected /plans response shape:', body);
+  logger.error('[usePlans] Unexpected /plans response shape:', body);
   throw new Error('Invalid plans data format');
 }
 
