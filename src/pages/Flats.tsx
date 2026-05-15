@@ -132,6 +132,14 @@ export default function Flats() {
   const safeStatuses = useMemo(() => Array.isArray(statuses) ? statuses : [], [statuses]);
   const safeApiFlats = useMemo(() => Array.isArray(apiFlats) ? apiFlats : [], [apiFlats]);
 
+  const normalizeFlatNo = (value: string) => value.trim().toUpperCase();
+  const normalizeEmail = (value?: string | null) => (value || '').trim().toLowerCase();
+  const normalizeMobile = (value?: string | null) => {
+    const digits = (value || '').replace(/\D/g, '');
+    if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2);
+    return digits;
+  };
+
   const statusOptions = useMemo(() => {
     const deduped = safeStatuses.filter(
       (item, index, arr) => arr.findIndex((x) => x.code === item.code) === index
@@ -204,6 +212,39 @@ export default function Flats() {
     try {
       if (!user) throw new Error('User not authenticated');
 
+      const enteredFlatNo = normalizeFlatNo(data.flatNumber);
+      const enteredEmail = normalizeEmail(data.ownerEmail);
+      const enteredMobile = normalizeMobile(data.ownerPhone);
+      const editingPublicId = isEditing ? selectedFlat?.publicId : null;
+
+      const duplicateFlatNo = safeApiFlats.some(
+        (f) => f.publicId !== editingPublicId && normalizeFlatNo(f.flatNo) === enteredFlatNo
+      );
+      if (duplicateFlatNo) {
+        setFormError('This flat number already exists.');
+        return;
+      }
+
+      if (enteredEmail) {
+        const duplicateEmail = safeApiFlats.some(
+          (f) => f.publicId !== editingPublicId && normalizeEmail(f.contactEmail) === enteredEmail
+        );
+        if (duplicateEmail) {
+          setFormError('This owner email is already linked to another flat.');
+          return;
+        }
+      }
+
+      if (enteredMobile) {
+        const duplicateMobile = safeApiFlats.some(
+          (f) => f.publicId !== editingPublicId && normalizeMobile(f.contactMobile) === enteredMobile
+        );
+        if (duplicateMobile) {
+          setFormError('This owner mobile number is already linked to another flat.');
+          return;
+        }
+      }
+
       let selectedStatusCode: string | undefined;
       if (data.statusCode) {
         selectedStatusCode = data.statusCode;
@@ -215,10 +256,10 @@ export default function Flats() {
       if (isEditing && selectedFlat?.publicId) {
         const payload = {
           publicId: selectedFlat.publicId,
-          flatNo: data.flatNumber,
+          flatNo: enteredFlatNo,
           ownerName: data.ownerName,
-          contactMobile: data.ownerPhone,
-          contactEmail: data.ownerEmail || undefined,
+          contactMobile: enteredMobile || undefined,
+          contactEmail: enteredEmail || undefined,
           maintenanceAmount: Number(data.maintenanceAmount),
           statusCode: selectedStatusCode,
         };
@@ -230,10 +271,10 @@ export default function Flats() {
         showToast('Flat updated successfully', 'success');
       } else {
         const payload = {
-          flatNo: data.flatNumber,
+          flatNo: enteredFlatNo,
           ownerName: data.ownerName,
-          contactMobile: data.ownerPhone,
-          contactEmail: data.ownerEmail || undefined,
+          contactMobile: enteredMobile || undefined,
+          contactEmail: enteredEmail || undefined,
           maintenanceAmount: Number(data.maintenanceAmount),
           statusCode: selectedStatusCode,
         };

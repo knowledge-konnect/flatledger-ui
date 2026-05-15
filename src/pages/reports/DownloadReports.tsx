@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FileDown, Loader2, Calendar, CalendarDays } from 'lucide-react';
+import { FileDown, Loader2, Calendar, CalendarDays, FileSpreadsheet, Download } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Card, { CardContent } from '../../components/ui/Card';
 import PageHeader from '../../components/ui/PageHeader';
@@ -132,6 +132,53 @@ export default function DownloadReportsPage() {
 
   return (
     <DashboardLayout title="Reports">
+      {/* Loading Overlay */}
+      {(isMonthlyLoading || isYearlyLoading) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 max-w-sm mx-4 text-center">
+            <div className="relative">
+              {/* Animated Document Icons */}
+              <div className="relative h-32 mb-6">
+                {/* Main Document */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-bounce">
+                  <FileSpreadsheet className="w-20 h-20 text-emerald-500" strokeWidth={1.5} />
+                </div>
+                
+                {/* Floating Download Arrow */}
+                <div className="absolute left-1/2 top-0 -translate-x-1/2 animate-pulse">
+                  <Download className="w-10 h-10 text-blue-500" strokeWidth={2} />
+                </div>
+                
+                {/* Orbiting Dots */}
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32">
+                  <div className="absolute w-3 h-3 bg-emerald-500 rounded-full top-0 left-1/2 -translate-x-1/2 animate-ping" />
+                  <div className="absolute w-3 h-3 bg-blue-500 rounded-full bottom-0 left-1/2 -translate-x-1/2 animate-ping" style={{ animationDelay: '0.5s' }} />
+                  <div className="absolute w-3 h-3 bg-violet-500 rounded-full left-0 top-1/2 -translate-y-1/2 animate-ping" style={{ animationDelay: '1s' }} />
+                  <div className="absolute w-3 h-3 bg-pink-500 rounded-full right-0 top-1/2 -translate-y-1/2 animate-ping" style={{ animationDelay: '1.5s' }} />
+                </div>
+              </div>
+
+              {/* Text Content */}
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                  Preparing Your Report
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Generating Excel file with all your financial data...
+                </p>
+                
+                {/* Animated Progress Dots */}
+                <div className="flex items-center justify-center gap-1.5 pt-3">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-5">
         <PageHeader
           title="Download Reports"
@@ -174,7 +221,7 @@ export default function DownloadReportsPage() {
           </div>
 
           {activeTab === 'monthly' && (
-            <Card className={cn('overflow-hidden w-full max-w-xl transition-all duration-200 hover:shadow-md', isMonthlyLoading ? 'opacity-60 pointer-events-none' : '')}>
+            <Card className="overflow-hidden w-full max-w-xl transition-all duration-200 hover:shadow-md">
               <div className="h-1 w-full bg-blue-400" />
               <CardContent className="pt-5">
                 <div className="flex flex-col">
@@ -235,7 +282,7 @@ export default function DownloadReportsPage() {
           )}
 
           {activeTab === 'yearly' && (
-            <Card className={cn('overflow-hidden w-full max-w-xl transition-all duration-200 hover:shadow-md', isYearlyLoading ? 'opacity-60 pointer-events-none' : '')}>
+            <Card className="overflow-hidden w-full max-w-xl transition-all duration-200 hover:shadow-md">
               <div className="h-1 w-full bg-violet-400" />
               <CardContent className="pt-5">
                 <div className="flex flex-col">

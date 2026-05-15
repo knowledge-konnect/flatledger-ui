@@ -11,7 +11,7 @@ const reportsSubItems = [
   { name: 'Billing Summary',   href: '/reports/collection-summary', icon: BarChart2 },
   { name: 'Outstanding Dues',  href: '/reports/defaulters',          icon: AlertTriangle },
   { name: 'Income & Expenses', href: '/reports/income-vs-expense',  icon: TrendingUp },
-  { name: 'Download Reports',  href: '/reports/download-reports',    icon: FileDown },
+  { name: 'Download Reports',  href: '/reports/download-reports',    icon: FileDown, adminOnly: true },
 ];
 
 const navGroups = [
@@ -169,7 +169,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                               reportsOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                             )}>
                               <div className="ml-3 mt-1 mb-1 space-y-0.5 border-l border-emerald-800/60 pl-3">
-                                {reportsSubItems.map(child => {
+                                {reportsSubItems.filter(child => !('adminOnly' in child && child.adminOnly && !isAdminUser)).map(child => {
                                   const isChildActive = currentPath === child.href || currentPath.startsWith(child.href + '/');
                                   return (
                                     <Link

@@ -100,6 +100,8 @@ export default function Users() {
     return digits;
   };
 
+  const normalizeEmail = (value: string) => value.trim().toLowerCase();
+
   const applyApiFieldErrors = (errors: Array<{ field?: string; messages?: string[] }> | undefined) => {
     if (!errors?.length) return false;
     let hasFieldError = false;
@@ -151,6 +153,28 @@ export default function Users() {
     }
 
     const normalizedMobile = normalizeMobile(mobile || '');
+    const normalizedEmail = normalizeEmail(email || '');
+
+    if (normalizedEmail) {
+      const hasDuplicateEmail = users.some(
+        (u) => normalizeEmail(u.email || '') === normalizedEmail
+      );
+      if (hasDuplicateEmail) {
+        setEmailError('This email is already used by another user.');
+        return;
+      }
+    }
+
+    if (normalizedMobile) {
+      const hasDuplicateMobile = users.some(
+        (u) => normalizeMobile(u.mobile || '') === normalizedMobile
+      );
+      if (hasDuplicateMobile) {
+        setMobileError('This mobile number is already used by another user.');
+        return;
+      }
+    }
+
     if (normalizedMobile && normalizedMobile.length !== 10) {
       setMobileError('Mobile number must be a valid 10-digit number.');
       return;
@@ -161,7 +185,7 @@ export default function Users() {
     try {
       const result = await createUserMutation.mutateAsync({
         name,
-        email: email.trim() || undefined,
+        email: normalizedEmail || undefined,
         username: enteredUsername || undefined,
         mobile: normalizedMobile || undefined,
         roleCode: selectedRoleCode,
@@ -220,6 +244,28 @@ export default function Users() {
     }
 
     const normalizedMobile = normalizeMobile(mobile || '');
+    const normalizedEmail = normalizeEmail(email || '');
+
+    if (normalizedEmail) {
+      const hasDuplicateEmail = users.some(
+        (u) => u.publicId !== selectedUser.publicId && normalizeEmail(u.email || '') === normalizedEmail
+      );
+      if (hasDuplicateEmail) {
+        setEmailError('This email is already used by another user.');
+        return;
+      }
+    }
+
+    if (normalizedMobile) {
+      const hasDuplicateMobile = users.some(
+        (u) => u.publicId !== selectedUser.publicId && normalizeMobile(u.mobile || '') === normalizedMobile
+      );
+      if (hasDuplicateMobile) {
+        setMobileError('This mobile number is already used by another user.');
+        return;
+      }
+    }
+
     if (normalizedMobile && normalizedMobile.length !== 10) {
       setMobileError('Mobile number must be a valid 10-digit number.');
       return;
@@ -230,7 +276,7 @@ export default function Users() {
       await usersApi.updateUser(selectedUser.publicId, {
         publicId: selectedUser.publicId,
         name,
-        email: email.trim(),
+        email: normalizedEmail,
         mobile: normalizedMobile || undefined,
         roleCode: selectedRoleCode,
       });

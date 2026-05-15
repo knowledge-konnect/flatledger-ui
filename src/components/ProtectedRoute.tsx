@@ -35,7 +35,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles 
 
   // Redirect unauthenticated users to the landing page with a session-expired hint
   if (!isAuthenticated) {
-    return <Navigate to="/?reason=session_expired" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // Role-based access control: check both the roles array and the legacy role string

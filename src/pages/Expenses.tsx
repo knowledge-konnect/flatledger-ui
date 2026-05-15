@@ -302,6 +302,28 @@ export default function Expenses() {
   const onSubmit = async (data: ExpenseFormData) => {
     setFormError(null); // Reset error at start
     try {
+      const vendorInput = (data.vendor || '').trim();
+      const normalizedVendor = vendorInput.toLowerCase();
+      const normalizedDate = data.date;
+      const normalizedCategory = data.categoryCode.trim().toLowerCase();
+      const normalizedAmount = Number(data.amount);
+      const editingPublicId = selectedExpense?.publicId;
+
+      const hasDuplicateExpense = expensesData.some((expense) => {
+        if (editingPublicId && expense.publicId === editingPublicId) return false;
+        return (
+          expense.dateIncurred.substring(0, 10) === normalizedDate
+          && expense.categoryCode.trim().toLowerCase() === normalizedCategory
+          && Number(expense.amount) === normalizedAmount
+          && (expense.vendor || '').trim().toLowerCase() === normalizedVendor
+        );
+      });
+
+      if (hasDuplicateExpense) {
+        setFormError('A matching expense already exists for the same date, category, amount, and vendor.');
+        return;
+      }
+
       if (selectedExpense) {
         // Update
         await updateMutation.mutateAsync({
@@ -309,7 +331,7 @@ export default function Expenses() {
           payload: {
             date: data.date,
             categoryCode: data.categoryCode,
-            vendor: data.vendor,
+            vendor: vendorInput || undefined,
             description: data.description,
             amount: Number(data.amount),
           },
@@ -320,7 +342,7 @@ export default function Expenses() {
         await createMutation.mutateAsync({
           date: data.date,
           categoryCode: data.categoryCode,
-          vendor: data.vendor,
+          vendor: vendorInput || undefined,
           description: data.description,
           amount: Number(data.amount),
         });

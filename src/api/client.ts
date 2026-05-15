@@ -158,7 +158,7 @@ apiClient.interceptors.response.use(
               isRedirecting = true;
               setTimeout(() => {
                 isRedirecting = false;
-                window.location.href = '/login?reason=session_expired';
+                window.location.href = '/login';
               }, 100);
             }
             
@@ -177,7 +177,7 @@ apiClient.interceptors.response.use(
             isRedirecting = true;
             setTimeout(() => {
               isRedirecting = false;
-              window.location.href = '/login?reason=session_expired';
+              window.location.href = '/login';
             }, 100);
           }
           

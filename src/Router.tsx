@@ -80,7 +80,7 @@ function UserRoutes() {
   // Using startsWith handles nested routes like /flats/:id/ledger.
   const isProtected = protectedPaths.some(p => pathname === p || pathname.startsWith(p + '/') );
   if (!isAuthenticated && !isLoading && isProtected) {
-    return <Navigate to="/?reason=session_expired" replace />;
+    return <Navigate to="/" replace />;
   }
 
   if (isAuthenticated && user && user.forcePasswordChange === true) {
@@ -120,7 +120,7 @@ function UserRoutes() {
           <Route path="/reports/income-vs-expense" element={<ProtectedRoute><IncomeVsExpense /></ProtectedRoute>} />
           <Route path="/reports/fund-ledger" element={<ProtectedRoute><FundLedger /></ProtectedRoute>} />
           <Route path="/reports/payment-register" element={<ProtectedRoute><PaymentRegister /></ProtectedRoute>} />
-          <Route path="/reports/download-reports" element={<ProtectedRoute><DownloadReports /></ProtectedRoute>} />
+          <Route path="/reports/download-reports" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><DownloadReports /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><Users /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><Settings /></ProtectedRoute>} />
           <Route path="/settings/opening-balance" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><OpeningBalanceEntry /></ProtectedRoute>} />
