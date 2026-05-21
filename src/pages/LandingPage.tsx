@@ -1,45 +1,26 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { motion, useInView } from 'framer-motion';
 import Navbar from "../components/layout/Navbar";
 import {
   ArrowRight, IndianRupee, BarChart3, Users, Zap,
-  Receipt, PieChart, CheckCircle2, ChevronRight, Star,
+  Receipt, PieChart, CheckCircle2, ChevronRight,
 } from "lucide-react";
 import { PricingSection } from '../components/pricing/PricingSection';
 
 // Static data — defined outside component to avoid recreation on every render
-const planFeatures = [
-  { color: "from-green-500 to-green-600",    icon: IndianRupee, title: "Generate bills in seconds, not hours",       description: "One click generates bills for every flat — no more Sunday evenings in Excel." },
-  { color: "from-teal-500 to-teal-600",      icon: Receipt,     title: "Know instantly who hasn't paid",              description: "Real-time payment status for every flat — no WhatsApp follow-ups or manual registers." },
-  { color: "from-orange-500 to-orange-600",  icon: BarChart3,   title: "Track every expense easily",                  description: "Categorised expenses, fully searchable — perfect for AGM presentations and reviews." },
-  { color: "from-emerald-500 to-emerald-600",icon: Zap,         title: "See full society finances at a glance",       description: "Collection rate, fund balance, pending dues — all on one screen, always current." },
-  { color: "from-emerald-600 to-emerald-800",  icon: PieChart,  title: "Get audit-ready reports in seconds",          description: "Income vs expense, defaulter list, payment history — export to CSV anytime." },
-  { color: "from-red-500 to-red-600",        icon: Users,      title: "Right access for every committee member",    description: "Treasurer, Secretary, or Viewer — each person sees exactly what they need." },
-];
-
-// Counts up from 0 to `to` once `active` becomes true
-function AnimatedNumber({ to, prefix = '', suffix = '', active }: { to: number; prefix?: string; suffix?: string; active: boolean }) {
-  const [value, setValue] = useState(0);
-  useEffect(() => {
-    if (!active) return;
-    const duration = 1100;
-    const start = performance.now();
-    let raf: number;
-    const tick = (now: number) => {
-      const t = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3);
-      setValue(Math.round(eased * to));
-      if (t < 1) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [active, to]);
-  const formatted = prefix === '\u20b9' ? value.toLocaleString('en-IN') : String(value);
-  return <>{prefix}{formatted}{suffix}</>;
-}
+const planFeatureDefs = [
+  { color: "from-green-500 to-green-600", icon: IndianRupee, key: 'billing' },
+  { color: "from-teal-500 to-teal-600", icon: Receipt, key: 'payments' },
+  { color: "from-orange-500 to-orange-600", icon: BarChart3, key: 'expenses' },
+  { color: "from-emerald-500 to-emerald-600", icon: Zap, key: 'finances' },
+  { color: "from-emerald-600 to-emerald-800", icon: PieChart, key: 'reports' },
+  { color: "from-red-500 to-red-600", icon: Users, key: 'roles' },
+] as const;
 
 const LandingPage: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [announcementVisible, setAnnouncementVisible] = useState(true);
@@ -47,17 +28,29 @@ const LandingPage: React.FC = () => {
   const mockRef = useRef<HTMLDivElement>(null);
   const mockInView = useInView(mockRef, { once: true, margin: '-80px' });
 
+  const planFeatures = planFeatureDefs.map((item) => ({
+    ...item,
+    title: t(`landing.features.items.${item.key}.title`),
+    description: t(`landing.features.items.${item.key}.description`),
+  }));
+  const trustItems = t('landing.trust.items', { returnObjects: true }) as Array<{ title: string; description: string }>;
+  const earlyAccessItems = t('landing.earlyAccess.items', { returnObjects: true }) as Array<{ title: string; description: string }>;
+  const howItWorksItems = t('landing.howItWorks.steps', { returnObjects: true }) as Array<{ step: string; title: string; description: string }>;
+  const faqItems = t('landing.faq.items', { returnObjects: true }) as Array<{ q: string; a: string }>;
+  const mockKpis = t('landing.mock.kpis', { returnObjects: true }) as Array<{ label: string; value: string; sub: string; color: string }>;
+  const mockRows = t('landing.mock.rows', { returnObjects: true }) as Array<{ flat: string; amount: string; status: string; color: string }>;
+
   return (
     <div className="min-h-screen pb-24 md:pb-0 bg-white dark:bg-slate-950">
       {/* ── ANNOUNCEMENT BAR ─────────────────────────────────────────────── */}
       {announcementVisible && (
         <div className="w-full bg-emerald-600 text-white text-center text-xs sm:text-sm py-2 px-4 font-medium relative">
-          Monthly billing in minutes, not hours — try FlatLedger free &nbsp;·&nbsp;
-          <a href="#pricing" className="underline underline-offset-2 hover:text-emerald-200 transition-colors">See plans →</a>
+          {t('landing.announcement.text')} &nbsp;·&nbsp;
+          <a href="#pricing" className="underline underline-offset-2 hover:text-emerald-200 transition-colors">{t('landing.announcement.link')}</a>
           <button
             className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors text-base leading-none"
             onClick={() => setAnnouncementVisible(false)}
-            aria-label="Dismiss announcement"
+            aria-label={t('landing.announcement.dismiss')}
           >
             &#x2715;
           </button>
@@ -78,50 +71,62 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="space-y-6 text-center">
             <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 dark:text-white text-balance animate-slide-in-up leading-tight tracking-tight">
-              Still Managing Society Billing on Excel?
-              <span className="hidden sm:inline"><br /></span>{" "}
+              {t('landing.hero.titleLine1')}
+              <span><br /></span>
+              {t('landing.hero.titleLine2')}
+              <span><br /></span>{" "}
               <span className="bg-gradient-to-r from-emerald-500 to-emerald-700 bg-clip-text text-transparent">
-                There's a Better Way.
+                {t('landing.hero.titleLine3')}
               </span>
             </h1>
 
             <p className="text-base sm:text-xl md:text-2xl text-slate-700 dark:text-slate-200 max-w-2xl mx-auto leading-relaxed animate-slide-in-up font-medium" style={{ animationDelay: '0.1s' }}>
-              Stop chasing payments on WhatsApp and managing bills in Excel. FlatLedger automates everything in one place.
+              {t('landing.hero.subtitle')}
             </p>
 
             <p className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold text-center animate-fade-in" style={{ animationDelay: '0.15s' }}>
-              Built for Apartment &amp; Housing Society Treasurers and Secretaries
+              {t('landing.hero.badge')}
             </p>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 pt-4 animate-slide-in-up" style={{ animationDelay: '0.2s' }}>
               <Link
                 to="/signup"
                 className="w-full sm:w-auto px-8 py-4 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:shadow-xl hover:bg-emerald-700 hover:-translate-y-1 active:translate-y-0 active:scale-[0.99] transition-all duration-300 flex items-center justify-center gap-2 group focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900"
-                aria-label="Start Free Trial in 2 Minutes"
+                aria-label={t('landing.hero.primaryCta')}
               >
-                <span>Start Free Trial in 2 Minutes</span>
+                <span>{t('landing.hero.primaryCta')}</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
               <a
                 href="#pricing"
-                className="w-full sm:w-auto px-8 py-4 border-2 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-lg font-semibold bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-400 dark:hover:border-slate-600 active:scale-[0.99] transition-all duration-300 text-center focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200 dark:focus-visible:ring-slate-800"
-                aria-label="See Pricing Plans"
+                className="w-full sm:w-auto px-6 py-3.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg font-medium bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 active:scale-[0.99] transition-all duration-300 text-center focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200 dark:focus-visible:ring-slate-800"
+                aria-label={t('landing.hero.secondaryCta')}
               >
-                See Pricing Plans
+                {t('landing.hero.secondaryCta')}
               </a>
             </div>
 
-            <p className="text-xs text-slate-500 dark:text-slate-400 animate-fade-in text-center" style={{ animationDelay: '0.35s' }}>No setup. No training. Works from day one.</p>
+            <div className="flex justify-center animate-fade-in" style={{ animationDelay: '0.25s' }}>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                {t('landing.hero.teluguBadge')}
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-500 dark:text-slate-400 animate-fade-in text-center" style={{ animationDelay: '0.35s' }}>{t('landing.hero.microcopy')}</p>
 
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-2 text-sm text-slate-600 dark:text-slate-400 animate-fade-in font-medium" style={{ animationDelay: '0.4s' }}>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> 30-day free trial</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> No credit card required</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> Cancel anytime</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> {t('landing.hero.highlights.trial')}</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> {t('landing.hero.highlights.card')}</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> {t('landing.hero.highlights.cancel')}</span>
             </div>
           </div>
 
           {/* Dashboard preview mock */}
-          <div ref={mockRef} className="mt-10 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          <p className="text-center text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-10 animate-fade-in" style={{ animationDelay: '0.45s' }}>
+            {t('landing.mock.previewLabel')}
+          </p>
+          <div ref={mockRef} className="mt-3 animate-fade-in" style={{ animationDelay: '0.5s' }}>
             <div className="relative mx-auto max-w-4xl">
               <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-2xl blur opacity-20" />
               <div className="relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
@@ -137,12 +142,7 @@ const LandingPage: React.FC = () => {
                 {/* Mock dashboard content */}
                 <div className="p-6 bg-slate-50 dark:bg-slate-900">
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-                    {[
-                      { label: "Total Collected", rawValue: 120000, prefix: '₹', suffix: '', sub: "This month", color: "text-green-600 dark:text-green-400" },
-                      { label: "Pending Dues", rawValue: 18500, prefix: '₹', suffix: '', sub: "3 flats", color: "text-amber-600 dark:text-amber-400" },
-                      { label: "Collection Rate", rawValue: 86, prefix: '', suffix: '%', sub: "+4% vs last month", color: "text-emerald-600 dark:text-emerald-400" },
-                      { label: "Society Fund", rawValue: 245000, prefix: '₹', suffix: '', sub: "Available balance", color: "text-emerald-600 dark:text-emerald-400" },
-                    ].map((kpi, i) => (
+                    {mockKpis.map((kpi, i) => (
                       <motion.div
                         key={kpi.label}
                         initial={{ opacity: 0, y: 12 }}
@@ -152,7 +152,7 @@ const LandingPage: React.FC = () => {
                       >
                         <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{kpi.label}</p>
                         <p className={`text-lg font-bold tabular-nums ${kpi.color}`}>
-                          <AnimatedNumber to={kpi.rawValue} prefix={kpi.prefix} suffix={kpi.suffix} active={mockInView} />
+                          {kpi.value}
                         </p>
                         <p className="text-xs text-slate-400 dark:text-slate-500">{kpi.sub}</p>
                       </motion.div>
@@ -160,17 +160,13 @@ const LandingPage: React.FC = () => {
                   </div>
                   <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Recent Payments</p>
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">View all</span>
+                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t('landing.mock.recentPayments')}</p>
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{t('landing.mock.viewAll')}</span>
                     </div>
                     <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                      {[
-                        { flat: "Flat 101 — Sharma", amount: "₹2,000", status: "Paid", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-                        { flat: "Flat 204 — Mehta", amount: "₹2,000", status: "Pending", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
-                        { flat: "Flat 302 — Reddy", amount: "₹3,500", status: "Overdue", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
-                      ].map((row, i) => (
+                      {mockRows.map((row, i) => (
                         <motion.div
-                          key={row.flat}
+                          key={`${row.flat}-${row.status}`}
                           initial={{ opacity: 0, x: -8 }}
                           animate={mockInView ? { opacity: 1, x: 0 } : {}}
                           transition={{ duration: 0.35, delay: 0.35 + i * 0.1, ease: 'easeOut' }}
@@ -195,54 +191,79 @@ const LandingPage: React.FC = () => {
       {/* ── SOCIAL PROOF STRIP ──────────────────────────────────────────── */}
         {/* Removed social proof strip section as requested */}
 
-      {/* ── TESTIMONIALS ────────────────────────────────────────────────────── */}
+      {/* ── TRUST SECTION ──────────────────────────────────────────────── */}
+      <section className="py-8 md:py-10 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-6 space-y-2">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
+              {t('landing.trust.title')}
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {t('landing.trust.subtitle')}
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
+            {trustItems.map((item, index) => {
+              const icons = [Receipt, Users, Zap];
+              const TrustIcon = icons[index];
+
+              if (!TrustIcon) return null;
+
+              return (
+                <div
+                  key={item.title}
+                  className="flex flex-col items-center text-center p-5 bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-xl hover:-translate-y-1 border border-slate-200 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-700 transition-all duration-300 animate-slide-in-up group"
+                  style={{ animationDelay: `${0.1 * (index + 1)}s` }}
+                >
+                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-all duration-300">
+                    <TrustIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">{item.title}</h3>
+                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">{item.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ── EARLY ACCESS ───────────────────────────────────────────────────── */}
       <section className="py-10 md:py-12 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8 space-y-2">
-            <p className="text-emerald-600 dark:text-emerald-400 text-sm font-semibold uppercase tracking-wider">Trusted by Housing Societies Across India</p>
+            <p className="text-emerald-600 dark:text-emerald-400 text-sm font-semibold uppercase tracking-wider">{t('landing.earlyAccess.badge')}</p>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
-              What Committee Members Are Saying
+              {t('landing.earlyAccess.title')}
             </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
+              {t('landing.earlyAccess.subtitle')}
+            </p>
           </div>
           <div className="grid sm:grid-cols-3 gap-6">
-            {[
-              {
-                quote: "Earlier we spent 3–4 hours every month preparing bills in Excel. Now it takes less than 10 minutes. The defaulter list alone saves us many awkward conversations.",
-                name: "Ramesh Iyer",
-                role: "Treasurer, Jade Gardens – Bengaluru",
-                initials: "RI",
-              },
-              {
-                quote: "Very easy to use, even for someone not very tech-savvy. Our secretary handles billing now, and all committee members can see reports whenever they need.",
-                name: "Sunita Patel",
-                role: "Secretary, Silver Oak CHS – Pune",
-                initials: "SP",
-              },
-              {
-                quote: "We tried two other apps before FlatLedger. This one works the way a housing society actually needs it to. Payment tracking and CSV exports are exactly right for our AGM.",
-                name: "Krishnamurthy R.",
-                role: "Committee Member, Palm Heights – Chennai",
-                initials: "KR",
-              },
-            ].map((t) => (
-              <div key={t.name} className="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 flex flex-col gap-4">
-                <div className="flex gap-0.5">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-amber-400" fill="currentColor" />
-                  ))}
-                </div>
-                <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed flex-1">“{t.quote}”</p>
-                <div className="flex items-center gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-                  <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">{t.initials}</div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{t.name}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{t.role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+            {[Receipt, Users, Zap].map((IconComponent, idx) => {
+              const item = earlyAccessItems[idx];
 
+              return (
+                <div key={item.title} className="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 flex flex-col gap-4">
+                  <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+                    <IconComponent className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">{item.title}</h3>
+                  <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed flex-1">{item.description}</p>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-8 text-center">
+            <Link
+              to="/signup"
+              className="inline-flex items-center gap-2 px-7 py-3.5 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:bg-emerald-700 hover:-translate-y-0.5 transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900"
+              aria-label={t('landing.earlyAccess.cta')}
+            >
+              {t('landing.earlyAccess.cta')}
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -250,10 +271,10 @@ const LandingPage: React.FC = () => {
       <section className="py-8 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
         <div className="max-w-3xl mx-auto text-center space-y-3">
           <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
-            Managing society finances shouldn't take hours every month. Between Excel sheets, WhatsApp reminders, and manual tracking — things get messy fast.
+            {t('landing.problem.body1')}
           </p>
           <p className="text-lg font-semibold text-slate-900 dark:text-white">
-            FlatLedger simplifies everything into one easy system.
+            {t('landing.problem.body2')}
           </p>
         </div>
       </section>
@@ -263,11 +284,11 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8 space-y-3">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white animate-slide-in-up">
-              Replace Excel and WhatsApp —{" "}
-              <span className="bg-gradient-to-r from-emerald-500 to-emerald-700 bg-clip-text text-transparent">with one simple app</span>
+              {t('landing.features.titlePrefix')} {" "}
+              <span className="bg-gradient-to-r from-emerald-500 to-emerald-700 bg-clip-text text-transparent">{t('landing.features.titleHighlight')}</span>
             </h2>
             <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
-              Everything a society treasurer or secretary needs for housing society management — no technical skills required
+              {t('landing.features.subtitle')}
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -292,49 +313,33 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
       {/* ── HOW IT WORKS ───────────────────────────────────────────────────── */}
-      <section id="how-it-works" className="py-10 md:py-12 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 scroll-mt-20">
+      <section id="how-it-works" className="py-8 md:py-10 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 scroll-mt-20">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8 space-y-3">
-            <p className="text-emerald-600 dark:text-emerald-400 text-sm font-semibold uppercase tracking-wider">Simple Setup</p>
+          <div className="text-center mb-6 space-y-2">
+            <p className="text-emerald-600 dark:text-emerald-400 text-sm font-semibold uppercase tracking-wider">{t('landing.howItWorks.badge')}</p>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
-              Up and running in under 30 minutes
+              {t('landing.howItWorks.title')}
             </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-300">No IT team. No complex configuration. Just three simple steps.</p>
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300">{t('landing.howItWorks.subtitle')}</p>
           </div>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {[
-              {
-                step: "1",
-                title: "Add your flats and members",
-                description: "Enter flat numbers, owner names, and maintenance amounts. Import from your existing Excel sheet in minutes if you have one.",
-              },
-              {
-                step: "2",
-                title: "Generate maintenance bills",
-                description: "Click once to generate bills for all flats every month. Customise amounts by flat type. Bills are ready instantly.",
-              },
-              {
-                step: "3",
-                title: "Track payments and expenses",
-                description: "Record cash, UPI, cheque, or bank transfers as they arrive. See who has paid, who hasn't, and your fund balance — all in real time.",
-              },
-            ].map((item) => (
-              <div key={item.step} className="flex flex-col items-start gap-3">
-                <div className="w-12 h-12 bg-emerald-600 text-white rounded-xl flex items-center justify-center text-xl font-extrabold shadow-lg flex-shrink-0">
+          <div className="grid sm:grid-cols-3 gap-4">
+            {howItWorksItems.map((item) => (
+              <div key={item.step} className="flex flex-col items-center text-center gap-2.5 p-1">
+                <div className="w-11 h-11 bg-emerald-600 text-white rounded-xl flex items-center justify-center text-lg font-extrabold shadow-lg flex-shrink-0">
                   {item.step}
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white">{item.title}</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{item.description}</p>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">{item.title}</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed max-w-[14rem]">{item.description}</p>
               </div>
             ))}
           </div>
-          <div className="mt-8 text-center">
+          <div className="mt-6 text-center">
             <Link
               to="/signup"
               className="inline-flex items-center gap-2 px-7 py-3.5 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:bg-emerald-700 hover:-translate-y-0.5 transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900"
-              aria-label="Get Started Free"
+              aria-label={t('landing.howItWorks.cta')}
             >
-              Get Started Free
+              {t('landing.howItWorks.cta')}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -345,11 +350,14 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8 space-y-2">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white animate-slide-in-up">
-              Simple Pricing —{" "}
-              <span className="bg-gradient-to-r from-emerald-500 to-emerald-700 bg-clip-text text-transparent">Less Than ₹5 Per Flat Per Month</span>
+              {t('landing.pricing.titlePrefix')} {" "}
+              <span className="bg-gradient-to-r from-emerald-500 to-emerald-700 bg-clip-text text-transparent">{t('landing.pricing.titleHighlight')}</span>
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">No hidden fees. No setup cost. Cancel anytime. Your data is always yours.</p>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Works out to less than ₹3 per flat per month</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t('landing.pricing.subtitle1')}</p>
+            {t('landing.pricing.subtitle2') && (
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('landing.pricing.subtitle2')}</p>
+            )}
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1">{t('landing.pricing.subtitle3')}</p>
           </div>
           <PricingSection
             onChoosePlan={(planId) => navigate(`/signup?plan=${planId}`)}
@@ -361,20 +369,11 @@ const LandingPage: React.FC = () => {
       <section id="faq" className="py-10 md:py-12 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 scroll-mt-20">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white text-balance">Frequently Asked Questions</h2>
-            <p className="text-slate-600 dark:text-slate-400 mt-3">Quick answers about your free trial, billing, and support.</p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white text-balance">{t('landing.faq.title')}</h2>
+            <p className="text-slate-600 dark:text-slate-400 mt-3">{t('landing.faq.subtitle')}</p>
           </div>
           <div className="divide-y divide-slate-200 dark:divide-slate-800 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-            {[
-              { q: "Can we migrate from Excel?", a: "Yes. You can enter your flat list and opening balances directly, or copy them from your existing Excel sheet. Most societies are set up and billing within 30 minutes." },
-              { q: "Is FlatLedger easy for non-technical users?", a: "Yes. FlatLedger is designed for treasurers and secretaries, not IT professionals. If you can use WhatsApp, you can use FlatLedger. No technical training needed." },
-              { q: "Do you support UPI or online payments?", a: "FlatLedger supports offline payment recording — you record cash, UPI, cheque, and bank transfer payments that residents make directly to the society account. It keeps things simple and fully under your committee's control." },
-              { q: "How many flats can I manage?", a: "The Starter plan supports up to 50 flats at ₹149/month. The Growth plan supports up to 100 flats at ₹249/month. Both include all features — bills, payments, reports, and expenses." },
-              { q: "Is our society's data secure?", a: "Yes. FlatLedger uses encrypted data storage, role-based access control, and regular backups. Only your committee members can access your society's data. We do not share data with any third party." },
-              { q: "What does the free trial include?", a: "The 30-day free trial gives you full access to all features — billing, payments, expenses, reports, and user management. No credit card required. You only pay if you choose to continue after the trial." },
-              { q: "Can we export our data anytime?", a: "Yes. Bills, payment records, and reports can be exported to CSV at any time. Your data is always yours — you are never locked in." },
-              { q: "What happens if we stop using FlatLedger?", a: "You can export all your data — bills, payments, and reports — as CSV files at any time. There is no lock-in. If you cancel, your data remains accessible for 30 days for export." },
-            ].map((item, i) => (
+            {faqItems.map((item, i) => (
               <div key={item.q} className="bg-white dark:bg-slate-900">
                 <button
                   className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors duration-200 group focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-100 dark:focus-visible:ring-emerald-900/40"
@@ -396,9 +395,9 @@ const LandingPage: React.FC = () => {
           </div>
           <div className="mt-5 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Still have questions?{" "}
+              {t('landing.faq.supportText')}{" "}
               <a href="mailto:support@flatledger.com" className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
-                Talk to support
+                {t('landing.faq.supportLink')}
               </a>
             </p>
           </div>
@@ -410,18 +409,18 @@ const LandingPage: React.FC = () => {
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="p-6 md:p-10 bg-gradient-to-br from-emerald-600 to-emerald-900 rounded-2xl shadow-2xl text-center space-y-3">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-white animate-slide-in-up">
-              Stop spending hours on billing every month. Start managing your society in minutes.
+              {t('landing.finalCta.title')}
             </h2>
             <p className="text-lg text-white/90 animate-slide-in-up max-w-xl mx-auto" style={{ animationDelay: '0.1s' }}>
-              Start your free 30-day trial today — no credit card, no setup, no Excel.
+              {t('landing.finalCta.subtitle')}
             </p>
             <Link
               to="/signup"
               className="px-8 py-4 bg-white text-emerald-600 rounded-lg font-bold shadow-lg hover:shadow-xl hover:bg-slate-50 hover:-translate-y-1 active:translate-y-0 active:scale-[0.99] transition-all duration-300 inline-flex w-fit items-center justify-center gap-2 mx-auto group animate-slide-in-up focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
               style={{ animationDelay: '0.2s' }}
-              aria-label="Get Started Free"
+              aria-label={t('landing.finalCta.cta')}
             >
-              Get Started Free
+              {t('landing.finalCta.cta')}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
             </Link>
           </div>
@@ -430,23 +429,44 @@ const LandingPage: React.FC = () => {
 
       {/* ── FOOTER ───────────────────────────────────────────────────────── */}
       <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col items-center">
-          <div className="mb-4 text-center">
-            <p className="text-lg font-bold">
-              <span className="text-slate-700 dark:text-slate-300">Flat</span><span className="text-emerald-600 dark:text-emerald-400">Ledger</span>
-            </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Simplifying housing society finances across India</p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-8 mb-4">
-            <a href="/" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Home</a>
-            <a href="#features" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Features</a>
-            <a href="#pricing" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Pricing</a>
-            <a href="#faq" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">FAQ</a>
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Privacy Policy</a>
-            <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Terms</a>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-8">
+            <div>
+              <p className="text-lg font-bold">
+                <span className="text-slate-700 dark:text-slate-300">Flat</span><span className="text-emerald-600 dark:text-emerald-400">Ledger</span>
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('landing.footer.tagline')}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('landing.footer.supportingText')}</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{t('landing.footer.groups.product')}</p>
+                <ul className="space-y-2">
+                  <li><a href="#features" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.features')}</a></li>
+                  <li><a href="#pricing" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.pricing')}</a></li>
+                  <li><a href="#faq" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.faq')}</a></li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{t('landing.footer.groups.support')}</p>
+                <ul className="space-y-2">
+                  <li><a href="mailto:support@flatledger.com" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.contact')}</a></li>
+                  <li><a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.privacy')}</a></li>
+                  <li><a href="/terms" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.terms')}</a></li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{t('landing.footer.groups.builtFor')}</p>
+                <ul className="space-y-2">
+                  <li><span className="text-sm text-slate-600 dark:text-slate-400">{t('landing.footer.builtFor.societies')}</span></li>
+                  <li><span className="text-sm text-slate-600 dark:text-slate-400">{t('landing.footer.builtFor.treasurers')}</span></li>
+                  <li><span className="text-sm text-slate-600 dark:text-slate-400">{t('landing.footer.builtFor.telugu')}</span></li>
+                </ul>
+              </div>
+            </div>
           </div>
           <div className="pt-4 border-t border-slate-200 dark:border-slate-800 w-full text-center text-sm text-slate-600 dark:text-slate-400">
-            <p>&copy; 2026 FlatLedger. All rights reserved.</p>
+            <p>{t('landing.footer.copyright')}</p>
           </div>
         </div>
       </footer>
@@ -455,13 +475,13 @@ const LandingPage: React.FC = () => {
       {/* ── MOBILE STICKY CTA ───────────────────────────────────────────── */}
       <div className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
         <div className="px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <p className="text-xs text-slate-500 dark:text-slate-400 text-center mb-1.5">Start in under 2 minutes</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 text-center mb-1.5">{t('landing.mobileCta.hint')}</p>
           <Link
             to="/signup"
             className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:bg-emerald-700 active:scale-[0.99] transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900"
-            aria-label="Start free trial"
+            aria-label={t('landing.mobileCta.button')}
           >
-            Start Free Trial
+            {t('landing.mobileCta.button')}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -474,8 +494,8 @@ const LandingPage: React.FC = () => {
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-20 left-4 z-50 md:bottom-5 md:left-auto md:right-5 w-14 h-14 bg-[#25D366] hover:bg-[#1ebe5d] text-white rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:-translate-y-1 hover:shadow-green-400/40"
-        aria-label="Chat with us on WhatsApp"
-        title="Chat with us on WhatsApp"
+        aria-label={t('landing.whatsappLabel')}
+        title={t('landing.whatsappLabel')}
       >
         <svg viewBox="0 0 24 24" className="w-7 h-7 fill-current" aria-hidden="true">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.521.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>

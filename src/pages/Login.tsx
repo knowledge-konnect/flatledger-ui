@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { FlatLedgerIcon } from '../components/ui/FlatLedgerIcon';
@@ -12,23 +13,22 @@ import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { AlertMessages } from '../lib/alertMessages';
 
-const loginSchema = z.object({
-  usernameOrEmail: z.string().min(1, 'Email or username is required'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-});
+type LoginFormData = {
+  usernameOrEmail: string;
+  password: string;
+};
 
-type LoginFormData = z.infer<typeof loginSchema>;
-
-const features = [
-  { icon: LayoutDashboard, title: 'Live KPI Dashboard',        desc: 'Collection rate, fund balance and pending dues — always current.' },
-  { icon: IndianRupee,     title: 'One-Click Billing',         desc: 'Generate bills for every flat in seconds.' },
-  { icon: Receipt,         title: 'Real-Time Payment Status',  desc: 'Know instantly who has paid — no WhatsApp follow-ups.' },
-  { icon: BarChart3,       title: 'Audit-Ready Reports',       desc: 'Income vs expense, defaulter list — export to CSV anytime.' },
-  { icon: PieChart,        title: 'Expense Tracking',          desc: 'Categorised expenses, perfect for AGM presentations.' },
-  { icon: Building2,       title: 'Flat & Resident Management',desc: 'Manage flats, owners and tenants — import from Excel.' },
-];
+const featureDefs = [
+  { icon: LayoutDashboard, key: 'dashboard' },
+  { icon: IndianRupee, key: 'billing' },
+  { icon: Receipt, key: 'payments' },
+  { icon: BarChart3, key: 'reports' },
+  { icon: PieChart, key: 'expenses' },
+  { icon: Building2, key: 'flats' },
+] as const;
 
 export default function Login() {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const { showErrorToast } = useApiErrorToast();
   const { login, isAuthenticated } = useAuth();
@@ -46,13 +46,24 @@ export default function Login() {
   useEffect(() => {
     const reason = searchParams.get('reason');
     if (reason === 'session_expired') {
-      showToast('Your session has expired. Please log in again.', 'warning');
+      showToast(AlertMessages.error.sessionExpired, 'warning');
       searchParams.delete('reason');
       navigate({ search: searchParams.toString() }, { replace: true });
     }
   }, [searchParams, showToast, navigate]);
 
   if (isAuthenticated) return null;
+
+  const loginSchema = z.object({
+    usernameOrEmail: z.string().min(1, t('auth.login.validation.usernameRequired')),
+    password: z.string().min(6, t('auth.login.validation.passwordMin')),
+  });
+
+  const features = featureDefs.map(feature => ({
+    icon: feature.icon,
+    title: t(`auth.login.features.${feature.key}.title`),
+    desc: t(`auth.login.features.${feature.key}.desc`),
+  }));
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -95,7 +106,7 @@ export default function Login() {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 flex">
+    <div className="relative h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 flex">
 
       {/* ── Left panel ── */}
       <div className="hidden lg:flex lg:w-[52%] h-full bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 flex-col p-12 relative overflow-hidden">
@@ -152,30 +163,29 @@ export default function Login() {
       {/* ── Right panel ── */}
       <div className="w-full lg:w-[48%] h-full flex flex-col items-center justify-center px-8">
         <div className="w-full max-w-[380px] animate-fade-in">
-
           {/* Back link */}
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors mb-8"
           >
-            ← Back to home
+            ← {t('auth.login.backToHome')}
           </Link>
 
           {/* Header */}
           <div className="mb-7">
             <div className="flex items-center gap-3 mb-1">
               <FlatLedgerIcon size={36} className="rounded-lg shadow-sm lg:hidden" />
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome back</h1>
+              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('auth.login.title')}</h1>
             </div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Sign in to manage your society</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{t('auth.login.subtitle')}</p>
           </div>
 
           {/* Form */}
           <div className="card" data-testid="login-form">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Input
-                label="Email or Username"
-                placeholder="your@email.com or username"
+                label={t('auth.login.usernameLabel')}
+                placeholder={t('auth.login.usernamePlaceholder')}
                 icon={<Mail className="w-4 h-4" />}
                 error={errors.usernameOrEmail?.message}
                 data-testid="input-email"
@@ -184,16 +194,16 @@ export default function Login() {
 
               <div>
                 <Input
-                  label="Password"
+                  label={t('auth.login.passwordLabel')}
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
+                  placeholder={t('auth.login.passwordPlaceholder')}
                   icon={<Lock className="w-4 h-4" />}
                   rightIcon={
                     <button
                       type="button"
                       onClick={() => setShowPassword(v => !v)}
                       className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 focus:outline-none"
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-label={showPassword ? t('auth.login.hidePassword') : t('auth.login.showPassword')}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -207,14 +217,14 @@ export default function Login() {
                     href="/forgot-password"
                     className="text-xs text-primary dark:text-primary-400 hover:underline font-medium"
                   >
-                    Forgot password?
+                    {t('auth.login.forgotPassword')}
                   </a>
                 </div>
               </div>
 
               {isRateLimited && (
                 <p className="text-xs text-red-500 dark:text-red-400 text-center bg-red-50 dark:bg-red-900/20 rounded-lg py-2 px-3">
-                  Too many attempts. Please wait 1 minute.
+                  {t('auth.login.rateLimit')}
                 </p>
               )}
 
@@ -226,24 +236,24 @@ export default function Login() {
                 size="lg"
                 data-testid="login-submit-btn"
               >
-                Sign In
+                {t('auth.login.submit')}
               </Button>
             </form>
 
             <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
-              No account?{' '}
+              {t('auth.login.noAccount')}{' '}
               <Link to="/signup" className="text-primary dark:text-primary-400 hover:underline font-semibold">
-                Start free trial
+                {t('auth.login.startFreeTrial')}
               </Link>
             </p>
           </div>
 
           {/* Footer */}
           <p className="mt-5 text-center text-xs text-slate-400 dark:text-slate-500">
-            By signing in you agree to our{' '}
-            <Link to="/terms" className="hover:underline text-slate-500 dark:text-slate-400">Terms</Link>
-            {' '}and{' '}
-            <Link to="/privacy" className="hover:underline text-slate-500 dark:text-slate-400">Privacy Policy</Link>
+            {t('auth.login.footerPrefix')}{' '}
+            <Link to="/terms" className="hover:underline text-slate-500 dark:text-slate-400">{t('auth.login.terms')}</Link>
+            {' '}{t('auth.login.and')}{' '}
+            <Link to="/privacy" className="hover:underline text-slate-500 dark:text-slate-400">{t('auth.login.privacyPolicy')}</Link>
           </p>
         </div>
       </div>
