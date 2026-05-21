@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { passwordSchema } from '../lib/validation';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -18,28 +19,27 @@ import { AlertMessages } from '../lib/alertMessages';
 import { cn } from '../lib/utils';
 import { usePlans } from '../hooks/usePlans';
 
-const signupSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  password: passwordSchema,
-  societyName: z.string().min(2, 'Society name is required'),
-  societyAddress: z.string().min(5, 'Please enter a valid address'),
-});
+type SignupFormData = {
+  name: string;
+  email: string;
+  password: string;
+  societyName: string;
+  societyAddress: string;
+};
 
-type SignupFormData = z.infer<typeof signupSchema>;
-
-const included = [
-  { icon: IndianRupee, label: 'One-click monthly billing' },
-  { icon: Receipt,     label: 'Real-time payment tracking' },
-  { icon: Zap,         label: 'Live KPI dashboard' },
-  { icon: BarChart3,   label: 'Income & expense reports' },
-  { icon: PieChart,    label: 'Defaulter tracking' },
-  { icon: Building2,   label: 'Unlimited flats & residents' },
-  { icon: Users,       label: 'Role-based team access' },
-  { icon: Building2,   label: 'Society & maintenance config' },
-];
+const includedDefs = [
+  { icon: IndianRupee, key: 'billing' },
+  { icon: Receipt, key: 'payments' },
+  { icon: Zap, key: 'kpi' },
+  { icon: BarChart3, key: 'reports' },
+  { icon: PieChart, key: 'defaulters' },
+  { icon: Building2, key: 'flats' },
+  { icon: Users, key: 'roles' },
+  { icon: Building2, key: 'config' },
+] as const;
 
 export default function Signup() {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const { showErrorToast } = useApiErrorToast();
   const { register: registerUser, isAuthenticated } = useAuth();
@@ -51,6 +51,17 @@ export default function Signup() {
   // Resolve the plan name from the ?plan= query param if present
   const planIdFromUrl = searchParams.get('plan');
   const selectedPlan = planIdFromUrl ? plans.find(p => p.id === planIdFromUrl) : null;
+  const signupSchema = z.object({
+    name: z.string().min(2, t('auth.signup.validation.nameMin')),
+    email: z.string().email(t('auth.signup.validation.invalidEmail')),
+    password: passwordSchema,
+    societyName: z.string().min(2, t('auth.signup.validation.societyNameRequired')),
+    societyAddress: z.string().min(5, t('auth.signup.validation.addressMin')),
+  });
+  const included = includedDefs.map(item => ({
+    icon: item.icon,
+    label: t(`auth.signup.included.${item.key}`),
+  }));
 
   if (isAuthenticated) return null;
 
@@ -144,18 +155,17 @@ export default function Signup() {
       {/* ── Right panel ── */}
       <div className="w-full lg:w-[58%] h-full flex flex-col items-center justify-center px-12">
         <div className="w-full max-w-[560px] animate-fade-in">
-
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="flex items-center gap-2.5 mb-0.5">
                 <FlatLedgerIcon size={30} className="rounded-lg shadow-sm lg:hidden" />
-                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Create your account</h1>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('auth.signup.title')}</h1>
               </div>
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 {selectedPlan
-                  ? <><span className="text-emerald-600 dark:text-emerald-400 font-medium">{selectedPlan.name} plan</span> · Free for 30 days</>
-                  : 'Free for 30 days, no credit card needed'
+                  ? <><span className="text-emerald-600 dark:text-emerald-400 font-medium">{selectedPlan.name} {t('auth.signup.plan')}</span> · {t('auth.signup.free30Days')}</>
+                  : t('auth.signup.noCard')
                 }
               </p>
             </div>
@@ -163,7 +173,7 @@ export default function Signup() {
               to="/"
               className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors whitespace-nowrap"
             >
-              ← Back
+              ← {t('auth.signup.back')}
             </Link>
           </div>
 
@@ -173,17 +183,17 @@ export default function Signup() {
 
               <div className="grid grid-cols-2 gap-3">
                 <Input
-                  label="Full Name"
-                  placeholder="John Doe"
+                  label={t('auth.signup.fullName')}
+                  placeholder={t('auth.signup.fullNamePlaceholder')}
                   icon={<User className="w-4 h-4" />}
                   error={errors.name?.message}
                   data-testid="input-name"
                   {...register('name')}
                 />
                 <Input
-                  label="Email"
+                  label={t('auth.signup.email')}
                   type="email"
-                  placeholder="your@email.com"
+                  placeholder={t('auth.signup.emailPlaceholder')}
                   icon={<Mail className="w-4 h-4" />}
                   error={errors.email?.message}
                   data-testid="input-email"
@@ -192,9 +202,9 @@ export default function Signup() {
               </div>
 
               <Input
-                label="Password"
+                label={t('auth.signup.password')}
                 type="password"
-                placeholder="Min. 6 characters"
+                placeholder={t('auth.signup.passwordPlaceholder')}
                 icon={<Lock className="w-4 h-4" />}
                 error={errors.password?.message}
                 data-testid="input-password"
@@ -204,8 +214,8 @@ export default function Signup() {
               <div className="border-t border-slate-200 dark:border-slate-700" />
 
               <Input
-                label="Society Name"
-                placeholder="e.g., Greenwoods Apartments"
+                label={t('auth.signup.societyName')}
+                placeholder={t('auth.signup.societyNamePlaceholder')}
                 icon={<Building2 className="w-4 h-4" />}
                 error={errors.societyName?.message}
                 data-testid="input-society-name"
@@ -214,11 +224,11 @@ export default function Signup() {
               />
 
               <div className="form-group">
-                <label className="label">Society Address</label>
+                <label className="label">{t('auth.signup.societyAddress')}</label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
                   <textarea
-                    placeholder="Enter full society address (building, street, city, state)"
+                    placeholder={t('auth.signup.societyAddressPlaceholder')}
                     rows={4}
                     className={cn(
                       'input pl-10 py-2.5 resize-none overflow-hidden min-h-[100px]',
@@ -241,21 +251,21 @@ export default function Signup() {
                 size="lg"
                 data-testid="signup-submit-btn"
               >
-                Start Free Trial
+                {t('auth.signup.submit')}
               </Button>
             </form>
 
             <p className="mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
-              Already have an account?{' '}
-              <Link to="/login" className="text-primary dark:text-primary-400 hover:underline font-semibold">Sign in</Link>
+              {t('auth.signup.alreadyAccount')}{' '}
+              <Link to="/login" className="text-primary dark:text-primary-400 hover:underline font-semibold">{t('auth.signup.signIn')}</Link>
             </p>
           </div>
 
           <p className="mt-3 text-center text-xs text-slate-400 dark:text-slate-500">
-            By continuing you agree to our{' '}
-            <Link to="/terms" className="hover:underline text-slate-500 dark:text-slate-400">Terms</Link>
-            {' '}and{' '}
-            <Link to="/privacy" className="hover:underline text-slate-500 dark:text-slate-400">Privacy Policy</Link>
+            {t('auth.signup.footerPrefix')}{' '}
+            <Link to="/terms" className="hover:underline text-slate-500 dark:text-slate-400">{t('auth.signup.terms')}</Link>
+            {' '}{t('auth.signup.and')}{' '}
+            <Link to="/privacy" className="hover:underline text-slate-500 dark:text-slate-400">{t('auth.signup.privacyPolicy')}</Link>
           </p>
         </div>
       </div>

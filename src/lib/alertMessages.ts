@@ -5,8 +5,9 @@
  * - Consistent tone and formatting
  */
 
-export const AlertMessages = {
-  // ===== SUCCESS MESSAGES =====
+import i18n from './i18n';
+
+const alertMessageDefaults = {
   success: {
     // Authentication
     loginSuccess: 'Welcome back! You\'ve been logged in successfully.',
@@ -44,8 +45,6 @@ export const AlertMessages = {
     settingsSaved: 'Your settings have been saved.',
     profileUpdated: 'Your profile has been updated.',
   },
-
-  // ===== ERROR MESSAGES =====
   error: {
     // General errors
     somethingWentWrong: 'Something went wrong. Please try again.',
@@ -104,8 +103,6 @@ export const AlertMessages = {
     settingsSaveFailed: 'Unable to save settings. Please try again.',
     profileUpdateFailed: 'Unable to update profile. Please try again.',
   },
-
-  // ===== WARNING MESSAGES =====
   warning: {
     unsavedChanges: 'You have unsaved changes. They will be lost if you leave this page.',
     confirmDelete: 'Are you sure you want to delete this? This action cannot be undone.',
@@ -115,8 +112,6 @@ export const AlertMessages = {
     noDataAvailable: 'No data available. Please try again later.',
     lowStorage: 'You\'re running low on storage space.',
   },
-
-  // ===== INFO MESSAGES =====
   info: {
     loading: 'Loading...',
     processingRequest: 'Processing your request...',
@@ -128,6 +123,26 @@ export const AlertMessages = {
     emptyList: 'Nothing to show here yet.',
     passwordRequirements: 'Password must be at least 6 characters long.',
   },
+} as const;
+
+type AlertMessageGroups = typeof alertMessageDefaults;
+type AlertMessageGroupName = keyof AlertMessageGroups;
+
+function createTranslatableGroup<T extends Record<string, string>>(groupName: AlertMessageGroupName, messages: T): T {
+  return new Proxy(messages, {
+    get(target, prop: string) {
+      const fallback = target[prop as keyof T];
+      if (typeof fallback !== 'string') return fallback;
+      return i18n.t(`alerts.${groupName}.${prop}`, { defaultValue: fallback });
+    },
+  });
+}
+
+export const AlertMessages = {
+  success: createTranslatableGroup('success', alertMessageDefaults.success),
+  error: createTranslatableGroup('error', alertMessageDefaults.error),
+  warning: createTranslatableGroup('warning', alertMessageDefaults.warning),
+  info: createTranslatableGroup('info', alertMessageDefaults.info),
 };
 
 /**

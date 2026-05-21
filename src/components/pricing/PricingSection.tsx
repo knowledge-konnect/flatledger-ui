@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
-import { CheckCircle2, ArrowRight, ChevronDown } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2, ArrowRight } from 'lucide-react';
 import { usePlans, type Plan } from '../../hooks/usePlans';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -35,78 +34,29 @@ const BENEFITS = [
   'See full society finances',
 ];
 
-const TRUST_BADGES = [
-  'No setup cost',
-  'Cancel anytime',
-  'No credit card required',
-];
+const DISPLAY_PRICING: Record<number, { monthly: number; yearly: number; perMonth: number; savePercent: number }> = {
+  50: { monthly: 199, yearly: 1499, perMonth: 125, savePercent: 37 },
+  100: { monthly: 349, yearly: 2999, perMonth: 250, savePercent: 30 },
+};
 
-/** Display name prefix keyed by maxFlats */
+/** Display name keyed by maxFlats */
 const PLAN_DISPLAY_NAMES: Record<number, string> = {
   50: 'Starter',
   100: 'Growth',
 };
 
-/** Subtitle shown under the plan title, keyed by maxFlats */
-const SIZE_SUBTITLES: Record<number, string> = {
-  25: 'Ideal for small societies',
-  50: 'Ideal for small societies',
-  100: 'Best for growing communities',
+/** Flat-range subtitle on the card, keyed by maxFlats */
+const PLAN_FLAT_SUBTITLES: Record<number, string> = {
+  50: 'Up to 50 Flats',
+  100: '51–100 Flats',
 };
 
-const FAQ_ITEMS = [
-  {
-    q: 'Can I cancel anytime?',
-    a: 'Yes, you can cancel your plan anytime with no questions asked.',
-  },
-  {
-    q: 'Do I need a credit card to start?',
-    a: 'No. The free trial requires no credit card at all.',
-  },
-  {
-    q: 'Can I change my plan later?',
-    a: 'Yes, you can upgrade or downgrade your plan anytime.',
-  },
-] as const;
-
-// ─── FAQ Item ─────────────────────────────────────────────────────────────────
-
-function FaqItem({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-5 py-4 text-sm font-semibold text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left"
-        aria-expanded={open}
-      >
-        {q}
-        <ChevronDown
-          className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-200 ${
-            open ? 'rotate-180' : ''
-          }`}
-        />
-      </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            key="answer"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <p className="px-5 pb-4 pt-1 text-sm text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900">
-              {a}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+/** Helper text line below flat subtitle, keyed by maxFlats */
+const SIZE_SUBTITLES: Record<number, string> = {
+  25: 'Best for small apartments',
+  50: 'Best for small apartments',
+  100: 'Best for larger societies',
+};
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -116,6 +66,7 @@ export function PricingSection({
   currentPlanId = null,
 }: PricingSectionProps) {
   const { plans, plansLoading, plansError } = usePlans();
+  const [billingCycle, setBillingCycle] = useState<'yearly' | 'monthly'>('monthly');
 
   // Group plans by planGroup. When planGroup is absent (monthly-only plans like
   // "Up to 50 Flats - Monthly") fall back to maxFlats so each tier gets its own card.
@@ -144,6 +95,20 @@ export function PricingSection({
       }));
   }, [plans]);
 
+  const visibleGroups = useMemo(
+    () => groups
+      .filter((grp) => {
+        const maxFlats = Number(grp.yearlyPlan?.maxFlats ?? grp.monthlyPlan?.maxFlats ?? 0);
+        return maxFlats === 50 || maxFlats === 100;
+      })
+      .sort((a, b) => {
+        const aFlats = Number(a.yearlyPlan?.maxFlats ?? a.monthlyPlan?.maxFlats ?? 0);
+        const bFlats = Number(b.yearlyPlan?.maxFlats ?? b.monthlyPlan?.maxFlats ?? 0);
+        return aFlats - bFlats;
+      }),
+    [groups],
+  );
+
   // ── Loading / error states ──────────────────────────────────────────────────
 
   if (plansLoading) {
@@ -171,30 +136,55 @@ export function PricingSection({
   return (
     <div className="space-y-8">
 
-      {/* ── Trust badges ── */}
-      <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-        {TRUST_BADGES.map((badge) => (
-          <span key={badge} className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 dark:text-slate-300">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-            {badge}
-          </span>
-        ))}
+      {/* ── Billing cycle toggle ── */}
+      <div className="flex justify-center">
+        <div className="inline-flex rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-1 gap-1">
+          <button
+            type="button"
+            onClick={() => setBillingCycle('monthly')}
+            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+              billingCycle === 'monthly'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            type="button"
+            onClick={() => setBillingCycle('yearly')}
+            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+              billingCycle === 'yearly'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            Yearly <span className="ml-1 text-xs font-bold opacity-80">(Recommended)</span>
+          </button>
+        </div>
       </div>
 
       {/* ── Plan cards ── */}
       <div className="grid md:grid-cols-2 gap-6 items-stretch max-w-3xl mx-auto w-full">
-        {groups.map((grp, index) => {
-          const activePlan = grp.monthlyPlan ?? grp.yearlyPlan;
+        {visibleGroups.map((grp, index) => {
+          const maxFlats = Number(grp.yearlyPlan?.maxFlats ?? grp.monthlyPlan?.maxFlats ?? 0);
+          // Active plan changes with billing cycle; fall back to whichever variant exists
+          const activePlan = billingCycle === 'yearly'
+            ? (grp.yearlyPlan ?? grp.monthlyPlan)
+            : (grp.monthlyPlan ?? grp.yearlyPlan);
 
           if (!activePlan) return null;
 
-          const price    = Number(activePlan.price ?? 0);
-          const maxFlats = Number(activePlan.maxFlats ?? 0);
-          const prefix   = PLAN_DISPLAY_NAMES[maxFlats];
-          const title    = prefix
-            ? `${prefix} (Up to ${maxFlats} Flats)`
-            : maxFlats ? `Up to ${maxFlats} Flats` : grp.key.replace(/_/g, ' ');
+          const pricing = DISPLAY_PRICING[maxFlats];
+
+          if (!pricing) return null;
+
+          const { monthly: monthlyPrice, yearly: yearlyPrice, perMonth: perMonthEquiv, savePercent } = pricing;
+
+          const title        = PLAN_DISPLAY_NAMES[maxFlats] ?? (maxFlats ? `Up to ${maxFlats} Flats` : grp.key.replace(/_/g, ' '));
+          const flatSubtitle = PLAN_FLAT_SUBTITLES[maxFlats] ?? null;
           const sizeSubtitle = SIZE_SUBTITLES[maxFlats] ?? null;
+          const isPopularPlan = maxFlats === 100;
 
           // Is this the plan the society is currently subscribed to?
           const isCurrentPlan = currentPlanId != null && (
@@ -203,25 +193,22 @@ export function PricingSection({
             grp.yearlyPlan?.id === currentPlanId
           );
 
-          // Per-flat (display only) — do NOT use for pricing logic
-          const perFlat = maxFlats > 0 ? (price / maxFlats).toFixed(1) : null;
-
           const isDisabled = isBusy;
 
           return (
             <div
               key={grp.key}
               className={`relative flex flex-col rounded-2xl border-2 overflow-hidden transition-all duration-300 animate-slide-in-up ${
-                grp.isPopular
+                isPopularPlan
                   ? 'border-emerald-500 bg-white dark:bg-slate-900 shadow-2xl scale-[1.02] hover:scale-[1.03]'
                   : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md hover:shadow-xl hover:scale-[1.02] hover:border-emerald-300 dark:hover:border-emerald-600'
               }`}
               style={{ animationDelay: `${0.1 * (index + 1)}s` }}
             >
               {/* Most Popular banner */}
-              {grp.isPopular ? (
+              {isPopularPlan ? (
                 <div className="bg-emerald-600 text-white text-xs font-bold text-center py-2.5 tracking-widest uppercase">
-                  ⭐ Most Popular
+                  Most Popular
                 </div>
               ) : isCurrentPlan ? (
                 <div className="bg-indigo-600 text-white text-xs font-bold text-center py-2.5 tracking-widest uppercase">
@@ -234,29 +221,57 @@ export function PricingSection({
 
               <div className="flex flex-col flex-1 px-6 pb-6 pt-4 gap-5">
 
-                {/* Title + size subtitle */}
+                {/* Title + subtitles */}
                 <div>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white">{title}</h3>
+                  {flatSubtitle && (
+                    <p className="text-sm font-semibold text-slate-600 dark:text-slate-400 mt-0.5">{flatSubtitle}</p>
+                  )}
                   {sizeSubtitle && (
-                    <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">
-                      {sizeSubtitle}
-                    </p>
+                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">{sizeSubtitle}</p>
                   )}
                 </div>
 
                 {/* Price block */}
-                <div className="space-y-1">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-5xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
-                      ₹{price}
-                    </span>
-                    <span className="text-slate-500 dark:text-slate-400 text-base font-medium">/month</span>
-                  </div>
-                  {perFlat && (
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                      (~₹{perFlat} per flat)
-                    </p>
+                <div className="space-y-1.5">
+                  {billingCycle === 'yearly' && yearlyPrice > 0 ? (
+                    <>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-5xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                          ₹{yearlyPrice.toLocaleString('en-IN')}
+                        </span>
+                        <span className="text-slate-500 dark:text-slate-400 text-base font-medium">/year</span>
+                      </div>
+                      {perMonthEquiv > 0 && (
+                        <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                          Only ₹{perMonthEquiv}/month
+                        </p>
+                      )}
+                      {savePercent > 0 && (
+                        <span className="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                          Save {savePercent}%
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-5xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">
+                          ₹{monthlyPrice.toLocaleString('en-IN')}
+                        </span>
+                        <span className="text-slate-500 dark:text-slate-400 text-base font-medium">/month</span>
+                      </div>
+                      <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/20 px-4 py-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Save with yearly</p>
+                        <div className="flex items-baseline gap-1.5 mt-1">
+                          <span className="text-lg font-bold text-slate-900 dark:text-white">₹{yearlyPrice.toLocaleString('en-IN')}</span>
+                          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">/year</span>
+                        </div>
+                        <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">(≈₹{perMonthEquiv}/month)</p>
+                      </div>
+                    </>
                   )}
+                  <p className="text-xs font-medium text-slate-400 dark:text-slate-500 pt-0.5">30 day free trial</p>
                 </div>
 
                 {/* Benefits list */}
@@ -289,7 +304,7 @@ export function PricingSection({
                         className={`group w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900 ${
                           isBusy
                             ? 'bg-emerald-600 text-white opacity-70 cursor-wait'
-                            : grp.isPopular
+                            : isPopularPlan
                               ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99]'
                               : 'border-2 border-emerald-500 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 active:scale-[0.99]'
                         }`}
@@ -298,12 +313,7 @@ export function PricingSection({
                         {isBusy ? 'Processing…' : 'Start Free Trial'}
                         {!isBusy && <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />}
                       </button>
-                      <p className="text-center text-xs font-medium text-slate-500 dark:text-slate-400 mt-1.5">
-                        Takes less than 2 minutes
-                      </p>
-                      <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-3">
-                        30-day free trial • No credit card • Cancel anytime
-                      </p>
+
                     </>
                   )}
                 </div>
@@ -314,24 +324,17 @@ export function PricingSection({
         })}
       </div>
 
-      {/* ── Trust section ── */}
-      <p className="text-center text-sm text-slate-500 dark:text-slate-400 font-medium">
-        30-day free trial · No credit card required · Cancel anytime
-      </p>
-
-      {/* ── Yearly teaser ── */}
-      <p className="text-center text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-        💡 Save up to 20% with yearly plans{' '}
-        <span className="text-slate-400 dark:text-slate-500">(coming soon)</span>
-      </p>
-
-      {/* ── FAQ ── */}
-      <div className="max-w-2xl mx-auto w-full space-y-2">
-        <p className="text-center text-sm font-semibold text-slate-600 dark:text-slate-400 mb-3">
-          Frequently Asked Questions
-        </p>
-        {FAQ_ITEMS.map((item) => (
-          <FaqItem key={item.q} q={item.q} a={item.a} />
+      {/* ── Inline trust row ── */}
+      <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 pt-2">
+        {[
+          'Choose the plan that matches your society size',
+          'No setup fees',
+          'No credit card required',
+        ].map((item) => (
+          <span key={item} className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 dark:text-slate-400">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+            {item}
+          </span>
         ))}
       </div>
 

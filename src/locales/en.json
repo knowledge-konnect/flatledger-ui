@@ -3,5 +3,317 @@
   "dashboard": "Dashboard",
   "settings": "Settings",
   "language": "Language",
-  "logout": "Logout"
+  "logout": "Logout",
+  "common": {
+    "toggleTheme": "Toggle theme"
+  },
+  "nav": {
+    "features": "Features",
+    "pricing": "Pricing",
+    "faq": "FAQ",
+    "login": "Login",
+    "startFree": "Start Free",
+    "settings": "Settings",
+    "logout": "Logout",
+    "loggingOut": "Logging out..."
+  },
+  "auth": {
+    "login": {
+      "backToHome": "Back to home",
+      "title": "Welcome back",
+      "subtitle": "Sign in to manage your society",
+      "usernameLabel": "Email or Username",
+      "usernamePlaceholder": "your@email.com or username",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "forgotPassword": "Forgot password?",
+      "rateLimit": "Too many attempts. Please wait 1 minute.",
+      "submit": "Sign In",
+      "noAccount": "No account?",
+      "startFreeTrial": "Start free trial",
+      "footerPrefix": "By signing in you agree to our",
+      "terms": "Terms",
+      "and": "and",
+      "privacyPolicy": "Privacy Policy",
+      "validation": {
+        "usernameRequired": "Email or username is required",
+        "passwordMin": "Password must be at least 6 characters"
+      },
+      "features": {
+        "dashboard": {
+          "title": "Live KPI Dashboard",
+          "desc": "Collection rate, fund balance and pending dues - always current."
+        },
+        "billing": {
+          "title": "One-Click Billing",
+          "desc": "Generate bills for every flat in seconds."
+        },
+        "payments": {
+          "title": "Real-Time Payment Status",
+          "desc": "Know instantly who has paid - no WhatsApp follow-ups."
+        },
+        "reports": {
+          "title": "Audit-Ready Reports",
+          "desc": "Income vs expense, defaulter list - export to CSV anytime."
+        },
+        "expenses": {
+          "title": "Expense Tracking",
+          "desc": "Categorised expenses, perfect for AGM presentations."
+        },
+        "flats": {
+          "title": "Flat & Resident Management",
+          "desc": "Manage flats, owners and tenants - import from Excel."
+        }
+      }
+    },
+    "signup": {
+      "title": "Create your account",
+      "plan": "plan",
+      "free30Days": "Free for 30 days",
+      "noCard": "Free for 30 days, no credit card needed",
+      "back": "Back",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "John Doe",
+      "email": "Email",
+      "emailPlaceholder": "your@email.com",
+      "password": "Password",
+      "passwordPlaceholder": "Min. 6 characters",
+      "societyName": "Society Name",
+      "societyNamePlaceholder": "e.g., Greenwoods Apartments",
+      "societyAddress": "Society Address",
+      "societyAddressPlaceholder": "Enter full society address (building, street, city, state)",
+      "submit": "Start Free Trial",
+      "alreadyAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "footerPrefix": "By continuing you agree to our",
+      "terms": "Terms",
+      "and": "and",
+      "privacyPolicy": "Privacy Policy",
+      "included": {
+        "billing": "One-click monthly billing",
+        "payments": "Real-time payment tracking",
+        "kpi": "Live KPI dashboard",
+        "reports": "Income & expense reports",
+        "defaulters": "Defaulter tracking",
+        "flats": "Unlimited flats & residents",
+        "roles": "Role-based team access",
+        "config": "Society & maintenance config"
+      },
+      "validation": {
+        "nameMin": "Name must be at least 2 characters",
+        "invalidEmail": "Invalid email address",
+        "societyNameRequired": "Society name is required",
+        "addressMin": "Please enter a valid address"
+      }
+    },
+    "forgot": {
+      "header": {
+        "resetTitle": "Reset Password",
+        "setTitle": "Set New Password",
+        "updatedTitle": "Password Updated",
+        "emailStepDesc": "Enter your email address to continue",
+        "passwordStepDesc": "Setting new password for {{email}}",
+        "successDesc": "Redirecting you now..."
+      },
+      "emailLabel": "Email Address",
+      "emailPlaceholder": "your@email.com",
+      "continue": "Continue",
+      "backToLogin": "Back to Login",
+      "newPassword": "New Password",
+      "newPasswordPlaceholder": "At least 6 characters",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Repeat password",
+      "resetPassword": "Reset Password",
+      "changeEmail": "Change Email",
+      "successTitle": "Password Updated",
+      "successBody": "Your password has been reset. Redirecting you now...",
+      "rememberPassword": "Remember your password?",
+      "signIn": "Sign in",
+      "requirements": {
+        "chars": "6-128 characters",
+        "uppercase": "One uppercase letter",
+        "lowercase": "One lowercase letter",
+        "number": "One number"
+      },
+      "strength": {
+        "weak": "weak",
+        "fair": "fair",
+        "good": "good",
+        "strong": "strong",
+        "veryStrong": "very strong"
+      },
+      "validation": {
+        "emailRequired": "Email is required",
+        "invalidEmail": "Invalid email format",
+        "confirmRequired": "Please confirm your password",
+        "passwordsNoMatch": "Passwords do not match",
+        "passwordMin": "Password must be at least 6 characters",
+        "passwordMax": "Password must be at most 128 characters",
+        "passwordUpper": "Password must contain at least one uppercase letter",
+        "passwordLower": "Password must contain at least one lowercase letter",
+        "passwordNumber": "Password must contain at least one number",
+        "accountNotFound": "No account found with this email address.",
+        "tooManyAttempts": "Too many attempts. Please wait a minute and try again.",
+        "resetFailed": "Failed to reset password. Please try again."
+      }
+    }
+  },
+  "landing": {
+    "announcement": {
+      "text": "Start your 30-day free trial today",
+      "link": "See plans ->",
+      "dismiss": "Dismiss announcement"
+    },
+    "hero": {
+      "titleLine1": "Still Managing Society Bills",
+      "titleLine2": "in Excel?",
+      "titleLine3": "Automate Billing in Minutes",
+      "subtitle": "Generate maintenance bills, share reminders on WhatsApp, and manage your apartment society in one place.",
+      "badge": "Built for Apartment & Housing Society Treasurers and Secretaries",
+      "primaryCta": "Start Free Trial",
+      "secondaryCta": "View Pricing",
+      "teluguBadge": "Multi-language support",
+      "microcopy": "No setup. No training. Works from day one.",
+      "highlights": {
+        "trial": "No credit card required",
+        "card": "Cancel anytime",
+        "cancel": "Use FlatLedger in your preferred language"
+      }
+    },
+    "mock": {
+      "previewLabel": "FlatLedger Preview",
+      "recentPayments": "Recent Payments",
+      "viewAll": "View all",
+      "kpis": [
+        { "label": "Collection Total", "value": "₹ XX,XXX", "sub": "Illustrative — not real data", "color": "text-green-600 dark:text-green-400" },
+        { "label": "Collection Rate", "value": "XX%", "sub": "Illustrative — not real data", "color": "text-amber-600 dark:text-amber-400" },
+        { "label": "Pending Payments", "value": "XX residents", "sub": "Illustrative — not real data", "color": "text-emerald-600 dark:text-emerald-400" },
+        { "label": "Monthly Due", "value": "₹ XX,XXX", "sub": "Illustrative — not real data", "color": "text-emerald-600 dark:text-emerald-400" }
+      ],
+      "rows": [
+        { "flat": "A101 – Ravi K", "amount": "₹—", "status": "Paid", "color": "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+        { "flat": "B203 – Flat Owner", "amount": "₹—", "status": "Pending", "color": "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
+        { "flat": "C104 – Resident", "amount": "₹—", "status": "Overdue", "color": "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" }
+      ]
+    },
+    "trust": {
+      "title": "Built specifically for",
+      "subtitle": "Designed for committee members managing apartment maintenance.",
+      "items": [
+        { "title": "Small apartment societies", "description": "Designed for communities with up to 100 flats." },
+        { "title": "Committee members & treasurers", "description": "Built for people managing billing and collections." },
+        { "title": "Self-managed communities", "description": "Simple maintenance management without extra complexity." }
+      ]
+    },
+    "earlyAccess": {
+      "badge": "Early Access",
+      "title": "Early Access for Apartment Societies",
+      "subtitle": "FlatLedger is welcoming its first apartment societies. Built for small communities and committee members who want to stop managing maintenance manually.",
+      "cta": "Be one of our first societies",
+      "items": [
+        { "title": "Built for small societies", "description": "Designed specifically for apartment societies with up to 100 flats." },
+        { "title": "Multi-language support", "description": "Use FlatLedger in your preferred language." },
+        { "title": "Help shape FlatLedger", "description": "Early users can suggest features and improvements." }
+      ]
+    },
+    "problem": {
+      "body1": "Managing society finances shouldn't take hours every month. Between Excel sheets, WhatsApp reminders, and manual tracking - things get messy fast.",
+      "body2": "FlatLedger simplifies everything into one easy system."
+    },
+    "features": {
+      "titlePrefix": "Replace Excel and WhatsApp",
+      "titleHighlight": "with one simple app",
+      "subtitle": "Generate bills, track payments, manage expenses, and keep society records in one place.",
+      "items": {
+        "billing": { "title": "Generate bills in seconds", "description": "Create maintenance bills for all flats in one click." },
+        "payments": { "title": "Track unpaid dues instantly", "description": "See pending payments without manual follow-ups." },
+        "expenses": { "title": "Manage expenses easily", "description": "Record and organize society expenses." },
+        "finances": { "title": "View society finances at a glance", "description": "Collections, pending dues, and fund balance in one place." },
+        "reports": { "title": "Download audit-ready reports", "description": "Export collections, expenses, and payment history anytime." },
+        "roles": { "title": "Role-based access", "description": "Treasurer, Secretary, and Viewer access controls." }
+      }
+    },
+    "howItWorks": {
+      "badge": "Simple Setup",
+      "title": "Set up your society in 3 simple steps",
+      "subtitle": "Add members, generate bills, and start managing payments.",
+      "cta": "Start Free Trial",
+      "steps": [
+        { "step": "1", "title": "Add flats & members", "description": "Import residents from Excel or add manually." },
+        { "step": "2", "title": "Generate maintenance bills", "description": "Create bills for all flats in one click." },
+        { "step": "3", "title": "Track payments", "description": "See collections, expenses, and pending dues." }
+      ]
+    },
+    "pricing": {
+      "titlePrefix": "Simple Pricing -",
+      "titleHighlight": "Less Than ₹4 Per Flat Per Month",
+      "subtitle1": "Even for small societies, software costs less than a cup of tea per flat.",
+      "subtitle2": "",
+      "subtitle3": "Prices are per society, not per resident."
+    },
+    "faq": {
+      "title": "Frequently Asked Questions",
+      "subtitle": "Quick answers about your free trial, billing, and support.",
+      "supportText": "Still have questions?",
+      "supportLink": "Talk to support",
+      "items": [
+        { "q": "Can we migrate from Excel?", "a": "Yes. You can enter your flat list and opening balances directly, or copy them from your existing Excel sheet. Most societies are set up and billing within 30 minutes." },
+        { "q": "Is FlatLedger easy for non-technical users?", "a": "Yes. FlatLedger is designed for treasurers and secretaries, not IT professionals. If you can use WhatsApp, you can use FlatLedger. No technical training needed." },
+        { "q": "Do you support UPI or online payments?", "a": "FlatLedger supports offline payment recording - you record cash, UPI, cheque, and bank transfer payments that residents make directly to the society account. It keeps things simple and fully under your committee's control." },
+        { "q": "How many flats can I manage?", "a": "Starter: ₹199/month or ₹1,499/year - up to 50 flats\n\nGrowth: ₹299/month or ₹2,499/year - up to 100 flats\n\n30 day free trial, no credit card required" },
+        { "q": "Is our society's data secure?", "a": "Yes. FlatLedger uses encrypted data storage, role-based access control, and regular backups. Only your committee members can access your society's data. We do not share data with any third party." },
+        { "q": "What does the free trial include?", "a": "The 30-day free trial gives you full access to all features - billing, payments, expenses, reports, and user management. No credit card required. You only pay if you choose to continue after the trial." },
+        { "q": "Can we export our data anytime?", "a": "Yes. Bills, payment records, and reports can be exported to CSV at any time. Your data is always yours - you are never locked in." },
+        { "q": "What happens if we stop using FlatLedger?", "a": "You can export all your data - bills, payments, and reports - as CSV files at any time. There is no lock-in. If you cancel, your data remains accessible for 30 days for export." }
+      ]
+    },
+    "finalCta": {
+      "title": "Ready to stop managing maintenance in Excel?",
+      "subtitle": "Start your free trial today — no credit card, no setup fees.",
+      "cta": "Start Free Trial"
+    },
+    "footer": {
+      "tagline": "Simplifying housing society finances across India",
+      "supportingText": "Society maintenance billing made simple.",
+      "groups": {
+        "product": "Product",
+        "support": "Support",
+        "builtFor": "Built for"
+      },
+      "links": {
+        "home": "Home",
+        "features": "Features",
+        "pricing": "Pricing",
+        "faq": "FAQ",
+        "contact": "Contact",
+        "privacy": "Privacy Policy",
+        "terms": "Terms"
+      },
+      "builtFor": {
+        "societies": "Apartment societies",
+        "treasurers": "Treasurers",
+        "telugu": "Apartment communities"
+      },
+      "copyright": "© 2026 FlatLedger. All rights reserved."
+    },
+    "mobileCta": {
+      "hint": "Start in under 2 minutes",
+      "button": "Start Free Trial"
+    },
+    "whatsappLabel": "Chat with us on WhatsApp"
+  },
+  "alerts": {
+    "success": {
+      "loginSuccess": "Welcome back! You've been logged in successfully.",
+      "logoutSuccess": "You've been logged out. See you soon!"
+    },
+    "error": {
+      "invalidCredentials": "Your email or password is incorrect. Please try again.",
+      "sessionExpired": "Your session has expired. Please log in again.",
+      "logoutFailed": "Unable to log out. Please try again.",
+      "somethingWentWrong": "Something went wrong. Please try again."
+    }
+  }
 }

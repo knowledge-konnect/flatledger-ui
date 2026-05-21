@@ -1,5 +1,6 @@
 ﻿import { ReactNode, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Moon, Sun, LogOut, Settings, Menu, X } from 'lucide-react';
 import Sidebar from './Sidebar';
 // import NotificationPanel from '../notifications/NotificationPanel'; // Hidden for MVP
@@ -27,6 +28,7 @@ interface DashboardLayoutProps {
  *   title: Optional page title shown in the navbar breadcrumb
  */
 export default function DashboardLayout({ children, title }: DashboardLayoutProps) {
+  const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -98,7 +100,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500 dark:text-slate-400"
-              aria-label="Toggle theme"
+              aria-label={t('common.toggleTheme')}
               data-testid="theme-toggle"
             >
               {theme === 'light' ? (
@@ -180,7 +182,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                         className="flex items-center gap-3 w-full px-4 py-2 text-sm text-[#0F172A] dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                       >
                         <Settings className="w-4 h-4 text-slate-400" />
-                        Settings
+                        {t('nav.settings')}
                       </button>
                       <button
                         onClick={() => {
@@ -191,7 +193,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                         className="flex items-center gap-3 w-full px-4 py-2 text-sm text-[#EF4444] hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
-                        {isLoggingOut ? 'Logging out…' : 'Logout'}
+                        {isLoggingOut ? t('nav.loggingOut') : t('nav.logout')}
                       </button>
                     </div>
                   </div>

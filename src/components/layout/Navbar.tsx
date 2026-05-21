@@ -1,6 +1,7 @@
 ﻿import React from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
 import Button from '../ui/Button';
 import { FlatLedgerIcon } from '../ui/FlatLedgerIcon';
@@ -20,6 +21,7 @@ interface NavbarProps {
  *   variant: 'landing' | 'dashboard' (default: 'landing')
  */
 export default function Navbar({ variant = 'landing' }: NavbarProps) {
+  const { t } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -136,7 +138,7 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
                     : 'text-[#0F172A] dark:text-[#F8FAFC] hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10 dark:hover:bg-emerald-400/10'
                 )}
               >
-                Features
+                {t('nav.features')}
               </a>
               <a
                 onClick={scrollToSection('pricing')}
@@ -148,7 +150,7 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
                     : 'text-[#0F172A] dark:text-[#F8FAFC] hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10 dark:hover:bg-emerald-400/10'
                 )}
               >
-                Pricing
+                {t('nav.pricing')}
               </a>
               <a
                 onClick={scrollToSection('faq')}
@@ -160,7 +162,7 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
                     : 'text-[#0F172A] dark:text-[#F8FAFC] hover:text-emerald-700 dark:hover:text-emerald-300 hover:bg-emerald-500/10 dark:hover:bg-emerald-400/10'
                 )}
               >
-                FAQ
+                {t('nav.faq')}
               </a>
             </div>
 
@@ -168,7 +170,7 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg hover:bg-[#F8FAFC] dark:hover:bg-[#020617] transition-colors duration-300"
-                aria-label="Toggle theme"
+                aria-label={t('common.toggleTheme')}
               >
                 {theme === 'light' ? (
                   <Moon className="w-5 h-5 text-[#64748B] hover:text-primary transition-colors" />
@@ -177,10 +179,10 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
                 )}
               </button>
               <Link to="/login">
-                <Button variant="secondary" size="sm">Login</Button>
+                <Button variant="secondary" size="sm">{t('nav.login')}</Button>
               </Link>
               <Link to="/signup">
-                <Button size="sm">Start Free</Button>
+                <Button size="sm">{t('nav.startFree')}</Button>
               </Link>
             </div>
           </div>

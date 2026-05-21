@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Building2, Mail, ArrowLeft, Eye, EyeOff, CheckCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,32 +9,53 @@ import { useCheckEmail, useResetPasswordDirect } from '../hooks/useAuth';
 import { useToast } from '../components/ui/Toast';
 import { setInMemoryAccessToken } from '../api/client';
 import { authApi } from '../api/authApi';
-import { emailSchema, passwordSchema, calculatePasswordStrength } from '../lib/validation';
+import { calculatePasswordStrength } from '../lib/validation';
+import { AlertMessages } from '../lib/alertMessages';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 
 // ── Step 1 schema ────────────────────────────────────────────────────────────
-const emailFormSchema = z.object({
-  email: emailSchema,
+const emailFormSchema = (t: (key: string) => string) => z.object({
+  email: z
+    .string()
+    .min(1, t('auth.forgot.validation.emailRequired'))
+    .email(t('auth.forgot.validation.invalidEmail'))
+    .toLowerCase()
+    .trim(),
 });
-type EmailForm = z.infer<typeof emailFormSchema>;
+type EmailForm = z.infer<ReturnType<typeof emailFormSchema>>;
 
 // ── Step 2 schema ────────────────────────────────────────────────────────────
-const passwordFormSchema = z
+const passwordFormSchema = (t: (key: string) => string) => z
   .object({
-    newPassword: passwordSchema,
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
+    newPassword: z
+      .string()
+      .min(6, t('auth.forgot.validation.passwordMin'))
+      .max(128, t('auth.forgot.validation.passwordMax'))
+      .regex(/[A-Z]/, t('auth.forgot.validation.passwordUpper'))
+      .regex(/[a-z]/, t('auth.forgot.validation.passwordLower'))
+      .regex(/[0-9]/, t('auth.forgot.validation.passwordNumber')),
+    confirmPassword: z.string().min(1, t('auth.forgot.validation.confirmRequired')),
   })
   .refine((d) => d.newPassword === d.confirmPassword, {
-    message: 'Passwords do not match',
+    message: t('auth.forgot.validation.passwordsNoMatch'),
     path: ['confirmPassword'],
   });
-type PasswordForm = z.infer<typeof passwordFormSchema>;
+type PasswordForm = z.infer<ReturnType<typeof passwordFormSchema>>;
+
+const strengthLabels = {
+  weak: 'auth.forgot.strength.weak',
+  fair: 'auth.forgot.strength.fair',
+  good: 'auth.forgot.strength.good',
+  strong: 'auth.forgot.strength.strong',
+  'very-strong': 'auth.forgot.strength.veryStrong',
+} as const;
 
 const SS_TOKEN_KEY = '__sl_at';
 const SS_USER_KEY  = '__sl_u';
 
 export default function ForgotPassword() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -46,7 +68,7 @@ export default function ForgotPassword() {
 
   // ── Step 1 form ─────────────────────────────────────────────────────────────
   const emailForm = useForm<EmailForm>({
-    resolver: zodResolver(emailFormSchema),
+    resolver: zodResolver(emailFormSchema(t)),
   });
 
   const onEmailSubmit = async (data: EmailForm) => {
@@ -58,19 +80,19 @@ export default function ForgotPassword() {
       const status = error?.response?.status;
       if (status === 404) {
         emailForm.setError('email', {
-          message: 'No account found with this email address.',
+          message: t('auth.forgot.validation.accountNotFound'),
         });
       } else if (status === 429) {
-        showToast('Too many attempts. Please wait a minute and try again.', 'error');
+        showToast(t('auth.forgot.validation.tooManyAttempts'), 'error');
       } else {
-        showToast('Something went wrong. Please try again.', 'error');
+        showToast(AlertMessages.error.somethingWentWrong, 'error');
       }
     }
   };
 
   // ── Step 2 form ─────────────────────────────────────────────────────────────
   const passwordForm = useForm<PasswordForm>({
-    resolver: zodResolver(passwordFormSchema),
+    resolver: zodResolver(passwordFormSchema(t)),
   });
 
   const watchPassword = passwordForm.watch('newPassword');
@@ -104,9 +126,9 @@ export default function ForgotPassword() {
       const status  = error?.response?.status;
       const message = error?.response?.data?.message;
       if (status === 429) {
-        showToast('Too many attempts. Please wait a minute and try again.', 'error');
+        showToast(t('auth.forgot.validation.tooManyAttempts'), 'error');
       } else {
-        showToast(message || 'Failed to reset password. Please try again.', 'error');
+        showToast(message || t('auth.forgot.validation.resetFailed'), 'error');
       }
     }
   };
@@ -115,21 +137,20 @@ export default function ForgotPassword() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] flex items-center justify-center px-4">
       <div className="w-full max-w-md animate-fade-in">
-
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 bg-emerald-600 rounded-xl mb-4 shadow-sm">
             <Building2 className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-2xl font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-1">
-            {step === 'email'    && 'Reset Password'}
-            {step === 'password' && 'Set New Password'}
-            {step === 'success'  && 'Password Updated'}
+            {step === 'email'    && t('auth.forgot.header.resetTitle')}
+            {step === 'password' && t('auth.forgot.header.setTitle')}
+            {step === 'success'  && t('auth.forgot.header.updatedTitle')}
           </h1>
           <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">
-            {step === 'email'    && 'Enter your email address to continue'}
-            {step === 'password' && `Setting new password for ${verifiedEmail}`}
-            {step === 'success'  && 'Redirecting you now…'}
+            {step === 'email'    && t('auth.forgot.header.emailStepDesc')}
+            {step === 'password' && t('auth.forgot.header.passwordStepDesc', { email: verifiedEmail })}
+            {step === 'success'  && t('auth.forgot.header.successDesc')}
           </p>
         </div>
 
@@ -140,9 +161,9 @@ export default function ForgotPassword() {
           {step === 'email' && (
             <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-6">
               <Input
-                label="Email Address"
+                label={t('auth.forgot.emailLabel')}
                 type="email"
-                placeholder="your@email.com"
+                placeholder={t('auth.forgot.emailPlaceholder')}
                 icon={<Mail className="w-4 h-4" />}
                 error={emailForm.formState.errors.email?.message}
                 {...emailForm.register('email')}
@@ -154,7 +175,7 @@ export default function ForgotPassword() {
                 className="w-full"
                 size="lg"
               >
-                Continue
+                {t('auth.forgot.continue')}
               </Button>
 
               <Button
@@ -164,7 +185,7 @@ export default function ForgotPassword() {
                 onClick={() => navigate('/login')}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Login
+                {t('auth.forgot.backToLogin')}
               </Button>
             </form>
           )}
@@ -176,12 +197,12 @@ export default function ForgotPassword() {
               {/* New Password */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  New Password
+                  {t('auth.forgot.newPassword')}
                 </label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="At least 6 characters"
+                    placeholder={t('auth.forgot.newPasswordPlaceholder')}
                     className={`w-full px-4 py-2.5 pr-12 rounded-lg border-2 transition-all duration-200
                       bg-white dark:bg-slate-900 text-slate-900 dark:text-white
                       ${passwordForm.formState.errors.newPassword
@@ -230,7 +251,7 @@ export default function ForgotPassword() {
                       ${passwordStrength.label === 'strong'      && 'text-green-600 dark:text-green-400'}
                       ${passwordStrength.label === 'very-strong' && 'text-emerald-600 dark:text-emerald-400'}
                     `}>
-                      {passwordStrength.label.replace('-', ' ')}
+                      {t(strengthLabels[passwordStrength.label])}
                     </span>
                   </div>
                 )}
@@ -238,10 +259,10 @@ export default function ForgotPassword() {
                 {/* Requirements */}
                 <div className="mt-3 space-y-1.5 text-xs text-[#64748B] dark:text-[#94A3B8]">
                   {[
-                    [(watchPassword?.length ?? 0) >= 6,        '6–128 characters'],
-                    [/[A-Z]/.test(watchPassword ?? ''),         'One uppercase letter'],
-                    [/[a-z]/.test(watchPassword ?? ''),         'One lowercase letter'],
-                    [/[0-9]/.test(watchPassword ?? ''),         'One number'],
+                    [(watchPassword?.length ?? 0) >= 6, t('auth.forgot.requirements.chars')],
+                    [/[A-Z]/.test(watchPassword ?? ''), t('auth.forgot.requirements.uppercase')],
+                    [/[a-z]/.test(watchPassword ?? ''), t('auth.forgot.requirements.lowercase')],
+                    [/[0-9]/.test(watchPassword ?? ''), t('auth.forgot.requirements.number')],
                   ].map(([met, label]) => (
                     <div key={label as string} className="flex items-center gap-2">
                       <span className={met ? 'text-emerald-600' : 'text-slate-400'}>✓</span>
@@ -254,11 +275,11 @@ export default function ForgotPassword() {
               {/* Confirm Password */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Confirm Password
+                  {t('auth.forgot.confirmPassword')}
                 </label>
                 <input
                   type="password"
-                  placeholder="Repeat password"
+                  placeholder={t('auth.forgot.confirmPasswordPlaceholder')}
                   className={`w-full px-4 py-2.5 rounded-lg border-2 transition-all duration-200
                     bg-white dark:bg-slate-900 text-slate-900 dark:text-white
                     ${passwordForm.formState.errors.confirmPassword
@@ -280,7 +301,7 @@ export default function ForgotPassword() {
                 className="w-full"
                 size="lg"
               >
-                Reset Password
+                {t('auth.forgot.resetPassword')}
               </Button>
 
               <Button
@@ -290,7 +311,7 @@ export default function ForgotPassword() {
                 onClick={() => setStep('email')}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Change Email
+                {t('auth.forgot.changeEmail')}
               </Button>
             </form>
           )}
@@ -303,10 +324,10 @@ export default function ForgotPassword() {
               </div>
               <div>
                 <h3 className="font-semibold text-[#0F172A] dark:text-[#F8FAFC] mb-2">
-                  Password Updated
+                  {t('auth.forgot.successTitle')}
                 </h3>
                 <p className="text-sm text-[#64748B] dark:text-[#94A3B8]">
-                  Your password has been reset. Redirecting you now…
+                  {t('auth.forgot.successBody')}
                 </p>
               </div>
               <div className="flex justify-center">
@@ -319,12 +340,12 @@ export default function ForgotPassword() {
         {/* Footer */}
         <div className="text-center mt-6">
           <p className="text-xs text-[#64748B] dark:text-[#94A3B8]">
-            Remember your password?{' '}
+            {t('auth.forgot.rememberPassword')}{' '}
             <button
               onClick={() => navigate('/login')}
               className="text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
             >
-              Sign in
+              {t('auth.forgot.signIn')}
             </button>
           </p>
         </div>
