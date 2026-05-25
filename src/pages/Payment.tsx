@@ -6,7 +6,6 @@ import Navbar from '../components/layout/Navbar'
 import { useAuth } from '../contexts/AuthProvider'
 import { ArrowLeft, CheckCircle, AlertCircle, Loader } from 'lucide-react'
 import { paymentApi, PaymentPlan } from '@/api/paymentApi'
-import { subscriptionApi } from '../api/subscriptionApi'
 import { useToast } from '../components/ui/Toast'
 import { useApiErrorToast } from '../hooks/useApiErrorHandler'
 import { loadRazorpayScript } from '../lib/razorpay'
@@ -28,15 +27,32 @@ export default function Payment() {
   const [error, setError] = useState<string | null>(null)
   const [plan, setPlan] = useState<PaymentPlan | null>(null)
 
-  const planId = searchParams.get('plan') || 'standard'
+  const planId = searchParams.get('plan') || ''
 
   // invoiceAmount is fetched from backend order — frontend never computes pricing
   const [invoiceAmount, setInvoiceAmount] = useState<number | null>(null)
 
   useEffect(() => {
-    paymentApi.getPlanById(planId)
-      .then(setPlan)
-      .catch(() => paymentApi.getPlanById('standard').then(setPlan))
+    let mounted = true
+    const loadPlan = async () => {
+      try {
+        if (planId) {
+          const byId = await paymentApi.getPlanById(planId)
+          if (mounted) setPlan(byId)
+          return
+        }
+
+        const plans = await paymentApi.getPlans()
+        if (mounted) setPlan(plans[0] ?? null)
+      } catch {
+        if (mounted) setPlan(null)
+      }
+    }
+
+    loadPlan()
+    return () => {
+      mounted = false
+    }
   }, [planId])
 
   useEffect(() => {
@@ -55,8 +71,12 @@ export default function Payment() {
     setError(null)
 
     try {
-      // Step 1: Create subscription/order on backend — backend determines price
-      const orderData = await subscriptionApi.subscribe({ planId })
+      if (!planId) {
+        throw new Error('No plan selected. Please choose a subscription plan again.')
+      }
+
+      // Step 1: Create Razorpay order on backend — backend determines price
+      const orderData = await paymentApi.createOrder({ planId })
       const { orderId, amount, currency, keyId } = orderData
 
       // Capture the invoice amount from backend order response (source of truth)
@@ -65,7 +85,7 @@ export default function Payment() {
 
       const options = {
         key: keyId,
-        amount,
+        amount: Math.round(backendAmount * 100),
         currency,
         order_id: orderId,
         name: BRAND_NAME,
@@ -73,11 +93,15 @@ export default function Payment() {
         handler: async (response: any) => {
           try {
             // Verify payment on backend using paymentApi
-            await paymentApi.verifyPayment({
+            const verifyResponse = await paymentApi.verifyPayment({
               orderId: response.razorpay_order_id,
               paymentId: response.razorpay_payment_id,
               signature: response.razorpay_signature,
             })
+
+            if (!verifyResponse?.isValid) {
+              throw new Error(verifyResponse?.message || 'Payment verification failed')
+            }
 
               // Payment successful — refresh subscription state before navigating
               try {
@@ -85,7 +109,7 @@ export default function Payment() {
               } catch { /* non-critical */ }
 
             showToast('Your subscription has been activated.', 'success')
-            navigate('/payment-success', { state: { planId, orderId: response.razorpay_order_id } })
+            navigate('/payment/success', { state: { planId, orderId: response.razorpay_order_id } })
           } catch (err: any) {
             const errData = err?.response?.data;
             if (errData) {
@@ -243,7 +267,7 @@ export default function Payment() {
                     <a href="#" className="text-primary hover:underline">
                       Privacy Policy
                     </a>
-                    . Your subscription will renew automatically on the same date each month. You can cancel anytime from your account settings.
+                    . Subscription is activated after successful payment verification.
                   </p>
                 </div>
 
@@ -304,7 +328,7 @@ export default function Payment() {
               <p className="text-sm text-muted-foreground">
                 <span className="font-semibold text-foreground">Money-back Guarantee</span>
                 <br />
-                7-day refund guarantee
+                Refund policy as per Terms
               </p>
             </div>
           </div>

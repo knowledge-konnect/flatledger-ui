@@ -71,10 +71,7 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="space-y-6 text-center">
             <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 dark:text-white text-balance animate-slide-in-up leading-tight tracking-tight">
-              {t('landing.hero.titleLine1')}
-              <span><br /></span>
-              {t('landing.hero.titleLine2')}
-              <span><br /></span>{" "}
+              {t('landing.hero.titleLine1')}{" "}{t('landing.hero.titleLine2')}{" "}
               <span className="bg-gradient-to-r from-emerald-500 to-emerald-700 bg-clip-text text-transparent">
                 {t('landing.hero.titleLine3')}
               </span>
@@ -82,10 +79,6 @@ const LandingPage: React.FC = () => {
 
             <p className="text-base sm:text-xl md:text-2xl text-slate-700 dark:text-slate-200 max-w-2xl mx-auto leading-relaxed animate-slide-in-up font-medium" style={{ animationDelay: '0.1s' }}>
               {t('landing.hero.subtitle')}
-            </p>
-
-            <p className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold text-center animate-fade-in" style={{ animationDelay: '0.15s' }}>
-              {t('landing.hero.badge')}
             </p>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 pt-4 animate-slide-in-up" style={{ animationDelay: '0.2s' }}>
@@ -231,7 +224,6 @@ const LandingPage: React.FC = () => {
       <section className="py-10 md:py-12 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8 space-y-2">
-            <p className="text-emerald-600 dark:text-emerald-400 text-sm font-semibold uppercase tracking-wider">{t('landing.earlyAccess.badge')}</p>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
               {t('landing.earlyAccess.title')}
             </h2>
@@ -346,7 +338,7 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
       {/* ── PRICING ──────────────────────────────────────────────────────── */}
-      <section id="pricing" className="py-10 md:py-12 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950 scroll-mt-20">
+      <section id="pricing" className="pt-10 md:pt-12 pb-16 md:pb-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8 space-y-2">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white animate-slide-in-up">
@@ -362,11 +354,36 @@ const LandingPage: React.FC = () => {
           <PricingSection
             onChoosePlan={(planId) => navigate(`/signup?plan=${planId}`)}
           />
+
+          {/* ── All plans include ── */}
+          <div className="mt-8 max-w-3xl mx-auto">
+            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 py-6">
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-4 uppercase tracking-wider">All plans include:</p>
+              <div className="grid sm:grid-cols-2 gap-2.5">
+                {[
+                  'Maintenance billing',
+                  'Expense tracking',
+                  'Dashboard',
+                  'Reports & exports',
+                  'Unlimited users',
+                  '30-day free trial',
+                ].map((item) => (
+                  <span key={item} className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 font-medium">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                    {item}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-4 text-xs font-semibold text-emerald-700 dark:text-emerald-400 border-t border-slate-200 dark:border-slate-700 pt-4">
+                🔒 Special pricing for early societies
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ── FAQ ──────────────────────────────────────────────────────────── */}
-      <section id="faq" className="py-10 md:py-12 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 scroll-mt-20">
+      <section id="faq" className="pt-16 md:pt-20 pb-10 md:pb-12 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 scroll-mt-20">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white text-balance">{t('landing.faq.title')}</h2>
@@ -423,6 +440,11 @@ const LandingPage: React.FC = () => {
               {t('landing.finalCta.cta')}
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
             </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3 text-sm text-white/90 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+              <span>✅ No credit card required</span>
+              <span>✅ 30-day free trial</span>
+              <span>✅ Get started in minutes</span>
+            </div>
           </div>
         </div>
       </section>
@@ -432,10 +454,13 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-8">
             <div>
-              <p className="text-lg font-bold">
-                <span className="text-slate-700 dark:text-slate-300">Flat</span><span className="text-emerald-600 dark:text-emerald-400">Ledger</span>
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('landing.footer.tagline')}</p>
+              <div className="flex flex-col leading-none gap-1 mb-2">
+                <p className="text-lg font-extrabold">
+                  <span className="text-slate-900 dark:text-white">Flat</span><span className="text-emerald-600 dark:text-emerald-400">Ledger</span>
+                </p>
+                <span className="text-[10px] uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300 font-bold">Society Management</span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{t('landing.footer.tagline')}</p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('landing.footer.supportingText')}</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">
@@ -451,8 +476,8 @@ const LandingPage: React.FC = () => {
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{t('landing.footer.groups.support')}</p>
                 <ul className="space-y-2">
                   <li><a href="mailto:support@flatledger.com" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.contact')}</a></li>
-                  <li><a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.privacy')}</a></li>
-                  <li><a href="/terms" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.terms')}</a></li>
+                  <li><Link to="/privacy" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.privacy')}</Link></li>
+                  <li><Link to="/terms" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.terms')}</Link></li>
                 </ul>
               </div>
               <div>

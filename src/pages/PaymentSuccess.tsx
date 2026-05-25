@@ -58,7 +58,7 @@ export default function PaymentSuccess() {
 
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Billing Cycle</span>
-                    <span className="font-semibold text-foreground">Monthly, auto-renews</span>
+                    <span className="font-semibold text-foreground">One-time (MVP)</span>
                   </div>
                 </div>
               </div>

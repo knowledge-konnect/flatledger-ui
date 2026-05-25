@@ -252,9 +252,25 @@ export default function Dashboard() {
 
   const collectionColor = currentBillCoverage >= 80 ? 'green' : currentBillCoverage >= 50 ? 'amber' : 'red' as any;
 
-  // Return null while checking setup status to prevent dashboard flash before redirect to /setup
+  // Show a skeleton while setup status is loading or redirect is pending
   if (setupLoading || (!setupComplete && setupSteps.length > 0)) {
-    return null;
+    return (
+      <DashboardLayout title="Dashboard">
+        <div className="space-y-6">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-5 py-4 animate-pulse">
+            <div className="h-6 w-48 rounded bg-slate-200 dark:bg-slate-700 mb-2" />
+            <div className="h-4 w-64 rounded bg-slate-200 dark:bg-slate-700" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ChartSkeleton />
+            <ChartSkeleton />
+          </div>
+        </div>
+      </DashboardLayout>
+    );
   }
 
   return (

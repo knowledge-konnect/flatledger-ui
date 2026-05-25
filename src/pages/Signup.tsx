@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import { FlatLedgerIcon } from '../components/ui/FlatLedgerIcon';
+import { FlatLedgerIcon, FLAT_LEDGER_ICON_SIZES } from '../components/ui/FlatLedgerIcon';
 import { useAuth } from '../contexts/AuthProvider';
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
@@ -114,10 +114,13 @@ export default function Signup() {
 
         {/* Brand */}
         <div className="relative z-10 flex items-center gap-3">
-          <FlatLedgerIcon size={36} className="rounded-xl shadow-lg" />
-          <span className="text-xl font-bold tracking-tight">
-            <span className="text-white">Flat</span><span className="text-emerald-300">Ledger</span>
-          </span>
+          <FlatLedgerIcon size={FLAT_LEDGER_ICON_SIZES.authHero} className="rounded-xl shadow-lg" />
+          <div className="flex flex-col leading-none gap-1.5">
+            <span className="text-[24px] font-extrabold tracking-tight">
+              <span className="text-white">Flat</span><span className="text-emerald-100">Ledger</span>
+            </span>
+            <span className="text-xs uppercase tracking-[0.16em] text-emerald-100/90 font-bold">Society Management</span>
+          </div>
         </div>
 
         {/* Headline */}
@@ -159,7 +162,7 @@ export default function Signup() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="flex items-center gap-2.5 mb-0.5">
-                <FlatLedgerIcon size={30} className="rounded-lg shadow-sm lg:hidden" />
+                <FlatLedgerIcon size={FLAT_LEDGER_ICON_SIZES.authCompact} className="rounded-lg shadow-sm lg:hidden" />
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('auth.signup.title')}</h1>
               </div>
               <p className="text-sm text-slate-500 dark:text-slate-400">

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 
 const sections = [
@@ -99,8 +100,8 @@ export default function PrivacyPolicy() {
           </div>
           <div className="flex flex-wrap justify-center gap-8 mb-6">
             <a href="/" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Home</a>
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Privacy Policy</a>
-            <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Terms</a>
+            <Link to="/privacy" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Privacy Policy</Link>
+            <Link to="/terms" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">Terms</Link>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 max-w-2xl text-center mb-4">
             FlatLedger helps housing societies in India manage maintenance billing, payment records, expenses, and financial reports without relying on spreadsheets.

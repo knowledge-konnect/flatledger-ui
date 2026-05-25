@@ -108,17 +108,26 @@
         "addressMin": "Please enter a valid address"
       }
     },
+    "reset": {
+      "tokenStepDesc": "Choose a new password for your account",
+      "strengthLabel": "Strength"
+    },
     "forgot": {
       "header": {
         "resetTitle": "Reset Password",
         "setTitle": "Set New Password",
         "updatedTitle": "Password Updated",
-        "emailStepDesc": "Enter your email address to continue",
+        "sentTitle": "Check your email",
+        "emailStepDesc": "Enter your email and we'll send a reset link",
+        "sentStepDesc": "If an account exists, we sent instructions to that address",
         "passwordStepDesc": "Setting new password for {{email}}",
         "successDesc": "Redirecting you now..."
       },
       "emailLabel": "Email Address",
       "emailPlaceholder": "your@email.com",
+      "sendLink": "Send reset link",
+      "sentBody": "Check your inbox (and spam folder) for a link valid for 60 minutes. If you don't see it, try again or contact your society admin.",
+      "tryAnotherEmail": "Use a different email",
       "continue": "Continue",
       "backToLogin": "Back to Login",
       "newPassword": "New Password",
@@ -167,19 +176,19 @@
       "dismiss": "Dismiss announcement"
     },
     "hero": {
-      "titleLine1": "Still Managing Society Bills",
-      "titleLine2": "in Excel?",
-      "titleLine3": "Automate Billing in Minutes",
-      "subtitle": "Generate maintenance bills, share reminders on WhatsApp, and manage your apartment society in one place.",
-      "badge": "Built for Apartment & Housing Society Treasurers and Secretaries",
+      "titleLine1": "Stop Managing Society Maintenance",
+      "titleLine2": "in",
+      "titleLine3": "Excel",
+      "subtitle": "Create maintenance bills, track payments, manage expenses, and get reports in minutes.",
+      "badge": "Designed for apartment societies with 10–50 flats",
       "primaryCta": "Start Free Trial",
       "secondaryCta": "View Pricing",
-      "teluguBadge": "Multi-language support",
-      "microcopy": "No setup. No training. Works from day one.",
+      "teluguBadge": "Designed for apartment societies with 10–50 flats",
+      "microcopy": "No credit card required. 30-day free trial.",
       "highlights": {
         "trial": "No credit card required",
         "card": "Cancel anytime",
-        "cancel": "Use FlatLedger in your preferred language"
+        "cancel": "Get started in minutes"
       }
     },
     "mock": {
@@ -200,39 +209,39 @@
     },
     "trust": {
       "title": "Built specifically for",
-      "subtitle": "Designed for committee members managing apartment maintenance.",
+      "subtitle": "Made for committee members managing maintenance in small apartment societies.",
       "items": [
-        { "title": "Small apartment societies", "description": "Designed for communities with up to 100 flats." },
+        { "title": "Small apartment societies", "description": "Designed for communities with 10–50 flats." },
         { "title": "Committee members & treasurers", "description": "Built for people managing billing and collections." },
         { "title": "Self-managed communities", "description": "Simple maintenance management without extra complexity." }
       ]
     },
     "earlyAccess": {
       "badge": "Early Access",
-      "title": "Early Access for Apartment Societies",
-      "subtitle": "FlatLedger is welcoming its first apartment societies. Built for small communities and committee members who want to stop managing maintenance manually.",
-      "cta": "Be one of our first societies",
+      "title": "Everything You Need for Maintenance Management",
+      "subtitle": "Everything needed to manage maintenance billing and expenses for your apartment society.",
+      "cta": "Start Free Trial",
       "items": [
-        { "title": "Built for small societies", "description": "Designed specifically for apartment societies with up to 100 flats." },
-        { "title": "Multi-language support", "description": "Use FlatLedger in your preferred language." },
-        { "title": "Help shape FlatLedger", "description": "Early users can suggest features and improvements." }
+        { "title": "Built for small societies", "description": "Designed specifically for apartment societies with 10–50 flats." },
+        { "title": "Offline Payment Recording", "description": "Record cash, UPI, and bank transfer payments as they happen." },
+        { "title": "Defaulter Reports", "description": "See who owes what — instantly. Download the defaulter list anytime." }
       ]
     },
     "problem": {
-      "body1": "Managing society finances shouldn't take hours every month. Between Excel sheets, WhatsApp reminders, and manual tracking - things get messy fast.",
+      "body1": "Managing society finances shouldn't take hours every month. Between Excel sheets and manual tracking — things get messy fast.",
       "body2": "FlatLedger simplifies everything into one easy system."
     },
     "features": {
-      "titlePrefix": "Replace Excel and WhatsApp",
-      "titleHighlight": "with one simple app",
-      "subtitle": "Generate bills, track payments, manage expenses, and keep society records in one place.",
+      "titlePrefix": "Why",
+      "titleHighlight": "FlatLedger?",
+      "subtitle": "Purpose-built for apartment societies managing maintenance manually.",
       "items": {
-        "billing": { "title": "Generate bills in seconds", "description": "Create maintenance bills for all flats in one click." },
-        "payments": { "title": "Track unpaid dues instantly", "description": "See pending payments without manual follow-ups." },
-        "expenses": { "title": "Manage expenses easily", "description": "Record and organize society expenses." },
-        "finances": { "title": "View society finances at a glance", "description": "Collections, pending dues, and fund balance in one place." },
-        "reports": { "title": "Download audit-ready reports", "description": "Export collections, expenses, and payment history anytime." },
-        "roles": { "title": "Role-based access", "description": "Treasurer, Secretary, and Viewer access controls." }
+        "billing": { "title": "Save Hours Every Month", "description": "Generate bills and reports in minutes instead of managing Excel sheets." },
+        "payments": { "title": "Track Dues Instantly", "description": "Quickly see who paid and who still has pending dues." },
+        "expenses": { "title": "No More Excel Mistakes", "description": "Avoid manual calculations and missing entries." },
+        "finances": { "title": "Reports in One Click", "description": "Download monthly and yearly reports instantly." },
+        "reports": { "title": "Manage Expenses Easily", "description": "Record society expenses like maintenance, repairs, and bills." },
+        "roles": { "title": "Society Fund Tracking", "description": "Check collections, expenses, and available balance anytime." }
       }
     },
     "howItWorks": {
@@ -241,17 +250,17 @@
       "subtitle": "Add members, generate bills, and start managing payments.",
       "cta": "Start Free Trial",
       "steps": [
-        { "step": "1", "title": "Add flats & members", "description": "Import residents from Excel or add manually." },
+        { "step": "1", "title": "Add flats and residents", "description": "Import residents from Excel or add manually." },
         { "step": "2", "title": "Generate maintenance bills", "description": "Create bills for all flats in one click." },
         { "step": "3", "title": "Track payments", "description": "See collections, expenses, and pending dues." }
       ]
     },
     "pricing": {
-      "titlePrefix": "Simple Pricing -",
-      "titleHighlight": "Less Than ₹4 Per Flat Per Month",
-      "subtitle1": "Even for small societies, software costs less than a cup of tea per flat.",
+      "titlePrefix": "Simple,",
+      "titleHighlight": "Transparent Pricing",
+      "subtitle1": "Per society, not per flat. Designed for small apartment committees.",
       "subtitle2": "",
-      "subtitle3": "Prices are per society, not per resident."
+      "subtitle3": "No setup fees. Cancel anytime."
     },
     "faq": {
       "title": "Frequently Asked Questions",
@@ -259,24 +268,25 @@
       "supportText": "Still have questions?",
       "supportLink": "Talk to support",
       "items": [
+        { "q": "Can I use FlatLedger for a small apartment?", "a": "Yes. FlatLedger works well for apartments with 10–50 flats. It is designed specifically for small, self-managed apartment societies." },
+        { "q": "Can I manage multiple buildings?", "a": "Currently one society per account. Each society gets its own dashboard, billing, and reports." },
+        { "q": "Are maintenance payments online?", "a": "Maintenance payments are recorded manually — cash, UPI, or bank transfer. You record what residents pay directly to the society account. Simple and fully under your committee's control." },
+        { "q": "Is there a free trial?", "a": "Yes, every society gets a 30-day free trial with full access to all features — billing, payments, expenses, and reports. No credit card required." },
+        { "q": "How are plans calculated?", "a": "Plans are based on the number of flats in your society. Choose the tier that fits your apartment size." },
         { "q": "Can we migrate from Excel?", "a": "Yes. You can enter your flat list and opening balances directly, or copy them from your existing Excel sheet. Most societies are set up and billing within 30 minutes." },
-        { "q": "Is FlatLedger easy for non-technical users?", "a": "Yes. FlatLedger is designed for treasurers and secretaries, not IT professionals. If you can use WhatsApp, you can use FlatLedger. No technical training needed." },
-        { "q": "Do you support UPI or online payments?", "a": "FlatLedger supports offline payment recording - you record cash, UPI, cheque, and bank transfer payments that residents make directly to the society account. It keeps things simple and fully under your committee's control." },
-        { "q": "How many flats can I manage?", "a": "Starter: ₹199/month or ₹1,499/year - up to 50 flats\n\nGrowth: ₹299/month or ₹2,499/year - up to 100 flats\n\n30 day free trial, no credit card required" },
         { "q": "Is our society's data secure?", "a": "Yes. FlatLedger uses encrypted data storage, role-based access control, and regular backups. Only your committee members can access your society's data. We do not share data with any third party." },
-        { "q": "What does the free trial include?", "a": "The 30-day free trial gives you full access to all features - billing, payments, expenses, reports, and user management. No credit card required. You only pay if you choose to continue after the trial." },
-        { "q": "Can we export our data anytime?", "a": "Yes. Bills, payment records, and reports can be exported to CSV at any time. Your data is always yours - you are never locked in." },
-        { "q": "What happens if we stop using FlatLedger?", "a": "You can export all your data - bills, payments, and reports - as CSV files at any time. There is no lock-in. If you cancel, your data remains accessible for 30 days for export." }
+        { "q": "Can we export our data anytime?", "a": "Yes. Bills, payment records, and reports can be exported to CSV at any time. Your data is always yours — you are never locked in." },
+        { "q": "Can I import my existing Excel data?", "a": "Yes. You can import your flats and residents from Excel." }
       ]
     },
     "finalCta": {
-      "title": "Ready to stop managing maintenance in Excel?",
-      "subtitle": "Start your free trial today — no credit card, no setup fees.",
-      "cta": "Start Free Trial"
+      "title": "Start Managing Society Maintenance Easily",
+      "subtitle": "Start your free trial today — 30 days free, no credit card, no setup fee.",
+      "cta": "Start Free 30-Day Trial"
     },
     "footer": {
       "tagline": "Simplifying housing society finances across India",
-      "supportingText": "Society maintenance billing made simple.",
+      "supportingText": "Simple maintenance management for apartment societies.",
       "groups": {
         "product": "Product",
         "support": "Support",

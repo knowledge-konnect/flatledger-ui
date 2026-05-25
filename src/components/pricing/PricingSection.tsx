@@ -28,35 +28,11 @@ interface PricingSectionProps {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const BENEFITS = [
-  'Generate bills in seconds',
-  'Track payments instantly',
-  'View financial reports',
-  'See full society finances',
+  'Maintenance billing',
+  'Expense tracking',
+  'Dashboard & reports',
+  'Defaulter tracking',
 ];
-
-const DISPLAY_PRICING: Record<number, { monthly: number; yearly: number; perMonth: number; savePercent: number }> = {
-  50: { monthly: 199, yearly: 1499, perMonth: 125, savePercent: 37 },
-  100: { monthly: 349, yearly: 2999, perMonth: 250, savePercent: 30 },
-};
-
-/** Display name keyed by maxFlats */
-const PLAN_DISPLAY_NAMES: Record<number, string> = {
-  50: 'Starter',
-  100: 'Growth',
-};
-
-/** Flat-range subtitle on the card, keyed by maxFlats */
-const PLAN_FLAT_SUBTITLES: Record<number, string> = {
-  50: 'Up to 50 Flats',
-  100: '51–100 Flats',
-};
-
-/** Helper text line below flat subtitle, keyed by maxFlats */
-const SIZE_SUBTITLES: Record<number, string> = {
-  25: 'Best for small apartments',
-  50: 'Best for small apartments',
-  100: 'Best for larger societies',
-};
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -73,7 +49,7 @@ export function PricingSection({
   const groups = useMemo<PlanGroup[]>(() => {
     const map: Record<string, { monthly?: Plan; yearly?: Plan; minOrder: number }> = {};
 
-    plans.forEach((p) => {
+    plans.filter((p) => p.isActive !== false).forEach((p) => {
       const key = p.planGroup ?? (p.maxFlats != null ? `flats_${p.maxFlats}` : p.id);
       if (!map[key]) map[key] = { minOrder: Infinity };
 
@@ -98,14 +74,10 @@ export function PricingSection({
   const visibleGroups = useMemo(
     () => groups
       .filter((grp) => {
-        const maxFlats = Number(grp.yearlyPlan?.maxFlats ?? grp.monthlyPlan?.maxFlats ?? 0);
-        return maxFlats === 50 || maxFlats === 100;
+        const plan = grp.yearlyPlan ?? grp.monthlyPlan;
+        return plan != null;
       })
-      .sort((a, b) => {
-        const aFlats = Number(a.yearlyPlan?.maxFlats ?? a.monthlyPlan?.maxFlats ?? 0);
-        const bFlats = Number(b.yearlyPlan?.maxFlats ?? b.monthlyPlan?.maxFlats ?? 0);
-        return aFlats - bFlats;
-      }),
+      .sort((a, b) => a.minOrder - b.minOrder),
     [groups],
   );
 
@@ -175,16 +147,19 @@ export function PricingSection({
 
           if (!activePlan) return null;
 
-          const pricing = DISPLAY_PRICING[maxFlats];
+          const monthlyPrice  = Number(grp.monthlyPlan?.price ?? 0);
+          const yearlyPrice   = Number(grp.yearlyPlan?.price ?? 0);
 
-          if (!pricing) return null;
+          const YEARLY_SAVINGS: Record<string, string> = {
+            basic: 'Save ₹298 per year',
+            standard: 'Save ₹398 per year',
+          };
 
-          const { monthly: monthlyPrice, yearly: yearlyPrice, perMonth: perMonthEquiv, savePercent } = pricing;
-
-          const title        = PLAN_DISPLAY_NAMES[maxFlats] ?? (maxFlats ? `Up to ${maxFlats} Flats` : grp.key.replace(/_/g, ' '));
-          const flatSubtitle = PLAN_FLAT_SUBTITLES[maxFlats] ?? null;
-          const sizeSubtitle = SIZE_SUBTITLES[maxFlats] ?? null;
-          const isPopularPlan = maxFlats === 100;
+          const title        = activePlan.name.replace(/ - (Monthly|Yearly)$/i, '');
+          const yearlySavingsLabel = YEARLY_SAVINGS[title.toLowerCase()] ?? null;
+          const flatSubtitle = maxFlats ? `Up to ${maxFlats} Flats` : null;
+          const sizeSubtitle = activePlan.description ?? null;
+          const isPopularPlan = grp.isPopular;
 
           // Is this the plan the society is currently subscribed to?
           const isCurrentPlan = currentPlanId != null && (
@@ -242,14 +217,9 @@ export function PricingSection({
                         </span>
                         <span className="text-slate-500 dark:text-slate-400 text-base font-medium">/year</span>
                       </div>
-                      {perMonthEquiv > 0 && (
-                        <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                          Only ₹{perMonthEquiv}/month
-                        </p>
-                      )}
-                      {savePercent > 0 && (
+                      {yearlySavingsLabel && (
                         <span className="inline-flex items-center rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                          Save {savePercent}%
+                          {yearlySavingsLabel}
                         </span>
                       )}
                     </>
@@ -267,7 +237,9 @@ export function PricingSection({
                           <span className="text-lg font-bold text-slate-900 dark:text-white">₹{yearlyPrice.toLocaleString('en-IN')}</span>
                           <span className="text-sm font-medium text-slate-500 dark:text-slate-400">/year</span>
                         </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">(≈₹{perMonthEquiv}/month)</p>
+                        {yearlySavingsLabel && (
+                          <p className="text-sm text-emerald-700 dark:text-emerald-300 font-semibold mt-1">{yearlySavingsLabel}</p>
+                        )}
                       </div>
                     </>
                   )}
@@ -327,7 +299,7 @@ export function PricingSection({
       {/* ── Inline trust row ── */}
       <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 pt-2">
         {[
-          'Choose the plan that matches your society size',
+          'Select a plan based on your apartment size',
           'No setup fees',
           'No credit card required',
         ].map((item) => (

@@ -4,7 +4,7 @@ import Navbar from '../components/layout/Navbar'
 import { useState } from 'react'
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { BRAND_NAME } from '../config/branding';
 import { PricingSection } from '../components/pricing/PricingSection';
 
@@ -209,12 +209,12 @@ export default function Subscription() {
             <a href="/" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">
               Home
             </a>
-            <a href="/privacy" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">
+            <Link to="/privacy" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">
               Privacy Policy
-            </a>
-            <a href="/terms" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">
+            </Link>
+            <Link to="/terms" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">
               Terms
-            </a>
+            </Link>
           </div>
           <div className="pt-4 border-t border-slate-200 dark:border-slate-800 w-full text-center text-sm text-slate-600 dark:text-slate-400">
             <p>&copy; {new Date().getFullYear()} {BRAND_NAME}. All rights reserved.</p>

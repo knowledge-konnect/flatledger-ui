@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../contexts/ThemeContext';
 import Button from '../ui/Button';
-import { FlatLedgerIcon } from '../ui/FlatLedgerIcon';
+import { FlatLedgerIcon, FLAT_LEDGER_ICON_SIZES } from '../ui/FlatLedgerIcon';
 import { cn } from '../../lib/utils';
 
 interface NavbarProps {
@@ -113,16 +113,16 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <Link to="/" className="flex items-center gap-2.5 group">
+              <Link to="/" className="flex items-center gap-3 group">
                 <FlatLedgerIcon
-                  size={40}
-                  className="flex-shrink-0 rounded-xl shadow-md group-hover:shadow-lg group-hover:-translate-y-0.5 transition-all duration-300"
+                  size={FLAT_LEDGER_ICON_SIZES.navbarDesktop}
+                  className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 rounded-xl shadow-md group-hover:shadow-lg group-hover:-translate-y-0.5 transition-all duration-300"
                 />
                 <div className="flex flex-col leading-none gap-1">
-                  <span className="text-[17px] tracking-tight leading-none">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300">Flat</span><span className="font-extrabold text-emerald-600 dark:text-emerald-400">Ledger</span>
+                  <span className="text-[19px] tracking-tight leading-tight font-bold">
+                    <span className="text-slate-900 dark:text-white font-extrabold">Flat</span><span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Ledger</span>
                   </span>
-                  <span className="text-[10px] uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-semibold hidden sm:block">Society Finance</span>
+                  <span className="text-[10px] uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300 font-bold hidden sm:block">Society Management</span>
                 </div>
               </Link>
             </div>

@@ -226,23 +226,20 @@ export const authApi = {
   },
 
   /**
-   * Check if an email exists in the system (step 1 of direct password reset)
-   * POST /auth/check-email
-   * Returns 200 { email } if found, 404 ErrorResponse if not found.
+   * Request password reset email (no email enumeration).
+   * POST /auth/forgot-password
    */
-  async checkEmail(email: string): Promise<{ email: string }> {
-    const response = await apiClient.post<ApiResponse<{ email: string }>>('/auth/check-email', { email });
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const response = await apiClient.post<ApiResponse<{ message: string }>>('/auth/forgot-password', { email });
     return response.data.data;
   },
 
   /**
-   * Reset password directly by email — no token required (step 2 of direct password reset)
-   * POST /auth/reset-password-direct
-   * Body: { email, newPassword, confirmPassword }
-   * Returns: { ok, accessToken, accessTokenExpiresAt }
+   * Reset password with token from email link.
+   * POST /auth/reset-password
    */
-  async resetPasswordDirect(payload: {
-    email: string;
+  async resetPassword(payload: {
+    token: string;
     newPassword: string;
     confirmPassword: string;
   }): Promise<{ ok: boolean; accessToken?: string; accessTokenExpiresAt?: string; message?: string }> {
@@ -251,7 +248,7 @@ export const authApi = {
       accessToken?: string;
       accessTokenExpiresAt?: string;
       message?: string;
-    }>>('/auth/reset-password-direct', payload);
+    }>>('/auth/reset-password', payload);
     return response.data.data;
   },
 };

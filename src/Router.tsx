@@ -3,7 +3,7 @@ import { lazy, Suspense, memo } from 'react';
 import MobileFAB from './components/ui/MobileFAB';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth, AuthProvider } from './contexts/AuthProvider';
-import { FlatLedgerIcon } from './components/ui/FlatLedgerIcon';
+import { FlatLedgerIcon, FLAT_LEDGER_ICON_SIZES } from './components/ui/FlatLedgerIcon';
 import { RoleCode } from './types/roles';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
 
@@ -40,6 +40,10 @@ const SubscriptionManagement = lazy(() => import('./pages/SubscriptionManagement
 const OpeningBalanceEntry = lazy(() => import('./components/OpeningBalance/OpeningBalanceEntry'));
 const Setup = lazy(() => import('./pages/Setup'));
 const Unauthorized = lazy(() => import('./pages/Unauthorized'));
+const Payment = lazy(() => import('./pages/Payment'));
+const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'));
+const PaymentGateways = lazy(() => import('./pages/PaymentGateways'));
+const Suggestions = lazy(() => import('./pages/Suggestions'));
 
 /**
  * Full-screen loading indicator shown while a lazy-loaded page chunk is being
@@ -48,7 +52,7 @@ const Unauthorized = lazy(() => import('./pages/Unauthorized'));
 const PageLoader = memo(function PageLoader() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-white dark:bg-slate-950">
-      <FlatLedgerIcon size={48} className="rounded-xl animate-pulse" />
+      <FlatLedgerIcon size={FLAT_LEDGER_ICON_SIZES.loader} className="rounded-xl animate-pulse" />
       <div className="animate-spin rounded-full h-6 w-6 border-2 border-emerald-200 border-t-emerald-600"></div>
     </div>
   );
@@ -69,7 +73,7 @@ function UserRoutes() {
 
   const publicPaths = ['/', '/privacy', '/terms', '/subscription', '/free-trial', '/login', '/signup', '/forgot-password', '/reset-password'];
   const protectedPaths = [
-    '/dashboard', '/flats', '/maintenance', '/expenses', '/reports', '/users', '/settings', '/setup', '/premium-dashboard', '/subscription/manage', '/flats/', '/reports/'
+    '/dashboard', '/flats', '/maintenance', '/expenses', '/reports', '/users', '/settings', '/setup', '/payment', '/subscription/manage', '/flats/', '/reports/'
   ];
 
   if (isLoading && !publicPaths.includes(pathname)) {
@@ -126,7 +130,10 @@ function UserRoutes() {
           <Route path="/settings/opening-balance" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><OpeningBalanceEntry /></ProtectedRoute>} />
           <Route path="/setup" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><Setup /></ProtectedRoute>} />
           <Route path="/subscription/manage" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><SubscriptionManagement /></ProtectedRoute>} />
-          <Route path="/premium-dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
+          <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
+          <Route path="/payment-gateways" element={<PaymentGateways />} />
+          <Route path="/suggestions" element={<Suggestions />} />
           <Route path="*" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <NotFound />} />
         </Routes>
       </Suspense>
