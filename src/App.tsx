@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ToastProvider } from './components/ui/Toast';
 import Router from './Router';
@@ -27,6 +29,16 @@ const queryClient = new QueryClient({
   },
 });
 
+function ScrollToTop() {
+  const { pathname, search } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [pathname, search]);
+
+  return null;
+}
+
 function App() {
   return (
     <ErrorBoundary variant="society">
@@ -34,6 +46,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <ThemeProvider>
             <ToastProvider>
+              <ScrollToTop />
               <Router />
             </ToastProvider>
           </ThemeProvider>

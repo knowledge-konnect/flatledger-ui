@@ -1,27 +1,27 @@
 /**
- * Thin hook wrappers around authApi for the direct password reset flow.
+ * Thin hook wrappers around authApi for password reset.
  * NOTE: Login and signup are handled by AuthProvider (src/contexts/AuthProvider.tsx).
  */
 import { useMutation } from '@tanstack/react-query';
 import { authApi } from '../api/authApi';
 
 /**
- * Step 1 — verify the email exists before showing the new-password form.
- * POST /auth/check-email
+ * Request a password reset email (same response whether email exists or not).
+ * POST /auth/forgot-password
  */
-export function useCheckEmail() {
+export function useForgotPassword() {
   return useMutation({
-    mutationFn: (email: string) => authApi.checkEmail(email),
+    mutationFn: (email: string) => authApi.forgotPassword(email),
   });
 }
 
 /**
- * Step 2 — reset the password directly by email (no token required).
- * POST /auth/reset-password-direct
+ * Reset password using the token from the email link.
+ * POST /auth/reset-password
  */
-export function useResetPasswordDirect() {
+export function useResetPassword() {
   return useMutation({
-    mutationFn: (payload: { email: string; newPassword: string; confirmPassword: string }) =>
-      authApi.resetPasswordDirect(payload),
+    mutationFn: (payload: { token: string; newPassword: string; confirmPassword: string }) =>
+      authApi.resetPassword(payload),
   });
 }

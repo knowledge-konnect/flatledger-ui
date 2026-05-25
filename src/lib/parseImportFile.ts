@@ -255,15 +255,44 @@ function parseExcel(file: File): Promise<Record<string, string>[]> {
     const reader = new FileReader();
     reader.onload = async e => {
       try {
-        const XLSX = await import('xlsx');
-        const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: 'array' });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-          defval: '',
-          raw: false, // use formatted string representation
+        const ExcelJS = await import('exceljs');
+        const buffer = e.target?.result as ArrayBuffer;
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buffer);
+        const sheet = workbook.worksheets[0];
+        if (!sheet) { resolve([]); return; }
+
+        const rows: Record<string, string>[] = [];
+        const headers: string[] = [];
+
+        sheet.eachRow((row, rowNum) => {
+          if (rowNum === 1) {
+            row.eachCell({ includeEmpty: true }, cell => {
+              headers.push(String(cell.value ?? ''));
+            });
+          } else {
+            const obj: Record<string, string> = {};
+            headers.forEach((h, i) => {
+              const cell = row.getCell(i + 1);
+              const raw = cell.value;
+              // ExcelJS returns rich text as { richText: [...] }, dates as Date objects
+              let val = '';
+              if (raw === null || raw === undefined) {
+                val = '';
+              } else if (typeof raw === 'object' && 'richText' in (raw as object)) {
+                val = (raw as { richText: { text: string }[] }).richText.map(r => r.text).join('');
+              } else if (raw instanceof Date) {
+                val = raw.toLocaleDateString();
+              } else {
+                val = String(raw);
+              }
+              obj[h] = val.trim();
+            });
+            rows.push(obj);
+          }
         });
-        resolve(rows as Record<string, string>[]);
+
+        resolve(rows);
       } catch (err) {
         reject(err);
       }
@@ -275,53 +304,48 @@ function parseExcel(file: File): Promise<Record<string, string>[]> {
 
 
 export async function downloadImportTemplate(): Promise<void> {
-  const XLSX = await import('xlsx');
-  const wb = XLSX.utils.book_new();
+  const ExcelJS = await import('exceljs');
+  const wb = new ExcelJS.Workbook();
 
   // Status display names — used in dropdown and sample rows
   // The parser normalises these to API codes via STATUS_ALIASES
   const STATUS_OPTIONS = ['Owner Occupied', 'Vacant', 'Rented', 'Under Maintenance'];
 
   // ── Sheet 1: Flats Data ────────────────────────────────────────────────
-  const dataRows = [
-    // Column header row — matches alias map exactly
-    ['Flat No', 'Owner Name', 'Mobile', 'Email', 'Status'],
+  const ws1 = wb.addWorksheet('Flats Data');
+  ws1.columns = [
+    { header: 'Flat No',    key: 'flatNo',    width: 14 },
+    { header: 'Owner Name', key: 'ownerName', width: 22 },
+    { header: 'Mobile',     key: 'mobile',    width: 18 },
+    { header: 'Email',      key: 'email',     width: 26 },
+    { header: 'Status',     key: 'status',    width: 22 },
+  ];
 
-    // Sample rows using display names (natural for users)
+  const sampleRows = [
     ['101', 'Ramesh Kumar', '9876543210', 'ramesh@example.com', 'Owner Occupied'],
     ['102', 'Sunita Mehta', '9123456789', '', 'Vacant'],
     ['103', 'Arjun Patel', '9988776655', '', 'Rented'],
   ];
+  sampleRows.forEach(r => ws1.addRow({ flatNo: r[0], ownerName: r[1], mobile: r[2], email: r[3], status: r[4] }));
 
-  const ws1 = XLSX.utils.aoa_to_sheet(dataRows);
+  // Style header row
+  ws1.getRow(1).font = { bold: true };
 
-  // Column widths
-  ws1['!cols'] = [
-    { wch: 14 }, // Flat No
-    { wch: 22 }, // Owner Name
-    { wch: 18 }, // Mobile
-    { wch: 26 }, // Email
-    { wch: 22 }, // Status
-  ];
-
-  // ── Dropdown validation on column E (Status) rows 2–1001 ──────────────
-  // Uses an inline list so no hidden sheet is needed. Excel/LibreOffice will
-  // show a picker; the importer also accepts free-typed values via STATUS_ALIASES.
-  const dropdownFormula = `"${STATUS_OPTIONS.join(',')}"`;
-  if (!ws1['!dataValidations']) ws1['!dataValidations'] = [];
-  (ws1['!dataValidations'] as object[]).push({
-    type: 'list',
-    sqref: 'E2:E1001',
-    formula1: dropdownFormula,
-    showDropDown: false,   // false = show arrow button in Excel
-    showErrorMessage: true,
-    errorTitle: 'Invalid Status',
-    error: `Choose from: ${STATUS_OPTIONS.join(', ')}`,
-  });
-
-  XLSX.utils.book_append_sheet(wb, ws1, 'Flats Data');
+  // Dropdown validation on Status column (E2:E1001)
+  for (let i = 2; i <= 1001; i++) {
+    ws1.getCell(`E${i}`).dataValidation = {
+      type: 'list',
+      allowBlank: true,
+      formulae: [`"${STATUS_OPTIONS.join(',')}"`],
+      showErrorMessage: true,
+      errorTitle: 'Invalid Status',
+      error: `Choose from: ${STATUS_OPTIONS.join(', ')}`,
+    };
+  }
 
   // ── Sheet 2: Instructions ──────────────────────────────────────────────
+  const ws2 = wb.addWorksheet('Instructions');
+  ws2.columns = [{ width: 24 }, { width: 12 }, { width: 55 }, { width: 30 }];
   const instrRows = [
     ['FLATS IMPORT — INSTRUCTIONS'],
     [],
@@ -343,14 +367,14 @@ export async function downloadImportTemplate(): Promise<void> {
     ['• Rows with errors are highlighted in the preview and skipped — fix and re-import.'],
     ['• Maximum file size: 5 MB.'],
   ];
-
-  const ws2 = XLSX.utils.aoa_to_sheet(instrRows);
-  ws2['!cols'] = [{ wch: 24 }, { wch: 12 }, { wch: 55 }, { wch: 30 }];
-
-  XLSX.utils.book_append_sheet(wb, ws2, 'Instructions');
+  instrRows.forEach(r => ws2.addRow(r));
+  ws2.getRow(1).font = { bold: true };
+  ws2.getRow(3).font = { bold: true };
 
   // ── Sheet 3: Status Codes Reference ───────────────────────────────────
-  const statusRows: (string | null)[][] = [
+  const ws3 = wb.addWorksheet('Status Options');
+  ws3.columns = [{ width: 28 }, { width: 22 }];
+  const statusRows = [
     ['STATUS OPTIONS REFERENCE'],
     [],
     ['Display Name (use in file)', 'Internal Code'],
@@ -362,11 +386,17 @@ export async function downloadImportTemplate(): Promise<void> {
     ['The Status column in "Flats Data" has a dropdown — just pick a value.'],
     ['If left blank, "Owner Occupied" is used by default.'],
   ];
+  statusRows.forEach(r => ws3.addRow(r));
+  ws3.getRow(1).font = { bold: true };
+  ws3.getRow(3).font = { bold: true };
 
-  const ws3 = XLSX.utils.aoa_to_sheet(statusRows);
-  ws3['!cols'] = [{ wch: 28 }, { wch: 22 }];
-  XLSX.utils.book_append_sheet(wb, ws3, 'Status Options');
-
-  // ── Download ───────────────────────────────────────────────────────────
-  XLSX.writeFile(wb, 'flats_import_template.xlsx');
+  // ── Download via Blob URL ────────────────────────────────────────────
+  const buffer = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'flats_import_template.xlsx';
+  a.click();
+  URL.revokeObjectURL(url);
 }

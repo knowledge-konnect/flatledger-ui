@@ -1,13 +1,11 @@
-﻿import type { Metadata } from 'next'
-import { ReactNode } from 'react'
-import '../src/index.css'
+﻿import { ReactNode } from 'react'
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'FlatLedger - Maintenance Billing for Apartment Societies',
   description: 'FlatLedger is a complete society management platform for maintenance billing, payments, expenses, and analytics. Simplify apartment administration.',
   icons: {
-    icon: '/icon.svg',
-    apple: '/apple-icon.png',
+    icon: '/icons/icon.svg',
+    apple: '/icons/icon-192x192.png',
   },
     generator: 'v0.app'
 }

@@ -1,5 +1,6 @@
 ﻿import React, { useState } from 'react';
 import { Eye, EyeOff, Lock } from 'lucide-react';
+import { FlatLedgerIcon, FLAT_LEDGER_ICON_SIZES } from '../components/ui/FlatLedgerIcon';
 import { useChangePassword } from '../hooks/useChangePassword';
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
@@ -120,10 +121,16 @@ export default function ChangePassword() {
       <div className="w-full max-w-md animate-slide-in-up">
         {/* Brand Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl shadow-sm mb-4">
-            <Lock className="w-8 h-8 text-white" />
+          <div className="inline-flex flex-col items-center gap-2 mb-4">
+            <FlatLedgerIcon size={FLAT_LEDGER_ICON_SIZES.authCompact} className="rounded-lg shadow-sm" />
+            <div className="flex flex-col leading-none gap-1">
+              <span className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                <span>Flat</span><span className="text-emerald-600 dark:text-emerald-400">Ledger</span>
+              </span>
+              <span className="text-[9px] uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300 font-bold">Society Management</span>
+            </div>
           </div>
-          <h1 className="text-4xl font-bold text-[#0F172A] dark:text-[#F8FAFC] mb-2">
+          <h1 className="text-4xl font-bold text-[#0F172A] dark:text-white mb-2">
             Change Password
           </h1>
           <p className="text-[#64748B] dark:text-[#94A3B8]">

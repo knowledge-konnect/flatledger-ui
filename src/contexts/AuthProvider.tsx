@@ -409,7 +409,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Public routes where we skip the silent refresh attempt (no cookie exists yet)
-  const PUBLIC_ROUTES = ['/', '/login', '/signup', '/forgot-password', '/reset-password'];
+  const PUBLIC_ROUTES = ['/', '/privacy', '/terms', '/login', '/signup', '/forgot-password', '/reset-password'];
 
   // Use useLayoutEffect for synchronous initialization to prevent flickering
   useLayoutEffect(() => {

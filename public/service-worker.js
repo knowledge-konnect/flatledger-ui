@@ -7,7 +7,7 @@
  *  - API requests: Network-only (never cache sensitive financial data).
  */
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v8';
 const STATIC_CACHE = `flatledger-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `flatledger-dynamic-${CACHE_VERSION}`;
 
@@ -16,10 +16,11 @@ const APP_SHELL = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icon.svg',
-  '/icon-192x192.png',
-  '/icon-512x512.png',
-  '/apple-icon.png',
+  '/icons/icon.svg',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  '/icons/icon-light-32x32.png',
+  '/icons/icon-dark-32x32.png',
 ];
 
 // ---------------------------------------------------------------------------

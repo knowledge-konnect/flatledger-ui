@@ -7,7 +7,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import { FlatLedgerIcon } from '../components/ui/FlatLedgerIcon';
+import { FlatLedgerIcon, FLAT_LEDGER_ICON_SIZES } from '../components/ui/FlatLedgerIcon';
 import { useAuth } from '../contexts/AuthProvider';
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
@@ -117,10 +117,13 @@ export default function Login() {
 
         {/* Brand */}
         <div className="relative z-10 flex items-center gap-3 mb-12">
-          <FlatLedgerIcon size={38} className="rounded-xl shadow-lg" />
-          <span className="text-2xl font-bold tracking-tight">
-            <span className="text-white">Flat</span><span className="text-emerald-300">Ledger</span>
-          </span>
+          <FlatLedgerIcon size={FLAT_LEDGER_ICON_SIZES.authHero} className="rounded-xl shadow-lg" />
+          <div className="flex flex-col leading-none gap-1.5">
+            <span className="text-[24px] font-extrabold tracking-tight">
+              <span className="text-white">Flat</span><span className="text-emerald-100">Ledger</span>
+            </span>
+            <span className="text-xs uppercase tracking-[0.16em] text-emerald-100/90 font-bold">Society Management</span>
+          </div>
         </div>
 
         {/* Headline */}
@@ -174,7 +177,7 @@ export default function Login() {
           {/* Header */}
           <div className="mb-7">
             <div className="flex items-center gap-3 mb-1">
-              <FlatLedgerIcon size={36} className="rounded-lg shadow-sm lg:hidden" />
+              <FlatLedgerIcon size={FLAT_LEDGER_ICON_SIZES.authCompact} className="rounded-lg shadow-sm lg:hidden" />
               <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('auth.login.title')}</h1>
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400">{t('auth.login.subtitle')}</p>

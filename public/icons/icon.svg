@@ -1,0 +1,22 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="bg-fav" x1="64" y1="56" x2="448" y2="456" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#34D399" />
+            <stop offset="1" stop-color="#047857" />
+        </linearGradient>
+    </defs>
+
+    <rect x="40" y="40" width="432" height="432" rx="108" fill="url(#bg-fav)" />
+
+    <rect x="126" y="238" width="40" height="136" rx="12" fill="#FFFFFF" />
+    <path d="M176 184L246 132L316 184V356H176V184Z" fill="#FFFFFF" />
+    <rect x="214" y="304" width="34" height="52" rx="10" fill="#10B981" />
+
+    <path d="M336 198H397L424 225V364C424 374.493 415.493 383 405 383H336C325.507 383 317 374.493 317 364V217C317 206.507 325.507 198 336 198Z" fill="#FFFFFF" />
+    <path d="M397 198V216C397 224.284 403.716 231 412 231H424L397 198Z" fill="#A7F3D0" />
+
+    <text x="371" y="305" text-anchor="middle" font-size="96" font-weight="800" font-family="Segoe UI Symbol, Noto Sans, Arial Unicode MS, sans-serif" fill="#10B981">₹</text>
+    <rect x="345" y="330" width="54" height="10" rx="5" fill="#10B981" />
+
+    <path d="M120 406C168 394 344 394 392 406" stroke="#6EE7B7" stroke-width="14" stroke-linecap="round" />
+</svg>
