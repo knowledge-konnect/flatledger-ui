@@ -119,10 +119,10 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
                   className="w-9 h-9 sm:w-10 sm:h-10 flex-shrink-0 rounded-xl shadow-md group-hover:shadow-lg group-hover:-translate-y-0.5 transition-all duration-300"
                 />
                 <div className="flex flex-col leading-none gap-1">
-                  <span className="text-[19px] tracking-tight leading-tight font-bold">
-                    <span className="text-slate-900 dark:text-white font-extrabold">Flat</span><span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Ledger</span>
+                  <span className="text-[19px] tracking-tight leading-tight">
+                    <span className="text-slate-800 dark:text-white font-bold">Flat</span><span className="font-black bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">Ledger</span>
                   </span>
-                  <span className="text-[10px] uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300 font-bold hidden sm:block">Society Management</span>
+                  <span className="text-[10px] tracking-[0.07em] text-emerald-600/85 dark:text-emerald-400/80 font-semibold hidden sm:block">Society Maintenance Simplified</span>
                 </div>
               </Link>
             </div>

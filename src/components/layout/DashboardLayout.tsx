@@ -143,6 +143,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
               <button
                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                 className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                aria-label="Profile menu"
                 data-testid="profile-menu-btn"
               >
                 <div className="w-7 h-7 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold text-xs shadow-sm flex-shrink-0">
@@ -190,7 +191,7 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                           handleLogout();
                         }}
                         disabled={isLoggingOut}
-                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-[#EF4444] hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors"
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors"
                       >
                         <LogOut className="w-4 h-4" />
                         {isLoggingOut ? t('nav.loggingOut') : t('nav.logout')}

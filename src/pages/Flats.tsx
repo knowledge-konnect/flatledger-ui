@@ -1,4 +1,5 @@
 ﻿import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Download, Upload, Edit, Trash, AlertCircle, Home, ChevronUp, ChevronDown, ChevronsUpDown, X, Info } from 'lucide-react';
 import ImportFlatsModal from '../components/Flats/ImportFlatsModal';
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -37,6 +38,7 @@ const flatSchema = z.object({
 
 type FlatFormData = z.infer<typeof flatSchema>;
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useFlats, useCreateFlat, useUpdateFlat, useDeleteFlat } from '../hooks/useFlats';
 import { useAuth } from '../contexts/AuthProvider';
 import { isAdminRole, collectUserRoles } from '../types/roles';
@@ -112,11 +114,14 @@ export default function Flats() {
   const [selectedFlat, setSelectedFlat] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formError, setFormError] = useState<string | null>(null); // For business rule errors
+  const [showObSuggestion, setShowObSuggestion] = useState(false);
   const { user } = useAuth();
   const isAdmin = isAdminRole(collectUserRoles(user));
+  const navigate = useNavigate();
 
   const { data: apiFlats, isLoading: apiFlatsLoading } = useFlats();
   
+  const queryClient = useQueryClient();
   const createFlat = useCreateFlat();
   const updateFlat = useUpdateFlat();
   const deleteFlat = useDeleteFlat();
@@ -270,6 +275,7 @@ export default function Flats() {
         reset(emptyForm);
         showToast('Flat updated successfully', 'success');
       } else {
+        const isFirstFlat = safeApiFlats.length === 0;
         const payload = {
           flatNo: enteredFlatNo,
           ownerName: data.ownerName,
@@ -293,6 +299,8 @@ export default function Flats() {
           logger.log('[Flats] Triggering billing generation for flatPublicId:', created.publicId);
           try {
             await billingApi.generateForFlat({ flatPublicId: created.publicId });
+            // Re-invalidate flats so the table picks up the generated bill's totalOutstanding
+            queryClient.invalidateQueries({ queryKey: ['flats'] });
           } catch (billingErr) {
             // Billing generation failure is non-critical — the flat was created successfully
             logger.log('[Flats] Billing generation failed:', billingErr);
@@ -301,6 +309,10 @@ export default function Flats() {
           logger.log('[Flats] Skipping billing generation — no publicId on created object:', created);
         }
         showToast(`${flatLabel} created successfully`, 'success');
+        // After the first flat is added, show a subtle banner suggesting Opening Balance
+        if (isFirstFlat) {
+          setShowObSuggestion(true);
+        }
       }
     } catch (error: any) {
       if (error?.response?.data) {
@@ -396,7 +408,33 @@ export default function Flats() {
   return (
     <DashboardLayout title="Flats">
       <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950">
-        <div className="space-y-4 sm:space-y-6 relative">{/* Modern Premium Header */}
+        <div className="space-y-4 sm:space-y-6 relative">
+        {/* Opening Balance suggestion banner — shown once after first flat is created */}
+        {showObSuggestion && (
+          <div className="flex items-start gap-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3">
+            <span className="text-lg leading-none mt-0.5">🎉</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">First flat added!</p>
+              <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-0.5">
+                Keep adding your remaining flats. Once done,{' '}
+                <button
+                  onClick={() => navigate('/setup')}
+                  className="underline font-semibold hover:text-emerald-900 dark:hover:text-emerald-100"
+                >
+                  go to Setup
+                </button>{' '}
+                to set up your Opening Balance.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowObSuggestion(false)}
+              className="text-emerald-500 hover:text-emerald-800 dark:hover:text-emerald-200 flex-shrink-0"
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}{/* Modern Premium Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-2">
           <div>
             <div className="flex items-center gap-3">

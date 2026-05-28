@@ -7,17 +7,17 @@ const Unauthorized: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 px-4">
+    <div className="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950 px-4">
       <div className="max-w-md w-full text-center">
         <div className="mb-8">
-          <ShieldAlert className="mx-auto h-24 w-24 text-red-500" />
+          <ShieldAlert className="mx-auto h-16 w-16 text-red-500" />
         </div>
         
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
           Access Denied
         </h1>
         
-        <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
+        <p className="text-base text-slate-600 dark:text-slate-400 mb-8">
           You don't have permission to access this page. Please contact your administrator if you believe this is an error.
         </p>
         

@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { Link, useNavigate } from 'react-router-dom'
-import { BRAND_NAME } from '../config/branding';
+import { BRAND_NAME, SUPPORT_EMAIL } from '../config/branding';
 import { PricingSection } from '../components/pricing/PricingSection';
 
 export default function Subscription() {
@@ -78,15 +78,23 @@ export default function Subscription() {
       <section className="py-8 md:py-12 px-2 sm:px-4 lg:px-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-6 space-y-2">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground">What's included in every plan</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">What's included in every plan</h2>
+            <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
               Everything you need to manage your society effectively
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {['Unlimited Flats & Residents', 'Secure Data Storage', 'Team Collaboration', 'Advanced Reports', 'Payment Recording', 'Email Support'].map((feature: string, i: number) => (
+            {[
+              { title: 'Maintenance billing', desc: 'Generate bills for all flats in one click.' },
+              { title: 'Expense tracking', desc: 'Record society expenses by category anytime.' },
+              { title: 'Dashboard & reports', desc: 'Live KPI dashboard with CSV export.' },
+              { title: 'Reports & exports', desc: 'Monthly and yearly reports downloadable instantly.' },
+              { title: 'Unlimited users', desc: 'Add committee members with role-based access.' },
+              { title: '30-day free trial', desc: 'Full access, no credit card required.' },
+            ].map((feature, i) => (
               <div key={i} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:border-emerald-300 dark:hover:border-emerald-600 hover:shadow-md transition-colors">
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{feature}</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{feature.title}</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">{feature.desc}</p>
               </div>
             ))}
           </div>
@@ -97,35 +105,25 @@ export default function Subscription() {
       <section className="py-8 md:py-12 px-2 sm:px-4 lg:px-6">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-6 space-y-2">
-            <h2 className="text-3xl font-bold text-foreground">How It Works</h2>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">How It Works</h2>
             <p className="text-slate-600 dark:text-slate-400">Get your society up and running in minutes</p>
           </div>
           <div className="space-y-4">
             {[
               {
                 step: '1',
-                title: 'Sign Up',
-                description: 'Create your account with your society name, email, and phone number.',
+                title: 'Add flats and residents',
+                description: 'Import residents from Excel or add them manually in minutes.',
               },
               {
                 step: '2',
-                title: 'Add Flats & Residents',
-                description: 'Enter flat numbers, owner names, emails, and maintenance amounts.',
+                title: 'Generate maintenance bills',
+                description: 'Create bills for all flats in one click with custom amounts and due dates.',
               },
               {
                 step: '3',
-                title: 'Generate Bills',
-                description: 'Create maintenance bills with customized amounts and due dates.',
-              },
-              {
-                step: '4',
-                title: 'Collect Payments',
-                description: 'Collect payments from residents offline (cash, cheque, or personal UPI).',
-              },
-              {
-                step: '5',
-                title: 'Record & Track',
-                description: 'Manually enter payment details in the app and generate reports.',
+                title: 'Track payments',
+                description: 'See collections, expenses, and pending dues — all in one dashboard.',
               },
             ].map((item, i) => (
               <div key={i} className="flex gap-4">
@@ -148,25 +146,38 @@ export default function Subscription() {
       <section className="py-8 md:py-12 px-2 sm:px-4 lg:px-6 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-6 space-y-2">
-            <h2 className="text-3xl font-bold text-foreground">Frequently Asked Questions</h2>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Frequently Asked Questions</h2>
             <p className="text-slate-600 dark:text-slate-400">Have questions? We've got answers</p>
           </div>
           <div className="space-y-2">
-            {[{
-                q: 'How does the free trial work?',
-                a: 'You get 30 days completely free with full access to all features. No credit card required to start. After 30 days, it\'s ₹199/month. You can cancel anytime.',
+            {[
+              {
+                q: 'Can I use FlatLedger for a small apartment?',
+                a: 'Yes. FlatLedger works well for apartments with 10–50 flats. It is designed specifically for small, self-managed apartment societies.',
               },
               {
-                q: 'Is my data secure?',
-                a: 'Yes, we use bank-grade encryption, SSL certificates, and daily automated backups to protect your data.',
+                q: 'Is there a free trial?',
+                a: 'Yes, every society gets a 30-day free trial with full access to all features — billing, payments, expenses, and reports. No credit card required.',
               },
               {
-                q: 'How are payments collected?',
-                a: 'Payments are collected offline by the society admin (cash, cheque, or personal UPI). You manually enter payment details in the app for record-keeping and reporting.',
+                q: 'How are plans calculated?',
+                a: 'Plans are based on the number of flats in your society. Choose the tier that fits your apartment size.',
               },
               {
-                q: 'Can I add unlimited flats?',
-                a: 'Yes, the plan includes unlimited flats. Add as many flats and residents as your society has.',
+                q: 'Are maintenance payments online?',
+                a: 'Maintenance payments are recorded manually — cash, UPI, or bank transfer. You record what residents pay directly to the society account. Simple and fully under your committee\'s control.',
+              },
+              {
+                q: 'Can we migrate from Excel?',
+                a: 'Yes. You can enter your flat list and opening balances directly, or copy them from your existing Excel sheet. Most societies are set up and billing within 30 minutes.',
+              },
+              {
+                q: 'Is our society\'s data secure?',
+                a: 'Yes. FlatLedger uses encrypted data storage, role-based access control, and regular backups. Only your committee members can access your society\'s data. We do not share data with any third party.',
+              },
+              {
+                q: 'Can we export our data anytime?',
+                a: 'Yes. Bills, payment records, and reports can be exported to CSV at any time. Your data is always yours — you are never locked in.',
               },
               {
                 q: 'Can I cancel anytime?',
@@ -174,8 +185,9 @@ export default function Subscription() {
               },
               {
                 q: 'How do I get support?',
-                a: 'Email support is available at support@FlatLedger.com. We respond to all support requests within 24 hours.',
-              }].map((faq: any, i: number) => (
+                a: `Email support is available at ${SUPPORT_EMAIL}. We respond to all support requests within 24 hours.`,
+              },
+            ].map((faq: any, i: number) => (
               <div key={i} className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/50 hover:border-emerald-300 dark:hover:border-emerald-600 transition-colors">
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{faq.q}</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">{faq.a}</p>

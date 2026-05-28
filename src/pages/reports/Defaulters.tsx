@@ -109,6 +109,8 @@ export default function DefaultersPage() {
 
   const paginatedData = sorted.slice(page * pageSize, page * pageSize + pageSize);
 
+  // const { user } = useAuth();
+
   return (
     <DashboardLayout title="Reports">
       <div className="space-y-5">
@@ -324,7 +326,9 @@ export default function DefaultersPage() {
                           {/* Phone */}
                           <td className="px-5 py-3 align-middle whitespace-nowrap hidden lg:table-cell">
                             {d.contact_mobile
-                              ? <span className="text-xs text-slate-600 dark:text-slate-300 font-medium tabular-nums">{d.contact_mobile}</span>
+                              ? (
+                                <span className="text-xs text-slate-600 dark:text-slate-300 font-medium tabular-nums">{d.contact_mobile}</span>
+                              )
                               : <span className="text-xs text-slate-400">—</span>
                             }
                           </td>

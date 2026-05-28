@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import { FlatLedgerIcon, FLAT_LEDGER_ICON_SIZES } from '../components/ui/FlatLedgerIcon';
 import { useChangePassword } from '../hooks/useChangePassword';
@@ -117,17 +117,17 @@ export default function ChangePassword() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md animate-slide-in-up">
         {/* Brand Header */}
         <div className="text-center mb-10">
           <div className="inline-flex flex-col items-center gap-2 mb-4">
             <FlatLedgerIcon size={FLAT_LEDGER_ICON_SIZES.authCompact} className="rounded-lg shadow-sm" />
             <div className="flex flex-col leading-none gap-1">
-              <span className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                <span>Flat</span><span className="text-emerald-600 dark:text-emerald-400">Ledger</span>
+              <span className="text-xl tracking-tight">
+                <span className="text-slate-800 dark:text-white font-bold">Flat</span><span className="font-black bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">Ledger</span>
               </span>
-              <span className="text-[9px] uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300 font-bold">Society Management</span>
+              <span className="text-[10px] tracking-[0.07em] text-emerald-600/85 dark:text-emerald-400/80 font-semibold">Society Maintenance Simplified</span>
             </div>
           </div>
           <h1 className="text-4xl font-bold text-[#0F172A] dark:text-white mb-2">
@@ -174,7 +174,7 @@ export default function ChangePassword() {
                 </button>
               </div>
               {errors.currentPassword && (
-                <p className="mt-2 text-sm text-[#DC2626] dark:text-[#EF4444] font-medium animate-slide-in-up">
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400 font-medium animate-slide-in-up">
                   {errors.currentPassword}
                 </p>
               )}
@@ -208,7 +208,7 @@ export default function ChangePassword() {
                 </button>
               </div>
               {errors.newPassword && (
-                <p className="mt-2 text-sm text-[#DC2626] dark:text-[#EF4444] font-medium animate-slide-in-up">
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400 font-medium animate-slide-in-up">
                   {errors.newPassword}
                 </p>
               )}
@@ -245,7 +245,7 @@ export default function ChangePassword() {
                 </button>
               </div>
               {errors.confirmPassword && (
-                <p className="mt-2 text-sm text-[#DC2626] dark:text-[#EF4444] font-medium animate-slide-in-up">
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400 font-medium animate-slide-in-up">
                   {errors.confirmPassword}
                 </p>
               )}

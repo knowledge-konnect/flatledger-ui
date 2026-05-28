@@ -5,7 +5,7 @@ import { motion, useInView } from 'framer-motion';
 import Navbar from "../components/layout/Navbar";
 import {
   ArrowRight, IndianRupee, BarChart3, Users, Zap,
-  Receipt, PieChart, CheckCircle2, ChevronRight,
+  Receipt, PieChart, CheckCircle2, ChevronRight, Shield, Database,
 } from "lucide-react";
 import { PricingSection } from '../components/pricing/PricingSection';
 
@@ -99,10 +99,14 @@ const LandingPage: React.FC = () => {
               </a>
             </div>
 
-            <div className="flex justify-center animate-fade-in" style={{ animationDelay: '0.25s' }}>
+            <div className="flex flex-wrap justify-center gap-2 animate-fade-in" style={{ animationDelay: '0.25s' }}>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                 {t('landing.hero.teluguBadge')}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 dark:border-blue-900/60 bg-blue-50 dark:bg-blue-950/30 px-3 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
+                <Shield className="w-3.5 h-3.5 text-blue-500" />
+                {t('landing.hero.socialProof')}
               </span>
             </div>
 
@@ -195,9 +199,9 @@ const LandingPage: React.FC = () => {
               {t('landing.trust.subtitle')}
             </p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
             {trustItems.map((item, index) => {
-              const icons = [Receipt, Users, Zap];
+              const icons = [Shield, Database, Users, Zap];
               const TrustIcon = icons[index];
 
               if (!TrustIcon) return null;
@@ -458,7 +462,7 @@ const LandingPage: React.FC = () => {
                 <p className="text-lg font-extrabold">
                   <span className="text-slate-900 dark:text-white">Flat</span><span className="text-emerald-600 dark:text-emerald-400">Ledger</span>
                 </p>
-                <span className="text-[10px] uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300 font-bold">Society Management</span>
+                <span className="text-[10px] tracking-[0.13em] text-emerald-600/75 dark:text-emerald-300/70 font-medium">Society Maintenance Simplified</span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{t('landing.footer.tagline')}</p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('landing.footer.supportingText')}</p>

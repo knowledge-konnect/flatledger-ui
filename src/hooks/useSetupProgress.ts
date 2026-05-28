@@ -4,10 +4,13 @@ import { useFlats } from './useFlats';
 import { useMaintenanceConfig } from './useSocieties';
 import { useAuth } from '../contexts/AuthProvider';
 
+export const OB_SKIPPED_KEY = 'ob_skipped';
+
 export interface SetupStep {
   id: string;
   label: string;
   completed: boolean;
+  skipped?: boolean;
   description: string;
 }
 
@@ -51,6 +54,13 @@ export function useSetupProgress(): SetupProgress {
     const obApplied = obStatus?.isApplied || false;
     const maintenanceConfigured = (maintenanceConfig?.defaultMonthlyCharge ?? 0) > 0;
 
+    let obSkipped = false;
+    try {
+      obSkipped = !obApplied && localStorage.getItem(OB_SKIPPED_KEY) === 'true';
+    } catch {
+      // ignore — localStorage unavailable (SSR / private browsing edge case)
+    }
+
     const steps: SetupStep[] = [
       {
         id: 'society',
@@ -74,11 +84,13 @@ export function useSetupProgress(): SetupProgress {
       {
         id: 'opening-balance',
         label: 'Opening Balance',
-        // Opening balance is optional — societies with no prior dues can skip it.
-        // Mark as complete if either applied OR explicitly skipped (isApplied can be false
-        // for new societies that have no outstanding dues from a previous system).
-        completed: obApplied,
-        description: obApplied ? 'Applied successfully' : 'Optional — skip if no prior dues',
+        completed: obApplied || obSkipped,
+        skipped: obSkipped && !obApplied,
+        description: obApplied
+          ? 'Applied successfully'
+          : obSkipped
+          ? 'Skipped — no prior dues'
+          : 'Optional — skip if no prior dues',
       },
     ];
 

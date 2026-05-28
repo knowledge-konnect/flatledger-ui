@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, CreditCard, Search, Edit, Trash, Eye, IndianRupee, AlertCircle, TrendingUp, Zap, Lock, Home, Calendar, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
+import { Plus, CreditCard, Search, Edit, Trash, Eye, IndianRupee, AlertCircle, TrendingUp, Zap, Lock, Home, Calendar, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, MessageCircle, Copy } from 'lucide-react';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import PageHeader from '../components/ui/PageHeader';
 import Tooltip from '../components/ui/Tooltip';
@@ -1705,6 +1705,37 @@ export default function Maintenance() {
 
               {/* -- Footer ----------------------------------------------- */}
               <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
+                {(() => {
+                  const vFlat = safeFlats.find(f => f.publicId === viewTarget.flatPublicId);
+                  const mobile = vFlat?.contactMobile?.replace(/\D/g, '');
+                  const waNumber = mobile ? (mobile.length === 10 ? `91${mobile}` : mobile) : null;
+                  const ownerLabel = vOwner || viewTarget.ownerName || 'Resident';
+                  const waMsg = `Dear ${ownerLabel}, your maintenance payment of ${formatCurrency(viewTarget.amount)} for Flat ${viewTarget.flatNumber || '—'} was received on ${formatDate(viewTarget.paymentDate)}. Thank you! — ${user?.societyName || 'Your Society'}`;
+                  return (
+                    <>
+                      {waNumber && (
+                        <a
+                          href={`https://wa.me/${waNumber}?text=${encodeURIComponent(waMsg)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-green-500 hover:bg-green-600 text-white transition-colors"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          WhatsApp Receipt
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        title="Copy receipt message"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        onClick={() => navigator.clipboard.writeText(waMsg)}
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        Copy
+                      </button>
+                    </>
+                  );
+                })()}
                 {isAdmin && !isPaymentLocked(viewTarget) && (viewTarget.allocations?.length ?? 0) === 0 && (
                   <Button size="sm" variant="outline"
                     onClick={() => { setShowViewModal(false); setViewTarget(null); openEditModal(viewTarget); }}
