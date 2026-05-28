@@ -21,7 +21,7 @@ export function StatCard({ title, value, change, positive = true, icon: Icon }: 
             className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
               positive
                 ? 'bg-[#16A34A]/10 text-[#16A34A] dark:text-[#22C55E]'
-                : 'bg-[#DC2626]/10 text-[#DC2626] dark:text-[#EF4444]'
+                : 'bg-red-100 dark:bg-red-950/20 text-red-600 dark:text-red-400'
             }`}
           >
             {positive ? (

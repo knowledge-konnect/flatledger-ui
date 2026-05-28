@@ -1,4 +1,4 @@
-﻿import { useEffect } from 'react';
+﻿import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CheckCircle,
@@ -14,6 +14,7 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import { useSetupProgress } from '../hooks/useSetupProgress';
+import { OB_SKIPPED_KEY } from '../hooks/useSetupProgress';
 
 export const SETUP_REDIRECTED_KEY = 'setup_redirected';
 
@@ -63,6 +64,20 @@ export default function Setup() {
   const navigate = useNavigate();
   const { steps, isComplete, progress } = useSetupProgress();
 
+  // Local toggle so Skip/Undo re-renders immediately without waiting for hook recompute
+  const [, forceUpdate] = useState(0);
+  const rerender = useCallback(() => forceUpdate((n) => n + 1), []);
+
+  const skipOb = useCallback(() => {
+    try { localStorage.setItem(OB_SKIPPED_KEY, 'true'); } catch { /* ignore */ }
+    rerender();
+  }, [rerender]);
+
+  const undoSkipOb = useCallback(() => {
+    try { localStorage.removeItem(OB_SKIPPED_KEY); } catch { /* ignore */ }
+    rerender();
+  }, [rerender]);
+
   // Mark that the user has visited the setup page so Dashboard won't auto-redirect again
   useEffect(() => {
     try {
@@ -73,6 +88,8 @@ export default function Setup() {
   }, []);
 
   const nextIncompleteStep = steps.find((s) => !s.completed);
+  const obStep = steps.find((s) => s.id === 'opening-balance');
+  const obPending = isComplete && obStep && !obStep.completed;
 
   const handleGoToDashboard = () => {
     navigate('/dashboard');
@@ -86,19 +103,25 @@ export default function Setup() {
           {/* ── Header ───────────────────────────────────────────────────── */}
           <div className="text-center space-y-3">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-700 shadow-lg shadow-emerald-500/30">
-              {isComplete ? (
+              {isComplete && !obPending ? (
                 <Sparkles className="w-8 h-8 text-white" />
               ) : (
                 <span className="text-3xl leading-none">🏢</span>
               )}
             </div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">
-              {isComplete ? 'Setup Complete!' : 'Get Started with FlatLedger'}
+              {isComplete && !obPending
+                ? 'Setup Complete!'
+                : obPending
+                ? 'Almost There!'
+                : 'Get Started with FlatLedger'}
             </h1>
             <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto text-sm">
-              {isComplete
+              {isComplete && !obPending
                 ? 'Your society is fully configured. Head to your dashboard to get started.'
-                : 'Complete these 4 steps to get your society fully up and running.'}
+                : obPending
+                ? 'Your society is ready to use. Set up Opening Balance to carry over any prior dues or bank balance.'
+                : 'Complete these steps to get your society fully up and running.'}
             </p>
           </div>
 
@@ -129,6 +152,8 @@ export default function Setup() {
             {STEP_CONFIG.map((config, index) => {
               const stepData = steps.find((s) => s.id === config.id);
               const isDone = stepData?.completed ?? false;
+              const isSkipped = stepData?.skipped ?? false;
+              const isObStep = config.id === 'opening-balance';
               const isNext = nextIncompleteStep?.id === config.id;
               const Icon = config.icon;
 
@@ -136,8 +161,10 @@ export default function Setup() {
                 <Card
                   key={config.id}
                   className={`p-6 transition-all duration-200 ${
-                    isDone
+                    isDone && !isSkipped
                       ? 'border-green-200 dark:border-green-800 bg-green-50/40 dark:bg-green-950/10'
+                      : isSkipped
+                      ? 'border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40'
                       : isNext
                       ? 'border-emerald-300 dark:border-emerald-700 shadow-md ring-1 ring-emerald-200 dark:ring-emerald-800'
                       : 'border-slate-200 dark:border-slate-800 opacity-60'
@@ -147,19 +174,23 @@ export default function Setup() {
                     {/* Icon */}
                     <div
                       className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center ${
-                        isDone
+                        isDone && !isSkipped
                           ? 'bg-green-100 dark:bg-green-900/40'
+                          : isSkipped
+                          ? 'bg-slate-100 dark:bg-slate-800'
                           : isNext
                           ? 'bg-emerald-100 dark:bg-emerald-900/40'
                           : 'bg-slate-100 dark:bg-slate-800'
                       }`}
                     >
-                      {isDone ? (
+                      {isDone && !isSkipped ? (
                         <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
                       ) : (
                         <Icon
                           className={`w-5 h-5 ${
-                            isNext
+                            isSkipped
+                              ? 'text-slate-400 dark:text-slate-500'
+                              : isNext
                               ? 'text-emerald-600 dark:text-emerald-400'
                               : 'text-slate-400 dark:text-slate-500'
                           }`}
@@ -173,14 +204,24 @@ export default function Setup() {
                         <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                           Step {index + 1}
                         </span>
-                        {isDone && (
+                        {isDone && !isSkipped && (
                           <span className="text-xs font-semibold text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/40 px-2 py-0.5 rounded-full">
                             Done
                           </span>
                         )}
-                        {!isDone && isNext && (
+                        {isSkipped && (
+                          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                            Skipped
+                          </span>
+                        )}
+                        {!isDone && !isSkipped && isNext && (
                           <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full">
                             Up Next
+                          </span>
+                        )}
+                        {isObStep && !isDone && !isSkipped && (
+                          <span className="text-xs font-medium text-slate-400 dark:text-slate-500 italic">
+                            Optional
                           </span>
                         )}
                       </div>
@@ -188,21 +229,39 @@ export default function Setup() {
                         {config.label}
                       </h3>
                       <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {isDone ? config.completedText : config.pendingText}
+                        {isDone && !isSkipped ? config.completedText : stepData?.description ?? config.pendingText}
                       </p>
+                      {/* Undo skip link */}
+                      {isSkipped && (
+                        <button
+                          onClick={undoSkipOb}
+                          className="mt-1.5 text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
+                        >
+                          Undo — I do have prior dues
+                        </button>
+                      )}
                     </div>
 
                     {/* CTA */}
-                    {!isDone && (
-                      <Button
-                        size="sm"
-                        variant={isNext ? 'primary' : 'outline'}
-                        onClick={() => navigate(config.route)}
-                        className="flex-shrink-0"
-                      >
-                        {isNext ? 'Start' : 'Go'}
-                        <ArrowRight className="w-4 h-4 ml-1" />
-                      </Button>
+                    {!isDone && !isSkipped && (
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <Button
+                          size="sm"
+                          variant={isNext ? 'primary' : 'outline'}
+                          onClick={() => navigate(config.route)}
+                        >
+                          {isNext ? 'Start' : 'Go'}
+                          <ArrowRight className="w-4 h-4 ml-1" />
+                        </Button>
+                        {isObStep && (
+                          <button
+                            onClick={skipOb}
+                            className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 font-medium whitespace-nowrap"
+                          >
+                            Skip — no prior dues
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </Card>
@@ -212,16 +271,29 @@ export default function Setup() {
 
           {/* ── Footer CTA ────────────────────────────────────────────────── */}
           <div className="flex flex-col items-center gap-3 pb-10">
-            <Button
-              size="lg"
-              onClick={handleGoToDashboard}
-              variant={isComplete ? 'primary' : 'outline'}
-              className="min-w-[200px]"
-            >
-              <LayoutDashboard className="w-4 h-4 mr-2" />
-              {isComplete ? 'Go to Dashboard' : 'Skip for Now'}
-            </Button>
-            {!isComplete && (
+            <div className="flex flex-wrap justify-center gap-3">
+              <Button
+                size="lg"
+                onClick={handleGoToDashboard}
+                variant={isComplete && !obPending ? 'outline' : 'outline'}
+                className="min-w-[200px]"
+              >
+                <LayoutDashboard className="w-4 h-4 mr-2" />
+                {isComplete && !obPending ? 'Go to Dashboard' : 'Skip for Now'}
+              </Button>
+              {isComplete && !obPending && (
+                <Button
+                  size="lg"
+                  variant="primary"
+                  className="min-w-[200px]"
+                  onClick={() => navigate('/maintenance')}
+                >
+                  <ArrowRight className="w-4 h-4 mr-2" />
+                  Generate First Bill
+                </Button>
+              )}
+            </div>
+            {(!isComplete || obPending) && (
               <p className="text-xs text-slate-400 dark:text-slate-500">
                 You can return to this setup anytime from the Settings menu.
               </p>

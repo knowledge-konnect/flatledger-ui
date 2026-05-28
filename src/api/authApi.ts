@@ -226,11 +226,12 @@ export const authApi = {
   },
 
   /**
-   * Request password reset email (no email enumeration).
+   * Request password reset — validates ownership by matching email AND mobile.
+   * When credentials match, the API returns the reset token directly (no email sent).
    * POST /auth/forgot-password
    */
-  async forgotPassword(email: string): Promise<{ message: string }> {
-    const response = await apiClient.post<ApiResponse<{ message: string }>>('/auth/forgot-password', { email });
+  async forgotPassword(payload: { email: string; mobile: string }): Promise<{ message: string; resetToken?: string }> {
+    const response = await apiClient.post<ApiResponse<{ message: string; resetToken?: string }>>('/auth/forgot-password', payload);
     return response.data.data;
   },
 

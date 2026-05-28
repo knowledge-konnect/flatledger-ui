@@ -109,7 +109,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                 <p className="text-sm font-semibold text-white truncate">
                   {user?.societyName || 'FlatLedger'}
                 </p>
-                <p className="text-[11px] text-emerald-400/70 truncate font-medium">
+                <p className="text-[11px] text-emerald-400 truncate font-medium">
                   Management
                 </p>
               </div>
@@ -133,7 +133,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
 
               return (
                 <div key={group.label}>
-                  <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-widest text-emerald-500/50">
+                  <p className="px-2 mb-2 text-[10px] font-semibold uppercase tracking-widest text-emerald-400/80">
                     {group.label}
                   </p>
                   <div className="space-y-0.5">
@@ -149,7 +149,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                                 'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
                                 isParentActive
                                   ? 'bg-emerald-500 text-white shadow-md shadow-emerald-900/50'
-                                  : 'text-emerald-100/60 hover:bg-emerald-900/70 hover:text-emerald-50'
+                                  : 'text-emerald-100/80 hover:bg-emerald-900/70 hover:text-white'
                               )}
                               data-testid="nav-reports"
                             >
@@ -208,7 +208,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                             'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150',
                             isActive
                               ? 'bg-emerald-500 text-white shadow-md shadow-emerald-900/50'
-                              : 'text-emerald-100/60 hover:bg-emerald-900/70 hover:text-emerald-50'
+                              : 'text-emerald-100/80 hover:bg-emerald-900/70 hover:text-white'
                           )}
                           data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                         >

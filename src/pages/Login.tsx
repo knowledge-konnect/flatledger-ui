@@ -116,13 +116,13 @@ export default function Login() {
         <div className="absolute top-1/2 right-8 w-32 h-32 bg-white/5 rounded-full pointer-events-none" />
 
         {/* Brand */}
-        <div className="relative z-10 flex items-center gap-3 mb-12">
+        <div className="relative z-10 flex items-center gap-4 mb-12">
           <FlatLedgerIcon size={FLAT_LEDGER_ICON_SIZES.authHero} className="rounded-xl shadow-lg" />
           <div className="flex flex-col leading-none gap-1.5">
-            <span className="text-[24px] font-extrabold tracking-tight">
-              <span className="text-white">Flat</span><span className="text-emerald-100">Ledger</span>
+            <span className="text-[24px] tracking-tight">
+              <span className="text-white font-bold">Flat</span><span className="font-black bg-gradient-to-r from-emerald-300 to-teal-200 bg-clip-text text-transparent">Ledger</span>
             </span>
-            <span className="text-xs uppercase tracking-[0.16em] text-emerald-100/90 font-bold">Society Management</span>
+            <span className="text-[11px] tracking-[0.07em] text-emerald-100/85 font-semibold">Society Maintenance Simplified</span>
           </div>
         </div>
 

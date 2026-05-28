@@ -210,7 +210,7 @@ export default function Payment() {
 
                   <div className="border-t border-border pt-4 mt-4">
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-muted-foreground">Monthly subscription</span>
+                      <span className="text-muted-foreground">{plan?.durationMonths === 12 ? 'Yearly subscription' : 'Monthly subscription'}</span>
                       {/* Amount comes from backend invoice — never computed on frontend */}
                       <span className="font-semibold text-foreground">{invoiceAmount != null ? `₹${invoiceAmount}` : plan?.name ? 'See checkout' : '—'}</span>
                     </div>
@@ -261,11 +261,11 @@ export default function Payment() {
                 <div className="p-4 bg-background rounded-lg border border-border/50">
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     By proceeding with payment, you agree to our{' '}
-                    <a href="#" className="text-primary hover:underline">
+                    <a href="/terms" className="text-primary hover:underline">
                       Terms of Service
                     </a>{' '}
                     and{' '}
-                    <a href="#" className="text-primary hover:underline">
+                    <a href="/privacy" className="text-primary hover:underline">
                       Privacy Policy
                     </a>
                     . Subscription is activated after successful payment verification.

@@ -117,17 +117,19 @@
         "resetTitle": "Reset Password",
         "setTitle": "Set New Password",
         "updatedTitle": "Password Updated",
-        "sentTitle": "Check your email",
-        "emailStepDesc": "Enter your email and we'll send a reset link",
-        "sentStepDesc": "If an account exists, we sent instructions to that address",
+        "sentTitle": "Details not found",
+        "formStepDesc": "Enter your registered email and 10-digit mobile to verify your identity",
+        "sentStepDesc": "No account matched those details. Please check and try again.",
         "passwordStepDesc": "Setting new password for {{email}}",
         "successDesc": "Redirecting you now..."
       },
       "emailLabel": "Email Address",
       "emailPlaceholder": "your@email.com",
-      "sendLink": "Send reset link",
-      "sentBody": "Check your inbox (and spam folder) for a link valid for 60 minutes. If you don't see it, try again or contact your society admin.",
-      "tryAnotherEmail": "Use a different email",
+      "mobileLabel": "Registered Mobile Number",
+      "mobilePlaceholder": "10-digit mobile number",
+      "verifyAndContinue": "Verify & Continue",
+      "noMatchBody": "We could not find an account matching that email and mobile number. Please double-check your details or contact your society admin.",
+      "tryAgain": "Try again",
       "continue": "Continue",
       "backToLogin": "Back to Login",
       "newPassword": "New Password",
@@ -156,6 +158,8 @@
       "validation": {
         "emailRequired": "Email is required",
         "invalidEmail": "Invalid email format",
+        "mobileRequired": "Mobile number is required",
+        "invalidMobile": "Mobile number must be exactly 10 digits",
         "confirmRequired": "Please confirm your password",
         "passwordsNoMatch": "Passwords do not match",
         "passwordMin": "Password must be at least 6 characters",
@@ -184,6 +188,7 @@
       "primaryCta": "Start Free Trial",
       "secondaryCta": "View Pricing",
       "teluguBadge": "Designed for apartment societies with 10–50 flats",
+      "socialProof": "Now in Early Access — Be among the first",
       "microcopy": "No credit card required. 30-day free trial.",
       "highlights": {
         "trial": "No credit card required",
@@ -208,12 +213,13 @@
       ]
     },
     "trust": {
-      "title": "Built specifically for",
-      "subtitle": "Made for committee members managing maintenance in small apartment societies.",
+      "title": "Why Societies Trust FlatLedger",
+      "subtitle": "Built with security, reliability, and simplicity at its core.",
       "items": [
-        { "title": "Small apartment societies", "description": "Designed for communities with 10–50 flats." },
-        { "title": "Committee members & treasurers", "description": "Built for people managing billing and collections." },
-        { "title": "Self-managed communities", "description": "Simple maintenance management without extra complexity." }
+        { "title": "Encrypted & Secure", "description": "Your society's financial data is encrypted at rest and in transit. We never share your data." },
+        { "title": "Daily Backups", "description": "Automatic daily backups so your records are always safe — even if something goes wrong." },
+        { "title": "Role-Based Access", "description": "Admins have full control. Viewers get read-only access. No accidental changes." },
+        { "title": "Quick to Set Up", "description": "Add your flats, configure dues, and generate your first bill — all in under 15 minutes." }
       ]
     },
     "earlyAccess": {
