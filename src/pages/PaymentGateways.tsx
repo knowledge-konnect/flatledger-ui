@@ -33,7 +33,7 @@ export default function PaymentGateways() {
                 If you have questions about payment collection or need further assistance, please contact our support team.
               </p>
               <a
-                href="mailto:support@FlatLedger.com?subject=Payment Collection Inquiry"
+                href="mailto:support@flatledger.in?subject=Payment Collection Inquiry"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary dark:bg-primary-500 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary transition-colors font-medium"
               >
                 <Mail className="w-4 h-4" />

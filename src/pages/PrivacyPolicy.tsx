@@ -4,7 +4,7 @@ import Navbar from '../components/layout/Navbar';
 const sections = [
   {
     title: '1. Who We Are',
-    body: 'FlatLedger is a software-as-a-service (SaaS) product designed to help apartment housing societies in India manage maintenance billing, resident payment records, society expenses, and financial reports. By using FlatLedger, you agree to the practices described in this Privacy Policy. If you have questions, contact us at support@flatledger.com.',
+    body: 'FlatLedger is a software-as-a-service (SaaS) product designed to help apartment housing societies in India manage maintenance billing, resident payment records, society expenses, and financial reports. By using FlatLedger, you agree to the practices described in this Privacy Policy. If you have questions, contact us at support@flatledger.in.',
   },
   {
     title: '2. Information We Collect',
@@ -28,11 +28,11 @@ const sections = [
   },
   {
     title: '7. Data Retention',
-    body: 'We retain your account and society data for as long as your subscription is active. If you cancel or your account is terminated, we retain data for a reasonable period (typically 90 days) to allow you to export your records before permanent deletion. Billing records and invoices may be retained longer to comply with tax and accounting regulations under Indian law. You may request early deletion by contacting support@flatledger.com, subject to any legal retention obligations.',
+    body: 'We retain your account and society data for as long as your subscription is active. If you cancel or your account is terminated, we retain data for a reasonable period (typically 90 days) to allow you to export your records before permanent deletion. Billing records and invoices may be retained longer to comply with tax and accounting regulations under Indian law. You may request early deletion by contacting support@flatledger.in, subject to any legal retention obligations.',
   },
   {
     title: '8. Your Rights and Choices',
-    body: 'As a FlatLedger account holder, you have the right to: access the data stored in your account at any time through the dashboard; export your billing records, payment history, and reports as CSV files; request corrections to inaccurate personal or society information; request deletion of your account and associated data (subject to legal retention requirements); withdraw consent for non-essential communications by contacting support.\n\nTo exercise any of these rights, contact us at support@flatledger.com.',
+    body: 'As a FlatLedger account holder, you have the right to: access the data stored in your account at any time through the dashboard; export your billing records, payment history, and reports as CSV files; request corrections to inaccurate personal or society information; request deletion of your account and associated data (subject to legal retention requirements); withdraw consent for non-essential communications by contacting support.\n\nTo exercise any of these rights, contact us at support@flatledger.in.',
   },
   {
     title: '9. Cookies',
@@ -40,7 +40,7 @@ const sections = [
   },
   {
     title: '10. Children\'s Privacy',
-    body: 'FlatLedger is not intended for use by individuals under the age of 18. We do not knowingly collect personal information from minors. If you believe we have inadvertently collected such information, please contact us immediately at support@flatledger.com and we will delete it.',
+    body: 'FlatLedger is not intended for use by individuals under the age of 18. We do not knowingly collect personal information from minors. If you believe we have inadvertently collected such information, please contact us immediately at support@flatledger.in and we will delete it.',
   },
   {
     title: '11. Changes to This Policy',
@@ -48,7 +48,7 @@ const sections = [
   },
   {
     title: '12. Contact Us',
-    body: 'If you have any questions, concerns, or requests regarding this Privacy Policy or how your data is handled, please contact us:\n\nEmail: support@flatledger.com\n\nWe aim to respond to all privacy-related inquiries within 5 business days.',
+    body: 'If you have any questions, concerns, or requests regarding this Privacy Policy or how your data is handled, please contact us:\n\nEmail: support@flatledger.in\n\nWe aim to respond to all privacy-related inquiries within 5 business days.',
   },
 ];
 

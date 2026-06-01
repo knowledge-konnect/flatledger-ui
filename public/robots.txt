@@ -16,4 +16,4 @@ Allow: /signup
 Allow: /privacy-policy
 Allow: /terms-of-service
 
-Sitemap: https://flat-ledger-ui.vercel.app/sitemap.xml
+Sitemap: https://www.flatledger.in/sitemap.xml

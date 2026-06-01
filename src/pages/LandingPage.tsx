@@ -1,44 +1,34 @@
-﻿import React, { useState, useRef } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { motion, useInView } from 'framer-motion';
+
 import Navbar from "../components/layout/Navbar";
 import {
-  ArrowRight, IndianRupee, BarChart3, Users, Zap,
-  Receipt, PieChart, CheckCircle2, ChevronRight, Shield, Database,
+  ArrowRight, Users, Receipt, CheckCircle2, ChevronRight, Shield, Database,
+  CreditCard, BarChart2, History,
 } from "lucide-react";
 import { PricingSection } from '../components/pricing/PricingSection';
 
 // Static data — defined outside component to avoid recreation on every render
-const planFeatureDefs = [
-  { color: "from-green-500 to-green-600", icon: IndianRupee, key: 'billing' },
-  { color: "from-teal-500 to-teal-600", icon: Receipt, key: 'payments' },
-  { color: "from-orange-500 to-orange-600", icon: BarChart3, key: 'expenses' },
-  { color: "from-emerald-500 to-emerald-600", icon: Zap, key: 'finances' },
-  { color: "from-emerald-600 to-emerald-800", icon: PieChart, key: 'reports' },
-  { color: "from-red-500 to-red-600", icon: Users, key: 'roles' },
-] as const;
+
 
 const LandingPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [announcementVisible, setAnnouncementVisible] = useState(true);
 
-  const mockRef = useRef<HTMLDivElement>(null);
-  const mockInView = useInView(mockRef, { once: true, margin: '-80px' });
 
-  const planFeatures = planFeatureDefs.map((item) => ({
-    ...item,
-    title: t(`landing.features.items.${item.key}.title`),
-    description: t(`landing.features.items.${item.key}.description`),
-  }));
-  const trustItems = t('landing.trust.items', { returnObjects: true }) as Array<{ title: string; description: string }>;
-  const earlyAccessItems = t('landing.earlyAccess.items', { returnObjects: true }) as Array<{ title: string; description: string }>;
-  const howItWorksItems = t('landing.howItWorks.steps', { returnObjects: true }) as Array<{ step: string; title: string; description: string }>;
-  const faqItems = t('landing.faq.items', { returnObjects: true }) as Array<{ q: string; a: string }>;
-  const mockKpis = t('landing.mock.kpis', { returnObjects: true }) as Array<{ label: string; value: string; sub: string; color: string }>;
-  const mockRows = t('landing.mock.rows', { returnObjects: true }) as Array<{ flat: string; amount: string; status: string; color: string }>;
+  // const mockInView = useInView(mockRef, { once: true, margin: '-80px' });
+
+  // const planFeatures = planFeatureDefs.map((item) => ({
+  //   ...item,
+  //   title: t(`landing.features.items.${item.key}.title`),
+  //   description: t(`landing.features.items.${item.key}.description`),
+  // }));
+  // const trustItems = t('landing.trust.items', { returnObjects: true }) as Array<{ title: string; description: string }>;
+  // const mockKpis = t('landing.mock.kpis', { returnObjects: true }) as Array<{ label: string; value: string; sub: string; color: string }>;
+  // const mockRows = t('landing.mock.rows', { returnObjects: true }) as Array<{ flat: string; amount: string; status: string; color: string }>;
 
   return (
     <div className="min-h-screen pb-24 md:pb-0 bg-white dark:bg-slate-950">
@@ -59,305 +49,436 @@ const LandingPage: React.FC = () => {
 
       <Navbar variant="landing" />
 
+
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
-      <section
-        className="pt-24 md:pt-32 pb-8 md:pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-white dark:bg-slate-950"
-      >
+      <section className="pt-24 md:pt-32 pb-10 md:pb-14 lg:pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-white dark:bg-slate-950">
         {/* Premium gradient glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-100/20 dark:bg-emerald-900/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-teal-100/20 dark:bg-teal-900/10 rounded-full blur-3xl pointer-events-none" />
+        {/* Dot pattern overlay */}
+        <div className="absolute inset-0 pointer-events-none opacity-60" style={{ backgroundImage: 'radial-gradient(rgba(16,185,129,0.15) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        {/* Radial glow from top */}
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16,185,129,0.15), transparent)' }} />
 
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="space-y-6 text-center">
-            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 dark:text-white text-balance animate-slide-in-up leading-tight tracking-tight">
-              {t('landing.hero.titleLine1')}{" "}{t('landing.hero.titleLine2')}{" "}
-              <span className="bg-gradient-to-r from-emerald-500 to-emerald-700 bg-clip-text text-transparent">
-                {t('landing.hero.titleLine3')}
-              </span>
+            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 dark:text-white leading-tight tracking-tight">
+              Stop Managing Society Maintenance in Excel
             </h1>
-
-            <p className="text-base sm:text-xl md:text-2xl text-slate-700 dark:text-slate-200 max-w-2xl mx-auto leading-relaxed animate-slide-in-up font-medium" style={{ animationDelay: '0.1s' }}>
-              {t('landing.hero.subtitle')}
+            <p className="text-base sm:text-xl md:text-2xl text-slate-700 dark:text-slate-200 max-w-2xl mx-auto leading-relaxed font-medium">
+              Manage maintenance billing, expenses, and payments &mdash; without Excel or WhatsApp
             </p>
-
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 pt-4 animate-slide-in-up" style={{ animationDelay: '0.2s' }}>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 pt-4">
               <Link
                 to="/signup"
                 className="w-full sm:w-auto px-8 py-4 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:shadow-xl hover:bg-emerald-700 hover:-translate-y-1 active:translate-y-0 active:scale-[0.99] transition-all duration-300 flex items-center justify-center gap-2 group focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900"
-                aria-label={t('landing.hero.primaryCta')}
+                aria-label="Start Free 30-Day Trial"
               >
-                <span>{t('landing.hero.primaryCta')}</span>
+                <span>Start Free 30-Day Trial</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
               <a
                 href="#pricing"
                 className="w-full sm:w-auto px-6 py-3.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-lg font-medium bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-600 active:scale-[0.99] transition-all duration-300 text-center focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200 dark:focus-visible:ring-slate-800"
-                aria-label={t('landing.hero.secondaryCta')}
+                aria-label="View Pricing"
               >
-                {t('landing.hero.secondaryCta')}
+                View Pricing
               </a>
             </div>
-
-            <div className="flex flex-wrap justify-center gap-2 animate-fade-in" style={{ animationDelay: '0.25s' }}>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                {t('landing.hero.teluguBadge')}
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 dark:border-blue-900/60 bg-blue-50 dark:bg-blue-950/30 px-3 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300">
-                <Shield className="w-3.5 h-3.5 text-blue-500" />
-                {t('landing.hero.socialProof')}
-              </span>
-            </div>
-
-            <p className="text-xs text-slate-500 dark:text-slate-400 animate-fade-in text-center" style={{ animationDelay: '0.35s' }}>{t('landing.hero.microcopy')}</p>
-
-            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-2 text-sm text-slate-600 dark:text-slate-400 animate-fade-in font-medium" style={{ animationDelay: '0.4s' }}>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> {t('landing.hero.highlights.trial')}</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> {t('landing.hero.highlights.card')}</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> {t('landing.hero.highlights.cancel')}</span>
+            {/* Trust row below CTA buttons */}
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-4 text-sm text-slate-600 dark:text-slate-400 font-medium">
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> No Credit Card Required</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> 30-Day Free Trial</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> Setup in Under 10 Minutes</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> Cancel Anytime</span>
             </div>
           </div>
 
-          {/* Dashboard preview mock */}
-          <p className="text-center text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-10 animate-fade-in" style={{ animationDelay: '0.45s' }}>
-            {t('landing.mock.previewLabel')}
-          </p>
-          <div ref={mockRef} className="mt-3 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-            <div className="relative mx-auto max-w-4xl">
-              <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-2xl blur opacity-20" />
-              <div className="relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
-                {/* Mock browser bar */}
-                <div className="flex items-center gap-2 px-4 py-3 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-                  <div className="w-3 h-3 rounded-full bg-red-400" />
-                  <div className="w-3 h-3 rounded-full bg-amber-400" />
-                  <div className="w-3 h-3 rounded-full bg-green-400" />
-                  <div className="flex-1 mx-4 bg-white dark:bg-slate-700 rounded px-3 py-1 text-xs text-slate-500 dark:text-slate-400">
-                    app.flatledger.com/dashboard
-                  </div>
-                </div>
-                {/* Mock dashboard content */}
-                <div className="p-6 bg-slate-50 dark:bg-slate-900">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-                    {mockKpis.map((kpi, i) => (
-                      <motion.div
-                        key={kpi.label}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={mockInView ? { opacity: 1, y: 0 } : {}}
-                        transition={{ duration: 0.4, delay: i * 0.08, ease: 'easeOut' }}
-                        className="bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 shadow-sm"
-                      >
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{kpi.label}</p>
-                        <p className={`text-lg font-bold tabular-nums ${kpi.color}`}>
-                          {kpi.value}
-                        </p>
-                        <p className="text-xs text-slate-400 dark:text-slate-500">{kpi.sub}</p>
-                      </motion.div>
-                    ))}
-                  </div>
-                  <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-                    <div className="px-4 py-2 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t('landing.mock.recentPayments')}</p>
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{t('landing.mock.viewAll')}</span>
+          {/* Dashboard Preview Mock */}
+          <div className="mt-10 relative max-w-5xl mx-auto">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
+              {/* App shell */}
+              <div className="flex h-[420px] bg-slate-950 text-white select-none">
+
+                {/* ── Sidebar ── */}
+                <aside className="hidden sm:flex flex-col w-44 shrink-0 bg-slate-950 border-r border-slate-800">
+                  {/* Logo */}
+                  <div className="px-4 pt-4 pb-3 border-b border-slate-800">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-black text-sm">F</div>
+                      <div>
+                        <p className="text-xs font-bold text-white leading-tight">FlatLedger</p>
+                        <p className="text-[9px] text-slate-400 leading-tight">Management</p>
+                      </div>
                     </div>
-                    <div className="divide-y divide-slate-100 dark:divide-slate-700">
-                      {mockRows.map((row, i) => (
-                        <motion.div
-                          key={`${row.flat}-${row.status}`}
-                          initial={{ opacity: 0, x: -8 }}
-                          animate={mockInView ? { opacity: 1, x: 0 } : {}}
-                          transition={{ duration: 0.35, delay: 0.35 + i * 0.1, ease: 'easeOut' }}
-                          className="flex items-center justify-between px-4 py-2"
-                        >
-                          <span className="text-sm text-slate-700 dark:text-slate-300">{row.flat}</span>
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm font-medium text-slate-900 dark:text-white">{row.amount}</span>
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${row.color}`}>{row.status}</span>
-                          </div>
-                        </motion.div>
+                  </div>
+                  {/* Nav */}
+                  <nav className="flex-1 px-2 py-3 space-y-0.5 text-[11px]">
+                    <p className="px-2 py-1 text-[9px] font-semibold uppercase tracking-widest text-slate-500">Overview</p>
+                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-emerald-700/30 text-emerald-400 font-semibold">
+                      <div className="w-3 h-3 rounded-sm bg-emerald-500/30 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-sm bg-emerald-400" /></div>
+                      Dashboard
+                    </div>
+                    <p className="px-2 pt-2 pb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-500">Management</p>
+                    {['Flats', 'Maintenance', 'Expenses', 'Reports'].map(item => (
+                      <div key={item} className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-slate-400 hover:text-slate-200">
+                        <div className="w-3 h-3 rounded-sm bg-slate-800" />
+                        {item}
+                      </div>
+                    ))}
+                    <p className="px-2 pt-2 pb-1 text-[9px] font-semibold uppercase tracking-widest text-slate-500">Admin</p>
+                    {['Users', 'Settings'].map(item => (
+                      <div key={item} className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-slate-400">
+                        <div className="w-3 h-3 rounded-sm bg-slate-800" />
+                        {item}
+                      </div>
+                    ))}
+                  </nav>
+                  {/* User */}
+                  <div className="px-3 py-3 border-t border-slate-800 flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center text-[10px] font-bold">S</div>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold text-white truncate">Santosh Kumar</p>
+                      <p className="text-[9px] text-slate-400">Society Admin</p>
+                    </div>
+                  </div>
+                </aside>
+
+                {/* ── Main content ── */}
+                <main className="flex-1 flex flex-col overflow-hidden bg-slate-900">
+                  {/* Topbar */}
+                  <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-800 bg-slate-900 shrink-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-500 text-xs">⟋</span>
+                      <span className="text-sm font-bold text-white">Dashboard</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[10px] font-semibold">Trial · 4d left</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold">⬆ Upgrade</span>
+                      <div className="w-6 h-6 rounded-full bg-emerald-600 flex items-center justify-center text-[10px] font-bold">S</div>
+                    </div>
+                  </div>
+
+                  {/* Scrollable body */}
+                  <div className="flex-1 overflow-hidden px-4 py-3 space-y-3">
+                    {/* Welcome + bills banner */}
+                    <div className="rounded-xl bg-slate-800 border border-slate-700 px-4 py-3">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-sm font-bold text-white">Welcome back, Santosh 👋</p>
+                          <p className="text-[11px] text-slate-400">Here's your society's financial overview</p>
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px]">
+                          <span className="px-2 py-0.5 rounded-md bg-slate-700 text-slate-300 font-medium">This Month</span>
+                          <span className="px-2 py-0.5 rounded-md text-slate-500">Last Month</span>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2 text-[10px] text-slate-400">
+                        <span className="flex items-center gap-1"><span className="text-emerald-400">↗</span> 49% collected this month</span>
+                        <span className="flex items-center gap-1 text-amber-400">⚠ 20 flats pending</span>
+                      </div>
+                      <div className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-900/40 border border-emerald-700/40 text-emerald-400 text-[10px] font-medium w-fit">
+                        ✓ Bills generated for June 2026
+                      </div>
+                    </div>
+
+                    {/* KPI cards */}
+                    <div className="grid grid-cols-4 gap-2">
+                      {[
+                        { label: 'PAYMENTS RECEIVED', value: '₹19,500', sub: null, bar: true, barPct: 49, barColor: 'bg-red-400' },
+                        { label: 'PENDING DUES', value: '₹20,500', sub: '20 flats pending', subColor: 'text-amber-400', bar: false },
+                        { label: 'SOCIETY EXPENSES', value: '₹0', sub: null, bar: false },
+                        { label: 'CURRENT FUND BALANCE', value: '₹12,400', sub: null, bar: false },
+                      ].map(k => (
+                        <div key={k.label} className="rounded-xl bg-slate-800 border border-slate-700 px-3 py-3">
+                          <p className="text-[8px] font-semibold uppercase tracking-wider text-slate-500 mb-1">{k.label}</p>
+                          <p className="text-base font-black text-white">{k.value}</p>
+                          {k.sub && <p className={`text-[10px] mt-0.5 font-medium ${k.subColor || 'text-slate-400'}`}>{k.sub}</p>}
+                          {k.bar && (
+                            <div className="mt-2">
+                              <div className="h-1 rounded-full bg-slate-700 overflow-hidden">
+                                <div className={`h-full ${k.barColor} rounded-full`} style={{ width: `${k.barPct}%` }} />
+                              </div>
+                              <p className="text-[9px] text-slate-500 mt-0.5">Collection · {k.barPct}% of current bills</p>
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
+
+                    {/* Bottom row: chart + pending dues + recent transactions */}
+                    <div className="grid grid-cols-5 gap-2">
+                      {/* Mini bar chart */}
+                      <div className="col-span-2 rounded-xl bg-slate-800 border border-slate-700 px-3 py-2.5">
+                        <p className="text-[10px] font-semibold text-slate-300 mb-2">6-Month Income vs Expenses</p>
+                        <div className="flex items-end gap-1.5 h-16 px-1">
+                          {[
+                            { inc: 10, exp: 5 }, { inc: 8, exp: 4 }, { inc: 6, exp: 3 }, { inc: 9, exp: 6 }, { inc: 100, exp: 40 }, { inc: 50, exp: 5 },
+                          ].map((bar, i) => (
+                            <div key={i} className="flex-1 flex items-end gap-0.5">
+                              <div className="flex-1 rounded-t bg-emerald-500 opacity-80" style={{ height: `${bar.inc}%` }} />
+                              <div className="flex-1 rounded-t bg-red-400 opacity-70" style={{ height: `${bar.exp}%` }} />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          <span className="flex items-center gap-1 text-[9px] text-slate-400"><span className="w-2 h-2 rounded-sm bg-emerald-500 inline-block" /> Income</span>
+                          <span className="flex items-center gap-1 text-[9px] text-slate-400"><span className="w-2 h-2 rounded-sm bg-red-400 inline-block" /> Expense</span>
+                        </div>
+                      </div>
+
+                      {/* Highest pending dues */}
+                      <div className="col-span-2 rounded-xl bg-slate-800 border border-slate-700 px-3 py-2.5">
+                        <p className="text-[10px] font-semibold text-slate-300 mb-1">Highest Pending Dues</p>
+                        <p className="text-[9px] text-slate-500 mb-2">Flats with large outstanding balances</p>
+                        <div className="space-y-1">
+                          {[
+                            { flat: 'Flat A-115', amt: '₹1,500' },
+                            { flat: 'Flat A-103', amt: '₹1,000' },
+                            { flat: 'Flat A-104', amt: '₹1,000' },
+                            { flat: 'Flat A-105', amt: '₹1,000' },
+                          ].map((r, i) => (
+                            <div key={r.flat} className="flex items-center justify-between text-[10px]">
+                              <div className="flex items-center gap-1.5">
+                                <span className="w-3.5 h-3.5 rounded-full bg-slate-700 flex items-center justify-center text-[8px] font-bold text-slate-400">{i + 1}</span>
+                                <span className="text-slate-300">{r.flat}</span>
+                              </div>
+                              <span className="font-semibold text-red-400">{r.amt}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Recent transactions */}
+                      <div className="col-span-1 rounded-xl bg-slate-800 border border-slate-700 px-3 py-2.5">
+                        <p className="text-[10px] font-semibold text-slate-300 mb-1">Recent</p>
+                        <div className="space-y-1.5">
+                          {[
+                            { flat: 'A-111', amt: '+₹1,000' },
+                            { flat: 'A-114', amt: '+₹1,000' },
+                            { flat: 'A-109', amt: '+₹1,000' },
+                          ].map(r => (
+                            <div key={r.flat} className="flex items-center gap-1.5 text-[10px]">
+                              <div className="w-3.5 h-3.5 rounded-full bg-emerald-900/60 border border-emerald-600/40 flex items-center justify-center">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                              </div>
+                              <span className="text-slate-400 flex-1">{r.flat}</span>
+                              <span className="text-emerald-400 font-semibold">{r.amt}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                </main>
+              </div>
+            </div>
+            {/* Sample data badge */}
+            <div className="absolute top-3 right-3 z-10">
+              <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-800/90 backdrop-blur border border-slate-600 text-xs font-semibold text-slate-300">
+                Sample Data
+              </span>
+            </div>
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white dark:from-slate-950 to-transparent pointer-events-none rounded-b-2xl" />
+          </div>
+          <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">
+            Actual dashboard — all data belongs to your society, accessible anytime.
+          </p>
+
+        </div>
+      </section>
+
+      {/* ── SOCIETY RECORDS STAY WITH THE SOCIETY ───────────────────────── */}
+      <section className="py-10 md:py-14 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12 space-y-3">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">Society Records Stay With The Society</h2>
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300">Committee members may change, but society records should not.</p>
+          </div>
+          <div className="flex flex-col md:flex-row gap-8">
+            <div className="flex-1 bg-white dark:bg-slate-950 rounded-2xl border border-red-200 dark:border-red-900/60 p-8">
+              <h3 className="font-bold text-red-600 dark:text-red-400 mb-5 text-lg">Without FlatLedger</h3>
+              <ul className="space-y-3 text-base text-slate-700 dark:text-slate-300">
+                <li>❌ Records stored on personal laptops</li>
+                <li>❌ Excel files get misplaced</li>
+                <li>❌ Information scattered across notebooks and WhatsApp</li>
+                <li>❌ New committees struggle with handovers</li>
+              </ul>
+            </div>
+            <div className="flex-1 bg-white dark:bg-slate-950 rounded-2xl border border-emerald-200 dark:border-emerald-800 p-8">
+              <h3 className="font-bold text-emerald-700 dark:text-emerald-400 mb-5 text-lg">With FlatLedger</h3>
+              <ul className="space-y-3 text-base text-slate-700 dark:text-slate-300">
+                <li>✅ Records remain accessible</li>
+                <li>✅ Easy committee handover</li>
+                <li>✅ Complete society history stays available</li>
+                <li>✅ One secure place for all records</li>
+              </ul>
+            </div>
+          </div>
+          <p className="text-base font-medium text-slate-600 dark:text-slate-400 text-center mt-10">Because society records belong to the society — not to one person's laptop</p>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ─────────────────────────────────────────────────── */}
+      <section className="py-10 md:py-14 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12 space-y-3">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">From Excel to FlatLedger in one afternoon</h2>
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300">No IT help needed. No training required.</p>
+          </div>
+          <div className="relative">
+            {/* Desktop connector line */}
+            <div
+              className="hidden md:block absolute h-0.5 bg-emerald-300 dark:bg-emerald-700 pointer-events-none z-0"
+              style={{ top: '23px', left: 'calc(100% / 6)', right: 'calc(100% / 6)' }}
+            />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="flex flex-col items-center text-center">
+                <div className="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xl font-black mb-4 shadow-md relative z-10">
+                  1
                 </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Add your flats</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">Enter flat numbers and owner names. Import from Excel if you have one.</p>
+              </div>
+              <div className="flex flex-col items-center text-center">
+                <div className="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xl font-black mb-4 shadow-md relative z-10">
+                  2
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Generate your first bill</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">Select the month, set the amount, click generate. Done for all flats at once.</p>
+              </div>
+              <div className="flex flex-col items-center text-center">
+                <div className="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xl font-black mb-4 shadow-md relative z-10">
+                  3
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Track every payment</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">Mark payments as they arrive — cash, UPI, or cheque. See who has paid instantly.</p>
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ── SOCIAL PROOF STRIP ──────────────────────────────────────────── */}
-        {/* Removed social proof strip section as requested */}
-
-      {/* ── TRUST SECTION ──────────────────────────────────────────────── */}
-      <section className="py-8 md:py-10 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-6 space-y-2">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
-              {t('landing.trust.title')}
-            </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {t('landing.trust.subtitle')}
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
-            {trustItems.map((item, index) => {
-              const icons = [Shield, Database, Users, Zap];
-              const TrustIcon = icons[index];
-
-              if (!TrustIcon) return null;
-
-              return (
-                <div
-                  key={item.title}
-                  className="flex flex-col items-center text-center p-5 bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-xl hover:-translate-y-1 border border-slate-200 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-700 transition-all duration-300 animate-slide-in-up group"
-                  style={{ animationDelay: `${0.1 * (index + 1)}s` }}
-                >
-                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-all duration-300">
-                    <TrustIcon className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">{item.title}</h3>
-                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">{item.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── EARLY ACCESS ───────────────────────────────────────────────────── */}
-      <section className="py-10 md:py-12 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8 space-y-2">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
-              {t('landing.earlyAccess.title')}
-            </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-              {t('landing.earlyAccess.subtitle')}
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {[Receipt, Users, Zap].map((IconComponent, idx) => {
-              const item = earlyAccessItems[idx];
-
-              return (
-                <div key={item.title} className="bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 flex flex-col gap-4">
-                  <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center">
-                    <IconComponent className="w-5 h-5" />
-                  </div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">{item.title}</h3>
-                  <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed flex-1">{item.description}</p>
-                </div>
-              );
-            })}
-          </div>
-          <div className="mt-8 text-center">
-            <Link
-              to="/signup"
-              className="inline-flex items-center gap-2 px-7 py-3.5 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:bg-emerald-700 hover:-translate-y-0.5 transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900"
-              aria-label={t('landing.earlyAccess.cta')}
-            >
-              {t('landing.earlyAccess.cta')}
-              <ArrowRight className="w-4 h-4" />
+          <p className="text-base font-semibold text-slate-600 dark:text-slate-300 text-center mt-8">Your society is fully set up. No accountant needed.</p>
+          <div className="text-center mt-6">
+            <Link to="/signup" className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold hover:underline text-base">
+              Start Free Trial <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ── PROBLEM → SOLUTION ──────────────────────────────────────────── */}
-      <section className="py-8 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
-        <div className="max-w-3xl mx-auto text-center space-y-3">
-          <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
-            {t('landing.problem.body1')}
-          </p>
-          <p className="text-lg font-semibold text-slate-900 dark:text-white">
-            {t('landing.problem.body2')}
-          </p>
+      {/* ── BUILT FOR APARTMENT COMMUNITIES ─────────────────────────────── */}
+      <section className="py-10 md:py-14 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12 space-y-3">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">Built for Apartment Societies</h2>
+            <p className="text-base text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">Designed for small apartment societies across India</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="flex flex-col items-center text-center p-8 bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center mb-4 shadow-md">
+                <Users className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">Apartment Secretaries</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">Manage maintenance billing, expenses, and records without spreadsheets.</p>
+            </div>
+            <div className="flex flex-col items-center text-center p-8 bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center mb-4 shadow-md">
+                <Database className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">Treasurers</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">Track collections, expenses, and balances with confidence.</p>
+            </div>
+            <div className="flex flex-col items-center text-center p-8 bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center mb-4 shadow-md">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">Committee Members</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">Access important society information from one shared system.</p>
+            </div>
+            <div className="flex flex-col items-center text-center p-8 bg-white dark:bg-slate-950 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 border-l-4 border-l-emerald-500">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-700 to-emerald-900 rounded-xl flex items-center justify-center mb-4 shadow-md">
+                <ArrowRight className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">Easy Committee Handover</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">Records stay organized even when committee members change.</p>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ── FEATURES ─────────────────────────────────────────────────────── */}
-      <section id="features" className="py-10 md:py-12 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950 scroll-mt-20">
-        <div className="max-w-6xl mx-auto">
+      <section id="features" className="py-8 md:py-10 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950 scroll-mt-20">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 space-y-3">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white animate-slide-in-up">
-              {t('landing.features.titlePrefix')} {" "}
-              <span className="bg-gradient-to-r from-emerald-500 to-emerald-700 bg-clip-text text-transparent">{t('landing.features.titleHighlight')}</span>
-            </h2>
-            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto animate-slide-in-up" style={{ animationDelay: '0.1s' }}>
-              {t('landing.features.subtitle')}
-            </p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">Everything You Need for Maintenance Management</h2>
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">Simple tools to manage billing, track expenses, and stay on top of dues.</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {planFeatures.slice(0, 6).map((feature, index) => {
-              const IconComponent = feature.icon;
-              return (
-                <div
-                  key={index}
-                  className="flex flex-col items-start p-6 bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-xl hover:-translate-y-1 border border-slate-200 dark:border-slate-800 hover:border-emerald-200 dark:hover:border-emerald-700 transition-all duration-300 animate-slide-in-up group"
-                  style={{ animationDelay: `${0.1 * (index + 1)}s` }}
-                >
-                  <div className={`w-12 h-12 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mb-4 shadow-md group-hover:scale-110 transition-all duration-300`}>
-                    <IconComponent className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">{feature.title}</h3>
-                  <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">{feature.description}</p>
-                </div>
-              );
-            })}
-          </div>
-
-        </div>
-      </section>
-      {/* ── HOW IT WORKS ───────────────────────────────────────────────────── */}
-      <section id="how-it-works" className="py-8 md:py-10 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 scroll-mt-20">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-6 space-y-2">
-            <p className="text-emerald-600 dark:text-emerald-400 text-sm font-semibold uppercase tracking-wider">{t('landing.howItWorks.badge')}</p>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white">
-              {t('landing.howItWorks.title')}
-            </h2>
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300">{t('landing.howItWorks.subtitle')}</p>
-          </div>
-          <div className="grid sm:grid-cols-3 gap-4">
-            {howItWorksItems.map((item) => (
-              <div key={item.step} className="flex flex-col items-center text-center gap-2.5 p-1">
-                <div className="w-11 h-11 bg-emerald-600 text-white rounded-xl flex items-center justify-center text-lg font-extrabold shadow-lg flex-shrink-0">
-                  {item.step}
-                </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">{item.title}</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed max-w-[14rem]">{item.description}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="flex flex-col items-start p-8 bg-slate-50 dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center mb-5 shadow-md">
+                <Receipt className="w-6 h-6 text-white" />
               </div>
-            ))}
-          </div>
-          <div className="mt-6 text-center">
-            <Link
-              to="/signup"
-              className="inline-flex items-center gap-2 px-7 py-3.5 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:bg-emerald-700 hover:-translate-y-0.5 transition-all duration-300 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900"
-              aria-label={t('landing.howItWorks.cta')}
-            >
-              {t('landing.howItWorks.cta')}
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Maintenance Billing</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">Create monthly maintenance bills in minutes.</p>
+            </div>
+            <div className="flex flex-col items-start p-8 bg-slate-50 dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-xl flex items-center justify-center mb-5 shadow-md">
+                <Database className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Expense Tracking</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">Record expenses and maintain clear financial records.</p>
+            </div>
+            <div className="flex flex-col items-start p-8 bg-slate-50 dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center mb-5 shadow-md">
+                <Shield className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Defaulter Reports</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">Track pending dues and generate reports instantly.</p>
+            </div>
+            <div className="flex flex-col items-start p-8 bg-slate-50 dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center mb-5 shadow-md">
+                <CreditCard className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Payment Recording</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">Record cash, UPI, cheque and bank transfers as they arrive. Know instantly who has paid and who hasn't.</p>
+            </div>
+            <div className="flex flex-col items-start p-8 bg-slate-50 dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center mb-5 shadow-md">
+                <BarChart2 className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Reports</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">Collection summary, fund ledger, payment history — export anytime for AGM or committee review.</p>
+            </div>
+            <div className="flex flex-col items-start p-8 bg-slate-50 dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-xl flex items-center justify-center mb-5 shadow-md">
+                <History className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Start Where You Left Off</h3>
+              <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-sm">Enter your existing fund balance and outstanding dues. Switch from Excel without losing any history.</p>
+            </div>
           </div>
         </div>
       </section>
+
       {/* ── PRICING ──────────────────────────────────────────────────────── */}
-      <section id="pricing" className="pt-10 md:pt-12 pb-16 md:pb-20 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950 scroll-mt-20">
+      <section id="pricing" className="py-8 md:py-10 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8 space-y-2">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white animate-slide-in-up">
-              {t('landing.pricing.titlePrefix')} {" "}
-              <span className="bg-gradient-to-r from-emerald-500 to-emerald-700 bg-clip-text text-transparent">{t('landing.pricing.titleHighlight')}</span>
+              Simple Pricing for Apartment Societies
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">{t('landing.pricing.subtitle1')}</p>
-            {t('landing.pricing.subtitle2') && (
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('landing.pricing.subtitle2')}</p>
-            )}
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-1">{t('landing.pricing.subtitle3')}</p>
+            <p className="text-lg text-emerald-700 dark:text-emerald-400 font-bold">Less than ₹7 per day for most societies.</p>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-semibold text-sm mt-2">
+              Early Access Pricing
+            </div>
+            <div className="text-sm font-medium text-slate-600 dark:text-slate-300 mt-2">First 10 societies lock in this price forever — price never increases</div>
           </div>
           <PricingSection
             onChoosePlan={(planId) => navigate(`/signup?plan=${planId}`)}
           />
+          <div className="mt-6 text-center">
+            <p className="text-sm text-slate-500 dark:text-slate-400">One price for your whole society · No per-flat charges · No setup cost</p>
+          </div>
 
           {/* ── All plans include ── */}
           <div className="mt-8 max-w-3xl mx-auto">
@@ -386,15 +507,21 @@ const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* ── FAQ ──────────────────────────────────────────────────────────── */}
-      <section id="faq" className="pt-16 md:pt-20 pb-10 md:pb-12 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-slate-900 scroll-mt-20">
+      <section id="faq" className="py-10 md:py-14 px-4 sm:px-6 lg:px-8 bg-white dark:bg-slate-950 scroll-mt-20">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white text-balance">{t('landing.faq.title')}</h2>
-            <p className="text-slate-600 dark:text-slate-400 mt-3">{t('landing.faq.subtitle')}</p>
+          <div className="text-center mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white">Frequently Asked Questions</h2>
+            <p className="text-slate-600 dark:text-slate-400 mt-3">Quick answers about your free trial, billing, and support.</p>
           </div>
           <div className="divide-y divide-slate-200 dark:divide-slate-800 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-            {faqItems.map((item, i) => (
+            {[
+              { q: "Can I use FlatLedger for a small apartment?", a: "Yes. FlatLedger works for small and large apartment societies alike." },
+              { q: "Are maintenance payments online?", a: "Maintenance collection tracking is built-in. Online payment collection is coming soon." },
+              { q: "Is there a free trial?", a: "Yes. You get a full 30-day free trial with no credit card required." },
+              { q: "Can we migrate from Excel?", a: "Yes. You can import your existing data from Excel or enter an opening balance to get started quickly." },
+              { q: "Is our data secure?", a: "Yes. All data is stored securely in the cloud with daily backups and you can export your data at any time." },
+              { q: "Can new committee members access old records?", a: "Yes. Society records remain available even when committee members change." },
+            ].map((item, i) => (
               <div key={item.q} className="bg-white dark:bg-slate-900">
                 <button
                   className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors duration-200 group focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-100 dark:focus-visible:ring-emerald-900/40"
@@ -416,9 +543,9 @@ const LandingPage: React.FC = () => {
           </div>
           <div className="mt-5 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              {t('landing.faq.supportText')}{" "}
-              <a href="mailto:support@flatledger.com" className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
-                {t('landing.faq.supportLink')}
+              Still have questions?{' '}
+              <a href="mailto:support@flatledger.in" className="font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                Talk to support
               </a>
             </p>
           </div>
@@ -426,76 +553,50 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* ── FINAL CTA ────────────────────────────────────────────────────── */}
-      <section className="py-10 md:py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-white dark:bg-slate-950">
+      <section className="py-10 md:py-14 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-slate-50 dark:bg-slate-900">
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="p-6 md:p-10 bg-gradient-to-br from-emerald-600 to-emerald-900 rounded-2xl shadow-2xl text-center space-y-3">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-white animate-slide-in-up">
-              {t('landing.finalCta.title')}
-            </h2>
-            <p className="text-lg text-white/90 animate-slide-in-up max-w-xl mx-auto" style={{ animationDelay: '0.1s' }}>
-              {t('landing.finalCta.subtitle')}
-            </p>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-white">Stop spending Sunday evenings on maintenance billing.</h2>
+            <p className="text-lg text-white/90 max-w-xl mx-auto">Start your free trial today — no Excel, no setup, no credit card.</p>
             <Link
               to="/signup"
-              className="px-8 py-4 bg-white text-emerald-600 rounded-lg font-bold shadow-lg hover:shadow-xl hover:bg-slate-50 hover:-translate-y-1 active:translate-y-0 active:scale-[0.99] transition-all duration-300 inline-flex w-fit items-center justify-center gap-2 mx-auto group animate-slide-in-up focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
-              style={{ animationDelay: '0.2s' }}
-              aria-label={t('landing.finalCta.cta')}
+              className="px-8 py-4 bg-white text-emerald-600 rounded-lg font-bold shadow-lg hover:shadow-xl hover:bg-slate-50 hover:-translate-y-1 active:translate-y-0 active:scale-[0.99] transition-all duration-300 inline-flex w-fit items-center justify-center gap-2 mx-auto group focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 border border-white/40"
+              aria-label="Start Free Trial"
             >
-              {t('landing.finalCta.cta')}
+              Start Free Trial
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
             </Link>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3 text-sm text-white/90 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-              <span>✅ No credit card required</span>
-              <span>✅ 30-day free trial</span>
-              <span>✅ Get started in minutes</span>
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 pt-3 text-sm text-white/90">
+              <span>30-day free trial</span>
+              <span>·</span>
+              <span>No Excel needed</span>
+              <span>·</span>
+              <span>Works on mobile</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* ── FOOTER ───────────────────────────────────────────────────────── */}
+
       <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-8 mb-8">
-            <div>
-              <div className="flex flex-col leading-none gap-1 mb-2">
-                <p className="text-lg font-extrabold">
-                  <span className="text-slate-900 dark:text-white">Flat</span><span className="text-emerald-600 dark:text-emerald-400">Ledger</span>
-                </p>
-                <span className="text-[10px] tracking-[0.13em] text-emerald-600/75 dark:text-emerald-300/70 font-medium">Society Maintenance Simplified</span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">{t('landing.footer.tagline')}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{t('landing.footer.supportingText')}</p>
+          <div className="flex flex-col items-center gap-4 mb-6">
+            <div className="flex flex-wrap justify-center gap-4 text-sm font-medium text-slate-700 dark:text-slate-300">
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> Secure Cloud Storage</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> Daily Backups</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> Data Export Anytime</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-green-500" /> Email Support</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{t('landing.footer.groups.product')}</p>
-                <ul className="space-y-2">
-                  <li><a href="#features" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.features')}</a></li>
-                  <li><a href="#pricing" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.pricing')}</a></li>
-                  <li><a href="#faq" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.faq')}</a></li>
-                </ul>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{t('landing.footer.groups.support')}</p>
-                <ul className="space-y-2">
-                  <li><a href="mailto:support@flatledger.com" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.contact')}</a></li>
-                  <li><Link to="/privacy" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.privacy')}</Link></li>
-                  <li><Link to="/terms" className="text-sm text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors duration-300">{t('landing.footer.links.terms')}</Link></li>
-                </ul>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">{t('landing.footer.groups.builtFor')}</p>
-                <ul className="space-y-2">
-                  <li><span className="text-sm text-slate-600 dark:text-slate-400">{t('landing.footer.builtFor.societies')}</span></li>
-                  <li><span className="text-sm text-slate-600 dark:text-slate-400">{t('landing.footer.builtFor.treasurers')}</span></li>
-                  <li><span className="text-sm text-slate-600 dark:text-slate-400">{t('landing.footer.builtFor.telugu')}</span></li>
-                </ul>
-              </div>
-            </div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">Made for Apartment Societies across India</div>
           </div>
-          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 w-full text-center text-sm text-slate-600 dark:text-slate-400">
-            <p>{t('landing.footer.copyright')}</p>
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 w-full flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-slate-600 dark:text-slate-400">
+            <p>© 2026 FlatLedger. All rights reserved.</p>
+            <div className="flex items-center gap-4">
+              <Link to="/contact" className="hover:text-slate-900 dark:hover:text-white transition-colors">Contact</Link>
+              <Link to="/privacy" className="hover:text-slate-900 dark:hover:text-white transition-colors">Privacy Policy</Link>
+              <Link to="/terms" className="hover:text-slate-900 dark:hover:text-white transition-colors">Terms</Link>
+            </div>
           </div>
         </div>
       </footer>

@@ -6,13 +6,12 @@ import { useMutation } from '@tanstack/react-query';
 import { authApi } from '../api/authApi';
 
 /**
- * Request a password reset by supplying both email and mobile for ownership verification.
- * On success the server returns a resetToken the frontend uses to navigate to reset-password.
+ * Request a password reset link by providing the registered email address.
  * POST /auth/forgot-password
  */
 export function useForgotPassword() {
   return useMutation({
-    mutationFn: (payload: { email: string; mobile: string }) => authApi.forgotPassword(payload),
+    mutationFn: (payload: { email: string }) => authApi.forgotPassword(payload),
   });
 }
 

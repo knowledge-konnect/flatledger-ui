@@ -102,8 +102,6 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
   const isActive = (section: string) => {
     if (location.pathname !== '/') return false;
     if (activeHash === `#${section}`) return true;
-    // If no hash, default to features as active
-    if (!activeHash && section === 'features') return true;
     return false;
   };
 
