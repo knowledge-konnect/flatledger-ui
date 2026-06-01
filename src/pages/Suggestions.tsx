@@ -21,10 +21,10 @@ export default function Suggestions() {
                   Send us your feedback, suggestions, or report any issues directly to our support team.
                 </p>
                 <a
-                  href="mailto:support@FlatLedger.com?subject=Feedback for FlatLedger"
+                  href="mailto:support@flatledger.in?subject=Feedback for FlatLedger"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-primary dark:bg-primary-500 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary transition-colors font-medium group"
                 >
-                  Send Email to support@FlatLedger.com
+                  Send Email to support@flatledger.in
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </a>
               </div>

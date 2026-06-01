@@ -12,7 +12,7 @@
     "pricing": "Pricing",
     "faq": "FAQ",
     "login": "Login",
-    "startFree": "Start Free",
+    "startFree": "Start Free Trial",
     "settings": "Settings",
     "logout": "Logout",
     "loggingOut": "Logging out..."
@@ -117,9 +117,9 @@
         "resetTitle": "Reset Password",
         "setTitle": "Set New Password",
         "updatedTitle": "Password Updated",
-        "sentTitle": "Details not found",
-        "formStepDesc": "Enter your registered email and 10-digit mobile to verify your identity",
-        "sentStepDesc": "No account matched those details. Please check and try again.",
+        "sentTitle": "Check Your Email",
+        "formStepDesc": "Enter your registered email address to receive a password reset link",
+        "sentStepDesc": "If an account exists for that email, we've sent a password reset link. Please check your inbox.",
         "passwordStepDesc": "Setting new password for {{email}}",
         "successDesc": "Redirecting you now..."
       },
@@ -127,8 +127,8 @@
       "emailPlaceholder": "your@email.com",
       "mobileLabel": "Registered Mobile Number",
       "mobilePlaceholder": "10-digit mobile number",
-      "verifyAndContinue": "Verify & Continue",
-      "noMatchBody": "We could not find an account matching that email and mobile number. Please double-check your details or contact your society admin.",
+      "verifyAndContinue": "Send Reset Link",
+      "noMatchBody": "If an account exists for that email address, you will receive a password reset link shortly.",
       "tryAgain": "Try again",
       "continue": "Continue",
       "backToLogin": "Back to Login",
@@ -183,17 +183,18 @@
       "titleLine1": "Stop Managing Society Maintenance",
       "titleLine2": "in",
       "titleLine3": "Excel",
-      "subtitle": "Create maintenance bills, track payments, manage expenses, and get reports in minutes.",
+      "subtitle": "Whether you're using Excel sheets, notebooks, registers, or WhatsApp messages, FlatLedger helps apartment societies manage maintenance, expenses, and records in one secure place.",
       "badge": "Designed for apartment societies with 10–50 flats",
-      "primaryCta": "Start Free Trial",
+      "primaryCta": "Start Free 30-Day Trial",
       "secondaryCta": "View Pricing",
       "teluguBadge": "Designed for apartment societies with 10–50 flats",
       "socialProof": "Now in Early Access — Be among the first",
       "microcopy": "No credit card required. 30-day free trial.",
       "highlights": {
-        "trial": "No credit card required",
-        "card": "Cancel anytime",
-        "cancel": "Get started in minutes"
+        "trial": "No Credit Card Required",
+        "card": "30-Day Free Trial",
+        "cancel": "Setup in Under 10 Minutes",
+        "anytime": "Cancel Anytime"
       }
     },
     "mock": {
@@ -238,16 +239,16 @@
       "body2": "FlatLedger simplifies everything into one easy system."
     },
     "features": {
-      "titlePrefix": "Why",
-      "titleHighlight": "FlatLedger?",
-      "subtitle": "Purpose-built for apartment societies managing maintenance manually.",
+      "titlePrefix": "Benefits",
+      "titleHighlight": "for Your Society",
+      "subtitle": "FlatLedger helps you save time, reduce mistakes, and keep records organized.",
       "items": {
-        "billing": { "title": "Save Hours Every Month", "description": "Generate bills and reports in minutes instead of managing Excel sheets." },
-        "payments": { "title": "Track Dues Instantly", "description": "Quickly see who paid and who still has pending dues." },
-        "expenses": { "title": "No More Excel Mistakes", "description": "Avoid manual calculations and missing entries." },
-        "finances": { "title": "Reports in One Click", "description": "Download monthly and yearly reports instantly." },
-        "reports": { "title": "Manage Expenses Easily", "description": "Record society expenses like maintenance, repairs, and bills." },
-        "roles": { "title": "Society Fund Tracking", "description": "Check collections, expenses, and available balance anytime." }
+        "billing": { "title": "Save Hours Every Month", "description": "Generate maintenance bills and track collections in minutes." },
+        "payments": { "title": "Track Dues Instantly", "description": "Know who has paid and who has pending dues at any time." },
+        "expenses": { "title": "Keep Records Organized", "description": "Store maintenance, expenses, and society records in one place." },
+        "finances": { "title": "Easy Reports", "description": "Generate reports without manual calculations and paperwork." },
+        "reports": { "title": "Smooth Committee Handover", "description": "Society records stay with the society, not on someone's laptop." },
+        "roles": { "title": "Reduce Manual Mistakes", "description": "Avoid errors caused by spreadsheets, notebooks, and manual calculations." }
       }
     },
     "howItWorks": {
@@ -286,9 +287,10 @@
       ]
     },
     "finalCta": {
-      "title": "Start Managing Society Maintenance Easily",
-      "subtitle": "Start your free trial today — 30 days free, no credit card, no setup fee.",
-      "cta": "Start Free 30-Day Trial"
+      "title": "Ready to Simplify Society Management?",
+      "subtitle": "Spend less time managing records and more time improving your community.",
+      "cta": "Start Free 30-Day Trial",
+      "supporting": "No Credit Card Required.\nSetup in Minutes."
     },
     "footer": {
       "tagline": "Simplifying housing society finances across India",

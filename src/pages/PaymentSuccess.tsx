@@ -157,8 +157,8 @@ export default function PaymentSuccess() {
               <div className="p-4 bg-background rounded-lg border border-border/50 text-center">
                 <p className="text-sm text-muted-foreground">
                   Need help? Contact our support team at{' '}
-                  <a href="mailto:support@FlatLedger.com" className="text-primary hover:underline font-semibold">
-                    support@FlatLedger.com
+                  <a href="mailto:support@flatledger.in" className="text-primary hover:underline font-semibold">
+                    support@flatledger.in
                   </a>
                 </p>
               </div>

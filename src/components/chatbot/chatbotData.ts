@@ -499,7 +499,7 @@ export const LANDING_FAQ_CATEGORIES: FAQCategory[] = [
       {
         question: 'How do I contact support?',
         answer:
-          'Email us at **support@FlatLedger.com** — we respond within 24 hours on business days. You can also use the **Suggestions** page inside the app to report issues or request features.',
+          'Email us at **support@flatledger.in** — we respond within 24 hours on business days. You can also use the **Suggestions** page inside the app to report issues or request features.',
       },
       {
         question: 'Is the app available in regional languages?',

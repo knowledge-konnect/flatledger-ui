@@ -16,6 +16,7 @@ const LandingPage = lazy(() => import('./pages/LandingPage'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const Contact = lazy(() => import('./pages/Contact'));
 const Subscription = lazy(() => import('./pages/Subscription'));
 const FreeTrial = lazy(() => import('./pages/FreeTrial'));
 const Login = lazy(() => import('./pages/Login'));
@@ -71,7 +72,7 @@ function UserRoutes() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const { pathname } = useLocation();
 
-  const publicPaths = ['/', '/privacy', '/terms', '/subscription', '/free-trial', '/login', '/signup', '/forgot-password', '/reset-password'];
+  const publicPaths = ['/', '/privacy', '/terms', '/contact', '/subscription', '/free-trial', '/login', '/signup', '/forgot-password', '/reset-password'];
   const protectedPaths = [
     '/dashboard', '/flats', '/maintenance', '/expenses', '/reports', '/users', '/settings', '/setup', '/payment', '/subscription/manage', '/flats/', '/reports/'
   ];
@@ -109,6 +110,7 @@ function UserRoutes() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
           <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="/subscription" element={<Subscription />} />

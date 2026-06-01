@@ -30,8 +30,10 @@ interface PricingSectionProps {
 const BENEFITS = [
   'Maintenance billing',
   'Expense tracking',
-  'Dashboard & reports',
+  'Payment recording',
   'Defaulter tracking',
+  'Dashboard & reports',
+  'Data export',
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -84,21 +86,109 @@ export function PricingSection({
   // ── Loading / error states ──────────────────────────────────────────────────
 
   if (plansLoading) {
+    // Show skeleton cards for loading state
     return (
-      <div className="text-center py-16">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto mb-4" />
-        <p className="text-slate-600 dark:text-slate-400">Loading plans…</p>
+      <div className="grid md:grid-cols-2 gap-6 items-stretch max-w-3xl mx-auto w-full py-16">
+        {[1, 2].map((i) => (
+          <div key={i} className="flex flex-col rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md animate-pulse p-8 gap-4">
+            <div className="h-6 w-1/3 bg-slate-200 dark:bg-slate-800 rounded mb-2" />
+            <div className="h-4 w-1/4 bg-slate-100 dark:bg-slate-700 rounded mb-4" />
+            <div className="h-10 w-1/2 bg-slate-100 dark:bg-slate-800 rounded mb-4" />
+            <div className="h-4 w-2/3 bg-slate-100 dark:bg-slate-800 rounded mb-2" />
+            <div className="h-4 w-1/2 bg-slate-100 dark:bg-slate-800 rounded mb-2" />
+            <div className="h-10 w-full bg-emerald-100 dark:bg-emerald-900/20 rounded mt-4" />
+          </div>
+        ))}
       </div>
     );
   }
 
+  // If error, show static fallback pricing (never show error message)
   if (plansError) {
+    // Static fallback for two plans
+    const fallbackPlans = [
+      {
+        key: 'basic',
+        title: 'Basic',
+        flatLimit: 'Up to 25 Flats',
+        subtitle: 'Perfect for small apartment societies up to 25 flats',
+        monthly: 199,
+        yearly: 1990,
+        savings: 398,
+        features: [
+          'Maintenance billing',
+          'Expense tracking',
+          'Payment recording',
+          'Defaulter tracking',
+          'Dashboard & reports',
+          'Data export',
+        ],
+      },
+      {
+        key: 'standard',
+        title: 'Standard',
+        flatLimit: 'Up to 50 Flats',
+        subtitle: 'For societies that have outgrown 25 flats',
+        monthly: 299,
+        yearly: 2990,
+        savings: 598,
+        features: [
+          'Maintenance billing',
+          'Expense tracking',
+          'Payment recording',
+          'Defaulter tracking',
+          'Dashboard & reports',
+          'Data export',
+        ],
+      },
+    ];
     return (
-      <div className="text-center py-12">
-        <p className="text-red-600 dark:text-red-400">{plansError}</p>
-        <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
-          Please try again later for live pricing.
-        </p>
+      <div className="grid md:grid-cols-2 gap-6 items-stretch max-w-3xl mx-auto w-full">
+        {fallbackPlans.map((plan) => (
+          <div key={plan.key} className={`relative flex flex-col rounded-2xl border-2 overflow-hidden transition-all duration-300 ${plan.key === 'standard' ? 'border-emerald-500 bg-white dark:bg-slate-900 shadow-2xl scale-[1.02]' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md'}`}>
+            {plan.key === 'standard' ? (
+              <div className="bg-emerald-600 text-white text-xs font-bold text-center py-2.5 tracking-widest uppercase">Most Popular</div>
+            ) : (
+              <div className="py-2.5 bg-transparent" />
+            )}
+            <div className="flex flex-col flex-1 px-6 pb-6 pt-4 gap-5">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">{plan.title}</h3>
+                <p className="text-sm font-semibold text-slate-600 dark:text-slate-400 mt-0.5">{plan.flatLimit}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{plan.subtitle}</p>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-5xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">₹{plan.monthly}</span>
+                  <span className="text-slate-500 dark:text-slate-400 text-base font-medium">/month</span>
+                </div>
+                <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                  ₹{plan.yearly}/year · Save ₹{plan.savings}
+                </p>
+                <p className="text-xs font-medium text-slate-400 dark:text-slate-500 pt-0.5">30 day free trial</p>
+              </div>
+              <ul className="space-y-2 flex-1">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-2 text-slate-700 dark:text-slate-300">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-sm font-medium">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-auto pt-2">
+                <button
+                  type="button"
+                  onClick={() => onChoosePlan(plan.key)}
+                  className={`group w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99]`}
+                  aria-label={`Start Free Trial — ${plan.title}`}
+                >
+                  Start Free 30-Day Trial
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform duration-200" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     );
   }
@@ -131,7 +221,7 @@ export function PricingSection({
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            Yearly <span className="ml-1 text-xs font-bold opacity-80">(Recommended)</span>
+            Yearly <span className="ml-1 text-xs font-bold opacity-80">(2 months free)</span>
           </button>
         </div>
       </div>
@@ -150,9 +240,10 @@ export function PricingSection({
           const monthlyPrice  = Number(grp.monthlyPlan?.price ?? 0);
           const yearlyPrice   = Number(grp.yearlyPlan?.price ?? 0);
 
+          const annualSavings = monthlyPrice * 12 - yearlyPrice;
           const YEARLY_SAVINGS: Record<string, string> = {
-            basic: 'Save ₹298 per year',
-            standard: 'Save ₹398 per year',
+            basic: annualSavings > 0 ? `Save ₹${annualSavings.toLocaleString('en-IN')}/year` : '',
+            standard: annualSavings > 0 ? `Save ₹${annualSavings.toLocaleString('en-IN')}/year` : '',
           };
 
           const title        = activePlan.name.replace(/ - (Monthly|Yearly)$/i, '');
@@ -203,7 +294,7 @@ export function PricingSection({
                     <p className="text-sm font-semibold text-slate-600 dark:text-slate-400 mt-0.5">{flatSubtitle}</p>
                   )}
                   {sizeSubtitle && (
-                    <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-0.5">{sizeSubtitle}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{sizeSubtitle}</p>
                   )}
                 </div>
 
@@ -231,16 +322,11 @@ export function PricingSection({
                         </span>
                         <span className="text-slate-500 dark:text-slate-400 text-base font-medium">/month</span>
                       </div>
-                      <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/70 dark:bg-emerald-950/20 px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Save with yearly</p>
-                        <div className="flex items-baseline gap-1.5 mt-1">
-                          <span className="text-lg font-bold text-slate-900 dark:text-white">₹{yearlyPrice.toLocaleString('en-IN')}</span>
-                          <span className="text-sm font-medium text-slate-500 dark:text-slate-400">/year</span>
-                        </div>
-                        {yearlySavingsLabel && (
-                          <p className="text-sm text-emerald-700 dark:text-emerald-300 font-semibold mt-1">{yearlySavingsLabel}</p>
-                        )}
-                      </div>
+                      {yearlyPrice > 0 && annualSavings > 0 && (
+                        <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                          ₹{yearlyPrice.toLocaleString('en-IN')}/year · Save ₹{annualSavings.toLocaleString('en-IN')}
+                        </p>
+                      )}
                     </>
                   )}
                   <p className="text-xs font-medium text-slate-400 dark:text-slate-500 pt-0.5">30 day free trial</p>
@@ -299,7 +385,7 @@ export function PricingSection({
       {/* ── Inline trust row ── */}
       <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 pt-2">
         {[
-          'Select a plan based on your apartment size',
+
           'No setup fees',
           'No credit card required',
         ].map((item) => (

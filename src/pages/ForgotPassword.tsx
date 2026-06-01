@@ -1,7 +1,7 @@
 ﻿import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Building2, Mail, Phone, ArrowLeft } from 'lucide-react';
+import { Building2, Mail, ArrowLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,17 +18,12 @@ const forgotFormSchema = (t: (key: string) => string) => z.object({
     .email(t('auth.forgot.validation.invalidEmail'))
     .toLowerCase()
     .trim(),
-  mobile: z
-    .string()
-    .min(1, t('auth.forgot.validation.mobileRequired'))
-    .regex(/^[0-9]{10}$/, t('auth.forgot.validation.invalidMobile')),
 });
 type ForgotForm = z.infer<ReturnType<typeof forgotFormSchema>>;
 
 export default function ForgotPassword() {
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const navigate = useNavigate();
   const [step, setStep] = useState<'form' | 'done'>('form');
   const forgotPasswordMutation = useForgotPassword();
 
@@ -38,14 +33,8 @@ export default function ForgotPassword() {
 
   const onSubmit = async (data: ForgotForm) => {
     try {
-      const result = await forgotPasswordMutation.mutateAsync({ email: data.email, mobile: data.mobile });
-      if (result.resetToken) {
-        // Navigate directly to the reset page with the token pre-filled.
-        navigate(`/reset-password?token=${encodeURIComponent(result.resetToken)}`);
-      } else {
-        // Credentials did not match — show generic message to avoid user enumeration.
-        setStep('done');
-      }
+      await forgotPasswordMutation.mutateAsync({ email: data.email });
+      setStep('done');
     } catch (error: unknown) {
       const status = (error as { response?: { status?: number } })?.response?.status;
       if (status === 429) {
@@ -83,14 +72,6 @@ export default function ForgotPassword() {
                 icon={<Mail className="w-4 h-4" />}
                 error={form.formState.errors.email?.message}
                 {...form.register('email')}
-              />
-              <Input
-                label={t('auth.forgot.mobileLabel')}
-                type="tel"
-                placeholder={t('auth.forgot.mobilePlaceholder')}
-                icon={<Phone className="w-4 h-4" />}
-                error={form.formState.errors.mobile?.message}
-                {...form.register('mobile')}
               />
               <Button type="submit" className="w-full" isLoading={forgotPasswordMutation.isPending}>
                 {t('auth.forgot.verifyAndContinue')}

@@ -382,7 +382,7 @@ export default function ChatBot({ variant = 'dashboard' }: ChatBotProps) {
                 <p className="text-center text-[11px] text-slate-400 dark:text-slate-500 pt-0.5">
                   Still confused?{' '}
                   <a
-                    href="mailto:support@FlatLedger.com"
+                    href="mailto:support@flatledger.in"
                     className="text-emerald-500 hover:text-emerald-600 underline underline-offset-2"
                   >
                     Email us →

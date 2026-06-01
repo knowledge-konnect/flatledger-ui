@@ -12,7 +12,7 @@ const sections = [
   },
   {
     title: '3. Account Registration and Responsibilities',
-    body: 'To use FlatLedger, you must register an account with a valid email address and create a society workspace. You are responsible for:\n\n• Providing accurate and up-to-date information during registration and setup.\n• Maintaining the confidentiality of your account credentials.\n• All activity that occurs under your account, including actions taken by committee members you invite.\n• Ensuring that only authorised individuals are granted access to your society workspace.\n• Promptly notifying us at support@flatledger.com if you suspect unauthorised access to your account.',
+    body: 'To use FlatLedger, you must register an account with a valid email address and create a society workspace. You are responsible for:\n\n• Providing accurate and up-to-date information during registration and setup.\n• Maintaining the confidentiality of your account credentials.\n• All activity that occurs under your account, including actions taken by committee members you invite.\n• Ensuring that only authorised individuals are granted access to your society workspace.\n• Promptly notifying us at support@flatledger.in if you suspect unauthorised access to your account.',
   },
   {
     title: '4. Free Trial',
@@ -24,7 +24,7 @@ const sections = [
   },
   {
     title: '6. Cancellation and Termination',
-    body: 'You may cancel your subscription at any time from your account settings or by contacting support@flatledger.com. Cancellation takes effect at the end of your current billing cycle; you retain access to the service until that date.\n\nWe reserve the right to suspend or terminate your account without notice if:\n\n• These Terms of Service are violated.\n• Your account is used for fraudulent, abusive, or illegal activity.\n• Continued access poses a security or operational risk to the platform or other users.\n• Required by a court order or applicable law.\n\nUpon termination, you may request an export of your data within 30 days. After this period, data may be permanently deleted.',
+    body: 'You may cancel your subscription at any time from your account settings or by contacting support@flatledger.in. Cancellation takes effect at the end of your current billing cycle; you retain access to the service until that date.\n\nWe reserve the right to suspend or terminate your account without notice if:\n\n• These Terms of Service are violated.\n• Your account is used for fraudulent, abusive, or illegal activity.\n• Continued access poses a security or operational risk to the platform or other users.\n• Required by a court order or applicable law.\n\nUpon termination, you may request an export of your data within 30 days. After this period, data may be permanently deleted.',
   },
   {
     title: '7. Acceptable Use',
@@ -52,7 +52,7 @@ const sections = [
   },
   {
     title: '13. Governing Law',
-    body: 'These Terms of Service are governed by and construed in accordance with the laws of India. Any disputes arising under or in connection with these Terms shall be subject to the exclusive jurisdiction of the courts located in India. We encourage you to contact us at support@flatledger.com first to resolve any dispute informally before pursuing legal action.',
+    body: 'These Terms of Service are governed by and construed in accordance with the laws of India. Any disputes arising under or in connection with these Terms shall be subject to the exclusive jurisdiction of the courts located in India. We encourage you to contact us at support@flatledger.in first to resolve any dispute informally before pursuing legal action.',
   },
   {
     title: '14. Changes to These Terms',
@@ -60,7 +60,7 @@ const sections = [
   },
   {
     title: '15. Contact Us',
-    body: 'If you have any questions about these Terms of Service, please contact us:\n\nEmail: support@flatledger.com\n\nWe aim to respond to all inquiries within 5 business days.',
+    body: 'If you have any questions about these Terms of Service, please contact us:\n\nEmail: support@flatledger.in\n\nWe aim to respond to all inquiries within 5 business days.',
   },
 ];
 
