@@ -49,9 +49,7 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
   };
 
   // Track the active URL hash to highlight the correct nav link
-  const [activeHash, setActiveHash] = React.useState(
-    typeof window !== 'undefined' ? window.location.hash : ''
-  );
+  const [activeHash, setActiveHash] = React.useState('');
 
   // Keep activeHash in sync with browser hash changes (e.g. back/forward navigation)
   React.useEffect(() => {
@@ -107,7 +105,7 @@ export default function Navbar({ variant = 'landing' }: NavbarProps) {
 
   if (variant === 'landing') {
     return (
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-[#020617]/80 backdrop-blur-xl border-b border-[#E2E8F0] dark:border-[#1E293B] shadow-sm">
+      <nav className="sticky top-0 z-50 backdrop-blur-md bg-white/90 dark:bg-[#0d1f1a]/90 border-b border-gray-100 dark:border-emerald-900/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
