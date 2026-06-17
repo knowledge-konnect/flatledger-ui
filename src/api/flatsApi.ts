@@ -234,7 +234,13 @@ export const flatsApi = {
    * @returns Promise<BulkCreateFlatsResponse>
    */
   async bulkCreateFlats(payload: BulkCreateFlatsPayload): Promise<BulkCreateFlatsResponse> {
-    const response = await apiClient.post<ApiResponse<BulkCreateFlatsResponse>>('/flats/bulk', payload);
+    // Bulk flat creation can take longer than the default API timeout
+    // because it creates flats sequentially and generates bills for each one.
+    const response = await apiClient.post<ApiResponse<BulkCreateFlatsResponse>>(
+      '/flats/bulk',
+      payload,
+      { timeout: 120_000 }
+    );
     const data = response.data.data;
     return {
       succeeded: data?.succeeded ?? [],

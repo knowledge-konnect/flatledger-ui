@@ -10,18 +10,40 @@ import apiClient from './client';
  * GET /plans  (public, no auth required)
  */
 export interface PaymentPlan {
-  id: string;           // UUID
+  id: string;
   name: string;
   description?: string | null;
-  price: number;        // Single price field (backend has no monthlyAmount/yearlyAmount)
+  price: number;
+  monthlyAmount?: number;
   currency: string;
   durationMonths: number;
   maxFlats: number;
-  planGroup: string;
+  planGroup?: string;
   isActive?: boolean;
   isPopular: boolean;
   discountPercentage?: number | null;
   displayOrder: number;
+}
+
+function normalizePaymentPlan(raw: Record<string, unknown>): PaymentPlan {
+  const price = Number(
+    raw.price ?? raw.Price ?? raw.monthlyAmount ?? raw.MonthlyAmount ?? 0
+  );
+  return {
+    id: String(raw.id ?? raw.Id ?? ''),
+    name: String(raw.name ?? raw.Name ?? ''),
+    description: (raw.description ?? raw.Description) as string | null | undefined,
+    price,
+    monthlyAmount: price,
+    currency: String(raw.currency ?? raw.Currency ?? 'INR'),
+    durationMonths: Number(raw.durationMonths ?? raw.DurationMonths ?? 1),
+    maxFlats: Number(raw.maxFlats ?? raw.MaxFlats ?? 0),
+    planGroup: (raw.planGroup ?? raw.PlanGroup) as string | undefined,
+    isActive: (raw.isActive ?? raw.IsActive) as boolean | undefined,
+    isPopular: Boolean(raw.isPopular ?? raw.IsPopular ?? false),
+    discountPercentage: (raw.discountPercentage ?? raw.DiscountPercentage) as number | null | undefined,
+    displayOrder: Number(raw.displayOrder ?? raw.DisplayOrder ?? 999),
+  };
 }
 
 /**
@@ -29,7 +51,7 @@ export interface PaymentPlan {
  * POST /payments/create-order
  */
 export interface CreateOrderRequest {
-  planId: string; // UUID of selected plan
+  planId: string;
 }
 
 /**
@@ -37,10 +59,10 @@ export interface CreateOrderRequest {
  * POST /payments/create-order
  */
 export interface RazorpayOrderResponse {
-  orderId: string; // Razorpay order ID
-  amount: number; // Amount in rupees (float)
-  currency: string; // 'INR'
-  keyId: string; // Razorpay key ID for checkout
+  orderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
 }
 
 /**
@@ -48,9 +70,9 @@ export interface RazorpayOrderResponse {
  * POST /payments/verify-payment
  */
 export interface VerifyPaymentRequest {
-  orderId: string; // Razorpay order ID
-  paymentId: string; // Razorpay payment ID
-  signature: string; // Razorpay signature for verification
+  orderId: string;
+  paymentId: string;
+  signature: string;
 }
 
 /**
@@ -62,45 +84,18 @@ export interface VerifyPaymentResponse {
   message: string;
 }
 
-/* =====================================================
-   API SERVICE (Following API Documentation Endpoints)
-===================================================== */
-
-/**
- * Payment API Service
- * Handles Razorpay payment integration for subscriptions
- */
 export const paymentApi = {
-  /**
-   * Get all available subscription plans
-   * GET /plans
-   * Public endpoint - no authentication required
-   * @returns Promise<PaymentPlan[]>
-   */
   async getPlans(): Promise<PaymentPlan[]> {
-    const response = await apiClient.get<ApiResponse<{ plans: PaymentPlan[] }>>('/plans');
-    return response.data.data.plans || [];
+    const response = await apiClient.get<ApiResponse<{ plans: Record<string, unknown>[] }>>('/plans');
+    const raw = response.data.data.plans || [];
+    return raw.map(normalizePaymentPlan);
   },
 
-  /**
-   * Get specific plan by ID
-   * GET /plans/{id}
-   * Public endpoint - no authentication required
-   * @param id UUID of the plan
-   * @returns Promise<PaymentPlan>
-   */
   async getPlanById(id: string): Promise<PaymentPlan> {
-    const response = await apiClient.get<ApiResponse<PaymentPlan>>(`/plans/${id}`);
-    return response.data.data;
+    const response = await apiClient.get<ApiResponse<Record<string, unknown>>>(`/plans/${id}`);
+    return normalizePaymentPlan(response.data.data);
   },
 
-  /**
-   * Create a Razorpay order for subscription payment
-   * POST /payments/create-order
-   * Requires authentication
-   * @param request CreateOrderRequest with amount in paise
-   * @returns Promise<RazorpayOrderResponse>
-   */
   async createOrder(request: CreateOrderRequest): Promise<RazorpayOrderResponse> {
     const response = await apiClient.post<ApiResponse<RazorpayOrderResponse>>('/payments/create-order', request);
     if (!response.data || !response.data.data) {
@@ -109,13 +104,6 @@ export const paymentApi = {
     return response.data.data;
   },
 
-  /**
-   * Verify Razorpay payment signature and activate subscription
-   * POST /payments/verify-payment
-   * Requires authentication
-   * @param request VerifyPaymentRequest with payment details
-   * @returns Promise<VerifyPaymentResponse>
-   */
   async verifyPayment(request: VerifyPaymentRequest): Promise<VerifyPaymentResponse> {
     const response = await apiClient.post<ApiResponse<VerifyPaymentResponse>>('/payments/verify-payment', request);
     if (!response.data || !response.data.data) {

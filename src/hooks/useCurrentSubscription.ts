@@ -21,6 +21,7 @@ export interface CurrentSubscriptionState {
   accessAllowed: boolean;
   trialDaysRemaining: number | null;
   trialEnd: string | null;
+  durationMonths: number;
   loading: boolean;
   error: string | null;
 }
@@ -33,6 +34,7 @@ const initialState: CurrentSubscriptionState = {
   accessAllowed: false,
   trialDaysRemaining: null,
   trialEnd: null,
+  durationMonths: 1,
   loading: false,
   error: null,
 };
@@ -58,6 +60,7 @@ export function useCurrentSubscription() {
           accessAllowed: current.accessAllowed,
           trialDaysRemaining: current.trialDaysRemaining ?? null,
           trialEnd: current.trialEndDate ?? null,
+          durationMonths: current.durationMonths ?? 1,
           loading: false,
           error: null,
         }));
@@ -75,6 +78,7 @@ export function useCurrentSubscription() {
         accessAllowed: legacy.accessAllowed,
         trialDaysRemaining: legacy.trialDaysRemaining ?? null,
         trialEnd: legacy.trialEndDate ?? null,
+        durationMonths: legacy.durationMonths ?? 1,
         loading: false,
         error: null,
       }));

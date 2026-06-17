@@ -12,6 +12,8 @@ export interface SubscriptionStatusData {
   subscribedAmount?: number | null;
   currency?: string | null;
   currentPeriodEnd?: string | null;
+  durationMonths?: number;
+  maxFlats?: number | null;
 }
 
 export interface TrialData {
@@ -70,15 +72,13 @@ export const subscriptionApi = {
 
   /**
    * Get current subscription (society-scoped).
-   * GET /subscriptions/current?societyId=
-   * societyId is accepted by the backend for client compatibility but
-   * society isolation is always enforced server-side via JWT.
+   * Backend currently exposes GET /subscriptions/status.
+   * societyId is ignored client-side because society isolation is enforced
+   * server-side via JWT.
    */
   async getCurrent(societyId?: string): Promise<SubscriptionStatusData | null> {
-    const query = societyId ? `?societyId=${encodeURIComponent(societyId)}` : '';
-    const response = await apiClient.get<ApiResponse<SubscriptionStatusData>>(
-      `/subscriptions/current${query}`
-    );
+    void societyId;
+    const response = await apiClient.get<ApiResponse<SubscriptionStatusData>>('/subscriptions/status');
     if (!response.data.succeeded) return null;
     const d = response.data.data;
     if (!d || d.status === 'none') return null;

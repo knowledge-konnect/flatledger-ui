@@ -74,7 +74,7 @@ function UserRoutes() {
 
   const publicPaths = ['/', '/privacy', '/terms', '/contact', '/subscription', '/free-trial', '/login', '/signup', '/forgot-password', '/reset-password'];
   const protectedPaths = [
-    '/dashboard', '/flats', '/maintenance', '/expenses', '/reports', '/users', '/settings', '/setup', '/payment', '/subscription/manage', '/flats/', '/reports/'
+    '/dashboard', '/flats', '/maintenance', '/expenses', '/reports', '/users', '/settings', '/setup', '/payment', '/subscription/manage', '/subscription/renew', '/flats/', '/reports/'
   ];
 
   if (isLoading && !publicPaths.includes(pathname)) {
@@ -132,6 +132,7 @@ function UserRoutes() {
           <Route path="/settings/opening-balance" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><OpeningBalanceEntry /></ProtectedRoute>} />
           <Route path="/setup" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><Setup /></ProtectedRoute>} />
           <Route path="/subscription/manage" element={<ProtectedRoute roles={[RoleCode.SOCIETY_ADMIN]}><SubscriptionManagement /></ProtectedRoute>} />
+          <Route path="/subscription/renew" element={<Navigate to="/subscription/manage" replace />} />
           <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
           <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
           <Route path="/payment-gateways" element={<PaymentGateways />} />
@@ -149,6 +150,7 @@ export default function Router() {
     <Routes>
       {/* Admin panel — isolated with its own AdminAuthProvider and error boundary */}
       <Route path="/admin/*" element={<AdminApp />} />
+      
       {/*
        * All society-facing routes — wrapped in AuthProvider so auth state is
        * available throughout the tree, and in ErrorBoundary to catch render errors.

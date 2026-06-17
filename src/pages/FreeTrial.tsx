@@ -9,7 +9,7 @@ export default function FreeTrial() {
       <main className="py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Try FlatLedger free for 14 days</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Try FlatLedger free for 30 days</h1>
             <p className="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mt-3">No credit card required. Set up your society, send the first bill, and see payments come in.</p>
           </div>
 
@@ -17,7 +17,7 @@ export default function FreeTrial() {
             <div className="p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm text-center">
               <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">What you get</h2>
               <ul className="mx-auto max-w-md space-y-3 text-slate-500 dark:text-slate-400">
-                <li className="flex items-center justify-center gap-3"><span className="text-emerald-600 dark:text-emerald-400">•</span> Full access to Professional features for 14 days</li>
+                <li className="flex items-center justify-center gap-3"><span className="text-emerald-600 dark:text-emerald-400">•</span> Full access to Professional features for 30 days</li>
                 <li className="flex items-center justify-center gap-3"><span className="text-emerald-600 dark:text-emerald-400">•</span> Create bills, send email reminders, and track payments</li>
                 <li className="flex items-center justify-center gap-3"><span className="text-emerald-600 dark:text-emerald-400">•</span> Invite admins and members, export reports</li>
                 <li className="flex items-center justify-center gap-3"><span className="text-emerald-600 dark:text-emerald-400">•</span> No credit card required, cancel anytime</li>

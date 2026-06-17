@@ -397,7 +397,7 @@ export default function SettingsPageRedesigned() {
                           value={profileFormData.mobile}
                           onChange={e => setProfileFormData(p => ({ ...p, mobile: e.target.value }))}
                         />
-                        <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveProfile} disabled={isSaving || !isAdmin}>
+                        <Button variant="primary" className="flex items-center gap-2" onClick={handleSaveProfile} disabled={isSaving}>
                           {isSaving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                           {isSaving ? 'Saving...' : 'Save Mobile'}
                         </Button>
@@ -552,7 +552,7 @@ export default function SettingsPageRedesigned() {
                         variant="primary" 
                         className="flex items-center gap-2" 
                         onClick={handleSaveMaintenanceConfig} 
-                        disabled={isSaving || !maintenanceForm.defaultMonthlyCharge || maintenanceForm.defaultMonthlyCharge <= 0 || !maintenanceForm.dueDayOfMonth || maintenanceForm.dueDayOfMonth < 1 || maintenanceForm.dueDayOfMonth > 28 || maintenanceForm.lateFeePerMonth < 0 || maintenanceForm.gracePeriodDays < 0}
+                        disabled={isSaving || !isAdmin || !maintenanceForm.defaultMonthlyCharge || maintenanceForm.defaultMonthlyCharge <= 0 || !maintenanceForm.dueDayOfMonth || maintenanceForm.dueDayOfMonth < 1 || maintenanceForm.dueDayOfMonth > 28 || maintenanceForm.lateFeePerMonth < 0 || maintenanceForm.gracePeriodDays < 0}
                       >
                         {isSaving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         {isSaving ? 'Saving...' : 'Save Configuration'}
@@ -668,10 +668,12 @@ export default function SettingsPageRedesigned() {
                           <p className="text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-1">Current Plan</p>
                           <p className="text-white text-2xl font-bold">{subscription.planName || 'No Active Plan'}</p>
                           {(subscription.subscribedAmount ?? subscription.monthlyAmount) && (
-                            <>
-                              {/* Use subscribedAmount (locked price) for active subscription; fall back to monthlyAmount for trial/legacy */}
-                              <p className="text-emerald-100 text-sm mt-1">₹{subscription.subscribedAmount ?? subscription.monthlyAmount}<span className="text-emerald-300">/month</span></p>
-                            </>
+                            <p className="text-emerald-100 text-sm mt-1">
+                              ₹{subscription.subscribedAmount ?? subscription.monthlyAmount}
+                              <span className="text-emerald-300">
+                                /{(subscription.durationMonths ?? 1) === 12 ? 'year' : 'month'}
+                              </span>
+                            </p>
                           )}
                         </div>
                         <div className="flex flex-col items-end gap-2">

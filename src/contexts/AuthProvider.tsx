@@ -428,7 +428,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
       if (isPublicRoute) {
         logger.log(`[AuthProvider.initAuth] Skipping init on public route: ${currentPath}`);
-        setAuthState(null, undefined, false); // isLoading → false, no redirect
+        // Do not clear an existing valid session when user lands on a public page
+        // (e.g. reset-password, login). Just finish initialization.
+        setState(prev => (prev.isLoading ? { ...prev, isLoading: false } : prev));
         return;
       }
 

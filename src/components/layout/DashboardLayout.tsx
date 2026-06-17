@@ -1,7 +1,7 @@
 ﻿import { ReactNode, useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Moon, Sun, LogOut, Settings, Menu, X } from 'lucide-react';
+import { Moon, Sun, LogOut, Settings, Menu, X, AlertTriangle } from 'lucide-react';
 import Sidebar from './Sidebar';
 // import NotificationPanel from '../notifications/NotificationPanel'; // Hidden for MVP
 // import { useNotificationCount } from '../../hooks/useNotificationCount'; // Hidden for MVP
@@ -11,6 +11,9 @@ import { useToast } from '../ui/Toast';
 import { cn } from '../../lib/utils';
 import { AlertMessages } from '../../lib/alertMessages';
 import { getPrimaryRoleLabel } from '../../types/roles';
+import { useCurrentSubscription } from '../../hooks/useCurrentSubscription';
+
+const DISMISS_KEY = 'sub_expiry_banner_dismissed';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -32,16 +35,43 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { showToast } = useToast();
   // const unreadCount = useNotificationCount(); // Hidden for MVP
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   // const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false); // Hidden for MVP
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  // Subscription expiry banner state
+  const subscription = useCurrentSubscription();
+  const [sevenDayDismissed, setSevenDayDismissed] = useState(
+    () => sessionStorage.getItem(DISMISS_KEY) === 'true'
+  );
+
+  // Compute days until expiry from subscription data
+  const expiryDateStr = subscription.currentPeriodEnd ?? subscription.trialEnd;
+  const daysUntilExpiry: number | null = (() => {
+    if (!expiryDateStr) return null;
+    const expiryMs = new Date(expiryDateStr).setHours(0, 0, 0, 0);
+    const todayMs = new Date().setHours(0, 0, 0, 0);
+    return Math.floor((expiryMs - todayMs) / (1000 * 60 * 60 * 24));
+  })();
   // Read window width eagerly so the sidebar is already open on desktop before
   // first paint, preventing a 256 px layout shift (CLS) on large screens.
   const [isSidebarOpen, setIsSidebarOpen] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth >= 1024 : false
   );
+
+  useEffect(() => {
+    if (subscription.loading) return;
+
+    const blockedBySubscription = subscription.status === 'expired' || subscription.status === 'cancelled';
+    const isAllowedRoute = location.pathname.startsWith('/subscription/manage') || location.pathname.startsWith('/subscription/renew');
+
+    if (blockedBySubscription && !isAllowedRoute) {
+      navigate('/subscription/manage', { replace: true });
+    }
+  }, [subscription.loading, subscription.status, location.pathname, navigate]);
 
   // Keep sidebar in sync when user resizes the window.
   const handleResize = useCallback(() => {
@@ -203,6 +233,80 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
             </div>
           </div>
         </header>
+
+        {/* Subscription Expiry Banner (hidden on subscription pages to avoid duplicate messaging) */}
+        {!location.pathname.startsWith('/subscription/manage') && !location.pathname.startsWith('/subscription/renew') && daysUntilExpiry !== null && daysUntilExpiry <= 7 && (() => {
+          if (daysUntilExpiry <= 0) {
+            // Expired — not dismissible
+            return (
+              <div className="px-4 sm:px-6 py-3 bg-red-600 text-white border-b border-red-700/60">
+                <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm font-semibold truncate">Your subscription has expired. Renew now to restore access.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/subscription/manage')}
+                    className="flex-shrink-0 px-3.5 py-1.5 rounded-lg bg-white text-red-700 text-xs font-bold hover:bg-red-50 transition-colors"
+                  >
+                    Renew Now
+                  </button>
+                </div>
+              </div>
+            );
+          }
+          if (daysUntilExpiry === 1) {
+            // 1 day — not dismissible
+            return (
+              <div className="px-4 sm:px-6 py-3 bg-orange-500 text-white border-b border-orange-600/60">
+                <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-sm font-semibold truncate">Your subscription expires tomorrow. Renew now.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/subscription/manage')}
+                    className="flex-shrink-0 px-3.5 py-1.5 rounded-lg bg-white text-orange-700 text-xs font-bold hover:bg-orange-50 transition-colors"
+                  >
+                    Renew Now
+                  </button>
+                </div>
+              </div>
+            );
+          }
+          // 2–7 days — dismissible per session
+          if (sevenDayDismissed) return null;
+          return (
+            <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 bg-amber-400 text-amber-950 text-sm font-medium">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <span>
+                  Your subscription expires in {daysUntilExpiry} day{daysUntilExpiry !== 1 ? 's' : ''}. Renew now to avoid interruption.
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Link
+                  to="/subscription/manage"
+                  className="px-3 py-1 rounded-md bg-amber-900 text-white text-xs font-semibold hover:bg-amber-800 transition-colors"
+                >
+                  Renew Now
+                </Link>
+                <button
+                  onClick={() => {
+                    sessionStorage.setItem(DISMISS_KEY, 'true');
+                    setSevenDayDismissed(true);
+                  }}
+                  className="p-1 rounded hover:bg-amber-500/40 transition-colors"
+                  aria-label="Dismiss banner"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Main Content */}
         <main className="p-4 sm:p-6 pb-20 lg:pb-8">

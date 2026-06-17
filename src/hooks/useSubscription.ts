@@ -16,6 +16,7 @@ interface SubscriptionState {
   monthlyAmount: number | null;
   trialEnd: string | null;
   currentPeriodEnd: string | null;
+  durationMonths: number;
   loading: boolean;
   error: string | null;
 }
@@ -42,6 +43,7 @@ const initialState: SubscriptionState = {
   monthlyAmount: null,
   trialEnd: null,
   currentPeriodEnd: null,
+  durationMonths: 1,
   loading: false,
   error: null,
 };
@@ -56,6 +58,7 @@ function mapStatusToState(data: SubscriptionStatusData): Partial<SubscriptionSta
     monthlyAmount: data.monthlyAmount ?? null,
     trialEnd: data.trialEndDate ?? null,
     currentPeriodEnd: data.currentPeriodEnd ?? null,
+    durationMonths: data.durationMonths ?? 1,
     loading: false,
     error: null,
   };

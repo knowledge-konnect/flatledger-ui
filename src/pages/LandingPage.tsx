@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import Navbar from "../components/layout/Navbar";
 import {
-  ArrowRight, Users, Receipt, CheckCircle2, ChevronRight,
+  ArrowRight, Users, Receipt, CheckCircle2, ChevronDown,
   CreditCard, History,
   Building2, IndianRupee, FileText, BarChart3, Home,
   ClipboardList, Wallet, RefreshCw, AlertCircle, X, Check,
@@ -33,7 +33,7 @@ const LandingPage: React.FC = () => {
   // const mockRows = t('landing.mock.rows', { returnObjects: true }) as Array<{ flat: string; amount: string; status: string; color: string }>;
 
   return (
-    <div className="min-h-screen pb-24 md:pb-0 bg-white dark:bg-[#061410]">
+    <div className="min-h-screen pb-24 md:pb-0 bg-white dark:bg-[#021B16]">
       {/* -- ANNOUNCEMENT BAR ----------------------------------------------- */}
       {announcementVisible && (
         <div className="w-full bg-emerald-600 text-white text-center text-xs sm:text-sm py-2 px-4 font-medium relative">
@@ -53,7 +53,7 @@ const LandingPage: React.FC = () => {
 
 
       {/* -- HERO ------------------------------------------------------------ */}
-      <section className="pt-24 md:pt-32 pb-4 md:pb-6 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-b from-emerald-50/70 via-white to-white dark:from-[#061410] dark:via-[#071612] dark:to-[#071612]">
+      <section className="pt-20 md:pt-28 pb-3 md:pb-5 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-gradient-to-b from-emerald-50/70 via-white to-white dark:from-[#021B16] dark:via-[#021B16] dark:to-[#021B16]">
         {/* Dark mode - Radial glow from top center */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] rounded-full pointer-events-none z-0 hidden dark:block" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.15) 0%, transparent 70%)' }} />
         {/* Dark mode - Dot pattern */}
@@ -77,7 +77,7 @@ const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto relative z-10">
           <div className="space-y-6 text-center">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d1fae5] dark:bg-[rgba(52,211,153,0.08)] border border-emerald-200 dark:border-emerald-700/40 text-[#065f46] dark:text-[#86efc7] text-xs font-semibold uppercase tracking-[0.06em]">
-              Built for Apartment Societies Across India
+              FOR INDIAN APARTMENT SOCIETIES
             </div>
             <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 dark:text-white leading-tight tracking-tight">
               Stop Managing Society Maintenance in Excel
@@ -89,11 +89,12 @@ const LandingPage: React.FC = () => {
               <Link
                 to="/signup"
                 className="w-full sm:w-auto px-8 py-4 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:shadow-xl hover:bg-emerald-700 hover:-translate-y-1 active:translate-y-0 active:scale-[0.99] transition-all duration-300 flex items-center justify-center gap-2 group focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900"
-                aria-label="Start Free Trial"
+                aria-label="Start 30-Day Free Trial"
               >
-                <span>Start Free Trial</span>
+                <span>Start 30-Day Free Trial</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
               </Link>
+
               <a
                 href="#pricing"
                 className="w-full sm:w-auto px-6 py-3.5 border border-emerald-500 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 rounded-lg font-medium bg-transparent hover:bg-emerald-50 dark:hover:bg-emerald-500/10 active:scale-[0.99] transition-all duration-200 text-center focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-200 dark:focus-visible:ring-emerald-900"
@@ -112,9 +113,9 @@ const LandingPage: React.FC = () => {
           </div>
 
           {/* Dashboard Preview Mock */}
-          <div className="mt-8 pt-4 relative max-w-5xl mx-auto z-10">
-            <div className="rounded-xl border border-emerald-200 dark:border-emerald-900/40 overflow-hidden shadow-sm">
-              <div className="relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden">
+          <div className="mt-8 pt-3 relative max-w-6xl mx-auto z-10">
+            <div className="rounded-xl border border-emerald-200 dark:border-[rgba(255,255,255,.05)] overflow-hidden shadow-sm dark:shadow-[0_20px_80px_rgba(0,0,0,.5)]">
+              <div className="relative bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-[rgba(255,255,255,.05)] shadow-2xl overflow-hidden dark:shadow-[0_20px_80px_rgba(0,0,0,.5)]">  
               {/* App shell */}
               <div className="flex h-[420px] bg-slate-950 text-white select-none">
 
@@ -204,7 +205,7 @@ const LandingPage: React.FC = () => {
                       {[
                         { label: 'PAYMENTS RECEIVED', value: 'Rs 19,500', sub: null, bar: true, barPct: 49, barColor: 'bg-emerald-500' },
                         { label: 'PENDING DUES', value: 'Rs 20,500', sub: '20 flats pending', subColor: 'text-amber-400', bar: false },
-                        { label: 'SOCIETY EXPENSES', value: 'Rs 0', sub: null, bar: false },
+                        { label: 'SOCIETY EXPENSES', value: 'Rs 7,100', sub: null, bar: false },
                         { label: 'CURRENT FUND BALANCE', value: 'Rs 12,400', sub: null, bar: false },
                       ].map(k => (
                         <div key={k.label} className="rounded-xl bg-slate-800 border border-slate-700 px-3 py-3">
@@ -300,14 +301,14 @@ const LandingPage: React.FC = () => {
             <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white dark:from-slate-950 to-transparent pointer-events-none rounded-b-2xl" />
           </div>
           <p className="mt-3 text-center text-xs text-slate-500 dark:text-[#6e9688] italic">
-            Actual dashboard &mdash; all data belongs to your society, accessible anytime.
+            This is the real product UI, shown here with sample numbers.
           </p>
 
         </div>
       </section>
 
       {/* -- SOCIETY RECORDS STAY WITH THE SOCIETY ------------------------- */}
-      <section className="py-10 md:py-14 px-4 sm:px-6 lg:px-8 bg-[#edfaf4] dark:bg-[#0a1b17] border-t border-emerald-500/[0.08]">
+      <section className="py-8 md:py-12 px-4 sm:px-6 lg:px-8 bg-[#edfaf4] dark:bg-[#05241E] border-t border-emerald-500/[0.08]">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12 space-y-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d1fae5] dark:bg-[rgba(52,211,153,0.08)] border border-emerald-200 dark:border-emerald-700/40 text-[#065f46] dark:text-[#86efc7] text-xs font-semibold uppercase tracking-[0.06em]">Why FlatLedger</div>
@@ -315,7 +316,7 @@ const LandingPage: React.FC = () => {
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300">Committee members may change, but society records should not.</p>
           </div>
           <div className="flex flex-col md:flex-row gap-8">
-            <div className="flex-1 bg-white dark:bg-red-500/[0.07] rounded-2xl border border-red-200 dark:border-red-500/20 p-8">
+            <div className="flex-1 bg-white dark:bg-red-500/[0.07] rounded-2xl border border-red-200 dark:border-red-500/20 dark:border-gray-700/50 p-8">
               <h3 className="font-bold text-red-600 dark:text-red-400 mb-5 text-lg">Without FlatLedger</h3>
               <ul className="space-y-3 text-base text-slate-700 dark:text-[#fca5a5]">
                 <li className="flex items-start gap-2.5"><span className="mt-0.5 w-5 h-5 rounded-full bg-red-100 border border-red-200 dark:bg-red-950 dark:border-red-400/60 flex items-center justify-center flex-shrink-0"><X className="w-3 h-3 text-red-600 dark:text-red-200" strokeWidth={2.5} /></span>Records stored on personal laptops</li>
@@ -324,7 +325,7 @@ const LandingPage: React.FC = () => {
                 <li className="flex items-start gap-2.5"><span className="mt-0.5 w-5 h-5 rounded-full bg-red-100 border border-red-200 dark:bg-red-950 dark:border-red-400/60 flex items-center justify-center flex-shrink-0"><X className="w-3 h-3 text-red-600 dark:text-red-200" strokeWidth={2.5} /></span>New committees struggle with handovers</li>
               </ul>
             </div>
-            <div className="flex-1 bg-emerald-50 dark:bg-emerald-500/[0.07] rounded-2xl border border-emerald-200 dark:border-emerald-500/25 p-8">
+            <div className="flex-1 bg-emerald-50 dark:bg-emerald-500/[0.07] rounded-2xl border border-emerald-200 dark:border-emerald-500/25 dark:border-gray-700/50 p-8">
               <h3 className="font-bold text-emerald-700 dark:text-emerald-400 mb-5 text-lg">With FlatLedger</h3>
               <ul className="space-y-3 text-base text-slate-700 dark:text-[#6ee7b7]">
                 <li className="flex items-start gap-2.5"><span className="mt-0.5 w-5 h-5 rounded-full bg-emerald-100 border border-emerald-200 dark:bg-emerald-950 dark:border-emerald-400/60 flex items-center justify-center flex-shrink-0"><Check className="w-3 h-3 text-emerald-700 dark:text-emerald-200" strokeWidth={2.5} /></span>Records remain accessible</li>
@@ -339,7 +340,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* -- HOW IT WORKS --------------------------------------------------- */}
-      <section className="py-10 md:py-14 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#071612] border-t border-emerald-500/[0.08]">
+      <section className="py-10 md:py-14 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#021B16] border-t border-emerald-500/[0.08]">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12 space-y-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d1fae5] dark:bg-[rgba(52,211,153,0.08)] border border-emerald-200 dark:border-emerald-700/40 text-[#065f46] dark:text-[#86efc7] text-xs font-semibold uppercase tracking-[0.06em]">Quick Setup</div>
@@ -378,14 +379,14 @@ const LandingPage: React.FC = () => {
           <p className="text-base font-semibold text-slate-600 dark:text-slate-300 text-center mt-8">Your society is fully set up. No accountant needed.</p>
           <div className="text-center mt-6">
             <Link to="/signup" className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99] transition-all duration-300 group">
-              Start Free Trial <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+              Start 30-Day Free Trial <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
             </Link>
           </div>
         </div>
       </section>
 
       {/* -- BUILT FOR APARTMENT COMMUNITIES ------------------------------- */}
-      <section className="py-10 md:py-14 px-4 sm:px-6 lg:px-8 bg-[#edfaf4] dark:bg-[#0a1b17] border-t border-emerald-500/[0.08]">
+      <section className="py-10 md:py-14 px-4 sm:px-6 lg:px-8 bg-[#edfaf4] dark:bg-[#05241E] border-t border-emerald-500/[0.08]">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 space-y-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d1fae5] dark:bg-[rgba(52,211,153,0.08)] border border-emerald-200 dark:border-emerald-700/40 text-[#065f46] dark:text-[#86efc7] text-xs font-semibold uppercase tracking-[0.06em]">Who It's For</div>
@@ -393,28 +394,28 @@ const LandingPage: React.FC = () => {
             <p className="text-base text-slate-500 dark:text-[#6e9688] max-w-2xl mx-auto">Designed for small apartment societies across India</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="flex flex-col items-center text-center p-8 bg-white dark:bg-[#0f211c] rounded-2xl shadow-sm border border-slate-200 dark:border-[#1a3a31] hover:shadow-md transition-shadow duration-200">
+            <div className="flex flex-col items-center text-center p-8 bg-white dark:bg-[#0B2A24] rounded-2xl shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,.25)] border border-slate-200 dark:border-[rgba(52,211,153,.15)] hover:shadow-md dark:hover:shadow-[0_8px_30px_rgba(0,0,0,.25)] dark:hover:bg-[#10352D] transition-all duration-200">
               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-4">
                 <ClipboardList className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">Apartment Secretaries</h3>
               <p className="text-slate-600 dark:text-[#a8c5ba] leading-relaxed text-sm">Manage maintenance billing, expenses, and records without spreadsheets.</p>
             </div>
-            <div className="flex flex-col items-center text-center p-8 bg-white dark:bg-[#0f211c] rounded-2xl shadow-sm border border-slate-200 dark:border-[#1a3a31] hover:shadow-md transition-shadow duration-200">
+            <div className="flex flex-col items-center text-center p-8 bg-white dark:bg-[#0B2A24] rounded-2xl shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,.25)] border border-slate-200 dark:border-[rgba(52,211,153,.15)] hover:shadow-md dark:hover:shadow-[0_8px_30px_rgba(0,0,0,.25)] dark:hover:bg-[#10352D] dark:hover:border-[rgba(52,211,153,.3)] transition-all duration-200">
               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-4">
                 <Wallet className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">Treasurers</h3>
               <p className="text-slate-600 dark:text-[#a8c5ba] leading-relaxed text-sm">Track collections, expenses, and balances with confidence.</p>
             </div>
-            <div className="flex flex-col items-center text-center p-8 bg-white dark:bg-[#0f211c] rounded-2xl shadow-sm border border-slate-200 dark:border-[#1a3a31] hover:shadow-md transition-shadow duration-200">
+            <div className="flex flex-col items-center text-center p-8 bg-white dark:bg-[#0B2A24] rounded-2xl shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,.25)] border border-slate-200 dark:border-[rgba(52,211,153,.15)] hover:shadow-md dark:hover:shadow-[0_8px_30px_rgba(0,0,0,.25)] dark:hover:bg-[#10352D] dark:hover:border-[rgba(52,211,153,.3)] transition-all duration-200">
               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-4">
                 <Users className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white mb-2">Committee Members</h3>
               <p className="text-slate-600 dark:text-[#a8c5ba] leading-relaxed text-sm">Access important society information from one shared system.</p>
             </div>
-            <div className="flex flex-col items-center text-center p-8 bg-white dark:bg-[#0f211c] rounded-2xl shadow-sm border border-slate-200 dark:border-[#1a3a31] hover:shadow-md transition-shadow duration-200">
+            <div className="flex flex-col items-center text-center p-8 bg-white dark:bg-[#0B2A24] rounded-2xl shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,.25)] border border-slate-200 dark:border-[rgba(52,211,153,.15)] hover:shadow-md dark:hover:shadow-[0_8px_30px_rgba(0,0,0,.25)] dark:hover:bg-[#10352D] dark:hover:border-[rgba(52,211,153,.3)] transition-all duration-200">
               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-4">
                 <RefreshCw className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
@@ -426,7 +427,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* -- FEATURES ------------------------------------------------------- */}
-      <section id="features" className="py-8 md:py-10 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#071612] border-t border-emerald-500/[0.08] scroll-mt-20">
+      <section id="features" className="py-8 md:py-10 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#021B16] border-t border-emerald-500/[0.08] scroll-mt-20">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 space-y-3">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d1fae5] dark:bg-[rgba(52,211,153,0.08)] border border-emerald-200 dark:border-emerald-700/40 text-[#065f46] dark:text-[#86efc7] text-xs font-semibold uppercase tracking-[0.06em]">Features</div>
@@ -434,42 +435,42 @@ const LandingPage: React.FC = () => {
             <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">Simple tools to manage billing, track expenses, and stay on top of dues.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="flex flex-col items-start p-8 bg-emerald-50/50 dark:bg-[#0f211c] rounded-2xl shadow-sm border border-slate-200 dark:border-[#1a3a31]">
+            <div className="flex flex-col items-start p-8 bg-emerald-50/50 dark:bg-[#0B2A24] rounded-2xl shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,.25)] border border-slate-200 dark:border-[rgba(52,211,153,.15)] hover:shadow-md dark:hover:shadow-[0_8px_30px_rgba(0,0,0,.25)] dark:hover:bg-[#10352D] dark:hover:border-[rgba(52,211,153,.3)] transition-all duration-200">
               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-5">
                 <FileText className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Maintenance Billing</h3>
               <p className="text-slate-600 dark:text-[#a8c5ba] leading-relaxed text-sm">Create monthly maintenance bills in minutes.</p>
             </div>
-            <div className="flex flex-col items-start p-8 bg-emerald-50/50 dark:bg-[#0f211c] rounded-2xl shadow-sm border border-slate-200 dark:border-[#1a3a31]">
+            <div className="flex flex-col items-start p-8 bg-emerald-50/50 dark:bg-[#0B2A24] rounded-2xl shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,.25)] border border-slate-200 dark:border-[rgba(52,211,153,.15)] hover:shadow-md dark:hover:shadow-[0_8px_30px_rgba(0,0,0,.25)] dark:hover:bg-[#10352D] dark:hover:border-[rgba(52,211,153,.3)] transition-all duration-200">
               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-5">
                 <Receipt className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Expense Tracking</h3>
               <p className="text-slate-600 dark:text-[#a8c5ba] leading-relaxed text-sm">Record expenses and maintain clear financial records.</p>
             </div>
-            <div className="flex flex-col items-start p-8 bg-emerald-50/50 dark:bg-[#0f211c] rounded-2xl shadow-sm border border-slate-200 dark:border-[#1a3a31]">
+            <div className="flex flex-col items-start p-8 bg-emerald-50/50 dark:bg-[#0B2A24] rounded-2xl shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,.25)] border border-slate-200 dark:border-[rgba(52,211,153,.15)] hover:shadow-md dark:hover:shadow-[0_8px_30px_rgba(0,0,0,.25)] dark:hover:bg-[#10352D] dark:hover:border-[rgba(52,211,153,.3)] transition-all duration-200">
               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-5">
                 <AlertCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Defaulter Reports</h3>
               <p className="text-slate-600 dark:text-[#a8c5ba] leading-relaxed text-sm">Track pending dues and generate reports instantly.</p>
             </div>
-            <div className="flex flex-col items-start p-8 bg-emerald-50/50 dark:bg-[#0f211c] rounded-2xl shadow-sm border border-slate-200 dark:border-[#1a3a31]">
+            <div className="flex flex-col items-start p-8 bg-emerald-50/50 dark:bg-[#0B2A24] rounded-2xl shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,.25)] border border-slate-200 dark:border-[rgba(52,211,153,.15)] hover:shadow-md dark:hover:shadow-[0_8px_30px_rgba(0,0,0,.25)] dark:hover:bg-[#10352D] dark:hover:border-[rgba(52,211,153,.3)] transition-all duration-200">
               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-5">
                 <CreditCard className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Payment Recording</h3>
               <p className="text-slate-600 dark:text-[#a8c5ba] leading-relaxed text-sm">Record cash, UPI, cheque and bank transfers as they arrive. Know instantly who has paid and who hasn't.</p>
             </div>
-            <div className="flex flex-col items-start p-8 bg-emerald-50/50 dark:bg-[#0f211c] rounded-2xl shadow-sm border border-slate-200 dark:border-[#1a3a31]">
+            <div className="flex flex-col items-start p-8 bg-emerald-50/50 dark:bg-[#0B2A24] rounded-2xl shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,.25)] border border-slate-200 dark:border-[rgba(52,211,153,.15)] hover:shadow-md dark:hover:shadow-[0_8px_30px_rgba(0,0,0,.25)] dark:hover:bg-[#10352D] dark:hover:border-[rgba(52,211,153,.3)] transition-all duration-200">
               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-5">
                 <BarChart3 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Reports</h3>
               <p className="text-slate-600 dark:text-[#a8c5ba] leading-relaxed text-sm">Collection summary, fund ledger, payment history - export anytime for AGM or committee review.</p>
             </div>
-            <div className="flex flex-col items-start p-8 bg-emerald-50/50 dark:bg-[#0f211c] rounded-2xl shadow-sm border border-slate-200 dark:border-[#1a3a31]">
+            <div className="flex flex-col items-start p-8 bg-emerald-50/50 dark:bg-[#0B2A24] rounded-2xl shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,.25)] border border-slate-200 dark:border-[rgba(52,211,153,.15)] hover:shadow-md dark:hover:shadow-[0_8px_30px_rgba(0,0,0,.25)] dark:hover:bg-[#10352D] dark:hover:border-[rgba(52,211,153,.3)] transition-all duration-200">
               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-5">
                 <History className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
@@ -481,7 +482,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* -- PRICING -------------------------------------------------------- */}
-      <section id="pricing" className="py-8 md:py-10 px-4 sm:px-6 lg:px-8 bg-[#edfaf4] dark:bg-[#0a1b17] border-t border-emerald-500/[0.08] scroll-mt-20">
+      <section id="pricing" className="py-8 md:py-10 px-4 sm:px-6 lg:px-8 bg-[#edfaf4] dark:bg-[#05241E] border-t border-emerald-500/[0.08] scroll-mt-20">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8 space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d1fae5] dark:bg-[rgba(52,211,153,0.08)] border border-emerald-200 dark:border-emerald-700/40 text-[#065f46] dark:text-[#86efc7] text-xs font-semibold uppercase tracking-[0.06em]">Pricing</div>
@@ -496,22 +497,19 @@ const LandingPage: React.FC = () => {
           <PricingSection
             onChoosePlan={(planId) => navigate(`/signup?plan=${planId}`)}
           />
-          <div className="mt-6 text-center">
-            <p className="text-sm text-slate-500 dark:text-[#6e9688]">One price for your whole society - No per-flat charges - No setup cost</p>
-          </div>
 
 
         </div>
       </section>
 
-      <section id="faq" className="py-10 md:py-14 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#071612] border-t border-emerald-500/[0.08] scroll-mt-20">
+      <section id="faq" className="py-10 md:py-14 px-4 sm:px-6 lg:px-8 bg-white dark:bg-[#021B16] border-t border-emerald-500/[0.08] scroll-mt-20">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d1fae5] dark:bg-[rgba(52,211,153,0.08)] border border-emerald-200 dark:border-emerald-700/40 text-[#065f46] dark:text-[#86efc7] text-xs font-semibold uppercase tracking-[0.06em] mb-3">FAQ</div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 dark:text-white">Frequently Asked Questions</h2>
             <p className="text-slate-600 dark:text-[#a8c5ba] mt-3">Quick answers about your free trial, billing, and support.</p>
           </div>
-          <div className="divide-y divide-slate-200 dark:divide-[rgba(52,211,153,0.08)] rounded-2xl border border-emerald-200 dark:border-[rgba(52,211,153,0.12)] overflow-hidden shadow-sm bg-white dark:bg-[#0f211c]">
+          <div className="divide-y divide-slate-200 dark:divide-[rgba(52,211,153,0.08)] rounded-2xl border border-emerald-200 dark:border-[1px_solid_rgba(52,211,153,.1)] overflow-hidden shadow-sm bg-white dark:bg-[#0B2A24] dark:shadow-[0_8px_30px_rgba(0,0,0,.25)]">
             {[
               { q: "Can I use FlatLedger for a small apartment?", a: "Yes. FlatLedger works for small and large apartment societies alike." },
               { q: "Are maintenance payments online?", a: "Maintenance collection tracking is built-in. Online payment collection is coming soon." },
@@ -527,8 +525,8 @@ const LandingPage: React.FC = () => {
                   aria-expanded={openFaq === i}
                 >
                   <span className="font-semibold text-slate-900 dark:text-white text-sm sm:text-base pr-4 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-200">{item.q}</span>
-                  <ChevronRight
-                    className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-180 text-emerald-500 dark:text-emerald-400' : 'text-emerald-600 dark:text-emerald-400'}`}
+                  <ChevronDown
+                    className={`w-5 h-5 flex-shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-180 text-emerald-500 dark:text-emerald-400' : 'rotate-0 text-emerald-600 dark:text-emerald-400'}`}
                   />
                 </button>
                 {openFaq === i && (
@@ -551,7 +549,7 @@ const LandingPage: React.FC = () => {
       </section>
 
       {/* -- FINAL CTA ------------------------------------------------------ */}
-      <section className="py-10 md:py-14 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-slate-50 dark:bg-[#081916]">
+      <section className="py-10 md:py-14 px-4 sm:px-6 lg:px-8 relative overflow-hidden bg-slate-50 dark:bg-[#021B16]">
         <div className="max-w-4xl mx-auto relative z-10">
           <div className="p-6 md:p-10 bg-gradient-to-br from-emerald-600 to-emerald-900 rounded-2xl shadow-2xl text-center space-y-3">
             <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-white">Stop spending Sunday evenings on maintenance billing.</h2>
@@ -559,9 +557,9 @@ const LandingPage: React.FC = () => {
             <Link
               to="/signup"
               className="px-8 py-4 bg-white text-emerald-600 rounded-lg font-bold shadow-lg hover:shadow-xl hover:bg-slate-50 hover:-translate-y-1 active:translate-y-0 active:scale-[0.99] transition-all duration-300 inline-flex w-fit items-center justify-center gap-2 mx-auto group focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40 border border-white/40"
-              aria-label="Start Free Trial"
+              aria-label="Start 30-Day Free Trial"
             >
-              Start Free Trial
+              Start 30-Day Free Trial
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
             </Link>
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 pt-3 text-sm text-white/90">
@@ -577,7 +575,7 @@ const LandingPage: React.FC = () => {
 
       {/* -- FOOTER --------------------------------------------------------- */}
 
-      <footer className="border-t border-slate-200 dark:border-emerald-900/30 bg-white dark:bg-[#061410]">
+      <footer className="border-t border-slate-200 dark:border-emerald-900/30 bg-white dark:bg-[#01110D]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="flex flex-col items-center gap-4 mb-6">
             <div className="flex flex-wrap justify-center gap-4 text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -601,7 +599,7 @@ const LandingPage: React.FC = () => {
 
 
       {/* -- MOBILE STICKY CTA --------------------------------------------- */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-slate-200 dark:border-emerald-900/30 bg-white/95 dark:bg-[#061410]/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-slate-200 dark:border-emerald-900/30 bg-white/95 dark:bg-[#021B16]/95 backdrop-blur supports-[backdrop-filter]:bg-white/85">
         <div className="px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <p className="text-xs text-slate-500 dark:text-[#6e9688] text-center mb-1.5">{t('landing.mobileCta.hint')}</p>
           <Link
