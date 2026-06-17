@@ -230,8 +230,11 @@ export const authApi = {
    * POST /auth/forgot-password
    */
   async forgotPassword(payload: { email: string }): Promise<{ message: string }> {
-    const response = await apiClient.post<ApiResponse<{ message: string }>>('/auth/forgot-password', payload);
-    return response.data.data;
+    const response = await apiClient.post<ApiResponse<null>>('/auth/forgot-password', payload);
+    if (!response.data.succeeded) {
+      throw new Error(response.data.message || 'Request failed');
+    }
+    return { message: response.data.message };
   },
 
   /**
@@ -242,13 +245,10 @@ export const authApi = {
     token: string;
     newPassword: string;
     confirmPassword: string;
-  }): Promise<{ ok: boolean; accessToken?: string; accessTokenExpiresAt?: string; message?: string }> {
-    const response = await apiClient.post<ApiResponse<{
-      ok: boolean;
-      accessToken?: string;
-      accessTokenExpiresAt?: string;
-      message?: string;
-    }>>('/auth/reset-password', payload);
-    return response.data.data;
+  }): Promise<void> {
+    const response = await apiClient.post<ApiResponse<null>>('/auth/reset-password', payload);
+    if (!response.data.succeeded) {
+      throw new Error(response.data.message || 'Password reset failed');
+    }
   },
 };

@@ -107,13 +107,29 @@ export const SubscriptionManager: React.FC = () => {
                 <div className="text-xs text-slate-400">Trial ends: {new Date(trialEnd).toLocaleDateString()}</div>
               )}
               {status === 'expired' && (
-                <div className="text-xs text-red-600">Your trial has ended. Please upgrade to continue.</div>
+                <div className="text-sm text-red-600 mt-1 font-medium">Your subscription has ended. Please upgrade to continue using FlatLedger.</div>
+              )}
+              {status === 'cancelled' && (
+                <div className="text-sm text-red-600 mt-1 font-medium">Your subscription has been cancelled. Please upgrade to restore access.</div>
               )}
             </div>
-            <div className="text-right">
-              <div className={`text-lg font-semibold ${accessAllowed ? 'text-green-600' : 'text-red-600'}`}>{accessAllowed ? '✓ Access Granted' : '✗ Access Denied'}</div>
+            <div className="text-right flex flex-col items-end gap-1">
+              <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold ${accessAllowed ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                {accessAllowed ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                {accessAllowed ? 'Access Granted' : 'Access Restricted'}
+              </div>
             </div>
           </div>
+
+          {!accessAllowed && (
+            <Alert variant="error" className="mt-2">
+              <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0" />
+              <div>
+                <div className="font-semibold">Action Required</div>
+                <div className="text-sm mt-1">Your access to premium features has been restricted. Subscribe to one of our plans below to regain full access to your account and continue managing your society.</div>
+              </div>
+            </Alert>
+          )}
           {/* Plan Selection */}
           <div className="mt-6">
             <div className="mb-2 font-semibold text-slate-900 dark:text-white">Choose a Plan</div>
@@ -142,7 +158,7 @@ export const SubscriptionManager: React.FC = () => {
                     />
                     <span className="font-bold text-lg text-slate-900 dark:text-white">{plan.name}</span>
                     {/* Use plan.price from backend for display — DO NOT compute pricing on frontend */}
-                    <span className="text-emerald-700 dark:text-emerald-300 font-bold text-xl">₹{plan.price ?? plan.monthlyAmount}{plan.name.toLowerCase().includes('year') ? '/year' : '/month'}</span>
+                    <span className="text-emerald-700 dark:text-emerald-300 font-bold text-xl">₹{plan.price ?? plan.monthlyAmount}/{Number(plan.durationMonths) === 12 ? 'year' : 'month'}</span>
                     <span className="text-xs text-slate-500 dark:text-slate-400 mt-1">{plan.description}</span>
                   </label>
                 ))}
@@ -166,7 +182,7 @@ export const SubscriptionManager: React.FC = () => {
                 onClick={handleSubscribe}
                 disabled={loading || subscribing || !selectedPlanId}
                 isLoading={subscribing}
-                className="bg-emerald-600 text-white hover:bg-emerald-700"
+                className="bg-emerald-600 text-white hover:bg-emerald-700 shadow-md hover:shadow-lg transition-all"
               >
                 <CreditCard className="h-4 w-4 mr-2" />
                 {subscribing ? 'Processing...' : 'Upgrade'}

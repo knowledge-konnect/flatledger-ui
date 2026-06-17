@@ -7,5 +7,6 @@ import {
 } from 'next-themes'
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>
+  const merged = { defaultTheme: 'light', ...props } as ThemeProviderProps;
+  return <NextThemesProvider {...merged}>{children}</NextThemesProvider>
 }

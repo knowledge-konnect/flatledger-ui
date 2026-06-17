@@ -72,10 +72,12 @@ export interface AdminPlanUpdateRequest {
   currency: string;
   durationMonths: number;
   isActive?: boolean;
+  maxFlats?: number;
   planGroup?: string;
   displayOrder?: number;
   isPopular?: boolean;
   discountPercentage?: number | null;
+  description?: string;
 }
 
 export type PlanListParams = {

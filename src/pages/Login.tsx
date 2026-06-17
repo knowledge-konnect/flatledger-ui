@@ -216,12 +216,12 @@ export default function Login() {
                   {...register('password')}
                 />
                 <div className="flex justify-end mt-1.5">
-                  <a
-                    href="/forgot-password"
+                  <Link
+                    to="/forgot-password"
                     className="text-xs text-primary dark:text-primary-400 hover:underline font-medium"
                   >
                     {t('auth.login.forgotPassword')}
-                  </a>
+                  </Link>
                 </div>
               </div>
 

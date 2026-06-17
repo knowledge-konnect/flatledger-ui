@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useOwnSociety } from './useSocieties';
+import { useAuth } from '../contexts/AuthProvider';
 import {
   clampDate,
   clampYearMonth,
@@ -10,16 +10,16 @@ import {
 } from '../lib/periodFilters';
 
 export function useSocietyPeriodBounds() {
-  const { data: society } = useOwnSociety();
+  const { user } = useAuth();
 
   const minDate = useMemo(() => {
-    const raw = society?.onboardingDate || society?.createdAt;
+    const raw = user?.createdAt;
     if (!raw) return undefined;
     const dateStr = toDateString(raw);
     // Guard against sentinel values like "0001-01-01" that come from unset DateOnly fields
     if (!dateStr || dateStr < '2000-01-01') return undefined;
     return dateStr;
-  }, [society?.onboardingDate, society?.createdAt]);
+  }, [user?.createdAt]);
 
   const minMonth = useMemo(() => {
     if (!minDate) return undefined;

@@ -3,6 +3,7 @@ import { ApiError } from '../types/api';
 import { logger } from '../lib/logger';
 import { getGlobalToastFn } from '../lib/toastBridge';
 
+
 // Get API base URL from environment variables
 const _rawApiUrl: string =
   (import.meta.env.VITE_APP_API_URL as string | undefined) ??
@@ -25,7 +26,9 @@ export const setInMemoryAccessToken = (token: string | null): void => {
   inMemoryAccessToken = token;
 };
 
-export const getInMemoryAccessToken = (): string | null => inMemoryAccessToken;
+export const getInMemoryAccessToken = (): string | null => {
+  return inMemoryAccessToken;
+};
 
 // Callback registered by AuthProvider so the axios interceptor can trigger
 // a token refresh without importing React context (which would create a circular dep).
@@ -65,7 +68,7 @@ export const apiClient: AxiosInstance = axios.create({
 // since the token may already be expired.
 // NOTE: these must match the path passed to apiClient methods (e.g. '/auth/login'),
 // NOT the full URL. Axios config.url is the relative path only, not baseURL + path.
-const UNAUTHENTICATED_PATHS = ['/auth/refresh', '/auth/login', '/auth/register'];
+const UNAUTHENTICATED_PATHS = ['/auth/refresh', '/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password'];
 
 // Request interceptor - attach Authorization header with accessToken
 apiClient.interceptors.request.use(
@@ -76,8 +79,9 @@ apiClient.interceptors.request.use(
 
     if (!isUnauthenticated) {
       // Read access token from memory only — never from localStorage or cookies
-      if (inMemoryAccessToken) {
-        config.headers.Authorization = `Bearer ${inMemoryAccessToken}`;
+      const token = getInMemoryAccessToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
       }
     }
     

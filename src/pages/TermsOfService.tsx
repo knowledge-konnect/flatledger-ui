@@ -56,7 +56,7 @@ const sections = [
   },
   {
     title: '14. Changes to These Terms',
-    body: 'We may update these Terms of Service from time to time to reflect product changes, legal requirements, or operational updates. We will notify you of material changes by email or through an in-app notice at least 14 days before the changes take effect. Continued use of FlatLedger after the effective date constitutes your acceptance of the revised Terms.',
+    body: 'We may update these Terms of Service from time to time to reflect product changes, legal requirements, or operational updates. We will notify you of material changes by email or through an in-app notice at least 30 days before the changes take effect. Continued use of FlatLedger after the effective date constitutes your acceptance of the revised Terms.',
   },
   {
     title: '15. Contact Us',

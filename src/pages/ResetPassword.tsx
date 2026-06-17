@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Building2, ArrowLeft, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { Building2, ArrowLeft, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useResetPassword } from '../hooks/useAuth';
 import { useToast } from '../components/ui/Toast';
-import { setInMemoryAccessToken } from '../api/client';
-import { authApi } from '../api/authApi';
 import { calculatePasswordStrength } from '../lib/validation';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -30,9 +28,6 @@ const passwordFormSchema = (t: (key: string) => string) => z
   });
 type PasswordForm = z.infer<ReturnType<typeof passwordFormSchema>>;
 
-const SS_TOKEN_KEY = '__sl_at';
-const SS_USER_KEY = '__sl_u';
-
 export default function ResetPassword() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -40,7 +35,9 @@ export default function ResetPassword() {
   const { showToast } = useToast();
   const token = searchParams.get('token')?.trim() ?? '';
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [done, setDone] = useState(false);
+  const [invalidToken, setInvalidToken] = useState(false);
   const resetMutation = useResetPassword();
 
   const passwordForm = useForm<PasswordForm>({
@@ -57,34 +54,32 @@ export default function ResetPassword() {
   }, [token, navigate]);
 
   const onSubmit = async (data: PasswordForm) => {
+    setInvalidToken(false);
     try {
-      const result = await resetMutation.mutateAsync({
+      await resetMutation.mutateAsync({
         token,
         newPassword: data.newPassword,
         confirmPassword: data.confirmPassword,
       });
 
-      if (result?.accessToken) {
-        setInMemoryAccessToken(result.accessToken);
-        sessionStorage.setItem(SS_TOKEN_KEY, result.accessToken);
-        try {
-          const user = await authApi.getMe();
-          sessionStorage.setItem(SS_USER_KEY, JSON.stringify(user));
-        } catch {
-          // Non-critical
-        }
-      }
-
       setDone(true);
+      showToast('Password has been reset successfully. Redirecting to login...', 'success');
       setTimeout(() => {
-        window.location.href = result?.accessToken ? '/dashboard' : '/login';
-      }, 1500);
+        navigate('/login', { replace: true });
+      }, 2000);
     } catch (error: unknown) {
       const err = error as { response?: { status?: number; data?: { message?: string; errors?: Record<string, string[]> } } };
       const status = err?.response?.status;
       const fieldErrors = err?.response?.data?.errors;
-      if (fieldErrors?.token?.[0]) {
-        passwordForm.setError('newPassword', { message: fieldErrors.token[0] });
+
+      if (status === 401) {
+        setInvalidToken(true);
+      } else if (fieldErrors?.newPassword?.[0]) {
+        passwordForm.setError('newPassword', { message: fieldErrors.newPassword[0] });
+      } else if (fieldErrors?.confirmPassword?.[0]) {
+        passwordForm.setError('confirmPassword', { message: fieldErrors.confirmPassword[0] });
+      } else if (fieldErrors?.token?.[0]) {
+        setInvalidToken(true);
       } else if (status === 429) {
         showToast(t('auth.forgot.validation.tooManyAttempts'), 'error');
       } else {
@@ -113,11 +108,23 @@ export default function ResetPassword() {
         <div className="bg-white dark:bg-[#0F172A] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
           {done ? (
             <div className="text-center space-y-3">
-              <CheckCircle className="w-12 h-12 text-emerald-600 mx-auto" />
               <p className="text-sm text-slate-600 dark:text-slate-300">{t('auth.forgot.successBody')}</p>
             </div>
           ) : (
             <form onSubmit={passwordForm.handleSubmit(onSubmit)} className="space-y-4">
+              {/* Invalid / expired token — not dismissible */}
+              {invalidToken && (
+                <div className="flex items-start gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-3 py-2.5">
+                  <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    This reset link is invalid or has expired.{' '}
+                    <Link to="/forgot-password" className="font-medium underline hover:text-red-800 dark:hover:text-red-200">
+                      Request a new one
+                    </Link>
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   {t('auth.forgot.newPassword')}
@@ -131,7 +138,7 @@ export default function ResetPassword() {
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                     onClick={() => setShowPassword((v) => !v)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
@@ -144,14 +151,31 @@ export default function ResetPassword() {
                   </p>
                 )}
               </div>
-              <Input
-                label={t('auth.forgot.confirmPassword')}
-                type="password"
-                placeholder={t('auth.forgot.confirmPasswordPlaceholder')}
-                error={passwordForm.formState.errors.confirmPassword?.message}
-                {...passwordForm.register('confirmPassword')}
-              />
-              <Button type="submit" className="w-full" isLoading={resetMutation.isPending}>
+
+              <div className="relative">
+                <Input
+                  label={t('auth.forgot.confirmPassword')}
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder={t('auth.forgot.confirmPasswordPlaceholder')}
+                  error={passwordForm.formState.errors.confirmPassword?.message}
+                  {...passwordForm.register('confirmPassword')}
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 top-[34px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full"
+                isLoading={resetMutation.isPending}
+                disabled={resetMutation.isPending}
+              >
                 {t('auth.forgot.resetPassword')}
               </Button>
               <Link

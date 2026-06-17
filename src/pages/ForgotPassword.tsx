@@ -1,46 +1,49 @@
 ﻿import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Building2, Mail, ArrowLeft } from 'lucide-react';
+import { Building2, Mail, ArrowLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useForgotPassword } from '../hooks/useAuth';
-import { useToast } from '../components/ui/Toast';
-import { AlertMessages } from '../lib/alertMessages';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 
-const forgotFormSchema = (t: (key: string) => string) => z.object({
+const forgotFormSchema = z.object({
   email: z
     .string()
-    .min(1, t('auth.forgot.validation.emailRequired'))
-    .email(t('auth.forgot.validation.invalidEmail'))
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address')
     .toLowerCase()
     .trim(),
 });
-type ForgotForm = z.infer<ReturnType<typeof forgotFormSchema>>;
+type ForgotForm = z.infer<typeof forgotFormSchema>;
 
 export default function ForgotPassword() {
   const { t } = useTranslation();
-  const { showToast } = useToast();
   const [step, setStep] = useState<'form' | 'done'>('form');
+  const [isRateLimited, setIsRateLimited] = useState(false);
   const forgotPasswordMutation = useForgotPassword();
 
   const form = useForm<ForgotForm>({
-    resolver: zodResolver(forgotFormSchema(t)),
+    resolver: zodResolver(forgotFormSchema),
   });
 
   const onSubmit = async (data: ForgotForm) => {
+    setIsRateLimited(false);
     try {
       await forgotPasswordMutation.mutateAsync({ email: data.email });
+      // Always show success — API returns 200 even if email doesn't exist
       setStep('done');
     } catch (error: unknown) {
       const status = (error as { response?: { status?: number } })?.response?.status;
       if (status === 429) {
-        showToast(t('auth.forgot.validation.tooManyAttempts'), 'error');
-      } else {
-        showToast(AlertMessages.error.somethingWentWrong, 'error');
+        setIsRateLimited(true);
+      }
+      // For all other errors (including 400), still show "done" to prevent email enumeration
+      // Only 429 warrants a visible error
+      if (status !== 429) {
+        setStep('done');
       }
     }
   };
@@ -65,6 +68,16 @@ export default function ForgotPassword() {
         <div className="bg-white dark:bg-[#0F172A] rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6">
           {step === 'form' ? (
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {/* Rate limit banner */}
+              {isRateLimited && (
+                <div className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    Too many attempts. Please try again in a minute.
+                  </p>
+                </div>
+              )}
+
               <Input
                 label={t('auth.forgot.emailLabel')}
                 type="email"
@@ -73,7 +86,12 @@ export default function ForgotPassword() {
                 error={form.formState.errors.email?.message}
                 {...form.register('email')}
               />
-              <Button type="submit" className="w-full" isLoading={forgotPasswordMutation.isPending}>
+              <Button
+                type="submit"
+                className="w-full"
+                isLoading={forgotPasswordMutation.isPending}
+                disabled={forgotPasswordMutation.isPending || isRateLimited}
+              >
                 {t('auth.forgot.verifyAndContinue')}
               </Button>
               <Link
@@ -86,12 +104,10 @@ export default function ForgotPassword() {
             </form>
           ) : (
             <div className="space-y-4 text-center">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
               <p className="text-sm text-slate-600 dark:text-slate-300">
-                {t('auth.forgot.noMatchBody')}
+                Check your inbox. If this email is registered, you'll receive a reset link shortly.
               </p>
-              <Button type="button" variant="outline" className="w-full" onClick={() => setStep('form')}>
-                {t('auth.forgot.tryAgain')}
-              </Button>
               <Link
                 to="/login"
                 className="flex items-center justify-center gap-2 text-sm text-slate-600 dark:text-slate-400 hover:text-emerald-600"

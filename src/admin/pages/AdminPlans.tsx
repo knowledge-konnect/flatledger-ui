@@ -13,7 +13,7 @@ import { AdminPageHeader } from '../components/AdminPageHeader';
 import { AdminConfirmDialog } from '../components/AdminConfirmDialog';
 import { AdminDetailDrawer, DrawerSection, DrawerField } from '../components/AdminDetailDrawer';
 import { getAdminErrorMessage } from '../api/adminClient';
-import type { AdminPlanDto } from '../types/adminTypes';
+import type { AdminPlanDto, AdminPlanCreateRequest, AdminPlanUpdateRequest } from '../types/adminTypes';
 
 const planSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -66,7 +66,7 @@ export default function AdminPlans() {
   const totalCount = data?.data.data.totalCount ?? 0;
 
   const createMutation = useMutation({
-    mutationFn: (body: { name: string; price: number; currency: string; durationMonths: number }) =>
+    mutationFn: (body: AdminPlanCreateRequest) =>
       adminPlansApi.create(body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_plans'] });
@@ -78,7 +78,7 @@ export default function AdminPlans() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, body }: { id: string; body: { name: string; price: number; currency: string; durationMonths: number } }) =>
+    mutationFn: ({ id, body }: { id: string; body: AdminPlanUpdateRequest }) =>
       adminPlansApi.update(id, body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_plans'] });
@@ -96,6 +96,12 @@ export default function AdminPlans() {
         currency: plan.currency,
         durationMonths: plan.durationMonths,
         isActive: false,
+        planGroup: plan.planGroup,
+        maxFlats: plan.maxFlats,
+        displayOrder: plan.displayOrder,
+        isPopular: plan.isPopular ?? false,
+        discountPercentage: plan.discountPercentage ?? null,
+        description: plan.description,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin_plans'] });
