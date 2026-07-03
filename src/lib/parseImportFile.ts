@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import { z } from 'zod';
+import { Workbook } from 'exceljs';
 import { CreateFlatDto } from '../api/flatsApi';
 
 // ---------------------------------------------------------------------------
@@ -255,9 +256,8 @@ function parseExcel(file: File): Promise<Record<string, string>[]> {
     const reader = new FileReader();
     reader.onload = async e => {
       try {
-        const ExcelJS = await import('exceljs');
         const buffer = e.target?.result as ArrayBuffer;
-        const workbook = new ExcelJS.Workbook();
+        const workbook = new Workbook();
         await workbook.xlsx.load(buffer);
         const sheet = workbook.worksheets[0];
         if (!sheet) { resolve([]); return; }
