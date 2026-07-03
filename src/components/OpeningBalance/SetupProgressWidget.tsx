@@ -6,26 +6,23 @@ import Button from '../ui/Button';
 
 export default function SetupProgressWidget() {
   const navigate = useNavigate();
-  const { progress, isComplete, nextStep } = useSetupProgress();
+  const { steps: setupSteps, progress, isComplete, nextStep } = useSetupProgress();
 
   const steps = [
     { 
       id: 'society', 
       label: 'Society Profile', 
       route: '/settings/society',
-      status: progress >= 34
     },
     { 
       id: 'flats', 
       label: 'Add Flats', 
       route: '/flats',
-      status: progress >= 67
     },
     { 
       id: 'opening-balance', 
       label: 'Opening Balance', 
       route: '/settings/opening-balance',
-      status: progress === 100
     },
   ];
 
@@ -40,9 +37,11 @@ export default function SetupProgressWidget() {
   };
 
   const progressPercentage = progress;
+  const openingBalanceStep = setupSteps.find((step) => step.id === 'opening-balance');
+  const isOpeningBalancePending = openingBalanceStep ? !openingBalanceStep.completed && !openingBalanceStep.skipped : false;
 
-  // Don't show if setup is complete
-  if (isComplete) {
+  // Hide only when setup is fully complete and opening balance is not pending
+  if (isComplete && !isOpeningBalancePending) {
     return null;
   }
 
@@ -76,26 +75,28 @@ export default function SetupProgressWidget() {
         <div className="space-y-2 mb-3">
           {steps.map((step) => {
             const isNextStep = nextStep && step.id === nextStep.id;
+            const stepData = setupSteps.find((setupStep) => setupStep.id === step.id);
+            const isDone = stepData?.completed ?? false;
             return (
               <div
                 key={step.id}
                 className="flex items-center gap-2"
               >
-                {step.status ? (
+                {isDone ? (
                   <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
                 ) : (
                   <Circle className="w-4 h-4 text-slate-300 dark:text-slate-600 flex-shrink-0" />
                 )}
                 <span
                   className={`text-xs font-medium ${
-                    step.status
+                    isDone
                       ? 'text-slate-900 dark:text-slate-100'
                       : 'text-slate-500 dark:text-slate-400'
                   }`}
                 >
                   {step.label}
                 </span>
-                {isNextStep && !step.status && (
+                {isNextStep && !isDone && (
                   <span className="ml-auto text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full">
                     Next
                   </span>

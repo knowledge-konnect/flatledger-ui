@@ -89,7 +89,7 @@ export default function Setup() {
 
   const nextIncompleteStep = steps.find((s) => !s.completed);
   const obStep = steps.find((s) => s.id === 'opening-balance');
-  const obPending = isComplete && obStep && !obStep.completed;
+  const obPending = Boolean(obStep && !obStep.completed && !obStep.skipped);
 
   const handleGoToDashboard = () => {
     navigate('/dashboard');
