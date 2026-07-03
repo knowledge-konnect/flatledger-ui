@@ -1,6 +1,5 @@
 import Papa from 'papaparse';
 import { z } from 'zod';
-import { Workbook } from 'exceljs';
 import { CreateFlatDto } from '../api/flatsApi';
 
 // ---------------------------------------------------------------------------
@@ -252,10 +251,12 @@ function parseCsv(file: File): Promise<Record<string, string>[]> {
 }
 
 function parseExcel(file: File): Promise<Record<string, string>[]> {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const reader = new FileReader();
     reader.onload = async e => {
       try {
+        // Dynamically import Workbook only when needed to avoid bundle bloat
+        const { Workbook } = await import('exceljs');
         const buffer = e.target?.result as ArrayBuffer;
         const workbook = new Workbook();
         await workbook.xlsx.load(buffer);
@@ -304,6 +305,8 @@ function parseExcel(file: File): Promise<Record<string, string>[]> {
 
 
 export async function downloadImportTemplate(): Promise<void> {
+  // Dynamically import ExcelJS only when template download is requested
+  const { Workbook } = await import('exceljs');
   const wb = new Workbook();
 
   // Status display names — used in dropdown and sample rows
@@ -330,18 +333,6 @@ export async function downloadImportTemplate(): Promise<void> {
   // Style header row
   ws1.getRow(1).font = { bold: true };
 
-  // Dropdown validation on Status column (E2:E1001)
-  for (let i = 2; i <= 1001; i++) {
-    ws1.getCell(`E${i}`).dataValidation = {
-      type: 'list',
-      allowBlank: true,
-      formulae: [`"${STATUS_OPTIONS.join(',')}"`],
-      showErrorMessage: true,
-      errorTitle: 'Invalid Status',
-      error: `Choose from: ${STATUS_OPTIONS.join(', ')}`,
-    };
-  }
-
   // ── Sheet 2: Instructions ──────────────────────────────────────────────
   const ws2 = wb.addWorksheet('Instructions');
   ws2.columns = [{ width: 24 }, { width: 12 }, { width: 55 }, { width: 30 }];
@@ -353,13 +344,12 @@ export async function downloadImportTemplate(): Promise<void> {
     ['Owner Name', 'YES', 'Full name of the flat owner', 'Ramesh Kumar'],
     ['Mobile',     'YES', 'Contact mobile number (min 10 digits)', '9876543210'],
     ['Email',      'No',  'Owner email address', 'owner@example.com'],
-    ['Status',     'No',  `Choose from dropdown: ${STATUS_OPTIONS.join(', ')}. Defaults to "Owner Occupied" if blank.`, 'Owner Occupied'],
+    ['Status',     'No',  `Choose from: ${STATUS_OPTIONS.join(', ')}. Defaults to "Owner Occupied" if blank.`, 'Owner Occupied'],
     [],
     ['NOTE: Maintenance Amount'],
     ['Maintenance amount is configured automatically from your society settings. You do not need to include it in the file.'],
     [],
     ['RULES'],
-    ['• The Status column has a dropdown — click the cell and pick a value (no typing required).'],
     ['• Delete the 3 sample rows (rows 2-4) before filling in your own data — or replace them directly.'],
     ['• Columns are case-insensitive — "Flat No", "flat no", "flatNo" all work.'],
     ['• Do NOT rename the "Flats Data" sheet; the importer reads the first sheet.'],
