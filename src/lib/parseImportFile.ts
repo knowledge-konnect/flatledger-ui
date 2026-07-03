@@ -226,10 +226,8 @@ export async function parseImportFile(file: File): Promise<ParsedFlatRow[]> {
 
   if (ext === 'csv') {
     rawRows = await parseCsv(file);
-  } else if (ext === 'xlsx' || ext === 'xls') {
-    rawRows = await parseExcel(file);
   } else {
-    throw new Error('Unsupported file type. Please upload a .csv or .xlsx file.');
+    throw new Error('Please upload a .csv file. Download our template to see the correct format.');
   }
 
   // Remove empty rows
@@ -250,142 +248,44 @@ function parseCsv(file: File): Promise<Record<string, string>[]> {
   });
 }
 
-function parseExcel(file: File): Promise<Record<string, string>[]> {
-  return new Promise(async (resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = async e => {
-      try {
-        // Dynamically import Workbook only when needed to avoid bundle bloat
-        const { Workbook } = await import('exceljs');
-        const buffer = e.target?.result as ArrayBuffer;
-        const workbook = new Workbook();
-        await workbook.xlsx.load(buffer);
-        const sheet = workbook.worksheets[0];
-        if (!sheet) { resolve([]); return; }
-
-        const rows: Record<string, string>[] = [];
-        const headers: string[] = [];
-
-        sheet.eachRow((row, rowNum) => {
-          if (rowNum === 1) {
-            row.eachCell({ includeEmpty: true }, cell => {
-              headers.push(String(cell.value ?? ''));
-            });
-          } else {
-            const obj: Record<string, string> = {};
-            headers.forEach((h, i) => {
-              const cell = row.getCell(i + 1);
-              const raw = cell.value;
-              // ExcelJS returns rich text as { richText: [...] }, dates as Date objects
-              let val = '';
-              if (raw === null || raw === undefined) {
-                val = '';
-              } else if (typeof raw === 'object' && 'richText' in (raw as object)) {
-                val = (raw as { richText: { text: string }[] }).richText.map(r => r.text).join('');
-              } else if (raw instanceof Date) {
-                val = raw.toLocaleDateString();
-              } else {
-                val = String(raw);
-              }
-              obj[h] = val.trim();
-            });
-            rows.push(obj);
-          }
-        });
-
-        resolve(rows);
-      } catch (err) {
-        reject(err);
-      }
-    };
-    reader.onerror = () => reject(new Error('Failed to read file'));
-    reader.readAsArrayBuffer(file);
-  });
-}
 
 
-export async function downloadImportTemplate(): Promise<void> {
-  // Dynamically import ExcelJS only when template download is requested
-  const { Workbook } = await import('exceljs');
-  const wb = new Workbook();
 
-  // Status display names — used in dropdown and sample rows
-  // The parser normalises these to API codes via STATUS_ALIASES
+/**
+ * Download a CSV template for flat imports
+ * No external dependencies — pure CSV generation to avoid CSP eval() issues
+ */
+export function downloadImportTemplate(): void {
   const STATUS_OPTIONS = ['Owner Occupied', 'Vacant', 'Rented', 'Under Maintenance'];
-
-  // ── Sheet 1: Flats Data ────────────────────────────────────────────────
-  const ws1 = wb.addWorksheet('Flats Data');
-  ws1.columns = [
-    { header: 'Flat No',    key: 'flatNo',    width: 14 },
-    { header: 'Owner Name', key: 'ownerName', width: 22 },
-    { header: 'Mobile',     key: 'mobile',    width: 18 },
-    { header: 'Email',      key: 'email',     width: 26 },
-    { header: 'Status',     key: 'status',    width: 22 },
+  
+  // CSV template content
+  const lines = [
+    // Header
+    ['Flat No', 'Owner Name', 'Mobile', 'Email', 'Status'].join(','),
+    // Sample rows
+    '101,Ramesh Kumar,9876543210,ramesh@example.com,Owner Occupied',
+    '102,Sunita Mehta,9123456789,,Vacant',
+    '103,Arjun Patel,9988776655,,Rented',
+    '',
+    '# INSTRUCTIONS:',
+    '# Flat No (required): Unique flat identifier (e.g., 101, A-201)',
+    '# Owner Name (required): Full name of the flat owner',
+    '# Mobile (required): Contact number - minimum 10 digits',
+    '# Email (optional): Owner email address',
+    `# Status (optional): Choose one of: ${STATUS_OPTIONS.join(', ')} - defaults to "Owner Occupied"`,
+    '# Maintenance Amount is configured automatically from society settings',
+    '# Delete sample rows before importing your data',
   ];
-
-  const sampleRows = [
-    ['101', 'Ramesh Kumar', '9876543210', 'ramesh@example.com', 'Owner Occupied'],
-    ['102', 'Sunita Mehta', '9123456789', '', 'Vacant'],
-    ['103', 'Arjun Patel', '9988776655', '', 'Rented'],
-  ];
-  sampleRows.forEach(r => ws1.addRow({ flatNo: r[0], ownerName: r[1], mobile: r[2], email: r[3], status: r[4] }));
-
-  // Style header row
-  ws1.getRow(1).font = { bold: true };
-
-  // ── Sheet 2: Instructions ──────────────────────────────────────────────
-  const ws2 = wb.addWorksheet('Instructions');
-  ws2.columns = [{ width: 24 }, { width: 12 }, { width: 55 }, { width: 30 }];
-  const instrRows = [
-    ['FLATS IMPORT — INSTRUCTIONS'],
-    [],
-    ['Column', 'Required', 'Description', 'Example'],
-    ['Flat No',    'YES', 'Unique flat / unit identifier', '101, A-201, B-12'],
-    ['Owner Name', 'YES', 'Full name of the flat owner', 'Ramesh Kumar'],
-    ['Mobile',     'YES', 'Contact mobile number (min 10 digits)', '9876543210'],
-    ['Email',      'No',  'Owner email address', 'owner@example.com'],
-    ['Status',     'No',  `Choose from: ${STATUS_OPTIONS.join(', ')}. Defaults to "Owner Occupied" if blank.`, 'Owner Occupied'],
-    [],
-    ['NOTE: Maintenance Amount'],
-    ['Maintenance amount is configured automatically from your society settings. You do not need to include it in the file.'],
-    [],
-    ['RULES'],
-    ['• Delete the 3 sample rows (rows 2-4) before filling in your own data — or replace them directly.'],
-    ['• Columns are case-insensitive — "Flat No", "flat no", "flatNo" all work.'],
-    ['• Do NOT rename the "Flats Data" sheet; the importer reads the first sheet.'],
-    ['• Rows with errors are highlighted in the preview and skipped — fix and re-import.'],
-    ['• Maximum file size: 5 MB.'],
-  ];
-  instrRows.forEach(r => ws2.addRow(r));
-  ws2.getRow(1).font = { bold: true };
-  ws2.getRow(3).font = { bold: true };
-
-  // ── Sheet 3: Status Codes Reference ───────────────────────────────────
-  const ws3 = wb.addWorksheet('Status Options');
-  ws3.columns = [{ width: 28 }, { width: 22 }];
-  const statusRows = [
-    ['STATUS OPTIONS REFERENCE'],
-    [],
-    ['Display Name (use in file)', 'Internal Code'],
-    ['Owner Occupied',  'owner_occupied'],
-    ['Vacant',          'vacant'],
-    ['Rented',          'rented'],
-    ['Under Maintenance','under_maintenance'],
-    [],
-    ['The Status column in "Flats Data" has a dropdown — just pick a value.'],
-    ['If left blank, "Owner Occupied" is used by default.'],
-  ];
-  statusRows.forEach(r => ws3.addRow(r));
-  ws3.getRow(1).font = { bold: true };
-  ws3.getRow(3).font = { bold: true };
-
-  // ── Download via Blob URL ────────────────────────────────────────────
-  const buffer = await wb.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  
+  const csvContent = lines.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'flats_import_template.xlsx';
-  a.click();
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'flats_import_template.csv');
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }

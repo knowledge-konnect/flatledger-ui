@@ -132,7 +132,7 @@ export default function ImportFlatsModal({ isOpen, onClose, onSuccess }: ImportF
       setParsedRows(rows);
       setStep('preview');
     } catch (err) {
-      setParseError(err instanceof Error ? err.message : '❌ We couldn\'t read your file. Make sure it\'s a valid .csv or .xlsx file.');
+      setParseError(err instanceof Error ? err.message : '❌ We couldn\'t read your file. Make sure it\'s a valid .csv file.');
     } finally {
       setIsParsing(false);
     }
@@ -235,7 +235,7 @@ export default function ImportFlatsModal({ isOpen, onClose, onSuccess }: ImportF
   const renderUploadStep = () => (
     <div className="space-y-3">
       <FileUpload
-        accept=".csv,.xlsx,.xls"
+        accept=".csv"
         maxSize={5}
         onFilesSelected={handleFilesSelected}
       />
