@@ -18,6 +18,7 @@ export interface SetupProgress {
   steps: SetupStep[];
   progress: number;
   isComplete: boolean;
+  isOpeningBalancePending: boolean;
   isLoading: boolean;
   nextStep: SetupStep | null;
 }
@@ -34,7 +35,7 @@ export interface SetupProgress {
  */
 export function useSetupProgress(): SetupProgress {
   const { user } = useAuth();
-  const societyId = user?.societyPublicId || '';
+  const societyId = user?.societyPublicId || user?.societyId || '';
   const { data: obStatus, isLoading: obLoading } = useOpeningBalanceStatus();
   const { data: flats, isLoading: flatsLoading } = useFlats();
   const { data: maintenanceConfig, isLoading: maintenanceConfigLoading } = useMaintenanceConfig(societyId);
@@ -45,6 +46,7 @@ export function useSetupProgress(): SetupProgress {
         steps: [],
         progress: 0,
         isComplete: false,
+        isOpeningBalancePending: false,
         isLoading: true,
         nextStep: null,
       };
@@ -102,11 +104,13 @@ export function useSetupProgress(): SetupProgress {
     // Opening balance (step 4) is optional — it does not block completion.
     const requiredSteps = steps.filter((s) => s.id !== 'opening-balance');
     const requiredComplete = requiredSteps.every((s) => s.completed);
+    const obPending = !obApplied && !obSkipped;
 
     return {
       steps,
       progress: progressPercentage,
       isComplete: requiredComplete,
+      isOpeningBalancePending: obPending,
       isLoading: false,
       nextStep: nextIncompleteStep,
     };

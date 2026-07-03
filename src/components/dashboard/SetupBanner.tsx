@@ -29,7 +29,7 @@ export default function SetupBanner() {
   if (isLoading) return null;
 
   const obStep = steps.find((s) => s.id === 'opening-balance');
-  const showObNudge = isComplete && obStep && !obStep.completed && !obNudgeDismissed;
+  const showObNudge = Boolean(obStep && !obStep.completed && !obNudgeDismissed);
 
   const completedCount = steps.filter((s) => s.completed).length;
 

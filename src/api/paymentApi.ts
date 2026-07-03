@@ -26,15 +26,14 @@ export interface PaymentPlan {
 }
 
 function normalizePaymentPlan(raw: Record<string, unknown>): PaymentPlan {
-  const price = Number(
-    raw.price ?? raw.Price ?? raw.monthlyAmount ?? raw.MonthlyAmount ?? 0
-  );
+  const price = Number(raw.price ?? raw.Price ?? 0);
+  const monthlyAmount = Number(raw.monthlyAmount ?? raw.MonthlyAmount ?? price);
   return {
     id: String(raw.id ?? raw.Id ?? ''),
     name: String(raw.name ?? raw.Name ?? ''),
     description: (raw.description ?? raw.Description) as string | null | undefined,
     price,
-    monthlyAmount: price,
+    monthlyAmount,
     currency: String(raw.currency ?? raw.Currency ?? 'INR'),
     durationMonths: Number(raw.durationMonths ?? raw.DurationMonths ?? 1),
     maxFlats: Number(raw.maxFlats ?? raw.MaxFlats ?? 0),
@@ -86,8 +85,8 @@ export interface VerifyPaymentResponse {
 
 export const paymentApi = {
   async getPlans(): Promise<PaymentPlan[]> {
-    const response = await apiClient.get<ApiResponse<{ plans: Record<string, unknown>[] }>>('/plans');
-    const raw = response.data.data.plans || [];
+    const response = await apiClient.get<ApiResponse<Record<string, unknown>[]>>('/plans');
+    const raw = response.data.data ?? [];
     return raw.map(normalizePaymentPlan);
   },
 

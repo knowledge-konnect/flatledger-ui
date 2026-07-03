@@ -131,7 +131,12 @@ export default function Dashboard() {
   const { minDate, minMonth, maxMonth, clampDate } = useSocietyPeriodBounds();
   // ...existing code...
   const navigate = useNavigate();
-  const { isComplete: setupComplete, isLoading: setupLoading, steps: setupSteps } = useSetupProgress();
+  const {
+    isComplete: setupComplete,
+    isLoading: setupLoading,
+    isOpeningBalancePending,
+    steps: setupSteps,
+  } = useSetupProgress();
 
   // Show welcome modal on first visit when setup is not yet complete.
   // Stored in localStorage so it only shows once per browser.
@@ -147,11 +152,12 @@ export default function Dashboard() {
   // modal is dismissed.
   useEffect(() => {
     if (setupLoading) return; // Wait for setup data before deciding
-    if (showWelcome && !setupComplete) return; // Let the welcome modal show first
-    if (!setupComplete && setupSteps.length > 0) {
+    const needsSetupRedirect = !setupComplete || isOpeningBalancePending;
+    if (showWelcome && needsSetupRedirect) return; // Let the welcome modal show first
+    if (needsSetupRedirect) {
       navigate('/setup', { replace: true });
     }
-  }, [setupComplete, setupLoading, setupSteps, navigate, showWelcome]);
+  }, [setupComplete, setupLoading, setupSteps, navigate, showWelcome, isOpeningBalancePending]);
 
   const [periodTab, setPeriodTab] = useState<PeriodTab>('this-month');
   const [startDate, setStartDate] = useState(() => getThisMonthRange().start);
@@ -251,9 +257,10 @@ export default function Dashboard() {
   });
 
   const collectionColor = currentBillCoverage >= 80 ? 'green' : currentBillCoverage >= 50 ? 'amber' : 'red' as any;
+  const needsSetupRedirect = !setupComplete;
 
   // Show a skeleton while setup status is loading or redirect is pending
-  if (setupLoading || (!setupComplete && setupSteps.length > 0)) {
+  if (setupLoading || needsSetupRedirect) {
     return (
       <DashboardLayout title="Dashboard">
         <div className="space-y-6">

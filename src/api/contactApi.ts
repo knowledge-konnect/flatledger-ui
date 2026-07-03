@@ -12,9 +12,9 @@ export interface ContactUsRequest {
 export const contactApi = {
   /**
    * Submit a contact-us enquiry.
-   * POST /contact-us
+   * POST /contact
    */
   async submit(data: ContactUsRequest): Promise<void> {
-    await apiClient.post<ApiResponse<null>>('/contact-us', data);
+    await apiClient.post<ApiResponse<null>>('/contact', data);
   },
 };

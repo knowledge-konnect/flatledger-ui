@@ -290,6 +290,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Decode JWT and set auth state with full auth response data
       setAuthState(auth.accessToken, auth);
+      queryClient.clear();
       logger.log(`[AuthProvider.login] Login successful with user data`);
       
       // Return auth response for caller to check forcePasswordChange
