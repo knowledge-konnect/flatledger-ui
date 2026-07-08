@@ -108,7 +108,7 @@ export default function Payment() {
               } catch { /* non-critical */ }
 
             showToast('Your subscription has been activated.', 'success')
-            navigate('/payment/success', { state: { planId, orderId: response.razorpay_order_id } })
+            navigate('/payment/success', { state: { planId, orderId: response.razorpay_order_id, paymentId: response.razorpay_payment_id } })
           } catch (err: any) {
             const errData = err?.response?.data;
             if (errData) {

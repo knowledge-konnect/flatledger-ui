@@ -8,6 +8,9 @@ import {
   ChevronRight,
   Clock,
   Info,
+  Home,
+  Wallet,
+  Sparkles,
 } from 'lucide-react';
 const ReactApexChart = lazy(() => import('react-apexcharts'));
 import DashboardLayout from '../components/layout/DashboardLayout';
@@ -419,6 +422,79 @@ export default function Dashboard() {
                 />
               </>
             )}
+          </div>
+
+          {/* ── Quick Actions & Follow-Up ─────────────────────────────── */}
+          <div className="grid grid-cols-1 xl:grid-cols-[1.35fr_0.95fr] gap-5">
+            <Card className="p-5 rounded-2xl shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Quick actions</h3>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Common tasks for daily society management</p>
+                </div>
+                <div className="rounded-full bg-emerald-50 dark:bg-emerald-950/30 p-2 text-emerald-600 dark:text-emerald-400">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  { label: 'Record payment', description: 'Log a maintenance payment quickly', icon: Wallet, route: '/maintenance' },
+                  { label: 'Manage flats', description: 'Add or update flat details', icon: Home, route: '/flats' },
+                  { label: 'Add expense', description: 'Track society expenses', icon: ArrowDownCircle, route: '/expenses' },
+                  { label: 'View dues', description: 'Check pending balances', icon: ReceiptText, route: '/reports/defaulters' },
+                ].map(({ label, description, icon: Icon, route }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => navigate(route)}
+                    className="text-left rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 p-3 transition hover:border-emerald-200 hover:bg-emerald-50 dark:hover:border-emerald-800 dark:hover:bg-emerald-950/20"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="rounded-lg bg-white dark:bg-slate-900 p-2 shadow-sm">
+                        <Icon className="w-4 h-4 text-slate-700 dark:text-slate-300" />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{label}</span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{description}</p>
+                  </button>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="p-5 rounded-2xl shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">This month at a glance</h3>
+                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Suggested follow-up so recurring work stays simple</p>
+                </div>
+              </div>
+              <div className="space-y-2.5 text-sm">
+                {!billingStatus?.isGenerated && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 p-3 text-amber-700 dark:text-amber-300">
+                    <div className="font-semibold">Billing has not been generated yet</div>
+                    <div className="text-xs mt-1">Create the current month’s bills to keep maintenance tracking accurate.</div>
+                  </div>
+                )}
+                {zeroAmountFlatsCount > 0 && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/20 p-3 text-red-700 dark:text-red-300">
+                    <div className="font-semibold">{zeroAmountFlatsCount} flat{zeroAmountFlatsCount !== 1 ? 's' : ''} need a maintenance amount</div>
+                    <div className="text-xs mt-1">Review flat settings so monthly billing stays consistent.</div>
+                  </div>
+                )}
+                {pendingFlatsCount > 0 && (
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50 p-3 text-slate-700 dark:text-slate-300">
+                    <div className="font-semibold">{pendingFlatsCount} flat{pendingFlatsCount !== 1 ? 's' : ''} still have pending dues</div>
+                    <div className="text-xs mt-1">Use the dues report to follow up quickly.</div>
+                  </div>
+                )}
+                {billingStatus?.isGenerated && zeroAmountFlatsCount === 0 && pendingFlatsCount === 0 && (
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/20 p-3 text-emerald-700 dark:text-emerald-300">
+                    <div className="font-semibold">Everything looks on track</div>
+                    <div className="text-xs mt-1">Bills are generated and there are no obvious follow-ups for the month.</div>
+                  </div>
+                )}
+              </div>
+            </Card>
           </div>
 
           {/* ── Smart Insights ───────────────────────────────────────────── */}

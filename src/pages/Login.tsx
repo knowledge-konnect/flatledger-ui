@@ -157,9 +157,9 @@ export default function Login() {
 
         {/* Bottom trust bar */}
         <div className="relative z-10 mt-10 pt-6 border-t border-white/20 flex items-center gap-6 text-xs text-emerald-100/70">
-          <span>🏢 50+ societies</span>
+          <span>🏢 Built for apartment societies</span>
           <span>🔒 Encrypted & secure</span>
-          <span>📤 Export anytime</span>
+          <span>📤 Export to Excel/CSV</span>
         </div>
       </div>
 

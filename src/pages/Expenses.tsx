@@ -1,24 +1,24 @@
-﻿import { useState, useMemo } from 'react';
-import { Plus, Zap, Droplet, Shield, Wrench, TrendingDown, TrendingUp, Edit, Trash2, Search, X, AlertCircle, IndianRupee, Lightbulb, Hammer, Home, BarChart2, Divide } from 'lucide-react';
+﻿import { zodResolver } from '@hookform/resolvers/zod';
+import { AlertCircle, BarChart2, Divide, Droplet, Edit, Hammer, Home, IndianRupee, Lightbulb, Plus, Search, Shield, Trash2, TrendingDown, TrendingUp, Wrench, X, Zap } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { ExpenseResponse } from '../api/expensesApi';
 import DashboardLayout from '../components/layout/DashboardLayout';
-import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import PageHeader from '../components/ui/PageHeader';
 import Button from '../components/ui/Button';
+import Card, { CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import Input from '../components/ui/Input';
+import Modal, { ModalFooter } from '../components/ui/Modal';
+import PageHeader from '../components/ui/PageHeader';
+import Select from '../components/ui/Select';
+import { useToast } from '../components/ui/Toast';
 import { useAuth } from '../contexts/AuthProvider';
 import { useTheme } from '../contexts/ThemeContext';
-import { isAdminRole, collectUserRoles } from '../types/roles';
-import Input from '../components/ui/Input';
-import Select from '../components/ui/Select';
-import Modal, { ModalFooter } from '../components/ui/Modal';
-import { formatCurrency, formatDate } from '../lib/utils';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useToast } from '../components/ui/Toast';
-import { useExpenses, useCreateExpense, useUpdateExpense, useDeleteExpense, useExpenseCategories } from '../hooks/useExpenses';
-import { ExpenseResponse } from '../api/expensesApi';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
+import { useCreateExpense, useDeleteExpense, useExpenseCategories, useExpenses, useUpdateExpense } from '../hooks/useExpenses';
+import { formatCurrency, formatDate } from '../lib/utils';
+import { collectUserRoles, isAdminRole } from '../types/roles';
 
 const expenseSchema = z.object({
   date: z.string().min(1, 'Date is required'),
@@ -40,22 +40,22 @@ const colorPalette = [
 
 // Icon mapping for known category codes
 const defaultCategoryIcons: Record<string, any> = {
-  electricity:          Lightbulb,
-  water:                Droplet,
-  security:             Shield,
-  cctv_maintenance:     Shield,
-  repairs:              Hammer,
-  repair:               Hammer,
-  maintenance:          Wrench,
-  general_maintenance:  Wrench,
-  lift_maintenance:     Wrench,
-  utilities:            Zap,
-  internet_wifi:        Zap,
-  salary:               IndianRupee,
-  watchman_salary:      IndianRupee,
-  cleaning_salary:      IndianRupee,
-  other:                Home,
-  others:               Home,
+  electricity: Lightbulb,
+  water: Droplet,
+  security: Shield,
+  cctv_maintenance: Shield,
+  repairs: Hammer,
+  repair: Hammer,
+  maintenance: Wrench,
+  general_maintenance: Wrench,
+  lift_maintenance: Wrench,
+  utilities: Zap,
+  internet_wifi: Zap,
+  salary: IndianRupee,
+  watchman_salary: IndianRupee,
+  cleaning_salary: IndianRupee,
+  other: Home,
+  others: Home,
 };
 
 export default function Expenses() {
@@ -90,6 +90,20 @@ export default function Expenses() {
     resolver: zodResolver(expenseSchema),
   });
 
+  const getDefaultExpenseFormValues = (prefill?: Partial<ExpenseFormData>): ExpenseFormData => ({
+    date: today.toISOString().substring(0, 10),
+    categoryCode: '',
+    vendor: '',
+    description: '',
+    amount: '',
+    ...prefill,
+  });
+
+  const lastExpense = useMemo(() => {
+    if (!expensesData.length) return null;
+    return [...expensesData].sort((a, b) => new Date(b.dateIncurred).getTime() - new Date(a.dateIncurred).getTime())[0];
+  }, [expensesData]);
+
   /* =====================================================
      HELPER FUNCTIONS
   ===================================================== */
@@ -109,7 +123,7 @@ export default function Expenses() {
   // Build dynamic icon map from categories
   const categoryIconMap = useMemo(() => {
     const map: Record<string, any> = { ...defaultCategoryIcons };
-    
+
     categoriesData.forEach((category) => {
       const code = category.code.toLowerCase();
       // If not in default map, use Home icon
@@ -117,7 +131,7 @@ export default function Expenses() {
         map[code] = Home;
       }
     });
-    
+
     return map;
   }, [categoriesData]);
 
@@ -153,8 +167,8 @@ export default function Expenses() {
         const search = searchTerm.toLowerCase();
         const categoryLabel = getCategoryLabel(expense.categoryCode).toLowerCase();
         if (!expense.vendor?.toLowerCase().includes(search) &&
-            !expense.description?.toLowerCase().includes(search) &&
-            !categoryLabel.includes(search)) {
+          !expense.description?.toLowerCase().includes(search) &&
+          !categoryLabel.includes(search)) {
           return false;
         }
       }
@@ -242,8 +256,8 @@ export default function Expenses() {
           const search = searchTerm.toLowerCase();
           const categoryLabel = getCategoryLabel(expense.categoryCode).toLowerCase();
           if (!expense.vendor?.toLowerCase().includes(search) &&
-              !expense.description?.toLowerCase().includes(search) &&
-              !categoryLabel.includes(search)) {
+            !expense.description?.toLowerCase().includes(search) &&
+            !categoryLabel.includes(search)) {
             return false;
           }
         }
@@ -270,23 +284,23 @@ export default function Expenses() {
 
     const display = changePct !== null
       ? {
-          value: `${changePct > 0 ? '+' : ''}${changePct.toFixed(1)}%`,
-          valueClass: changePct > 0
-            ? 'text-rose-600 dark:text-rose-400'
-            : 'text-emerald-600 dark:text-emerald-400',
-          subtitle: 'vs previous period',
-        }
+        value: `${changePct > 0 ? '+' : ''}${changePct.toFixed(1)}%`,
+        valueClass: changePct > 0
+          ? 'text-rose-600 dark:text-rose-400'
+          : 'text-emerald-600 dark:text-emerald-400',
+        subtitle: 'vs previous period',
+      }
       : totalExpenses > 0
         ? {
-            value: 'New',
-            valueClass: 'text-blue-600 dark:text-blue-400',
-            subtitle: 'No previous-period expenses',
-          }
+          value: 'New',
+          valueClass: 'text-blue-600 dark:text-blue-400',
+          subtitle: 'No previous-period expenses',
+        }
         : {
-            value: '0.0%',
-            valueClass: 'text-slate-900 dark:text-white',
-            subtitle: 'No expenses in both periods',
-          };
+          value: '0.0%',
+          valueClass: 'text-slate-900 dark:text-white',
+          subtitle: 'No expenses in both periods',
+        };
 
     return { monthOverMonthChangePct: changePct, monthOverMonthDisplay: display };
   }, [previousPeriodMetrics.total, totalExpenses]);
@@ -320,13 +334,15 @@ export default function Expenses() {
       });
 
       if (hasDuplicateExpense) {
-        setFormError('A matching expense already exists for the same date, category, amount, and vendor.');
+        const duplicateMessage = 'A matching expense already exists for the same date, category, amount, and vendor.';
+        setFormError(duplicateMessage);
+        showToast(duplicateMessage, 'error');
         return;
       }
 
       if (selectedExpense) {
         // Update
-        await updateMutation.mutateAsync({
+        const updatedExpense = await updateMutation.mutateAsync({
           publicId: selectedExpense.publicId,
           payload: {
             date: data.date,
@@ -336,32 +352,72 @@ export default function Expenses() {
             amount: Number(data.amount),
           },
         });
-        showToast('Expense updated successfully', 'success');
+        showToast((updatedExpense as any).__message || 'Expense updated successfully', 'success');
       } else {
         // Create
-        await createMutation.mutateAsync({
+        const createdExpense = await createMutation.mutateAsync({
           date: data.date,
           categoryCode: data.categoryCode,
           vendor: vendorInput || undefined,
           description: data.description,
           amount: Number(data.amount),
         });
-        showToast('Expense added successfully', 'success');
+        showToast((createdExpense as any).__message || 'Expense added successfully', 'success');
       }
 
       handleCloseModal();
     } catch (error: any) {
       if (error?.response?.data) {
-        // If there are no fieldErrors, treat as general error, show only in modal
-        if (!error.response.data.errors || error.response.data.errors.length === 0) {
-          setFormError(error.response.data.message || 'Error saving expense');
-        }
-        // Do NOT show toast for form errors to avoid duplicate messages
+        const errorData = error.response.data;
+
+        // Support both documented API errors (array of { field, messages })
+        // and ASP.NET ProblemDetails-style errors ({ field: [messages] }).
+        const fieldErrors = Array.isArray(errorData.errors)
+          ? errorData.errors.reduce(
+            (acc: any, err: any) => {
+              if (err?.field && Array.isArray(err?.messages)) {
+                acc[err.field] = err.messages;
+              }
+              return acc;
+            },
+            {}
+          )
+          : errorData.errors && typeof errorData.errors === 'object'
+            ? errorData.errors
+            : undefined;
+
+        const firstFieldError = fieldErrors && Object.keys(fieldErrors).length > 0
+          ? Object.values(fieldErrors).flat().find((msg) => typeof msg === 'string')
+          : undefined;
+
+        const apiMessage =
+          errorData.message ||
+          errorData.detail ||
+          errorData.title ||
+          firstFieldError ||
+          'Error saving expense';
+
+        setFormError(apiMessage);
+        showErrorToast({
+          ok: false,
+          message: apiMessage,
+          code: errorData.code,
+          fieldErrors,
+          traceId: errorData.traceId,
+        });
       } else {
-        setFormError('Error saving expense');
-        showToast('Error saving expense', 'error');
+        const fallbackMessage = error?.message || 'Error saving expense';
+        setFormError(fallbackMessage);
+        showToast(fallbackMessage, 'error');
       }
     }
+  };
+
+  const openAddExpenseModal = (prefill?: Partial<ExpenseFormData>) => {
+    setSelectedExpense(null);
+    setFormError(null);
+    reset(getDefaultExpenseFormValues(prefill));
+    setShowAddModal(true);
   };
 
   const handleEditExpense = (expense: ExpenseResponse) => {
@@ -407,7 +463,7 @@ export default function Expenses() {
     setShowAddModal(false);
     setSelectedExpense(null);
     setFormError(null);
-    reset();
+    reset(getDefaultExpenseFormValues());
   };
 
   /* =====================================================
@@ -466,14 +522,15 @@ export default function Expenses() {
           icon={TrendingDown}
           actions={
             isAdmin && (
-              <Button size="md" onClick={() => {
-              setSelectedExpense(null);
-              reset();
-              setShowAddModal(true);
-            }}>
-              <Plus className="w-4 h-4" />
-              Add Expense
-            </Button>
+              <Button size="md" onClick={() => openAddExpenseModal(lastExpense ? {
+                categoryCode: lastExpense.categoryCode,
+                vendor: lastExpense.vendor ?? '',
+                description: lastExpense.description ?? '',
+                amount: String(lastExpense.amount),
+              } : undefined)}>
+                <Plus className="w-4 h-4" />
+                Add Expense
+              </Button>
             )
           }
         />
@@ -646,38 +703,37 @@ export default function Expenses() {
                       return amtB - amtA;
                     })
                     .map((category) => {
-                    const amount = categoryData.find(d => d.categoryKey === category.code)?.value || 0;
-                    const pct = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
-                    const isSelected = selectedCategoryFilter === category.code;
-                    const color = getCategoryColor(category.code);
-                    return (
-                      <div
-                        key={category.code}
-                        onClick={() => amount > 0 ? setSelectedCategoryFilter(isSelected ? '' : category.code) : undefined}
-                        className={`flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-150 border ${amount === 0 ? 'opacity-40 cursor-default' : 'cursor-pointer'} ${
-                          isSelected
+                      const amount = categoryData.find(d => d.categoryKey === category.code)?.value || 0;
+                      const pct = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
+                      const isSelected = selectedCategoryFilter === category.code;
+                      const color = getCategoryColor(category.code);
+                      return (
+                        <div
+                          key={category.code}
+                          onClick={() => amount > 0 ? setSelectedCategoryFilter(isSelected ? '' : category.code) : undefined}
+                          className={`flex items-center gap-2 px-2 py-2 rounded-lg transition-all duration-150 border ${amount === 0 ? 'opacity-40 cursor-default' : 'cursor-pointer'} ${isSelected
                             ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700'
                             : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-slate-200 dark:hover:border-slate-700'
-                        }`}
-                      >
-                        <div
-                          className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: `${color}22` }}
+                            }`}
                         >
-                          {renderCategoryIcon(category.code, 'sm')}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-1">
-                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">{category.displayName}</span>
-                            <span className="text-[10px] font-semibold tabular-nums" style={{ color }}>{pct.toFixed(0)}%</span>
+                          <div
+                            className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: `${color}22` }}
+                          >
+                            {renderCategoryIcon(category.code, 'sm')}
                           </div>
-                          <div className="h-1 rounded-full bg-slate-100 dark:bg-slate-700 mt-1 overflow-hidden">
-                            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">{category.displayName}</span>
+                              <span className="text-[10px] font-semibold tabular-nums" style={{ color }}>{pct.toFixed(0)}%</span>
+                            </div>
+                            <div className="h-1 rounded-full bg-slate-100 dark:bg-slate-700 mt-1 overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })
+                      );
+                    })
                 ) : (
                   <p className="col-span-2 text-xs text-slate-400 dark:text-slate-500 py-4 text-center">No categories available</p>
                 )}
@@ -726,13 +782,24 @@ export default function Expenses() {
                     className="!py-2 text-sm"
                   />
                   {isAdmin && (
-                    <Button size="sm" onClick={() => { setSelectedExpense(null); reset(); setShowAddModal(true); }}>
+                    <Button size="sm" onClick={() => openAddExpenseModal(lastExpense ? {
+                      categoryCode: lastExpense.categoryCode,
+                      vendor: lastExpense.vendor ?? '',
+                      description: lastExpense.description ?? '',
+                      amount: String(lastExpense.amount),
+                    } : undefined)}>
                       <Plus className="w-4 h-4 mr-1" />
                       Add Expense
                     </Button>
                   )}
                 </div>
               </div>
+
+              {lastExpense && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-xs text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">
+                  Tip: new expenses will use today’s date and the last expense details so recurring entries are faster.
+                </div>
+              )}
 
               {/* ACTIVE FILTER INDICATORS */}
               {(searchTerm || selectedCategoryFilter) && (
@@ -798,11 +865,12 @@ export default function Expenses() {
                   {searchTerm ? 'No expenses match your search. Try adjusting your filters.' : 'Start tracking expenses to get insights into your spending patterns.'}
                 </p>
                 {!searchTerm && isAdmin && (
-                  <Button onClick={() => {
-                    setSelectedExpense(null);
-                    reset();
-                    setShowAddModal(true);
-                  }}>
+                  <Button onClick={() => openAddExpenseModal(lastExpense ? {
+                    categoryCode: lastExpense.categoryCode,
+                    vendor: lastExpense.vendor ?? '',
+                    description: lastExpense.description ?? '',
+                    amount: String(lastExpense.amount),
+                  } : undefined)}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Your First Expense
                   </Button>
@@ -853,27 +921,27 @@ export default function Expenses() {
                         <td className="px-6 py-3 whitespace-nowrap">
                           {isAdmin && (
                             <div className="flex gap-2 justify-center items-center">
-                            <button
-                              aria-label="Edit expense"
-                              onClick={() => handleEditExpense(expense)}
-                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
+                              <button
+                                aria-label="Edit expense"
+                                onClick={() => handleEditExpense(expense)}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
                                          bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-110
                                          dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-900/50
                                          focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              aria-label="Delete expense"
-                              onClick={() => { setDeleteTarget(expense); setShowDeleteModal(true); }}
-                              className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                aria-label="Delete expense"
+                                onClick={() => { setDeleteTarget(expense); setShowDeleteModal(true); }}
+                                className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200
                                          bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-110
                                          dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/50
                                          focus:outline-none focus:ring-2 focus:ring-rose-500/50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -898,161 +966,161 @@ export default function Expenses() {
             )}
             {isAdmin && (
               <Modal
-                    isOpen={showAddModal}
-                    onClose={handleCloseModal}
-                    title={selectedExpense ? 'Edit Expense' : 'Add New Expense'}
-                    size="xl"
-                  >
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                      {/* ── General/Business Rule Error Banner ── */}
-                      {formError && (
-                        <div className="mb-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3">
-                          <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-red-900 dark:text-red-100">{formError}</p>
-                          </div>
-                        </div>
-                      )}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-6">
-                        {/* Left column */}
-                        <div className="space-y-4">
-                          <Input
-                            label="Expense Date"
-                            type="date"
-                            error={errors.date?.message}
-                            {...register('date')}
-                          />
-                          <Select
-                            label="Category"
-                            options={[
-                              { value: '', label: 'Select a category...' },
-                              ...categoriesData.map((cat) => ({
-                                value: cat.code,
-                                label: cat.displayName,
-                              })),
-                            ]}
-                            error={errors.categoryCode?.message}
-                            {...register('categoryCode')}
-                          />
-                          <Input
-                            label="Amount (₹)"
-                            type="number"
-                            placeholder="1500"
-                            step="0.01"
-                            error={errors.amount?.message}
-                            {...register('amount')}
-                          />
-                        </div>
-                        {/* Right column */}
-                        <div className="space-y-4">
-                          <Input
-                            label="Vendor Name (Optional)"
-                            placeholder="e.g., ACME Plumbing"
-                            error={errors.vendor?.message}
-                            {...register('vendor')}
-                          />
-                          <Input
-                            label="Description (Optional)"
-                            placeholder="e.g., Pipe repair in building"
-                            error={errors.description?.message}
-                            {...register('description')}
-                          />
-                        </div>
+                isOpen={showAddModal}
+                onClose={handleCloseModal}
+                title={selectedExpense ? 'Edit Expense' : 'Add New Expense'}
+                size="xl"
+              >
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  {/* ── General/Business Rule Error Banner ── */}
+                  {formError && (
+                    <div className="mb-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3">
+                      <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-red-900 dark:text-red-100">{formError}</p>
                       </div>
-                    </form>
-                    <ModalFooter>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleCloseModal}
-                        disabled={createMutation.isPending || updateMutation.isPending}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        disabled={createMutation.isPending || updateMutation.isPending}
-                        onClick={handleSubmit(onSubmit)}
-                      >
-                        {createMutation.isPending || updateMutation.isPending ? (
-                          <>
-                            <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            {selectedExpense ? 'Updating...' : 'Adding...'}
-                          </>
-                        ) : selectedExpense ? 'Update Expense' : 'Add Expense'}
-                      </Button>
-                    </ModalFooter>
-                  </Modal>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 p-6">
+                    {/* Left column */}
+                    <div className="space-y-4">
+                      <Input
+                        label="Expense Date"
+                        type="date"
+                        error={errors.date?.message}
+                        {...register('date')}
+                      />
+                      <Select
+                        label="Category"
+                        options={[
+                          { value: '', label: 'Select a category...' },
+                          ...categoriesData.map((cat) => ({
+                            value: cat.code,
+                            label: cat.displayName,
+                          })),
+                        ]}
+                        error={errors.categoryCode?.message}
+                        {...register('categoryCode')}
+                      />
+                      <Input
+                        label="Amount (₹)"
+                        type="number"
+                        placeholder="1500"
+                        step="0.01"
+                        error={errors.amount?.message}
+                        {...register('amount')}
+                      />
+                    </div>
+                    {/* Right column */}
+                    <div className="space-y-4">
+                      <Input
+                        label="Vendor Name (Optional)"
+                        placeholder="e.g., ACME Plumbing"
+                        error={errors.vendor?.message}
+                        {...register('vendor')}
+                      />
+                      <Input
+                        label="Description (Optional)"
+                        placeholder="e.g., Pipe repair in building"
+                        error={errors.description?.message}
+                        {...register('description')}
+                      />
+                    </div>
+                  </div>
+                </form>
+                <ModalFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCloseModal}
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                    onClick={handleSubmit(onSubmit)}
+                  >
+                    {createMutation.isPending || updateMutation.isPending ? (
+                      <>
+                        <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        {selectedExpense ? 'Updating...' : 'Adding...'}
+                      </>
+                    ) : selectedExpense ? 'Update Expense' : 'Add Expense'}
+                  </Button>
+                </ModalFooter>
+              </Modal>
             )}
           </CardContent>
         </Card>
 
-      {/* Delete Confirmation Modal */}
-      {isAdmin && (
-        <Modal
-          isOpen={showDeleteModal}
-          onClose={() => {
-            setShowDeleteModal(false);
-            setDeleteTarget(null);
-          }}
-          title="🗑️ Delete Expense"
-          size="sm"
-        >
-          <div className="space-y-4 p-4 sm:p-6">
-            {deleteTarget && (
-              <>
-                <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    You're about to delete this expense:
-                  </p>
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">{deleteTarget.vendor}</p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">{formatDate(deleteTarget.dateIncurred)}</p>
+        {/* Delete Confirmation Modal */}
+        {isAdmin && (
+          <Modal
+            isOpen={showDeleteModal}
+            onClose={() => {
+              setShowDeleteModal(false);
+              setDeleteTarget(null);
+            }}
+            title="🗑️ Delete Expense"
+            size="sm"
+          >
+            <div className="space-y-4 p-4 sm:p-6">
+              {deleteTarget && (
+                <>
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                      You're about to delete this expense:
+                    </p>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="font-semibold text-gray-900 dark:text-white">{deleteTarget.vendor}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">{formatDate(deleteTarget.dateIncurred)}</p>
+                      </div>
+                      <p className="text-lg font-bold text-red-600 dark:text-red-400">{formatCurrency(deleteTarget.amount)}</p>
                     </div>
-                    <p className="text-lg font-bold text-red-600 dark:text-red-400">{formatCurrency(deleteTarget.amount)}</p>
                   </div>
-                </div>
-                <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-700">
-                  <p className="text-xs font-bold text-red-900 dark:text-red-100 mb-1">⚠️ Warning</p>
-                  <p className="text-xs text-red-800 dark:text-red-200">This action cannot be undone. The expense will be permanently deleted.</p>
-                </div>
-              </>
-            )}
-          </div>
-
-          <ModalFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDeleteModal(false);
-                setDeleteTarget(null);
-              }}
-              disabled={deleteMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleDeleteExpense}
-              disabled={deleteMutation.isPending}
-              className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white dark:border-red-500 dark:text-red-400"
-            >
-              {deleteMutation.isPending ? (
-                <>
-                  <div className="w-4 h-4 mr-2 border-2 border-red-600 border-t-transparent rounded-full animate-spin dark:border-red-400"></div>
-                  Deleting...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
+                  <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-700">
+                    <p className="text-xs font-bold text-red-900 dark:text-red-100 mb-1">⚠️ Warning</p>
+                    <p className="text-xs text-red-800 dark:text-red-200">This action cannot be undone. The expense will be permanently deleted.</p>
+                  </div>
                 </>
               )}
-            </Button>
-          </ModalFooter>
-        </Modal>
-      )}
+            </div>
+
+            <ModalFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteTarget(null);
+                }}
+                disabled={deleteMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleDeleteExpense}
+                disabled={deleteMutation.isPending}
+                className="border-red-600 text-red-600 hover:bg-red-600 hover:text-white dark:border-red-500 dark:text-red-400"
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <div className="w-4 h-4 mr-2 border-2 border-red-600 border-t-transparent rounded-full animate-spin dark:border-red-400"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </>
+                )}
+              </Button>
+            </ModalFooter>
+          </Modal>
+        )}
       </div>
     </DashboardLayout>
   );

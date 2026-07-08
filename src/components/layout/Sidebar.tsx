@@ -1,17 +1,17 @@
-﻿import { useState } from 'react';
+﻿import { AlertTriangle, BarChart2, BarChart3, Building2, ChevronDown, FileDown, IndianRupee, LayoutDashboard, LogOut, Settings, TrendingUp, Users, Wrench, X } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Building2, Wrench, IndianRupee, BarChart3, Users, Settings, LogOut, X, ChevronDown, BarChart2, AlertTriangle, TrendingUp, FileDown } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthProvider';
-import { isAdminRole, collectUserRoles, getPrimaryRoleLabel } from '../../types/roles';
-import { useToast } from '../ui/Toast';
-import { cn } from '../../lib/utils';
 import { AlertMessages } from '../../lib/alertMessages';
+import { cn } from '../../lib/utils';
+import { collectUserRoles, getPrimaryRoleLabel, isAdminRole } from '../../types/roles';
+import { useToast } from '../ui/Toast';
 
 const reportsSubItems = [
-  { name: 'Billing Summary',   href: '/reports/collection-summary', icon: BarChart2 },
-  { name: 'Outstanding Dues',  href: '/reports/defaulters',          icon: AlertTriangle },
-  { name: 'Income & Expenses', href: '/reports/income-vs-expense',  icon: TrendingUp },
-  { name: 'Download Reports',  href: '/reports/download-reports',    icon: FileDown, adminOnly: true },
+  { name: 'Billing Summary', href: '/reports/collection-summary', icon: BarChart2 },
+  { name: 'Outstanding Dues', href: '/reports/defaulters', icon: AlertTriangle },
+  { name: 'Income & Expenses', href: '/reports/income-vs-expense', icon: TrendingUp },
+  { name: 'Download Reports', href: '/reports/download-reports', icon: FileDown, adminOnly: true },
 ];
 
 const navGroups = [
@@ -110,7 +110,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                   {user?.societyName || 'FlatLedger'}
                 </p>
                 <p className="text-[11px] text-emerald-400 truncate font-medium">
-                  Management
+                  Society Management
                 </p>
               </div>
             </div>

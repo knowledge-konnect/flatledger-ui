@@ -83,7 +83,7 @@ const LandingPage: React.FC = () => {
               Stop Managing Society Maintenance in Excel
             </h1>
             <p className="text-base sm:text-xl md:text-2xl text-slate-700 dark:text-slate-200 max-w-2xl mx-auto leading-relaxed font-medium">
-              Manage maintenance billing, expenses, and payments &mdash; without Excel or WhatsApp
+              Manage maintenance billing, expenses, payments, and subscription receipts &mdash; without Excel or WhatsApp
             </p>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 pt-4">
               <Link
@@ -468,7 +468,7 @@ const LandingPage: React.FC = () => {
                 <BarChart3 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Reports</h3>
-              <p className="text-slate-600 dark:text-[#a8c5ba] leading-relaxed text-sm">Collection summary, fund ledger, payment history - export anytime for AGM or committee review.</p>
+              <p className="text-slate-600 dark:text-[#a8c5ba] leading-relaxed text-sm">Collection summary, fund ledger, payment history - export to Excel or CSV for AGM or committee review.</p>
             </div>
             <div className="flex flex-col items-start p-8 bg-emerald-50/50 dark:bg-[#0B2A24] rounded-2xl shadow-sm dark:shadow-[0_8px_30px_rgba(0,0,0,.25)] border border-slate-200 dark:border-[rgba(52,211,153,.15)] hover:shadow-md dark:hover:shadow-[0_8px_30px_rgba(0,0,0,.25)] dark:hover:bg-[#10352D] dark:hover:border-[rgba(52,211,153,.3)] transition-all duration-200">
               <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-5">
@@ -515,7 +515,7 @@ const LandingPage: React.FC = () => {
               { q: "Are maintenance payments online?", a: "Maintenance collection tracking is built-in. Online payment collection is coming soon." },
               { q: "Is there a free trial?", a: "Yes. You get a full 30-day free trial with no credit card required." },
               { q: "Can we migrate from Excel?", a: "Yes. You can import your existing data from Excel or enter an opening balance to get started quickly." },
-              { q: "Is our data secure?", a: "Yes. All data is stored securely in the cloud with daily backups and you can export your data at any time." },
+              { q: "Is our data secure?", a: "Yes. All data is stored securely in the cloud with daily backups and you can export records to Excel or CSV anytime." },
               { q: "Can new committee members access old records?", a: "Yes. Society records remain available even when committee members change." },
             ].map((item, i) => (
               <div key={item.q} className={`transition-all duration-200 ${openFaq === i ? 'border-l-2 border-emerald-500 pl-4 bg-emerald-500/[0.03] dark:bg-emerald-400/[0.04]' : ''}`}>
@@ -581,7 +581,7 @@ const LandingPage: React.FC = () => {
             <div className="flex flex-wrap justify-center gap-4 text-sm font-medium text-slate-700 dark:text-slate-300">
               <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Secure Cloud Storage</span>
               <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Daily Backups</span>
-              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Data Export Anytime</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Export to Excel/CSV</span>
               <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Email Support</span>
             </div>
             <div className="text-xs text-slate-500 dark:text-[#6e9688] mt-2">Made for Apartment Societies across India</div>

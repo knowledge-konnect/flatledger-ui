@@ -1,6 +1,6 @@
 ﻿import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Download, Upload, Edit, Trash, AlertCircle, Home, ChevronUp, ChevronDown, ChevronsUpDown, X, Info } from 'lucide-react';
+import { Plus, Search, Download, Upload, Edit, Trash, AlertCircle, Home, ChevronUp, ChevronDown, ChevronsUpDown, X } from 'lucide-react';
 import ImportFlatsModal from '../components/Flats/ImportFlatsModal';
 import DashboardLayout from '../components/layout/DashboardLayout';
 import Button from '../components/ui/Button';
@@ -21,8 +21,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { logger } from '../lib/logger';
-import { SignedBalanceDisplay } from '../components/ui/SignedBalanceDisplay';
-import Tooltip from '../components/ui/Tooltip';
 
 const flatSchema = z.object({
   flatNumber: z.string().min(1, 'Flat number is required'),
@@ -46,25 +44,6 @@ import { useToast } from '../components/ui/Toast';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { billingApi } from '../api/billingApi';
 
-/**
- * Component: FlatOutstandingBalance
- * Purpose: Displays the outstanding balance for a single flat using the signed balance display component.
- *
- * Props:
- *   outstandingBalance: preloaded outstanding total from the flats list response
- *   maintenanceAmount: The flat's fixed monthly charge (used for context)
- */
-function FlatOutstandingBalance({ outstandingBalance }: { outstandingBalance: number; maintenanceAmount: number }) {
-  // Use SignedBalanceDisplay component for consistent styling and color-coding
-  return (
-    <SignedBalanceDisplay 
-      amount={outstandingBalance} 
-      size="compact"
-      showLabel={true}
-    />
-  );
-}
-
 // We'll map API FlatDto to the UI model used below
 type UIFLat = {
   publicId: string;
@@ -73,7 +52,6 @@ type UIFLat = {
   ownerEmail: string;
   ownerPhone: string;
   maintenanceAmount: number;
-  outstandingBalance: number;
   // UI display name for status
   status: string;
   // status code (occupied, vacant, rented)
@@ -344,7 +322,6 @@ export default function Flats() {
         ownerEmail: f.contactEmail ?? '',
         ownerPhone: f.contactMobile,
         maintenanceAmount: f.maintenanceAmount,
-        outstandingBalance: f.totalOutstanding ?? 0,
         status: f.statusName || matchingStatus?.displayName || '',
         statusCode: matchingStatus?.code,
         statusId: f.statusId,
@@ -588,22 +565,6 @@ export default function Flats() {
                       <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors whitespace-nowrap" onClick={() => toggleSort('maintenanceAmount')}>
                         <span className="inline-flex items-center justify-end w-full">Monthly Charge <FlatSortIcon field="maintenanceAmount" sortBy={sortBy} sortDir={sortDir} /></span>
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider whitespace-nowrap">
-                        <span className="inline-flex items-center justify-end gap-1">
-                          Total Due
-                          <Tooltip
-                            side="bottom"
-                            content={
-                              <div className="flex flex-col gap-0.5 text-[11px] leading-snug">
-                                <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-rose-400 flex-shrink-0"></span><span className="text-rose-300 font-medium">+</span><span className="text-slate-200"> owes society</span></div>
-                                <div className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></span><span className="text-emerald-300 font-medium">−</span><span className="text-slate-200"> advance paid</span></div>
-                              </div>
-                            }
-                          >
-                            <Info className="w-3.5 h-3.5 text-slate-300 hover:text-white cursor-help transition-colors" />
-                          </Tooltip>
-                        </span>
-                      </th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">
                         Status
                       </th>
@@ -649,9 +610,6 @@ export default function Flats() {
                           <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                             {formatCurrency(flat.maintenanceAmount)}
                           </span>
-                        </td>
-                        <td className="px-6 py-3 text-right align-middle">
-                          <FlatOutstandingBalance outstandingBalance={flat.outstandingBalance} maintenanceAmount={flat.maintenanceAmount} />
                         </td>
                         <td className="px-6 py-3 whitespace-nowrap align-middle hidden sm:table-cell">
                           <StatusBadge code={flat.status} id={flat.statusId} label={flat.status} kind="flat" />

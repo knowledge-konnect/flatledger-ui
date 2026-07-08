@@ -1,6 +1,6 @@
 import { ApiResponse } from '../types/api';
-import { unwrapArrayData } from './responseUtils';
 import apiClient from './client';
+import { unwrapArrayData } from './responseUtils';
 
 /* =====================================================
    TYPES & INTERFACES (Following API Documentation)
@@ -86,7 +86,7 @@ export const expensesApi = {
    */
   async createExpense(payload: CreateExpenseRequest): Promise<ExpenseResponse> {
     const response = await apiClient.post<ApiResponse<ExpenseResponse>>('/expenses', payload);
-    return response.data.data;
+    return { ...response.data.data, __message: response.data.message } as ExpenseResponse;
   },
 
   /**
@@ -161,7 +161,7 @@ export const expensesApi = {
       `/expenses/${publicId}`,
       payload
     );
-    return response.data.data;
+    return { ...response.data.data, __message: response.data.message } as ExpenseResponse;
   },
 
   /**

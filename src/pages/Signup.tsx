@@ -28,14 +28,14 @@ type SignupFormData = {
 };
 
 const includedDefs = [
-  { icon: IndianRupee, key: 'billing' },
-  { icon: Receipt, key: 'payments' },
-  { icon: Zap, key: 'kpi' },
-  { icon: BarChart3, key: 'reports' },
-  { icon: PieChart, key: 'defaulters' },
-  { icon: Building2, key: 'flats' },
-  { icon: Users, key: 'roles' },
-  { icon: Building2, key: 'config' },
+  { icon: IndianRupee, label: 'Monthly billing' },
+  { icon: Receipt, label: 'Real-time payment tracking' },
+  { icon: Zap, label: 'Live KPI dashboard' },
+  { icon: BarChart3, label: 'Income & expense reports' },
+  { icon: PieChart, label: 'Defaulter tracking' },
+  { icon: Building2, label: 'Flat and resident records' },
+  { icon: Users, label: 'Role-based team access' },
+  { icon: Building2, label: 'Society settings & maintenance config' },
 ] as const;
 
 export default function Signup() {
@@ -60,7 +60,7 @@ export default function Signup() {
   });
   const included = includedDefs.map(item => ({
     icon: item.icon,
-    label: t(`auth.signup.included.${item.key}`),
+    label: item.label,
   }));
 
   if (isAuthenticated) return null;
@@ -130,10 +130,10 @@ export default function Signup() {
             <span className="text-emerald-100 text-xs font-medium">30-day free trial · No credit card</span>
           </div>
           <h2 className="text-3xl font-bold text-white leading-tight mb-3">
-            Replace Excel with<br />one simple app.
+            Replace Excel with one simple app.
           </h2>
           <p className="text-emerald-100/80 text-sm leading-relaxed mb-8">
-            Join 50+ housing societies already managing billing, payments and reports on FlatLedger.
+            Manage maintenance billing, payments, expenses, and reports for your society in one place.
           </p>
 
           {/* Feature checklist */}
@@ -150,8 +150,8 @@ export default function Signup() {
         {/* Trust bar */}
         <div className="relative z-10 pt-5 border-t border-white/20 flex items-center gap-5 text-xs text-emerald-100/60">
           <span>🔒 Encrypted & secure</span>
-          <span>📤 Export anytime</span>
-          <span>✕ Cancel anytime</span>
+          <span>📤 Export to Excel/CSV</span>
+          <span>✉️ Receipts by email</span>
         </div>
       </div>
 

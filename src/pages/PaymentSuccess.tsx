@@ -1,18 +1,59 @@
 ﻿"use client"
 
+import React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Navbar from '../components/layout/Navbar'
-import { CheckCircle, Download, Home } from 'lucide-react'
+import { CheckCircle, Download, Home, Receipt } from 'lucide-react'
+import { invoiceApi, UserInvoice } from '../api/invoiceApi'
 
 export default function PaymentSuccess() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { planId, orderId } = location.state || {}
+  const { planId, orderId, paymentId } = location.state || {}
 
   const planNames: Record<string, string> = {
     basic: 'Basic',
     standard: 'Standard',
     pro: 'Pro',
+  }
+
+  const [invoice, setInvoice] = React.useState<UserInvoice | null>(null)
+  const [isDownloading, setIsDownloading] = React.useState(false)
+
+  React.useEffect(() => {
+    let mounted = true
+    const loadInvoice = async () => {
+      if (!paymentId) return
+      try {
+        const items = await invoiceApi.getUserInvoices()
+        const found = items.find(i => i.paymentReference === paymentId)
+        if (mounted && found) {
+          setInvoice(found)
+        }
+      } catch {
+        // ignore — invoice may not be available yet
+      }
+    }
+    loadInvoice()
+    return () => { mounted = false }
+  }, [paymentId])
+
+  const handleDownloadInvoice = async () => {
+    if (!invoice?.id || isDownloading) return
+    setIsDownloading(true)
+    try {
+      const { blob, fileName } = await invoiceApi.downloadInvoicePdf(invoice.id)
+      const downloadUrl = URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = downloadUrl
+      anchor.download = fileName
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      URL.revokeObjectURL(downloadUrl)
+    } finally {
+      setIsDownloading(false)
+    }
   }
 
   return (
@@ -57,9 +98,19 @@ export default function PaymentSuccess() {
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Billing Cycle</span>
-                    <span className="font-semibold text-foreground">One-time (MVP)</span>
+                    <span className="text-muted-foreground">Payment Method</span>
+                    <span className="font-semibold text-foreground">Razorpay</span>
                   </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Receipt</span>
+                    <span className="font-semibold text-foreground">{invoice?.invoiceNumber ? `Invoice ${invoice.invoiceNumber}` : 'Delivered by email'}</span>
+                  </div>
+                  {invoice && (
+                    <div className="flex justify-between items-center pt-2">
+                      <span className="text-muted-foreground">Amount</span>
+                      <span className="font-semibold text-foreground">{invoice.totalAmount != null ? `₹${invoice.totalAmount}` : invoice.amount ? `₹${invoice.amount}` : '—'}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -137,7 +188,7 @@ export default function PaymentSuccess() {
               </div>
 
               {/* CTA Buttons */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <button
                   onClick={() => navigate('/dashboard')}
                   className="py-3 px-4 bg-gradient-to-r from-primary to-secondary text-white rounded-lg font-semibold hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
@@ -146,17 +197,26 @@ export default function PaymentSuccess() {
                   Go to Dashboard
                 </button>
                 <button
-                  className="py-3 px-4 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary/5 transition-all duration-300 flex items-center justify-center gap-2"
+                  onClick={handleDownloadInvoice}
+                  disabled={!invoice?.id || isDownloading}
+                  className="py-3 px-4 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary/5 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <Download className="w-4 h-4" />
-                  Download Invoice
+                  {isDownloading ? 'Downloading...' : 'Download Invoice'}
+                </button>
+                <button
+                  onClick={() => navigate('/subscription/manage')}
+                  className="py-3 px-4 border-2 border-primary text-primary rounded-lg font-semibold hover:bg-primary/5 transition-all duration-300 flex items-center justify-center gap-2"
+                >
+                  <Receipt className="w-4 h-4" />
+                  View Subscription
                 </button>
               </div>
 
               {/* Support */}
               <div className="p-4 bg-background rounded-lg border border-border/50 text-center">
                 <p className="text-sm text-muted-foreground">
-                  Need help? Contact our support team at{' '}
+                  A payment receipt was sent to your email. If you have questions, contact{' '}
                   <a href="mailto:support@flatledger.in" className="text-primary hover:underline font-semibold">
                     support@flatledger.in
                   </a>

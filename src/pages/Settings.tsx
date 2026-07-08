@@ -1,26 +1,41 @@
 ﻿"use client"
 
-import { useState, useEffect } from "react"
-import React from "react"
 import {
-  Save, User, Building2, Settings, CreditCard, AlertCircle, Loader, Eye, EyeOff,
-  Lock, Bell, Wrench, Moon, Sun, Shield, ChevronRight, CheckCircle2, IndianRupee, Calculator, Crown
+  AlertCircle,
+  Building2,
+  Calculator,
+  CheckCircle2,
+  ChevronRight,
+  CreditCard,
+  Crown,
+  Eye, EyeOff,
+  IndianRupee,
+  Loader,
+  Lock,
+  Moon,
+  Save,
+  Settings,
+  Shield,
+  Sun,
+  User,
+  Wrench
 } from 'lucide-react'
+import React, { useEffect, useState } from "react"
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import DashboardLayout from "../components/layout/DashboardLayout"
-import Input from "../components/ui/Input"
 import Button from "../components/ui/Button"
 import Card, { CardContent } from "../components/ui/Card"
-import { useAuth } from "../contexts/AuthProvider"
-import { useSociety, useUpdateSociety, useMaintenanceConfig, useUpdateMaintenanceConfig } from "../hooks/useSocieties"
-import { useChangePassword } from "../hooks/useChangePassword"
-import { useUpdateProfile } from "../hooks/useUpdateProfile"
-import { useSubscription } from "../hooks/useSubscription"
-import { useNotifications, useUpdateNotifications } from "../hooks/useNotifications"
+import Input from "../components/ui/Input"
 import { useToast } from "../components/ui/Toast"
-import { cn } from "../lib/utils"
+import { useAuth } from "../contexts/AuthProvider"
+import { useChangePassword } from "../hooks/useChangePassword"
+import { useNotifications, useUpdateNotifications } from "../hooks/useNotifications"
 import { useOpeningBalanceStatus } from "../hooks/useOpeningBalance"
-import { isAdminRole, collectUserRoles, getPrimaryRoleLabel } from "../types/roles"
+import { useMaintenanceConfig, useSociety, useUpdateMaintenanceConfig, useUpdateSociety } from "../hooks/useSocieties"
+import { useSubscription } from "../hooks/useSubscription"
+import { useUpdateProfile } from "../hooks/useUpdateProfile"
+import { cn } from "../lib/utils"
+import { collectUserRoles, getPrimaryRoleLabel, isAdminRole } from "../types/roles"
 
 const NAV_SECTIONS: { label: string; items: { id: string; label: string; icon: React.ElementType; description: string; adminOnly?: boolean; href?: string }[] }[] = [
   {
@@ -41,7 +56,6 @@ const NAV_SECTIONS: { label: string; items: { id: string; label: string; icon: R
   {
     label: 'Preferences',
     items: [
-      { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Alerts & reminders' },
       { id: 'appearance', label: 'Appearance', icon: Moon, description: 'Theme & display' },
     ],
   },
@@ -548,10 +562,10 @@ export default function SettingsPageRedesigned() {
                           <p className="text-xs text-slate-400 mt-1">Days after the due date before late fees start applying</p>
                         </div>
                       </div>
-                      <Button 
-                        variant="primary" 
-                        className="flex items-center gap-2" 
-                        onClick={handleSaveMaintenanceConfig} 
+                      <Button
+                        variant="primary"
+                        className="flex items-center gap-2"
+                        onClick={handleSaveMaintenanceConfig}
                         disabled={isSaving || !isAdmin || !maintenanceForm.defaultMonthlyCharge || maintenanceForm.defaultMonthlyCharge <= 0 || !maintenanceForm.dueDayOfMonth || maintenanceForm.dueDayOfMonth < 1 || maintenanceForm.dueDayOfMonth > 28 || maintenanceForm.lateFeePerMonth < 0 || maintenanceForm.gracePeriodDays < 0}
                       >
                         {isSaving ? <Loader className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -570,6 +584,9 @@ export default function SettingsPageRedesigned() {
                   <div>
                     <h3 className="font-semibold text-slate-800 dark:text-slate-200">Notification Preferences</h3>
                     <p className="text-xs text-slate-400 mt-0.5">Choose which events you want to be notified about</p>
+                  </div>
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">
+                    Recommended for a small society: turn on maintenance reminders and payment updates so admins can follow up quickly without checking the dashboard every day.
                   </div>
                   {notifications.isLoading ? (
                     <div className="flex items-center justify-center py-8"><Loader className="w-5 h-5 animate-spin text-slate-400" /></div>

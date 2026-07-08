@@ -26,12 +26,18 @@ export interface Transaction {
 
 export interface Invoice {
   id: string;
-  number: string;
-  date: string;
-  dueDate: string;
+  number: string; // InvoiceNumber
+  date?: string | null;
+  dueDate?: string | null;
   amount: number;
-  status: 'PENDING' | 'PAID' | 'OVERDUE';
-  items: InvoiceItem[];
+  totalAmount?: number;
+  currency?: string | null;
+  status: 'PENDING' | 'PAID' | 'OVERDUE' | string;
+  paymentMethod?: string | null;
+  paymentReference?: string | null;
+  description?: string | null;
+  createdAt?: string | null;
+  items?: InvoiceItem[];
 }
 
 export interface InvoiceItem {

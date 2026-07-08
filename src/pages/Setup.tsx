@@ -147,6 +147,20 @@ export default function Setup() {
             </p>
           </Card>
 
+          <Card className="p-5 border-emerald-200 bg-emerald-50/70 dark:border-emerald-900/40 dark:bg-emerald-950/20">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Recommended setup path</h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+                  For a small society, the quickest path is to set maintenance rules, add flats, and then start recording payments.
+                </p>
+              </div>
+              <div className="rounded-full bg-white/80 dark:bg-slate-900/60 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                {nextIncompleteStep ? `Up next: ${nextIncompleteStep.id === 'opening-balance' ? 'Opening Balance' : nextIncompleteStep.label}` : 'All set'}
+              </div>
+            </div>
+          </Card>
+
           {/* ── Step Cards ────────────────────────────────────────────────── */}
           <div className="space-y-4">
             {STEP_CONFIG.map((config, index) => {

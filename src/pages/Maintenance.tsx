@@ -1,34 +1,34 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Plus, CreditCard, Search, Edit, Trash, Eye, IndianRupee, AlertCircle, TrendingUp, Zap, Lock, Home, Calendar, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, MessageCircle, Copy } from 'lucide-react';
-import DashboardLayout from '../components/layout/DashboardLayout';
-import PageHeader from '../components/ui/PageHeader';
-import Tooltip from '../components/ui/Tooltip';
-import EmptyState from '../components/ui/EmptyState';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
-import Select from '../components/ui/Select';
-import Modal, { ModalFooter } from '../components/ui/Modal';
-import Badge from '../components/ui/Badge';
-import { SignedBalanceDisplay } from '../components/ui/SignedBalanceDisplay';
-import { formatCurrency, formatDate } from '../lib/utils';
-import { getMonthOptions as buildMonthOptions } from '../lib/periodFilters';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQuery } from '@tanstack/react-query';
+import { AlertCircle, Calendar, ChevronDown, ChevronLeft, ChevronRight, ChevronsUpDown, ChevronUp, CreditCard, Edit, Eye, Home, IndianRupee, Lock, Plus, Search, Trash, TrendingUp, Zap } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
 import { z } from 'zod';
-import { useAuth } from '../contexts/AuthProvider';
-import { useToast } from '../components/ui/Toast';
-import { useMaintenancePayments, useMaintenanceSummary, useCreateMaintenancePayment, useUpdateMaintenancePayment, useDeleteMaintenancePayment, usePaymentModes } from '../hooks/useBilling';
-import { useBillingStatus } from '../hooks/useBillingStatus';
-import { useFlats, useFlatFinancialSummary } from '../hooks/useFlats';
-import { useMaintenanceConfig } from '../hooks/useSocieties';
-import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { flatsApi } from '../api/flatsApi';
 import { CreateMaintenancePaymentResponse } from '../api/maintenanceApi';
-import { isAdminRole, collectUserRoles } from '../types/roles';
+import DashboardLayout from '../components/layout/DashboardLayout';
+import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
+import EmptyState from '../components/ui/EmptyState';
+import Input from '../components/ui/Input';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
+import Modal, { ModalFooter } from '../components/ui/Modal';
+import PageHeader from '../components/ui/PageHeader';
+import Select from '../components/ui/Select';
+import { SignedBalanceDisplay } from '../components/ui/SignedBalanceDisplay';
+import { useToast } from '../components/ui/Toast';
+import Tooltip from '../components/ui/Tooltip';
+import { useAuth } from '../contexts/AuthProvider';
+import { useApiErrorToast } from '../hooks/useApiErrorHandler';
+import { useCreateMaintenancePayment, useDeleteMaintenancePayment, useMaintenancePayments, useMaintenanceSummary, usePaymentModes, useUpdateMaintenancePayment } from '../hooks/useBilling';
+import { useBillingStatus } from '../hooks/useBillingStatus';
+import { useFlatFinancialSummary, useFlats } from '../hooks/useFlats';
+import { useMaintenanceConfig } from '../hooks/useSocieties';
 import { useSocietyPeriodBounds } from '../hooks/useSocietyPeriodBounds';
+import { getMonthOptions as buildMonthOptions } from '../lib/periodFilters';
+import { formatCurrency, formatDate } from '../lib/utils';
+import { collectUserRoles, isAdminRole } from '../types/roles';
 
 const paymentSchema = z.object({
   flatPublicId: z.string().min(1, 'Please select a flat'),
@@ -46,7 +46,7 @@ const paymentSchema = z.object({
       const fyStart = new Date(fyStartYear, 3, 1); // April 1
       return selected >= fyStart;
     }, { message: 'Payment date cannot be before the start of the current financial year (1 Apr)' }),
-  referenceNumber: z.string().optional(),
+  notes: z.string().max(500, 'Notes must be 500 characters or less').optional(),
 });
 
 type PaymentFormData = z.infer<typeof paymentSchema>;
@@ -167,7 +167,7 @@ export default function Maintenance() {
       amount: '',
       paymentModeId: '',
       paymentDate: new Date().toISOString().split('T')[0],
-      referenceNumber: '',
+      notes: '',
     },
   });
 
@@ -350,10 +350,10 @@ export default function Maintenance() {
           outstandingNow === 0
             ? 'Cleared'
             : after === 0
-            ? 'Cleared'
-            : after < before
-            ? 'Partial'
-            : 'Unpaid';
+              ? 'Cleared'
+              : after < before
+                ? 'Partial'
+                : 'Unpaid';
         result.set(payment.publicId, { before, after, status });
         runningDue = after;
       });
@@ -385,7 +385,7 @@ export default function Maintenance() {
             amount: Number(data.amount),
             paymentDate: new Date(data.paymentDate).toISOString(),
             paymentModeCode: data.paymentModeId,
-            referenceNumber: data.referenceNumber || undefined,
+            notes: data.notes || undefined,
           }
         });
         showToast('Payment updated successfully', 'success');
@@ -412,7 +412,7 @@ export default function Maintenance() {
             paymentDate: new Date(data.paymentDate).toISOString(),
             paymentModeId: data.paymentModeId,
             paymentModeCode: data.paymentModeId,
-            referenceNumber: data.referenceNumber || undefined,
+            notes: data.notes || undefined,
           },
           idempotencyKey,
         });
@@ -484,7 +484,7 @@ export default function Maintenance() {
       amount: String(payment.amount),
       paymentModeId: resolvedModeCode,
       paymentDate: payment.paymentDate.split('T')[0],
-      referenceNumber: payment.referenceNumber || '',
+      notes: payment.notes || payment.referenceNumber || '',
     });
     setShowAddModal(true);
   };
@@ -527,15 +527,15 @@ export default function Maintenance() {
     () =>
       searchQuery
         ? payments.filter(p => {
-            const q = searchQuery.toLowerCase();
-            return (
-              (p.flatNumber || '').toLowerCase().includes(q) ||
-              (p.recordedByName || '').toLowerCase().includes(q) ||
-              (p.notes || '').toLowerCase().includes(q) ||
-              (p.referenceNumber || '').toLowerCase().includes(q) ||
-              (p.paymentModeName || '').toLowerCase().includes(q)
-            );
-          })
+          const q = searchQuery.toLowerCase();
+          return (
+            (p.flatNumber || '').toLowerCase().includes(q) ||
+            (p.recordedByName || '').toLowerCase().includes(q) ||
+            (p.notes || '').toLowerCase().includes(q) ||
+            (p.referenceNumber || '').toLowerCase().includes(q) ||
+            (p.paymentModeName || '').toLowerCase().includes(q)
+          );
+        })
         : payments,
     [payments, searchQuery]
   );
@@ -618,7 +618,7 @@ export default function Maintenance() {
                     amount: '',
                     paymentModeId: '',
                     paymentDate: new Date().toISOString().split('T')[0],
-                    referenceNumber: '',
+                    notes: '',
                   });
                   setShowAddModal(true);
                 }}
@@ -693,89 +693,88 @@ export default function Maintenance() {
           {/* Summary stat strip */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-4 bg-slate-50/40 dark:bg-slate-900/20 lg:gap-2.5 lg:p-3">
 
-          {/* Total Charges */}
-          <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900 px-4 py-3 shadow-sm min-w-0 lg:gap-2.5 lg:px-3 lg:py-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0 lg:w-8 lg:h-8">
-              <IndianRupee className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            {/* Total Charges */}
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900 px-4 py-3 shadow-sm min-w-0 lg:gap-2.5 lg:px-3 lg:py-2.5">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0 lg:w-8 lg:h-8">
+                <IndianRupee className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 truncate">Total Charges</p>
+                <p className="text-base font-bold text-slate-900 dark:text-white leading-tight mt-0.5 lg:text-sm">
+                  {summaryLoading ? <span className="text-slate-300">…</span> : formatCurrency(summary?.totalCharges || 0)}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 truncate">Total Charges</p>
-              <p className="text-base font-bold text-slate-900 dark:text-white leading-tight mt-0.5 lg:text-sm">
-                {summaryLoading ? <span className="text-slate-300">…</span> : formatCurrency(summary?.totalCharges || 0)}
-              </p>
-            </div>
-          </div>
 
-          {/* Collected */}
-          <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900 px-4 py-3 shadow-sm min-w-0 lg:gap-2.5 lg:px-3 lg:py-2.5">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0 lg:w-8 lg:h-8">
-              <CreditCard className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            {/* Collected */}
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900 px-4 py-3 shadow-sm min-w-0 lg:gap-2.5 lg:px-3 lg:py-2.5">
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0 lg:w-8 lg:h-8">
+                <CreditCard className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 truncate">Collected</p>
+                <p className="text-base font-bold text-emerald-600 dark:text-emerald-400 leading-tight mt-0.5 lg:text-sm">
+                  {summaryLoading ? <span className="text-slate-300">…</span> : formatCurrency(summary?.totalCollected || 0)}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 truncate">Collected</p>
-              <p className="text-base font-bold text-emerald-600 dark:text-emerald-400 leading-tight mt-0.5 lg:text-sm">
-                {summaryLoading ? <span className="text-slate-300">…</span> : formatCurrency(summary?.totalCollected || 0)}
-              </p>
-            </div>
-          </div>
 
-          {/* Outstanding Balance */}
-          <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900 px-4 py-3 shadow-sm min-w-0 lg:gap-2.5 lg:px-3 lg:py-2.5">
-            <div className="w-9 h-9 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0 lg:w-8 lg:h-8">
-              <AlertCircle className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+            {/* Outstanding Balance */}
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900 px-4 py-3 shadow-sm min-w-0 lg:gap-2.5 lg:px-3 lg:py-2.5">
+              <div className="w-9 h-9 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0 lg:w-8 lg:h-8">
+                <AlertCircle className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 truncate">Outstanding Balance</p>
+                <p className={`text-base font-bold leading-tight mt-0.5 lg:text-sm ${(summary?.totalOutstanding || 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-400 dark:text-slate-500'
+                  }`}>
+                  {summaryLoading ? <span className="text-slate-300">…</span> : formatCurrency(summary?.totalOutstanding || 0)}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 truncate">Outstanding Balance</p>
-              <p className={`text-base font-bold leading-tight mt-0.5 lg:text-sm ${
-                (summary?.totalOutstanding || 0) > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-400 dark:text-slate-500'
-              }`}>
-                {summaryLoading ? <span className="text-slate-300">…</span> : formatCurrency(summary?.totalOutstanding || 0)}
-              </p>
-            </div>
-          </div>
 
-          {/* Collection % */}
-          <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900 px-4 py-3 shadow-sm min-w-0 lg:gap-2.5 lg:px-3 lg:py-2.5">
-            <div className="w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0 lg:w-8 lg:h-8">
-              <TrendingUp className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+            {/* Collection % */}
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900 px-4 py-3 shadow-sm min-w-0 lg:gap-2.5 lg:px-3 lg:py-2.5">
+              <div className="w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center flex-shrink-0 lg:w-8 lg:h-8">
+                <TrendingUp className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 truncate">Collection Rate</p>
+                {summaryLoading ? (
+                  <p className="text-base font-bold text-slate-300 mt-0.5 lg:text-sm">…</p>
+                ) : (summary?.totalCharges || 0) === 0 ? (
+                  <p className="text-base font-bold text-slate-400 dark:text-slate-500 mt-0.5 lg:text-sm">N/A</p>
+                ) : (
+                  <>
+                    <p className="text-base font-bold text-teal-600 dark:text-teal-400 leading-tight mt-0.5 lg:text-sm">
+                      {(summary?.collectionPercentage || 0).toFixed(1)}%
+                    </p>
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-1.5 overflow-hidden lg:mt-1">
+                      <div
+                        className="bg-teal-500 h-full rounded-full transition-all duration-700"
+                        style={{ width: `${Math.min(summary?.collectionPercentage || 0, 100)}%` }}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400 truncate">Collection Rate</p>
-              {summaryLoading ? (
-                <p className="text-base font-bold text-slate-300 mt-0.5 lg:text-sm">…</p>
-              ) : (summary?.totalCharges || 0) === 0 ? (
-                <p className="text-base font-bold text-slate-400 dark:text-slate-500 mt-0.5 lg:text-sm">N/A</p>
-              ) : (
-                <>
-                  <p className="text-base font-bold text-teal-600 dark:text-teal-400 leading-tight mt-0.5 lg:text-sm">
-                    {(summary?.collectionPercentage || 0).toFixed(1)}%
-                  </p>
-                  <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 mt-1.5 overflow-hidden lg:mt-1">
-                    <div
-                      className="bg-teal-500 h-full rounded-full transition-all duration-700"
-                      style={{ width: `${Math.min(summary?.collectionPercentage || 0, 100)}%` }}
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
 
           </div>{/* end stat strip */}
 
           {/* No-bills warning inside the card */}
           {!summaryLoading &&
-           (summary?.totalCharges || 0) === 0 &&
-           !(billingStatus?.isGenerated && period === billingStatus?.currentMonth) && (
-            <div className="flex items-start gap-2.5 border-t border-amber-100 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/20 px-4 py-2.5">
-              <AlertCircle className="w-4 h-4 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700 dark:text-amber-300">
-                <span className="font-semibold">No bills generated for this period.</span>{' '}
-                Charges, pending amounts and collection rate will show once bills are generated.{' '}
-                <Link to="/dashboard" className="font-semibold underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100 transition-colors">Generate Bills &rarr;</Link>
-              </p>
-            </div>
-          )}
+            (summary?.totalCharges || 0) === 0 &&
+            !(billingStatus?.isGenerated && period === billingStatus?.currentMonth) && (
+              <div className="flex items-start gap-2.5 border-t border-amber-100 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/20 px-4 py-2.5">
+                <AlertCircle className="w-4 h-4 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  <span className="font-semibold">No bills generated for this period.</span>{' '}
+                  Charges, pending amounts and collection rate will show once bills are generated.{' '}
+                  <Link to="/dashboard" className="font-semibold underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100 transition-colors">Generate Bills &rarr;</Link>
+                </p>
+              </div>
+            )}
 
         </div>{/* end period+cards section */}
 
@@ -830,11 +829,10 @@ export default function Maintenance() {
                     key={filterItem.key}
                     type="button"
                     onClick={() => setAllocationFilter(filterItem.key as 'all' | 'current' | 'arrears')}
-                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors ${
-                      allocationFilter === filterItem.key
-                        ? 'bg-emerald-600 text-white border-emerald-600'
-                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700'
-                    }`}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors ${allocationFilter === filterItem.key
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700'
+                      }`}
                   >
                     {filterItem.label}
                   </button>
@@ -861,7 +859,7 @@ export default function Maintenance() {
                 <button
                   type="button"
                   onClick={clearAllFilters}
-                    className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 hover:text-emerald-800 dark:hover:text-emerald-200 whitespace-nowrap"
+                  className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 hover:text-emerald-800 dark:hover:text-emerald-200 whitespace-nowrap"
                 >
                   Clear filters
                 </button>
@@ -904,7 +902,7 @@ export default function Maintenance() {
                       amount: '',
                       paymentModeId: '',
                       paymentDate: new Date().toISOString().split('T')[0],
-                      referenceNumber: '',
+                      notes: '',
                     });
                     setShowAddModal(true);
                   },
@@ -950,98 +948,98 @@ export default function Maintenance() {
                     const ownerName = flatOwnerMap.get(payment.flatPublicId);
                     const balance = paymentBalanceById.get(payment.publicId);
                     return (
-                    <tr
-                      key={payment.publicId}
-                      onClick={() => { setViewTarget(payment); setShowViewModal(true); }}
-                      className="group cursor-pointer transition-all duration-150 divide-x divide-slate-100 dark:divide-slate-700/60 even:bg-slate-50/40 dark:even:bg-slate-900/10 hover:bg-slate-50 dark:hover:bg-slate-800/60"
-                    >
-                      <td className="px-3 py-1.5 whitespace-nowrap">
-                        <div className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50">
-                          <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
-                            {payment.flatNumber || '-'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-3 py-1.5 whitespace-nowrap">
-                        <span className="text-sm text-slate-700 dark:text-slate-300">{formatDate(payment.paymentDate)}</span>
-                      </td>
-                      <td className="px-3 py-1.5 whitespace-nowrap">
-                        {ownerName ? (
-                          <span className="text-sm text-slate-700 dark:text-slate-300 truncate max-w-[130px] block">{ownerName}</span>
-                        ) : (
-                          <span className="text-sm text-slate-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-3 py-1.5 whitespace-nowrap text-right">
-                        <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                          {formatCurrency(payment.amount)}
-                        </span>
-                      </td>
-                      <td className="px-3 py-1.5 whitespace-nowrap">
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {payment.paymentModeName || '—'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-1.5 whitespace-nowrap">
-                        {(() => {
-                          // Prefer the authoritative billStatus from the API.
-                          // Fall back to the client-computed balance status for advance/OB rows
-                          // (no bill linked) or older records that predate the field.
-                          const apiStatus = payment.billStatus
-                            ? normalizeBillStatus(payment.billStatus)
-                            : null;
-
-                          const displayStatus: string =
-                            apiStatus === 'paid'    ? 'Cleared'
-                            : apiStatus === 'partial' ? 'Partial'
-                            : apiStatus === 'overdue' ? 'Overdue'
-                            : apiStatus === 'unpaid'  ? 'Unpaid'
-                            : balance?.status || 'Unpaid';
-
-                          const statusClass =
-                            displayStatus === 'Cleared'
-                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                              : displayStatus === 'Partial'
-                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-                              : displayStatus === 'Overdue'
-                              ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
-                              : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300';
-
-                          return (
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusClass}`}>
-                              {displayStatus}
+                      <tr
+                        key={payment.publicId}
+                        onClick={() => { setViewTarget(payment); setShowViewModal(true); }}
+                        className="group cursor-pointer transition-all duration-150 divide-x divide-slate-100 dark:divide-slate-700/60 even:bg-slate-50/40 dark:even:bg-slate-900/10 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                      >
+                        <td className="px-3 py-1.5 whitespace-nowrap">
+                          <div className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50">
+                            <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
+                              {payment.flatNumber || '-'}
                             </span>
-                          );
-                        })()}
-                      </td>
-                      <td className="px-3 py-1.5 w-[140px]">
-                        {(() => {
-                          const chips = appliedBucketsByPayment.get(payment.publicId) || [];
-                          if (!chips.length) return <span className="text-xs text-slate-400">—</span>;
-                          const visible = chips.slice(0, 1);
-                          const extra = chips.length - visible.length;
-                          const fullLabel = chips.map((entry) => entry.label).join(', ');
-                          return (
-                            <div className="flex flex-wrap gap-1" title={fullLabel}>
-                              {visible.map((entry) => (
-                                <span
-                                  key={entry.period}
-                                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold whitespace-nowrap bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                                >
-                                  {entry.label}
-                                </span>
-                              ))}
-                              {extra > 0 && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                                  +{extra} more
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </td>
-                      <td className="px-3 py-1.5 whitespace-nowrap w-[118px]" onClick={e => e.stopPropagation()}>
-                        <div className="flex gap-1 justify-center items-center">
+                          </div>
+                        </td>
+                        <td className="px-3 py-1.5 whitespace-nowrap">
+                          <span className="text-sm text-slate-700 dark:text-slate-300">{formatDate(payment.paymentDate)}</span>
+                        </td>
+                        <td className="px-3 py-1.5 whitespace-nowrap">
+                          {ownerName ? (
+                            <span className="text-sm text-slate-700 dark:text-slate-300 truncate max-w-[130px] block">{ownerName}</span>
+                          ) : (
+                            <span className="text-sm text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-1.5 whitespace-nowrap text-right">
+                          <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                            {formatCurrency(payment.amount)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-1.5 whitespace-nowrap">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {payment.paymentModeName || '—'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-1.5 whitespace-nowrap">
+                          {(() => {
+                            // Prefer the authoritative billStatus from the API.
+                            // Fall back to the client-computed balance status for advance/OB rows
+                            // (no bill linked) or older records that predate the field.
+                            const apiStatus = payment.billStatus
+                              ? normalizeBillStatus(payment.billStatus)
+                              : null;
+
+                            const displayStatus: string =
+                              apiStatus === 'paid' ? 'Cleared'
+                                : apiStatus === 'partial' ? 'Partial'
+                                  : apiStatus === 'overdue' ? 'Overdue'
+                                    : apiStatus === 'unpaid' ? 'Unpaid'
+                                      : balance?.status || 'Unpaid';
+
+                            const statusClass =
+                              displayStatus === 'Cleared'
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                : displayStatus === 'Partial'
+                                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+                                  : displayStatus === 'Overdue'
+                                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
+                                    : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300';
+
+                            return (
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusClass}`}>
+                                {displayStatus}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-3 py-1.5 w-[140px]">
+                          {(() => {
+                            const chips = appliedBucketsByPayment.get(payment.publicId) || [];
+                            if (!chips.length) return <span className="text-xs text-slate-400">—</span>;
+                            const visible = chips.slice(0, 1);
+                            const extra = chips.length - visible.length;
+                            const fullLabel = chips.map((entry) => entry.label).join(', ');
+                            return (
+                              <div className="flex flex-wrap gap-1" title={fullLabel}>
+                                {visible.map((entry) => (
+                                  <span
+                                    key={entry.period}
+                                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold whitespace-nowrap bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+                                  >
+                                    {entry.label}
+                                  </span>
+                                ))}
+                                {extra > 0 && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                    +{extra} more
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-3 py-1.5 whitespace-nowrap w-[118px]" onClick={e => e.stopPropagation()}>
+                          <div className="flex gap-1 justify-center items-center">
                             <button
                               aria-label="View payment details"
                               onClick={(e) => { e.stopPropagation(); setViewTarget(payment); setShowViewModal(true); }}
@@ -1052,58 +1050,58 @@ export default function Maintenance() {
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </button>
-                        {isAdmin && (<>
-                            {(payment.allocations?.length ?? 0) > 0 || isPaymentLocked(payment) ? (
-                              <Tooltip
-                                content={
-                                  isPaymentLocked(payment)
-                                    ? 'Payments older than 30 days cannot be edited.'
-                                    : 'This payment is linked to a bill. To edit, delete and recreate.'
-                                }
-                                side="top"
-                              >
-                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg
+                            {isAdmin && (<>
+                              {(payment.allocations?.length ?? 0) > 0 || isPaymentLocked(payment) ? (
+                                <Tooltip
+                                  content={
+                                    isPaymentLocked(payment)
+                                      ? 'Payments older than 30 days cannot be edited.'
+                                      : 'This payment is linked to a bill. To edit, delete and recreate.'
+                                  }
+                                  side="top"
+                                >
+                                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg
                                                  bg-slate-100 dark:bg-slate-800 cursor-not-allowed opacity-50">
-                                  <Lock className="w-3.5 h-3.5 text-slate-400" />
-                                </span>
-                              </Tooltip>
-                            ) : (
-                              <button
-                                aria-label="Edit payment"
-                                onClick={(e) => { e.stopPropagation(); openEditModal(payment); }}
-                                className="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-200
+                                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                                  </span>
+                                </Tooltip>
+                              ) : (
+                                <button
+                                  aria-label="Edit payment"
+                                  onClick={(e) => { e.stopPropagation(); openEditModal(payment); }}
+                                  className="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-200
                                            bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:scale-110
                                            dark:bg-emerald-950/50 dark:text-emerald-400 dark:hover:bg-emerald-900/50
                                            focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-                              >
-                                <Edit className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            <button
-                              aria-label="Delete payment"
-                              disabled={isPaymentLocked(payment)}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (isPaymentLocked(payment)) {
-                                  showToast('This payment is older than 30 days and cannot be deleted.', 'error');
-                                  return;
-                                }
-                                setDeleteTarget(payment);
-                                setShowDeleteModal(true);
-                              }}
-                              className={`inline-flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-200
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              <button
+                                aria-label="Delete payment"
+                                disabled={isPaymentLocked(payment)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (isPaymentLocked(payment)) {
+                                    showToast('This payment is older than 30 days and cannot be deleted.', 'error');
+                                    return;
+                                  }
+                                  setDeleteTarget(payment);
+                                  setShowDeleteModal(true);
+                                }}
+                                className={`inline-flex items-center justify-center w-7 h-7 rounded-lg transition-all duration-200
                                          focus:outline-none focus:ring-2 focus:ring-rose-500/50
-                                         ${ isPaymentLocked(payment)
-                                           ? 'bg-slate-100 dark:bg-slate-800 opacity-50 cursor-not-allowed'
-                                           : 'bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-110 dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/50'
-                                         }`}
-                            >
-                              <Trash className="w-3.5 h-3.5" />
-                            </button>
-                          </>)}
-                        </div>
-                      </td>
-                    </tr>
+                                         ${isPaymentLocked(payment)
+                                    ? 'bg-slate-100 dark:bg-slate-800 opacity-50 cursor-not-allowed'
+                                    : 'bg-rose-50 text-rose-600 hover:bg-rose-100 hover:scale-110 dark:bg-rose-950/50 dark:text-rose-400 dark:hover:bg-rose-900/50'
+                                  }`}
+                              >
+                                <Trash className="w-3.5 h-3.5" />
+                              </button>
+                            </>)}
+                          </div>
+                        </td>
+                      </tr>
                     );
                   })}
                 </tbody>
@@ -1168,409 +1166,403 @@ export default function Maintenance() {
           size="xl"
         >
 
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
-          {/* -- General/Business Rule Error Banner -- */}
-          {formError && (
-            <div className="mx-6 mt-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3">
-              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-red-900 dark:text-red-100">{formError}</p>
-              </div>
-            </div>
-          )}
-
-          {/* -- No-bills warning banner � only relevant when the entered payment date is in the current (ungenerated) month -- */}
-          {!isEditing && enteredPeriod === billingStatus?.currentMonth && !billingStatus?.isGenerated && (
-            <div className="flex items-start gap-3 mx-6 mt-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
-              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
-                  Bills not yet generated for {billingStatus?.currentMonth
-                    ? (() => { const [y, m] = billingStatus.currentMonth.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); })()
-                    : 'this month'}
-                </p>
-                <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
-                  Payment will be recorded as advance and automatically allocated once bills are generated.{' '}
-                  <Link
-                    to="/dashboard"
-                    className="font-semibold underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100 transition-colors whitespace-nowrap"
-                  >
-                    Generate Bills &rarr;
-                  </Link>
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* -- Duplicate-payment block � hard block when flat already has a payment for the entered period -- */}
-          {!isEditing && isDuplicatePayment && !localSubmitting && !createPayment.isPending && (
-            <div className="mx-6 mt-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3">
-              <div className="flex items-start gap-3">
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
+            {/* -- General/Business Rule Error Banner -- */}
+            {formError && (
+              <div className="mx-6 mt-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3">
                 <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-red-900 dark:text-red-100">Payment already recorded</p>
-                  <p className="text-xs text-red-700 dark:text-red-300 mt-0.5">
-                    This flat already has a payment recorded for {enteredPeriod}. Please verify before recording again.
-                  </p>
+                  <p className="text-sm font-semibold text-red-900 dark:text-red-100">{formError}</p>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* -- Zero-outstanding info � soft warning, does NOT block submit (payment goes as advance) -- */}
-          {!isEditing && !isDuplicatePayment && !!selectedFlatPublicId && hasZeroOutstanding && (
-            <div className="mx-6 mt-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
-              <div className="flex items-start gap-3">
+            {/* -- No-bills warning banner � only relevant when the entered payment date is in the current (ungenerated) month -- */}
+            {!isEditing && enteredPeriod === billingStatus?.currentMonth && !billingStatus?.isGenerated && (
+              <div className="flex items-start gap-3 mx-6 mt-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
                 <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">No outstanding balance</p>
+                  <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+                    Bills not yet generated for {billingStatus?.currentMonth
+                      ? (() => { const [y, m] = billingStatus.currentMonth.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); })()
+                      : 'this month'}
+                  </p>
                   <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
-                    This flat has no unpaid dues. The payment will be recorded as an advance and automatically allocated once bills are generated.
+                    Payment will be recorded as advance and automatically allocated once bills are generated.{' '}
+                    <Link
+                      to="/dashboard"
+                      className="font-semibold underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-100 transition-colors whitespace-nowrap"
+                    >
+                      Generate Bills &rarr;
+                    </Link>
                   </p>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* -- Two-column body --------------------------------------------- */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-0 p-4 sm:p-6 pb-0">
+            {/* -- Duplicate-payment block � hard block when flat already has a payment for the entered period -- */}
+            {!isEditing && isDuplicatePayment && !localSubmitting && !createPayment.isPending && (
+              <div className="mx-6 mt-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-red-900 dark:text-red-100">Payment already recorded</p>
+                    <p className="text-xs text-red-700 dark:text-red-300 mt-0.5">
+                      This flat already has a payment recorded for {enteredPeriod}. Please verify before recording again.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
-            {/* -- LEFT: Flat selector + outstanding breakdown --------------- */}
-            <div className="md:pr-6 md:border-r border-slate-200 dark:border-slate-700 space-y-4">
+            {/* -- Zero-outstanding info � soft warning, does NOT block submit (payment goes as advance) -- */}
+            {!isEditing && !isDuplicatePayment && !!selectedFlatPublicId && hasZeroOutstanding && (
+              <div className="mx-6 mt-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">No outstanding balance</p>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                      This flat has no unpaid dues. The payment will be recorded as an advance and automatically allocated once bills are generated.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
-              {/* Section label */}
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                Flat Details
-              </p>
+            {/* -- Two-column body --------------------------------------------- */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 p-4 sm:p-6 pb-0">
 
-              {/* Flat searchable combobox */}
-              <div className="form-field" ref={flatComboboxRef}>
-                <label className="label">Select Flat</label>
-                {isEditing ? (
-                  <>
-                    <div className="input bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed">
-                      {safeFlats.find(f => f.publicId === selectedFlatPublicId)
-                        ? `${safeFlats.find(f => f.publicId === selectedFlatPublicId)!.flatNo} · ${safeFlats.find(f => f.publicId === selectedFlatPublicId)!.ownerName}`
-                        : 'Choose a flat...'}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">Flat cannot be changed when editing a payment</p>
-                  </>
-                ) : (
-                  <div className="relative">
-                    <div
-                      className={`input flex items-center gap-2 cursor-text ${
-                        errors.flatPublicId ? 'input-error' : ''
-                      }`}
-                      onClick={() => flatSearchInputRef.current?.focus()}
-                    >
-                      <Search className="w-4 h-4 text-slate-400 shrink-0" />
-                      <input
-                        ref={flatSearchInputRef}
-                        className="flex-1 bg-transparent outline-none text-sm placeholder:text-slate-400"
-                        placeholder={selectedFlatPublicId
-                          ? (safeFlats.find(f => f.publicId === selectedFlatPublicId)
+              {/* -- LEFT: Flat selector + outstanding breakdown --------------- */}
+              <div className="md:pr-6 md:border-r border-slate-200 dark:border-slate-700 space-y-4">
+
+                {/* Section label */}
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  Flat Details
+                </p>
+
+                {/* Flat searchable combobox */}
+                <div className="form-field" ref={flatComboboxRef}>
+                  <label className="label">Select Flat</label>
+                  {isEditing ? (
+                    <>
+                      <div className="input bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed">
+                        {safeFlats.find(f => f.publicId === selectedFlatPublicId)
+                          ? `${safeFlats.find(f => f.publicId === selectedFlatPublicId)!.flatNo} · ${safeFlats.find(f => f.publicId === selectedFlatPublicId)!.ownerName}`
+                          : 'Choose a flat...'}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">Flat cannot be changed when editing a payment</p>
+                    </>
+                  ) : (
+                    <div className="relative">
+                      <div
+                        className={`input flex items-center gap-2 cursor-text ${errors.flatPublicId ? 'input-error' : ''
+                          }`}
+                        onClick={() => flatSearchInputRef.current?.focus()}
+                      >
+                        <Search className="w-4 h-4 text-slate-400 shrink-0" />
+                        <input
+                          ref={flatSearchInputRef}
+                          className="flex-1 bg-transparent outline-none text-sm placeholder:text-slate-400"
+                          placeholder={selectedFlatPublicId
+                            ? (safeFlats.find(f => f.publicId === selectedFlatPublicId)
                               ? `${safeFlats.find(f => f.publicId === selectedFlatPublicId)!.flatNo} · ${safeFlats.find(f => f.publicId === selectedFlatPublicId)!.ownerName}`
                               : 'Choose a flat...')
-                          : 'Search flat no. or owner...'}
-                        value={flatSearch}
-                        onChange={e => { setFlatSearch(e.target.value); setFlatDropdownOpen(true); }}
-                        onFocus={() => setFlatDropdownOpen(true)}
-                        onBlur={() => setTimeout(() => setFlatDropdownOpen(false), 200)}
-                      />
-                      {selectedFlatPublicId && (
-                        <button
-                          type="button"
-                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 shrink-0"
-                          onClick={e => { e.stopPropagation(); setValue('flatPublicId', ''); setFlatSearch(''); }}
-                          tabIndex={-1}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                    {flatDropdownOpen && (
-                      <ul className="absolute z-50 mt-1 w-full max-h-52 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg">
-                        {safeFlats
-                          .filter(flat => {
-                            const q = flatSearch.toLowerCase();
-                            return !q || flat.flatNo.toLowerCase().includes(q) || flat.ownerName.toLowerCase().includes(q);
-                          })
-                          .map(flat => {
-                            const alreadyPaid = alreadyPaidFlatIds.has(flat.publicId);
-                            const isSelected = flat.publicId === selectedFlatPublicId;
-                            return (
-                              <li
-                                key={flat.publicId}
-                                className={`flex items-center justify-between px-3 py-2 text-sm cursor-pointer ${
-                                  isSelected
+                            : 'Search flat no. or owner...'}
+                          value={flatSearch}
+                          onChange={e => { setFlatSearch(e.target.value); setFlatDropdownOpen(true); }}
+                          onFocus={() => setFlatDropdownOpen(true)}
+                          onBlur={() => setTimeout(() => setFlatDropdownOpen(false), 200)}
+                        />
+                        {selectedFlatPublicId && (
+                          <button
+                            type="button"
+                            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 shrink-0"
+                            onClick={e => { e.stopPropagation(); setValue('flatPublicId', ''); setFlatSearch(''); }}
+                            tabIndex={-1}
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                      {flatDropdownOpen && (
+                        <ul className="absolute z-50 mt-1 w-full max-h-52 overflow-y-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg">
+                          {safeFlats
+                            .filter(flat => {
+                              const q = flatSearch.toLowerCase();
+                              return !q || flat.flatNo.toLowerCase().includes(q) || flat.ownerName.toLowerCase().includes(q);
+                            })
+                            .map(flat => {
+                              const alreadyPaid = alreadyPaidFlatIds.has(flat.publicId);
+                              const isSelected = flat.publicId === selectedFlatPublicId;
+                              return (
+                                <li
+                                  key={flat.publicId}
+                                  className={`flex items-center justify-between px-3 py-2 text-sm cursor-pointer ${isSelected
                                     ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300'
                                     : 'hover:bg-slate-50 dark:hover:bg-slate-800'
-                                }`}
-                                onMouseDown={() => {
-                                  setValue('flatPublicId', flat.publicId, { shouldValidate: true });
-                                  setFlatSearch('');
-                                  setFlatDropdownOpen(false);
-                                }}
-                              >
-                                <span>{flat.flatNo} · {flat.ownerName}</span>
-                                {alreadyPaid && <span className="text-xs text-amber-500 ml-2">⚠ Paid</span>}
-                              </li>
-                            );
-                          })}
-                        {safeFlats.filter(flat => {
-                          const q = flatSearch.toLowerCase();
-                          return !q || flat.flatNo.toLowerCase().includes(q) || flat.ownerName.toLowerCase().includes(q);
-                        }).length === 0 && (
-                          <li className="px-3 py-2 text-sm text-slate-400">No flats found</li>
-                        )}
-                      </ul>
-                    )}
-                    <input type="hidden" {...register('flatPublicId')} />
-                  </div>
-                )}
-                {errors.flatPublicId && <p className="error-text">{errors.flatPublicId.message}</p>}
-              </div>
+                                    }`}
+                                  onMouseDown={() => {
+                                    setValue('flatPublicId', flat.publicId, { shouldValidate: true });
+                                    setFlatSearch('');
+                                    setFlatDropdownOpen(false);
+                                  }}
+                                >
+                                  <span>{flat.flatNo} · {flat.ownerName}</span>
+                                  {alreadyPaid && <span className="text-xs text-amber-500 ml-2">⚠ Paid</span>}
+                                </li>
+                              );
+                            })}
+                          {safeFlats.filter(flat => {
+                            const q = flatSearch.toLowerCase();
+                            return !q || flat.flatNo.toLowerCase().includes(q) || flat.ownerName.toLowerCase().includes(q);
+                          }).length === 0 && (
+                              <li className="px-3 py-2 text-sm text-slate-400">No flats found</li>
+                            )}
+                        </ul>
+                      )}
+                      <input type="hidden" {...register('flatPublicId')} />
+                    </div>
+                  )}
+                  {errors.flatPublicId && <p className="error-text">{errors.flatPublicId.message}</p>}
+                </div>
 
-              {/* Outstanding balance � always visible when flat selected */}
-              {selectedFlatPublicId && flatSummary ? (
-                <div className="rounded-xl border overflow-hidden">
-                  {/* Row: Outstanding Balance + Pay Full */}
-                  <div className={`flex items-center justify-between px-4 py-3 ${
-                    outstandingAmount > 0
+                {/* Outstanding balance � always visible when flat selected */}
+                {selectedFlatPublicId && flatSummary ? (
+                  <div className="rounded-xl border overflow-hidden">
+                    {/* Row: Outstanding Balance + Pay Full */}
+                    <div className={`flex items-center justify-between px-4 py-3 ${outstandingAmount > 0
                       ? 'border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/30'
                       : 'border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30'
-                  }`}>
-                    <div>
-                      <p className={`text-sm font-bold ${
-                        outstandingAmount === 0
+                      }`}>
+                      <div>
+                        <p className={`text-sm font-bold ${outstandingAmount === 0
                           ? 'text-emerald-800 dark:text-emerald-200'
                           : 'text-orange-800 dark:text-orange-200'
-                      }`}>
-                        Outstanding Balance
-                      </p>
-                      {outstandingAmount === 0 && (
-                        <p className="text-xs text-emerald-600 dark:text-emerald-400">All clear</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3">
-                      {outstandingAmount > 0 && !isEditing && (
-                        <button
-                          type="button"
-                          onClick={() => setValue('amount', String(outstandingAmount))}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-orange-600 hover:bg-orange-700 text-white transition-colors"
-                        >
-                          <Zap className="w-3 h-3" />
-                          Pay Full
-                        </button>
-                      )}
-                      <div className="text-xl font-bold">
-                        <SignedBalanceDisplay 
-                          amount={outstandingAmount} 
-                          size="large"
-                          showLabel={false}
-                        />
+                          }`}>
+                          Outstanding Balance
+                        </p>
+                        {outstandingAmount === 0 && (
+                          <p className="text-xs text-emerald-600 dark:text-emerald-400">All clear</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {outstandingAmount > 0 && !isEditing && (
+                          <button
+                            type="button"
+                            onClick={() => setValue('amount', String(outstandingAmount))}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-orange-600 hover:bg-orange-700 text-white transition-colors"
+                          >
+                            <Zap className="w-3 h-3" />
+                            Pay Full
+                          </button>
+                        )}
+                        <div className="text-xl font-bold">
+                          <SignedBalanceDisplay
+                            amount={outstandingAmount}
+                            size="large"
+                            showLabel={false}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ) : (
-                /* Placeholder when no flat selected */
-                <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/20 h-36 gap-2">
-                  <Home className="w-7 h-7 text-slate-300 dark:text-slate-600" />
-                  <p className="text-sm text-slate-400 dark:text-slate-500">Select a flat to see outstanding dues</p>
-                </div>
-              )}
-            </div>
-
-            {/* -- RIGHT: Payment fields -------------------------------------- */}
-            <div className="md:pl-6 space-y-4 mt-6 md:mt-0">
-
-              {/* Section label */}
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                Payment Details
-              </p>
-
-              {/* Amount � large & prominent */}
-              <div className="space-y-2">
-                <Input
-                  label="Amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="Enter amount"
-                  error={errors.amount?.message}
-                  {...register('amount')}
-                />
-                {/* Live remaining balance � hidden when this is a duplicate/blocked payment */}
-                {paymentAmountNumber > 0 && selectedFlatPublicId && flatSummary && !isDuplicatePayment && (
-                  <div className={`flex items-center justify-between text-xs px-3 py-2 rounded-lg ${
-                    effectiveOutstanding === 0
-                      ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800'
-                      : paymentAmountNumber >= effectiveOutstanding
-                      ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800'
-                      : 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700'
-                  }`}>
-                    <span className="text-slate-500 dark:text-slate-400">
-                      {effectiveOutstanding === 0 ? 'Will be recorded as:' : 'Balance after payment:'}
-                    </span>
-                    <span className={`font-bold ${
-                      effectiveOutstanding === 0
-                        ? 'text-blue-600 dark:text-blue-400'
-                        : paymentAmountNumber >= effectiveOutstanding
-                        ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-orange-600 dark:text-orange-400'
-                    }`}>
-                      {effectiveOutstanding === 0
-                        ? `Advance +${formatCurrency(paymentAmountNumber)}`
-                        : paymentAmountNumber >= effectiveOutstanding
-                        ? '\u2713 Fully cleared'
-                        : formatCurrency(effectiveOutstanding - paymentAmountNumber)}
-                    </span>
+                ) : (
+                  /* Placeholder when no flat selected */
+                  <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/20 h-36 gap-2">
+                    <Home className="w-7 h-7 text-slate-300 dark:text-slate-600" />
+                    <p className="text-sm text-slate-400 dark:text-slate-500">Select a flat to see outstanding dues</p>
                   </div>
                 )}
               </div>
 
-              {/* Date + Mode side by side */}
-              <div className="grid grid-cols-2 gap-3 items-start">
-                <div className="form-field">
-                  <Input
-                    label="Payment Date"
-                    type="date"
-                    min={getFYStartDateString()}
-                    max={getTodayDateString()}
-                    error={errors.paymentDate?.message}
-                    {...register('paymentDate')}
-                  />
-                </div>
-                <div className="form-field">
-                  <Select
-                    label="Payment Mode"
-                    options={[
-                      { value: '', label: 'Select mode...' },
-                      ...safePaymentModes.map(mode => ({
-                        value: mode.code,
-                        label: mode.displayName
-                      }))
-                    ]}
-                    error={errors.paymentModeId?.message}
-                    helperText={paymentModesLoading ? 'Loading...' : paymentModesError ? 'Unavailable' : undefined}
-                    disabled={paymentModesLoading || !!paymentModesError}
-                    {...register('paymentModeId')}
-                  />
-                </div>
-              </div>
+              {/* -- RIGHT: Payment fields -------------------------------------- */}
+              <div className="md:pl-6 space-y-4 mt-6 md:mt-0">
 
-              {/* Reference */}
-              <div className="form-field">
-                <Input
-                  label="Reference Number"
-                  placeholder="Transaction ID, cheque no., UPI ref…"
-                  error={errors.referenceNumber?.message}
-                  {...register('referenceNumber')}
-                />
-              </div>
+                {/* Section label */}
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  Payment Details
+                </p>
 
-            </div>
-          </div>{/* end two-column grid */}
-
-          {/* -- Allocation Summary (post-submit) ---------------------------- */}
-          {lastAllocationSummary && !isEditing && (
-            <div className="mx-6 mt-4 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h4 className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">Allocation Summary</h4>
-                <Badge variant="success">Paid {formatCurrency(lastAllocationSummary.totalPaid)}</Badge>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="p-3 rounded-lg bg-white/80 dark:bg-slate-900/40 border border-emerald-100 dark:border-emerald-900/40">
-                  <p className="text-slate-600 dark:text-slate-400">Allocations</p>
-                  <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">{lastAllocationSummary.allocations.length}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-white/80 dark:bg-slate-900/40 border border-emerald-100 dark:border-emerald-900/40">
-                  <p className="text-slate-600 dark:text-slate-400">Advance Balance</p>
-                  <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">{formatCurrency(lastAllocationSummary.remainingAdvance || 0)}</p>
-                </div>
-              </div>
-              {lastAllocationSummary.clearedPeriods.length > 0 && (
+                {/* Amount large & prominent */}
                 <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-wide text-emerald-800 dark:text-emerald-200">Months Cleared</p>
-                  <div className="flex flex-wrap gap-2">
-                    {lastAllocationSummary.clearedPeriods.map((p) => (
-                      <Badge key={p} variant="success">{p}</Badge>
-                    ))}
+                  <Input
+                    label="Amount"
+                    type="number"
+                    step="0.01"
+                    placeholder="Enter amount"
+                    error={errors.amount?.message}
+                    {...register('amount')}
+                  />
+                  {/* Live remaining balance hidden when this is a duplicate/blocked payment */}
+                  {paymentAmountNumber > 0 && selectedFlatPublicId && flatSummary && !isDuplicatePayment && (
+                    <div className={`flex items-center justify-between text-xs px-3 py-2 rounded-lg ${effectiveOutstanding === 0
+                      ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800'
+                      : paymentAmountNumber >= effectiveOutstanding
+                        ? 'bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800'
+                        : 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700'
+                      }`}>
+                      <span className="text-slate-500 dark:text-slate-400">
+                        {effectiveOutstanding === 0 ? 'Will be recorded as:' : 'Balance after payment:'}
+                      </span>
+                      <span className={`font-bold ${effectiveOutstanding === 0
+                        ? 'text-blue-600 dark:text-blue-400'
+                        : paymentAmountNumber >= effectiveOutstanding
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-orange-600 dark:text-orange-400'
+                        }`}>
+                        {effectiveOutstanding === 0
+                          ? `Advance +${formatCurrency(paymentAmountNumber)}`
+                          : paymentAmountNumber >= effectiveOutstanding
+                            ? '\u2713 Fully cleared'
+                            : formatCurrency(effectiveOutstanding - paymentAmountNumber)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Date + Mode side by side */}
+                <div className="grid grid-cols-2 gap-3 items-start">
+                  <div className="form-field">
+                    <Input
+                      label="Payment Date"
+                      type="date"
+                      min={getFYStartDateString()}
+                      max={getTodayDateString()}
+                      error={errors.paymentDate?.message}
+                      {...register('paymentDate')}
+                    />
+                  </div>
+                  <div className="form-field">
+                    <Select
+                      label="Payment Mode"
+                      options={[
+                        { value: '', label: 'Select mode...' },
+                        ...safePaymentModes.map(mode => ({
+                          value: mode.code,
+                          label: mode.displayName
+                        }))
+                      ]}
+                      error={errors.paymentModeId?.message}
+                      helperText={paymentModesLoading ? 'Loading...' : paymentModesError ? 'Unavailable' : undefined}
+                      disabled={paymentModesLoading || !!paymentModesError}
+                      {...register('paymentModeId')}
+                    />
                   </div>
                 </div>
-              )}
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-wide text-emerald-800 dark:text-emerald-200">Allocation Breakdown</p>
-                <div className="max-h-32 overflow-y-auto rounded-lg border border-emerald-100 dark:border-emerald-900/40 bg-white/70 dark:bg-slate-900/30">
-                  {lastAllocationSummary.allocations.map((allocation) => {
-                    const currentPeriod = new Date().toISOString().slice(0, 7);
-                    const isArrear = !!allocation.period && allocation.period < currentPeriod;
-                    const isCurrent = !!allocation.period && allocation.period === currentPeriod;
-                    return (
-                      <div key={allocation.billPublicId} className="flex items-center justify-between px-3 py-2 border-b border-emerald-100/70 dark:border-emerald-900/30 last:border-b-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{allocation.billPublicId}</span>
-                          {isCurrent && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-                              Current
-                            </span>
-                          )}
-                          {isArrear && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                              Arrear
-                            </span>
-                          )}
-                          {!allocation.period && (
-                            <span className="text-[10px] text-slate-400 dark:text-slate-500">Advance / OB</span>
-                          )}
-                        </div>
-                        <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{formatCurrency(allocation.allocatedAmount)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Idempotency Key: {lastAllocationSummary.idempotencyKey}</p>
-            </div>
-          )}
 
-          {/* -- Footer ------------------------------------------------------ */}
-          <ModalFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowAddModal(false);
-                setIsEditing(false);
-                setSelectedPayment(null);
-                setLastAllocationSummary(null);
-                setFormError(null);
-                reset();
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={
-                isSubmitting ||
-                localSubmitting ||
-                createPayment.isPending ||
-                updatePayment.isPending ||
-                paymentModesLoading ||
-                !!paymentModesError ||
-                isRefreshingLedger ||
-                (!isEditing && isDuplicatePayment)
-              }
-            >
-              <CreditCard className="w-4 h-4 mr-2" />
-              {isSubmitting || createPayment.isPending || updatePayment.isPending || isRefreshingLedger
-                ? (isEditing ? 'Updating...' : 'Saving...')
-                : (isEditing ? 'Update Payment' : 'Add Payment')
-              }
-            </Button>
-          </ModalFooter>
-        </form>
+                {/* Notes */}
+                <div className="form-field">
+                  <Input
+                    label="Notes"
+                    placeholder="Optional note for this payment"
+                    error={errors.notes?.message}
+                    {...register('notes')}
+                  />
+                </div>
+
+              </div>
+            </div>{/* end two-column grid */}
+
+            {/* -- Allocation Summary (post-submit) ---------------------------- */}
+            {lastAllocationSummary && !isEditing && (
+              <div className="mx-6 mt-4 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/70 dark:bg-emerald-950/20 p-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h4 className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">Allocation Summary</h4>
+                  <Badge variant="success">Paid {formatCurrency(lastAllocationSummary.totalPaid)}</Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="p-3 rounded-lg bg-white/80 dark:bg-slate-900/40 border border-emerald-100 dark:border-emerald-900/40">
+                    <p className="text-slate-600 dark:text-slate-400">Allocations</p>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">{lastAllocationSummary.allocations.length}</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-white/80 dark:bg-slate-900/40 border border-emerald-100 dark:border-emerald-900/40">
+                    <p className="text-slate-600 dark:text-slate-400">Advance Balance</p>
+                    <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">{formatCurrency(lastAllocationSummary.remainingAdvance || 0)}</p>
+                  </div>
+                </div>
+                {lastAllocationSummary.clearedPeriods.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs uppercase tracking-wide text-emerald-800 dark:text-emerald-200">Months Cleared</p>
+                    <div className="flex flex-wrap gap-2">
+                      {lastAllocationSummary.clearedPeriods.map((p) => (
+                        <Badge key={p} variant="success">{p}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-emerald-800 dark:text-emerald-200">Allocation Breakdown</p>
+                  <div className="max-h-32 overflow-y-auto rounded-lg border border-emerald-100 dark:border-emerald-900/40 bg-white/70 dark:bg-slate-900/30">
+                    {lastAllocationSummary.allocations.map((allocation) => {
+                      const currentPeriod = new Date().toISOString().slice(0, 7);
+                      const isArrear = !!allocation.period && allocation.period < currentPeriod;
+                      const isCurrent = !!allocation.period && allocation.period === currentPeriod;
+                      return (
+                        <div key={allocation.billPublicId} className="flex items-center justify-between px-3 py-2 border-b border-emerald-100/70 dark:border-emerald-900/30 last:border-b-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono text-slate-500 dark:text-slate-400">{allocation.billPublicId}</span>
+                            {isCurrent && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                Current
+                              </span>
+                            )}
+                            {isArrear && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                                Arrear
+                              </span>
+                            )}
+                            {!allocation.period && (
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500">Advance / OB</span>
+                            )}
+                          </div>
+                          <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{formatCurrency(allocation.allocatedAmount)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Idempotency Key: {lastAllocationSummary.idempotencyKey}</p>
+              </div>
+            )}
+
+            {/* -- Footer ------------------------------------------------------ */}
+            <ModalFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowAddModal(false);
+                  setIsEditing(false);
+                  setSelectedPayment(null);
+                  setLastAllocationSummary(null);
+                  setFormError(null);
+                  reset();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  isSubmitting ||
+                  localSubmitting ||
+                  createPayment.isPending ||
+                  updatePayment.isPending ||
+                  paymentModesLoading ||
+                  !!paymentModesError ||
+                  isRefreshingLedger ||
+                  (!isEditing && isDuplicatePayment)
+                }
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                {isSubmitting || createPayment.isPending || updatePayment.isPending || isRefreshingLedger
+                  ? (isEditing ? 'Updating...' : 'Saving...')
+                  : (isEditing ? 'Update Payment' : 'Add Payment')
+                }
+              </Button>
+            </ModalFooter>
+          </form>
         </Modal>
       )}
 
@@ -1588,20 +1580,20 @@ export default function Maintenance() {
           // Use the authoritative billStatus from the API; fall back to client-computed balance
           const apiStatus = normalizeBillStatus(viewTarget.billStatus);
           const vStatus: 'Cleared' | 'Partial' | 'Overdue' | 'Unpaid' =
-            apiStatus === 'paid'    ? 'Cleared'
-            : apiStatus === 'partial' ? 'Partial'
-            : apiStatus === 'overdue' ? 'Overdue'
-            : apiStatus === 'unpaid'  ? 'Unpaid'
-            : vBalance?.status || 'Unpaid';
+            apiStatus === 'paid' ? 'Cleared'
+              : apiStatus === 'partial' ? 'Partial'
+                : apiStatus === 'overdue' ? 'Overdue'
+                  : apiStatus === 'unpaid' ? 'Unpaid'
+                    : vBalance?.status || 'Unpaid';
 
           const isToday = !!viewTarget.paymentDate &&
             new Date(viewTarget.paymentDate).toDateString() === new Date().toDateString();
 
           const statusConfig = {
             Cleared: { bg: 'bg-emerald-50 dark:bg-emerald-950/30', text: 'text-emerald-700 dark:text-emerald-300', dot: 'bg-emerald-500', label: 'Fully Paid' },
-            Partial:  { bg: 'bg-amber-50  dark:bg-amber-950/30',   text: 'text-amber-700  dark:text-amber-300',  dot: 'bg-amber-400',  label: 'Partially Paid' },
-            Overdue:  { bg: 'bg-orange-50 dark:bg-orange-950/30',  text: 'text-orange-700 dark:text-orange-300', dot: 'bg-orange-500', label: 'Overdue' },
-            Unpaid:   { bg: 'bg-rose-50   dark:bg-rose-950/30',    text: 'text-rose-700   dark:text-rose-300',   dot: 'bg-rose-500',   label: 'Still Unpaid' },
+            Partial: { bg: 'bg-amber-50  dark:bg-amber-950/30', text: 'text-amber-700  dark:text-amber-300', dot: 'bg-amber-400', label: 'Partially Paid' },
+            Overdue: { bg: 'bg-orange-50 dark:bg-orange-950/30', text: 'text-orange-700 dark:text-orange-300', dot: 'bg-orange-500', label: 'Overdue' },
+            Unpaid: { bg: 'bg-rose-50   dark:bg-rose-950/30', text: 'text-rose-700   dark:text-rose-300', dot: 'bg-rose-500', label: 'Still Unpaid' },
           }[vStatus] ?? { bg: '', text: '', dot: '', label: vStatus };
 
           return (
@@ -1705,37 +1697,6 @@ export default function Maintenance() {
 
               {/* -- Footer ----------------------------------------------- */}
               <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
-                {(() => {
-                  const vFlat = safeFlats.find(f => f.publicId === viewTarget.flatPublicId);
-                  const mobile = vFlat?.contactMobile?.replace(/\D/g, '');
-                  const waNumber = mobile ? (mobile.length === 10 ? `91${mobile}` : mobile) : null;
-                  const ownerLabel = vOwner || viewTarget.ownerName || 'Resident';
-                  const waMsg = `Dear ${ownerLabel}, your maintenance payment of ${formatCurrency(viewTarget.amount)} for Flat ${viewTarget.flatNumber || '—'} was received on ${formatDate(viewTarget.paymentDate)}. Thank you! — ${user?.societyName || 'Your Society'}`;
-                  return (
-                    <>
-                      {waNumber && (
-                        <a
-                          href={`https://wa.me/${waNumber}?text=${encodeURIComponent(waMsg)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-green-500 hover:bg-green-600 text-white transition-colors"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          WhatsApp Receipt
-                        </a>
-                      )}
-                      <button
-                        type="button"
-                        title="Copy receipt message"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-                        onClick={() => navigator.clipboard.writeText(waMsg)}
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                        Copy
-                      </button>
-                    </>
-                  );
-                })()}
                 {isAdmin && !isPaymentLocked(viewTarget) && (viewTarget.allocations?.length ?? 0) === 0 && (
                   <Button size="sm" variant="outline"
                     onClick={() => { setShowViewModal(false); setViewTarget(null); openEditModal(viewTarget); }}
@@ -1766,36 +1727,36 @@ export default function Maintenance() {
           title="Delete Payment"
           size="sm"
         >
-        <div className="space-y-4 p-4 sm:p-6">
-          <p className="text-foreground">
-            Are you sure you want to delete the payment for <strong>Flat {deleteTarget?.flatNumber}</strong> of <strong>{formatCurrency(deleteTarget?.amount)}</strong>?
-          </p>
-          <p className="text-sm text-muted-foreground">
-            This action cannot be undone.
-          </p>
+          <div className="space-y-4 p-4 sm:p-6">
+            <p className="text-foreground">
+              Are you sure you want to delete the payment for <strong>Flat {deleteTarget?.flatNumber}</strong> of <strong>{formatCurrency(deleteTarget?.amount)}</strong>?
+            </p>
+            <p className="text-sm text-muted-foreground">
+              This action cannot be undone.
+            </p>
 
-          <ModalFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setShowDeleteModal(false);
-                setDeleteTarget(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="button"
-              variant="danger"
-              onClick={handleDelete}
-              disabled={deletePayment.isPending}
-            >
-              <Trash className="w-4 h-4 mr-2" />
-              {deletePayment.isPending ? 'Deleting...' : 'Delete Payment'}
-            </Button>
-          </ModalFooter>
-        </div>
+            <ModalFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteTarget(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                onClick={handleDelete}
+                disabled={deletePayment.isPending}
+              >
+                <Trash className="w-4 h-4 mr-2" />
+                {deletePayment.isPending ? 'Deleting...' : 'Delete Payment'}
+              </Button>
+            </ModalFooter>
+          </div>
         </Modal>
       )}
     </DashboardLayout>
