@@ -265,9 +265,16 @@ export default function Maintenance() {
   const isDuplicatePayment = !isEditing && !!selectedFlatPublicId &&
     alreadyPaidFlatIds.has(selectedFlatPublicId);
 
+  // Guard against any backend period leakage: only keep rows whose payment date
+  // falls in the selected month for table/filter rendering.
+  const periodScopedPayments = useMemo(
+    () => payments.filter((p) => (p.paymentDate || '').slice(0, 7) === period),
+    [payments, period]
+  );
+
   const paymentFlatIds = useMemo(
-    () => [...new Set(payments.map((p) => p.flatPublicId).filter(Boolean))],
-    [payments]
+    () => [...new Set(periodScopedPayments.map((p) => p.flatPublicId).filter(Boolean))],
+    [periodScopedPayments]
   );
 
   const { data: paymentFlatBulkSummaries = [] } = useQuery({
@@ -286,7 +293,7 @@ export default function Maintenance() {
   }, [paymentFlatBulkSummaries]);
   const appliedBucketsByPayment = useMemo(() => {
     return new Map(
-      payments.map((payment) => {
+      periodScopedPayments.map((payment) => {
         const bucket = new Map<string, number>();
         (payment.allocations || []).forEach((allocation) => {
           if (!allocation.period) return;
@@ -311,11 +318,11 @@ export default function Maintenance() {
         return [payment.publicId, entries] as const;
       })
     );
-  }, [payments, period]);
+  }, [periodScopedPayments, period]);
 
   const paymentBalanceById = useMemo(() => {
     const grouped = new Map<string, any[]>();
-    payments.forEach((payment) => {
+    periodScopedPayments.forEach((payment) => {
       const list = grouped.get(payment.flatPublicId) || [];
       list.push(payment);
       grouped.set(payment.flatPublicId, list);
@@ -370,7 +377,7 @@ export default function Maintenance() {
     });
 
     return result;
-  }, [payments, paymentFlatOutstandingNowMap]);
+  }, [periodScopedPayments, paymentFlatOutstandingNowMap]);
 
   const onSubmit = async (data: PaymentFormData) => {
     if (localSubmitting) return;
@@ -527,11 +534,11 @@ export default function Maintenance() {
     }
   };
 
-  // Filter by search query (period filtering now handled by backend)
+  // Filter by search query after client-side period scoping.
   const searchFilteredPayments = useMemo(
     () =>
       searchQuery
-        ? payments.filter(p => {
+        ? periodScopedPayments.filter(p => {
           const q = searchQuery.toLowerCase();
           return (
             (p.flatNumber || '').toLowerCase().includes(q) ||
@@ -541,8 +548,8 @@ export default function Maintenance() {
             (p.paymentModeName || '').toLowerCase().includes(q)
           );
         })
-        : payments,
-    [payments, searchQuery]
+        : periodScopedPayments,
+    [periodScopedPayments, searchQuery]
   );
 
   const filteredPayments = useMemo(
@@ -579,6 +586,11 @@ export default function Maintenance() {
     [filteredPayments, sortField, sortDir]
   );
 
+  const periodScopedNextPagePayments = useMemo(
+    () => nextPagePayments.filter((p) => (p.paymentDate || '').slice(0, 7) === period),
+    [nextPagePayments, period]
+  );
+
   const hasActiveFilters =
     searchQuery.trim().length > 0 ||
     allocationFilter !== 'all' ||
@@ -599,7 +611,7 @@ export default function Maintenance() {
   // NOTE: sort and filter are applied client-side on the current page only. When filters are
   // active across multiple pages, results may be incomplete � this is a known limitation of
   // server-side pagination without a total-count endpoint.
-  const hasNextPage = payments.length === PAGE_SIZE && nextPagePayments.length > 0;
+  const hasNextPage = periodScopedPayments.length === PAGE_SIZE && periodScopedNextPagePayments.length > 0;
   const pagedPayments = sortedPayments;
 
   return (
@@ -876,7 +888,7 @@ export default function Maintenance() {
             <div className="py-20">
               <LoadingSpinner centered />
             </div>
-          ) : filteredPayments.length === 0 && payments.length > 0 ? (
+          ) : filteredPayments.length === 0 && periodScopedPayments.length > 0 ? (
             <div className="px-6 py-14 text-center space-y-3">
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                 No records match the current filters
@@ -906,7 +918,7 @@ export default function Maintenance() {
                       flatPublicId: '',
                       amount: '',
                       paymentModeId: '',
-                      paymentDate: new Date().toISOString().split('T')[0],
+                      paymentDate: getDefaultPaymentDateForPeriod(period),
                       notes: '',
                     });
                     setShowAddModal(true);
@@ -1019,27 +1031,12 @@ export default function Maintenance() {
                         </td>
                         <td className="px-3 py-1.5 w-[140px]">
                           {(() => {
-                            const chips = appliedBucketsByPayment.get(payment.publicId) || [];
-                            if (!chips.length) return <span className="text-xs text-slate-400">—</span>;
-                            const visible = chips.slice(0, 1);
-                            const extra = chips.length - visible.length;
-                            const fullLabel = chips.map((entry) => entry.label).join(', ');
+                            const paymentPeriod = (payment.paymentDate || '').slice(0, 7);
+                            if (!paymentPeriod) return <span className="text-xs text-slate-400">-</span>;
                             return (
-                              <div className="flex flex-wrap gap-1" title={fullLabel}>
-                                {visible.map((entry) => (
-                                  <span
-                                    key={entry.period}
-                                    className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold whitespace-nowrap bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                                  >
-                                    {entry.label}
-                                  </span>
-                                ))}
-                                {extra > 0 && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                                    +{extra} more
-                                  </span>
-                                )}
-                              </div>
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold whitespace-nowrap bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                {formatPeriodLabel(paymentPeriod)}
+                              </span>
                             );
                           })()}
                         </td>
