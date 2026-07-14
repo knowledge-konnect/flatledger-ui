@@ -109,7 +109,10 @@ export default function Maintenance() {
   const { minMonth, clampMonth } = useSocietyPeriodBounds();
   const [showAddModal, setShowAddModal] = useState(false);
   const [period, setPeriod] = useState(getCurrentMonth());
-  const monthOptions = useMemo(() => buildMonthOptions(minMonth), [minMonth]);
+  const monthOptions = useMemo(
+    () => buildMonthOptions(minMonth, minMonth ? 6 : 24),
+    [minMonth]
+  );
   // New: formError state for business/general errors
   const [formError, setFormError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
