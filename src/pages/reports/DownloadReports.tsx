@@ -1,19 +1,19 @@
+import { Calendar, CalendarDays, Download, FileDown, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { FileDown, Loader2, Calendar, CalendarDays, FileSpreadsheet, Download } from 'lucide-react';
+import reportsApi from '../../api/reportsApi';
 import DashboardLayout from '../../components/layout/DashboardLayout';
+import Button from '../../components/ui/Button';
 import Card, { CardContent } from '../../components/ui/Card';
 import PageHeader from '../../components/ui/PageHeader';
-import Button from '../../components/ui/Button';
 import { useToast } from '../../components/ui/Toast';
-import reportsApi from '../../api/reportsApi';
-import { cn } from '../../lib/utils';
 import { useAuth } from '../../contexts/AuthProvider';
 import { useSocietyPeriodBounds } from '../../hooks/useSocietyPeriodBounds';
+import { cn } from '../../lib/utils';
 
-const MONTH_NAMES = ['January','February','March','April','May','June',
-                     'July','August','September','October','November','December'];
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'];
 
-const CURRENT_YEAR  = new Date().getFullYear();
+const CURRENT_YEAR = new Date().getFullYear();
 const CURRENT_MONTH = new Date().getMonth() + 1;
 const MAX_MONTH_VALUE = `${CURRENT_YEAR}-${String(CURRENT_MONTH).padStart(2, '0')}`;
 
@@ -29,7 +29,7 @@ const SELECT_CLS = cn(
 );
 
 const MONTHLY_TAGS = ['Collections', 'Expenses', 'Opening Balance', 'Closing Balance'];
-const YEARLY_TAGS  = ['Monthly Breakdown', 'Collections', 'Expenses', 'Net Balance'];
+const YEARLY_TAGS = ['Monthly Breakdown', 'Collections', 'Expenses', 'Net Balance'];
 
 type TabKey = 'monthly' | 'yearly';
 
@@ -143,12 +143,12 @@ export default function DownloadReportsPage() {
                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 animate-bounce">
                   <FileSpreadsheet className="w-20 h-20 text-emerald-500" strokeWidth={1.5} />
                 </div>
-                
+
                 {/* Floating Download Arrow */}
                 <div className="absolute left-1/2 top-0 -translate-x-1/2 animate-pulse">
                   <Download className="w-10 h-10 text-blue-500" strokeWidth={2} />
                 </div>
-                
+
                 {/* Orbiting Dots */}
                 <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32">
                   <div className="absolute w-3 h-3 bg-emerald-500 rounded-full top-0 left-1/2 -translate-x-1/2 animate-ping" />
@@ -166,7 +166,7 @@ export default function DownloadReportsPage() {
                 <p className="text-sm text-slate-600 dark:text-slate-400">
                   Generating Excel file with all your financial data...
                 </p>
-                
+
                 {/* Animated Progress Dots */}
                 <div className="flex items-center justify-center gap-1.5 pt-3">
                   <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
@@ -182,7 +182,7 @@ export default function DownloadReportsPage() {
       <div className="space-y-5">
         <PageHeader
           title="Download Reports"
-          description="Export financial summaries as an Excel (.xlsx) file"
+          description="Export Excel reports with collections, balances, expenses, and saved expense descriptions"
           icon={FileDown}
         />
 
@@ -232,7 +232,7 @@ export default function DownloadReportsPage() {
                       </span>
                     ))}
                   </div>
-                  <p className="mb-4 text-xs text-slate-600 dark:text-slate-400">Download a detailed monthly financial report</p>
+                  <p className="mb-4 text-xs text-slate-600 dark:text-slate-400">Download a detailed monthly financial report, including expense descriptions where available</p>
                 </div>
                 <div className="space-y-4">
                   <div>
@@ -293,7 +293,7 @@ export default function DownloadReportsPage() {
                       </span>
                     ))}
                   </div>
-                  <p className="mb-4 text-xs text-slate-600 dark:text-slate-400">Includes full year summary and breakdown</p>
+                  <p className="mb-4 text-xs text-slate-600 dark:text-slate-400">Includes full year summary, breakdown, and expense descriptions where available</p>
                 </div>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
