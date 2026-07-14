@@ -68,6 +68,12 @@ function getTodayDateString(): string {
   return new Date().toISOString().split('T')[0];
 }
 
+function getDefaultPaymentDateForPeriod(periodValue: string): string {
+  if (!/^\d{4}-\d{2}$/.test(periodValue)) return getTodayDateString();
+  const today = getTodayDateString();
+  return today.slice(0, 7) === periodValue ? today : `${periodValue}-01`;
+}
+
 function generateIdempotencyKey() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -244,14 +250,18 @@ export default function Maintenance() {
   const originalPaymentAmount = isEditing && selectedPayment ? (selectedPayment.amount ?? 0) : 0;
   const effectiveOutstanding = outstandingAmount + originalPaymentAmount;
 
-  // Flats that already have a payment recorded in the current month (across all pages).
+  // Flats that already have at least one payment recorded in the entered period.
   const alreadyPaidFlatIds = useMemo(
-    () => new Set(allCurrentPeriodPayments.map(p => p.flatPublicId)),
-    [allCurrentPeriodPayments]
+    () => new Set(
+      allCurrentPeriodPayments
+        .filter((p) => (p.paymentDate || '').slice(0, 7) === enteredPeriod)
+        .map((p) => p.flatPublicId)
+    ),
+    [allCurrentPeriodPayments, enteredPeriod]
   );
 
-  // True only when the flat already has a payment recorded for the entered period.
-  // Zero outstanding is NOT a blocker � payment is accepted as advance by the backend.
+  // True when the flat already has a payment recorded for the entered period.
+  // This is informational only; multiple installments in the same period are valid.
   const isDuplicatePayment = !isEditing && !!selectedFlatPublicId &&
     alreadyPaidFlatIds.has(selectedFlatPublicId);
 
@@ -364,11 +374,6 @@ export default function Maintenance() {
 
   const onSubmit = async (data: PaymentFormData) => {
     if (localSubmitting) return;
-    // Server-side guard: reject if duplicate detection fires (catches console-enabled button bypass)
-    if (isDuplicatePayment) {
-      setFormError(`A payment has already been recorded for ${enteredPeriod}. Please verify before recording again.`);
-      return;
-    }
     setLocalSubmitting(true);
     setFormError(null); // Reset error at start
     try {
@@ -617,7 +622,7 @@ export default function Maintenance() {
                     flatPublicId: '',
                     amount: '',
                     paymentModeId: '',
-                    paymentDate: new Date().toISOString().split('T')[0],
+                    paymentDate: getDefaultPaymentDateForPeriod(period),
                     notes: '',
                   });
                   setShowAddModal(true);
@@ -1200,15 +1205,15 @@ export default function Maintenance() {
               </div>
             )}
 
-            {/* -- Duplicate-payment block � hard block when flat already has a payment for the entered period -- */}
+            {/* -- Existing-payment banner: informational only, does not block submit -- */}
             {!isEditing && isDuplicatePayment && !localSubmitting && !createPayment.isPending && (
-              <div className="mx-6 mt-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3">
+              <div className="mx-6 mt-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
                 <div className="flex items-start gap-3">
-                  <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-red-900 dark:text-red-100">Payment already recorded</p>
-                    <p className="text-xs text-red-700 dark:text-red-300 mt-0.5">
-                      This flat already has a payment recorded for {enteredPeriod}. Please verify before recording again.
+                    <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">Payment already exists for this period</p>
+                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                      This flat already has a payment in {enteredPeriod}. You can still record another installment if needed.
                     </p>
                   </div>
                 </div>
@@ -1216,7 +1221,7 @@ export default function Maintenance() {
             )}
 
             {/* -- Zero-outstanding info � soft warning, does NOT block submit (payment goes as advance) -- */}
-            {!isEditing && !isDuplicatePayment && !!selectedFlatPublicId && hasZeroOutstanding && (
+            {!isEditing && !!selectedFlatPublicId && hasZeroOutstanding && (
               <div className="mx-6 mt-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 px-4 py-3">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
@@ -1394,8 +1399,8 @@ export default function Maintenance() {
                     error={errors.amount?.message}
                     {...register('amount')}
                   />
-                  {/* Live remaining balance hidden when this is a duplicate/blocked payment */}
-                  {paymentAmountNumber > 0 && selectedFlatPublicId && flatSummary && !isDuplicatePayment && (
+                  {/* Live remaining balance preview */}
+                  {paymentAmountNumber > 0 && selectedFlatPublicId && flatSummary && (
                     <div className={`flex items-center justify-between text-xs px-3 py-2 rounded-lg ${effectiveOutstanding === 0
                       ? 'bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800'
                       : paymentAmountNumber >= effectiveOutstanding
@@ -1551,8 +1556,7 @@ export default function Maintenance() {
                   updatePayment.isPending ||
                   paymentModesLoading ||
                   !!paymentModesError ||
-                  isRefreshingLedger ||
-                  (!isEditing && isDuplicatePayment)
+                  isRefreshingLedger
                 }
               >
                 <CreditCard className="w-4 h-4 mr-2" />
