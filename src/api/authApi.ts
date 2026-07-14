@@ -1,7 +1,7 @@
-import { LoginCredentials, RegisterCredentials, User, AuthResponse } from '../types/auth';
-import { ApiResponse } from '../types/api';
-import apiClient from './client';
 import { logger } from '../lib/logger';
+import { ApiResponse } from '../types/api';
+import { AuthResponse, LoginCredentials, RegisterCredentials, User } from '../types/auth';
+import apiClient from './client';
 
 /**
  * Converts AuthResponse to User object
@@ -10,14 +10,14 @@ import { logger } from '../lib/logger';
  * refreshToken is set as an httpOnly cookie by the backend.
  */
 const authResponseToUser = (response: any): User => {
-  const forcePasswordChange = 
-    response.forcePasswordChange || 
-    response.force_password_change || 
-    response.requirePasswordChange || 
-    response.require_password_change || 
-    response.mustChangePassword || 
+  const forcePasswordChange =
+    response.forcePasswordChange ||
+    response.force_password_change ||
+    response.requirePasswordChange ||
+    response.require_password_change ||
+    response.mustChangePassword ||
     false;
-  
+
   return {
     publicId: response.userPublicId || response.publicId || '',
     id: String(response.userId || response.userPublicId || response.id || ''),
@@ -34,8 +34,8 @@ const authResponseToUser = (response: any): User => {
     mobile: response.mobile || null,
     roleDisplayName: response.roleDisplayName || response.role || 'Member',
     lastLogin: response.lastLogin || null,
-    createdAt: response.createdAt || new Date().toISOString(),
-    updatedAt: response.updatedAt || new Date().toISOString(),
+    createdAt: response.createdAt || '',
+    updatedAt: response.updatedAt || '',
   };
 };
 
@@ -49,19 +49,19 @@ export const authApi = {
   async login(credentials: LoginCredentials): Promise<{ auth: AuthResponse; user: User }> {
     logger.log(`[authApi.login] Attempting login for user: ${credentials.usernameOrEmail}`);
     const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/login', credentials);
-    
+
     if (!response.data.succeeded) {
       throw new Error(response.data.message || 'Login failed');
     }
-    
+
     const authResponse = response.data.data;
     const user = authResponseToUser(authResponse);
-    
+
     // Enrich user with email from credentials since login response doesn't include it
     if (!user.email && credentials.usernameOrEmail.includes('@')) {
       user.email = credentials.usernameOrEmail;
     }
-    
+
     logger.log(`[authApi.login] Login successful - user: ${user.name}, society: ${user.societyName}`);
     return {
       auth: authResponse,
@@ -77,23 +77,23 @@ export const authApi = {
    */
   async register(credentials: RegisterCredentials): Promise<{ auth: AuthResponse; user: User }> {
     logger.log(`[authApi.register] Attempting registration`);
-    
+
     const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/register', credentials);
-    
+
     if (!response.data.succeeded) {
       throw new Error(response.data.message || 'Registration failed');
     }
-    
+
     const authResponse = response.data.data;
     const user = authResponseToUser(authResponse);
-    
+
     // Enrich user with data from credentials since they were just created
     user.name = credentials.name;
     user.email = credentials.email;
-    
+
     // IMPORTANT: Always use the societyName from credentials since we just created it
     user.societyName = credentials.societyName;
-    
+
     logger.log(`[authApi.register] Registration successful - user: ${user.name}, society: ${user.societyName} (${user.societyPublicId})`);
     return {
       auth: authResponse,
@@ -125,11 +125,11 @@ export const authApi = {
    */
   async refresh(): Promise<AuthResponse> {
     const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/refresh');
-    
+
     if (!response.data.succeeded) {
       throw new Error(response.data.message || 'Token refresh failed');
     }
-    
+
     return response.data.data;
   },
 
@@ -143,11 +143,11 @@ export const authApi = {
     try {
       logger.log(`[authApi.getMe] Fetching current user profile`);
       const response = await apiClient.get<ApiResponse<User>>('/auth/user');
-      
+
       if (!response.data.succeeded) {
         throw new Error(response.data.message || 'Failed to fetch user profile');
       }
-      
+
       const userData = response.data.data;
       // Ensure proper structure according to API documentation
       const user: User = {
@@ -166,10 +166,10 @@ export const authApi = {
         mobile: userData.mobile || null,
         roleDisplayName: userData.roleDisplayName || userData.role || 'Member',
         lastLogin: userData.lastLogin || null,
-        createdAt: userData.createdAt || new Date().toISOString(),
-        updatedAt: userData.updatedAt || new Date().toISOString(),
+        createdAt: userData.createdAt || '',
+        updatedAt: userData.updatedAt || '',
       };
-      
+
       logger.log(`[authApi.getMe] User profile loaded: ${user.name} (societyId: ${user.societyId})`);
       return user;
     } catch (error: any) {
@@ -213,11 +213,11 @@ export const authApi = {
         newPassword,
         confirmPassword: confirmPassword ?? newPassword,
       });
-      
+
       if (!response.data.succeeded) {
         throw new Error(response.data.message || 'Failed to change password');
       }
-      
+
       logger.log(`[authApi.changePassword] Password changed successfully`);
     } catch (error: any) {
       logger.error(`[authApi.changePassword] Failed to change password`, error);

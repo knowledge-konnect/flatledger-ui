@@ -24,6 +24,8 @@ export interface AuthResponse {
   userId?: number; // Internal ID (not exposed in API)
   userName?: string;
   email?: string;
+  createdAt?: string;
+  updatedAt?: string;
   role?: string;
   roleDisplayName?: string;
   forcePasswordChange?: boolean;

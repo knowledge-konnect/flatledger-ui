@@ -1,13 +1,13 @@
-import React, { createContext, useContext, useRef, useState, useMemo, useLayoutEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { jwtDecode } from 'jwt-decode';
+import React, { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/authApi';
-import { subscriptionApi } from '../api/subscriptionApi';
-import { AuthState, LoginCredentials, RegisterCredentials, User, AuthResponse } from '../types/auth';
+import { setInMemoryAccessToken, setRefreshTokenCallback } from '../api/client';
 import { handleApiError as categorizeError } from '../api/errorHandler';
-import { setRefreshTokenCallback, setInMemoryAccessToken } from '../api/client';
+import { subscriptionApi } from '../api/subscriptionApi';
 import { logger } from '../lib/logger';
+import { AuthResponse, AuthState, LoginCredentials, RegisterCredentials, User } from '../types/auth';
 
 // AuthContext is created at module scope. Prevent Vite HMR from partially replacing
 // this module — doing so would create a new AuthContext whilst lazy-loaded consumers
@@ -83,10 +83,10 @@ function decodeJwtToken(token: string, authResponse?: AuthResponse): User | null
       societyName: authResponse?.societyName || null,
       roleDisplayName: authResponse?.roleDisplayName || decoded.roleDisplayName || '',
       forcePasswordChange: authResponse?.forcePasswordChange ?? false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: authResponse?.createdAt || '',
+      updatedAt: authResponse?.updatedAt || '',
     };
-    
+
     logger.log('[AuthProvider.decodeJwtToken] Final user object:', {
       publicId: user.publicId,
       name: user.name,
@@ -94,7 +94,7 @@ function decodeJwtToken(token: string, authResponse?: AuthResponse): User | null
       role: user.role,
       societyName: user.societyName,
     });
-    
+
     return user;
   } catch (error) {
     logger.error('[AuthProvider] Failed to decode JWT token:', error);
@@ -104,7 +104,7 @@ function decodeJwtToken(token: string, authResponse?: AuthResponse): User | null
 
 // sessionStorage keys — survives F5/page-refresh but is cleared when the tab closes
 const SS_TOKEN_KEY = '__sl_at';
-const SS_USER_KEY  = '__sl_u';
+const SS_USER_KEY = '__sl_u';
 
 /**
  * Attempts to restore auth state synchronously from sessionStorage.
@@ -194,10 +194,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [state, setState] = useState<AuthState>(getInitialAuthState);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  
+
   // Flag to track if we just logged in/registered (to prevent unnecessary API call)
   const skipInitialFetch = useRef(false);
-  
+
   // Track refresh attempts to prevent infinite loops
   const refreshAttempts = useRef(0);
   const MAX_REFRESH_ATTEMPTS = 3;
@@ -213,7 +213,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (token) {
       const user = decodeJwtToken(token, authResponse);
-      
+
       if (user) {
         setInMemoryAccessToken(token);
         try {
@@ -277,22 +277,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       logger.log(`[AuthProvider.login] Starting login for user: ${credentials.usernameOrEmail}`);
       const { auth } = await authApi.login(credentials);
-      
+
       logger.log(`[AuthProvider.login] Login response received:`, {
         userName: auth.userName,
         role: auth.role,
         societyName: auth.societyName,
         userPublicId: auth.userPublicId,
       });
-      
+
       // Set skipInitialFetch to true since we just got fresh user data
       skipInitialFetch.current = true;
-      
+
       // Decode JWT and set auth state with full auth response data
       setAuthState(auth.accessToken, auth);
       queryClient.clear();
       logger.log(`[AuthProvider.login] Login successful with user data`);
-      
+
       // Return auth response for caller to check forcePasswordChange
       return auth;
     } catch (error) {
@@ -308,10 +308,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       logger.log(`[AuthProvider.register] Starting registration for user: ${credentials.name}`);
       const { auth } = await authApi.register(credentials);
-      
+
       // Set skipInitialFetch to true since we just got fresh user data
       skipInitialFetch.current = true;
-      
+
       // Decode JWT and set auth state with full auth response data
       setAuthState(auth.accessToken, auth);
       logger.log(`[AuthProvider.register] Registration successful with user data`);
@@ -326,7 +326,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Don't fail registration if trial creation fails
         logger.warn(`[AuthProvider.register] Trial creation failed`, error);
       }
-      
+
       // Return auth response for caller to check if tokens are present
       return auth;
     } catch (error) {
@@ -390,15 +390,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       refreshAttempts.current++;
-      
+
       logger.log(`[AuthProvider.refreshAccessToken] Attempting to refresh token (attempt ${refreshAttempts.current}/${MAX_REFRESH_ATTEMPTS})`);
-      
+
       // POST /auth/refresh — no body, refreshToken sent automatically via httpOnly cookie
       const authResponse = await authApi.refresh();
-      
+
       // Update in-memory state with new access token + rotate refresh token
       setAuthState(authResponse.accessToken, authResponse);
-      
+
       refreshAttempts.current = 0;
       logger.log(`[AuthProvider.refreshAccessToken] Token refresh successful`);
       return authResponse.accessToken;
