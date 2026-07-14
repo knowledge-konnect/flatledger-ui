@@ -54,6 +54,8 @@ export function useMaintenanceSummary(period?: string) {
       return result;
     },
     enabled: !!period,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 

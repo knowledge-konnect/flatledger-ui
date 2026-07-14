@@ -102,8 +102,9 @@ export function useDashboard(params?: DashboardParams) {
       return response.data.data;
     },
     enabled: !!getInMemoryAccessToken(),
-    // Mutations already invalidate this cache when data changes.
-    // 30s prevents spurious refetches on every tab-switch.
-    staleTime: 30_000,
+    // Dashboard values are highly dynamic and must react immediately
+    // to period changes and financial mutations.
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
