@@ -1,39 +1,39 @@
-﻿import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
+﻿import {
   AlertCircle,
-  TrendingUp,
   ArrowDownCircle,
-  ReceiptText,
   ChevronRight,
   Clock,
-  Info,
   Home,
-  Wallet,
+  Info,
+  ReceiptText,
   Sparkles,
+  TrendingUp,
+  Wallet,
 } from 'lucide-react';
-const ReactApexChart = lazy(() => import('react-apexcharts'));
-import DashboardLayout from '../components/layout/DashboardLayout';
-import { SubscriptionSummary } from '../components/SubscriptionSummary';
-import SetupBanner from '../components/dashboard/SetupBanner';
-import { useSetupProgress } from '../hooks/useSetupProgress';
-import WelcomeModal, { WELCOME_MODAL_SEEN_KEY } from '../components/setup/WelcomeModal';
-import Card from '../components/ui/Card';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ActivityItem } from '../components/dashboard/ActivityItem';
+import BillingReminderBanner from '../components/dashboard/BillingReminderBanner';
 import { KpiCard } from '../components/dashboard/KpiCard';
 import { OccupancyCard } from '../components/dashboard/OccupancyCard';
-import { ActivityItem } from '../components/dashboard/ActivityItem';
-import { useDashboard } from '../hooks/useDashboard';
-import { useFlats } from '../hooks/useFlats';
+import SetupBanner from '../components/dashboard/SetupBanner';
+import DashboardLayout from '../components/layout/DashboardLayout';
+import WelcomeModal, { WELCOME_MODAL_SEEN_KEY } from '../components/setup/WelcomeModal';
+import { SubscriptionSummary } from '../components/SubscriptionSummary';
+import Card from '../components/ui/Card';
+import Modal, { ModalFooter } from '../components/ui/Modal';
+import { useToast } from '../components/ui/Toast';
 import { useAuth } from '../contexts/AuthProvider';
 import { useBillingStatus, useGenerateBilling } from '../hooks/useBillingStatus';
-import { useToast } from '../components/ui/Toast';
-import { collectUserRoles, isAdminRole } from '../types/roles';
-import Modal, { ModalFooter } from '../components/ui/Modal';
-import BillingReminderBanner from '../components/dashboard/BillingReminderBanner';
-import { formatCurrency, cn } from '../lib/utils';
-import { axisLabelStyle, baseChartOptions, baseGrid, currencyK, currencyTooltip } from '../lib/chartOptions';
+import { useDashboard } from '../hooks/useDashboard';
 import { useDebounce } from '../hooks/useDebounce';
+import { useFlats } from '../hooks/useFlats';
+import { useSetupProgress } from '../hooks/useSetupProgress';
 import { useSocietyPeriodBounds } from '../hooks/useSocietyPeriodBounds';
+import { axisLabelStyle, baseChartOptions, baseGrid, currencyK, currencyTooltip } from '../lib/chartOptions';
+import { cn, formatCurrency } from '../lib/utils';
+import { collectUserRoles, isAdminRole } from '../types/roles';
+const ReactApexChart = lazy(() => import('react-apexcharts'));
 
 const dashboardAxisLabelStyle = {
   ...axisLabelStyle,
@@ -400,7 +400,7 @@ export default function Dashboard() {
               monthLabel={billingMonthLabel}
               isGenerated={!!billingStatus?.isGenerated}
               isLoading={billingStatusLoading}
-              isGenerating={Boolean((generateBilling as any).isPending || generateBilling.isLoading)}
+              isGenerating={Boolean(generateBilling.isPending)}
               zeroAmountFlatsCount={zeroAmountFlatsCount}
               onGenerate={
                 // Only enable the banner's Generate Now action for admins — it will open the modal
@@ -436,16 +436,16 @@ export default function Dashboard() {
                       showToast(err?.message || 'Failed to generate bills', 'error');
                     }
                   }}
-                  disabled={Boolean((generateBilling as any).isPending || generateBilling.isLoading)}
+                  disabled={Boolean(generateBilling.isPending)}
                 >
-                  {Boolean((generateBilling as any).isPending || generateBilling.isLoading) ? 'Generating...' : `Generate for ${selectedBillingPeriod}`}
+                  {generateBilling.isPending ? 'Generating...' : `Generate for ${selectedBillingPeriod}`}
                 </button>
               </ModalFooter>
             </Modal>
           </>
-        )
+        )}
 
-          {/* ── 4 KPI Cards ───────────────────────────────────────────────── */}
+        {/* ── 4 KPI Cards ───────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)
