@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { flatsApi, FlatDto, CreateFlatDto, UpdateFlatDto, FlatStatusDto, FlatFinancialSummaryDto, FlatLedgerDto, BulkCreateFlatsPayload, BulkCreateFlatsResponse } from '../api/flatsApi';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { BulkCreateFlatsPayload, BulkCreateFlatsResponse, CreateFlatDto, FlatDto, FlatFinancialSummaryDto, FlatLedgerDto, flatsApi, FlatStatusDto, UpdateFlatDto } from '../api/flatsApi';
 import { logger } from '../lib/logger';
 
 /**
@@ -130,6 +130,17 @@ export function useFlatLedger(publicId?: string) {
         throw new Error('Flat public ID is required');
       }
       const result = await flatsApi.getLedger(publicId);
+
+      // Defensive normalization: ensure bill status codes are stable and
+      // consistently lowercase so UI mappings don't misinterpret values
+      // (some backend responses may include `status` or differently-cased values).
+      if (result && Array.isArray(result.bills)) {
+        result.bills = result.bills.map((b) => ({
+          ...b,
+          statusCode: (b.statusCode || (b as any).status || '').toString().trim().toLowerCase(),
+        }));
+      }
+
       return result;
     },
     enabled: !!publicId,

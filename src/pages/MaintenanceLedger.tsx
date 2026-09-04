@@ -1,14 +1,13 @@
-import { useParams } from 'react-router-dom';
 import { ArrowLeft, FileText } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '../components/layout/DashboardLayout';
+import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
 import Card, { CardContent } from '../components/ui/Card';
 import PageHeader from '../components/ui/PageHeader';
-import Button from '../components/ui/Button';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
-import Badge from '../components/ui/Badge';
-import { formatCurrency } from '../lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/Table';
 import { useFlatLedger } from '../hooks/useFlats';
-import { useNavigate } from 'react-router-dom';
+import { formatCurrency } from '../lib/utils';
 
 function normalizeStatus(status?: string) {
   return (status || '').trim().toLowerCase();
@@ -83,10 +82,15 @@ export default function MaintenanceLedger() {
           description="Flat maintenance bill and payment ledger"
           icon={FileText}
           actions={
-            <Button variant="outline" onClick={() => navigate('/flats')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Flats
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" onClick={() => refetch()} disabled={isRefetching}>
+                {isRefetching ? 'Refreshing...' : 'Refresh Ledger'}
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/flats')}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Flats
+              </Button>
+            </div>
           }
         />
 
