@@ -1,6 +1,6 @@
 import { ApiResponse } from '../types/api';
-import { unwrapArrayData } from './responseUtils';
 import apiClient from './client';
+import { unwrapArrayData } from './responseUtils';
 
 /**
  * Flat DTO following API documentation structure
@@ -11,9 +11,12 @@ export interface FlatDto {
   publicId: string; // UUID - primary identifier
   societyPublicId?: string; // UUID - society identifier
   flatNo: string;
-  ownerName: string;
-  contactMobile: string;
-  contactEmail: string;
+  ownerName?: string;
+  contactMobile?: string;
+  contactEmail?: string;
+  tenantName?: string;
+  tenantMobile?: string;
+  tenantEmail?: string;
   maintenanceAmount: number;
   totalOutstanding?: number; // Included in list response
   statusId: number; // Numeric status ID (1, 2, 3, etc.)
@@ -31,6 +34,9 @@ export interface CreateFlatDto {
   ownerName?: string;
   contactMobile?: string;
   contactEmail?: string;
+  tenantName?: string;
+  tenantMobile?: string;
+  tenantEmail?: string;
   maintenanceAmount?: number; // Default: 0
   statusCode?: string; // Valid values: 'owner_occupied' | 'tenant_occupied' | 'vacant' | 'under_maintenance'
 }
@@ -45,6 +51,9 @@ export interface UpdateFlatDto {
   ownerName?: string;
   contactMobile?: string;
   contactEmail?: string;
+  tenantName?: string;
+  tenantMobile?: string;
+  tenantEmail?: string;
   maintenanceAmount?: number;
   statusCode?: string; // Valid values: 'owner_occupied' | 'tenant_occupied' | 'vacant' | 'under_maintenance'
 }
@@ -258,7 +267,7 @@ export const flatsApi = {
     const params: Record<string, string> = {};
     if (startDate) params.startDate = startDate;
     if (endDate) params.endDate = endDate;
-    
+
     const response = await apiClient.get<ApiResponse<FlatLedgerDto>>(`/flats/${publicId}/ledger`, { params });
     return response.data.data;
   },

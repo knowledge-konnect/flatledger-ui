@@ -1,32 +1,32 @@
-import { useState, useMemo, useEffect } from 'react';
+import { AlertCircle, ArrowLeft, Building2, CheckCircle2, ChevronRight, Search, TrendingDown, TrendingUp, Users, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, AlertCircle, ChevronRight, Search, X, Building2, Users, TrendingDown, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthProvider';
 import { useFlats } from '../../hooks/useFlats';
 import { useOpeningBalanceStatus, useSubmitOpeningBalance } from '../../hooks/useOpeningBalance';
-import { useAuth } from '../../contexts/AuthProvider';
-import { isAdminRole, collectUserRoles } from '../../types/roles';
+import { logger } from '../../lib/logger';
+import { formatCurrency } from '../../lib/utils';
 import { FlatBalance, OpeningBalanceSummary } from '../../types/openingBalance.types';
-import LoadingSpinner from '../ui/LoadingSpinner';
+import { collectUserRoles, isAdminRole } from '../../types/roles';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
-import { formatCurrency } from '../../lib/utils';
-import OpeningBalancePreviewModal from './OpeningBalancePreviewModal';
+import LoadingSpinner from '../ui/LoadingSpinner';
 import OpeningBalanceAlreadyApplied from './OpeningBalanceAlreadyApplied';
+import OpeningBalancePreviewModal from './OpeningBalancePreviewModal';
 import OpeningBalanceSuccess from './OpeningBalanceSuccess';
-import { logger } from '../../lib/logger';
 
 export default function OpeningBalanceEntry() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   // Check if user is Society Admin
   const isTreasurer = isAdminRole(collectUserRoles(user));
-  
+
   // API hooks
   const { data: statusData, isLoading: statusLoading } = useOpeningBalanceStatus();
   const { data: flatsData, isLoading: flatsLoading } = useFlats();
   const submitMutation = useSubmitOpeningBalance();
-  
+
   // Local state
   const [societyAmount, setSocietyAmount] = useState<string>('0');
   const [flatBalances, setFlatBalances] = useState<Map<string, number>>(new Map());
@@ -123,7 +123,7 @@ export default function OpeningBalanceEntry() {
   // Filter flats based on search and view mode
   const flatsWithBalances: FlatBalance[] = useMemo(() => {
     if (!flatsData) return [];
-    
+
     let filtered = flatsData;
 
     // In quick mode, only show selected flats or flats with non-zero balance
@@ -139,14 +139,14 @@ export default function OpeningBalanceEntry() {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(flat =>
         flat.flatNo.toLowerCase().includes(query) ||
-        flat.ownerName.toLowerCase().includes(query)
+        (flat.ownerName ?? '').toLowerCase().includes(query)
       );
     }
 
     return filtered.map(flat => ({
       flatPublicId: flat.publicId,
       flatNo: flat.flatNo,
-      ownerName: flat.ownerName,
+      ownerName: flat.ownerName ?? '',
       openingBalance: flatBalances.get(flat.publicId) || 0,
     }));
   }, [flatsData, flatBalances, searchQuery, viewMode, selectedFlatsForEntry]);
@@ -401,11 +401,10 @@ export default function OpeningBalanceEntry() {
               { n: 3, done: parseFloat(societyAmount) > 0 || Array.from(flatBalances.values()).some(v => v !== 0), color: 'emerald' },
             ].map((s, i, arr) => (
               <span key={s.n} className="flex items-center gap-1.5">
-                <span className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all ${
-                  s.done
+                <span className={`flex items-center justify-center w-6 h-6 rounded-full border-2 transition-all ${s.done
                     ? 'bg-emerald-500 border-emerald-500 text-white'
                     : 'border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400 bg-white dark:bg-slate-900'
-                }`}>
+                  }`}>
                   {s.done ? <CheckCircle2 className="w-3 h-3" /> : s.n}
                 </span>
                 {i < arr.length - 1 && <span className="w-4 h-px bg-slate-300 dark:bg-slate-600" />}
@@ -425,11 +424,10 @@ export default function OpeningBalanceEntry() {
             {/* Step 1 */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
               <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800">
-                <span className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${
-                  parseFloat(societyAmount) > 0
+                <span className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${parseFloat(societyAmount) > 0
                     ? 'bg-emerald-500 text-white'
                     : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
-                }`}>
+                  }`}>
                   {parseFloat(societyAmount) > 0 ? '✓' : '1'}
                 </span>
                 <div>
@@ -450,13 +448,12 @@ export default function OpeningBalanceEntry() {
                       step="0.01"
                       value={societyAmount}
                       onChange={(e) => setSocietyAmount(e.target.value)}
-                      className={`input w-full pl-8 text-xl py-3 font-bold tabular-nums ${
-                        validationErrors.societyAmount
+                      className={`input w-full pl-8 text-xl py-3 font-bold tabular-nums ${validationErrors.societyAmount
                           ? 'border-2 border-red-500 focus:ring-red-200'
                           : parseFloat(societyAmount) > 0
-                          ? 'border-2 border-emerald-400 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20'
-                          : ''
-                      }`}
+                            ? 'border-2 border-emerald-400 dark:border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20'
+                            : ''
+                        }`}
                       placeholder="0"
                     />
                   </div>
@@ -479,11 +476,10 @@ export default function OpeningBalanceEntry() {
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-3">
-                  <span className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${
-                    Array.from(flatBalances.values()).some(v => v !== 0)
+                  <span className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${Array.from(flatBalances.values()).some(v => v !== 0)
                       ? 'bg-emerald-500 text-white'
                       : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
-                  }`}>
+                    }`}>
                     {Array.from(flatBalances.values()).some(v => v !== 0) ? '✓' : '2'}
                   </span>
                   <div>
@@ -497,11 +493,10 @@ export default function OpeningBalanceEntry() {
                     <button
                       key={mode}
                       onClick={() => setViewMode(mode)}
-                      className={`px-3 py-1 text-xs font-semibold rounded-md transition-all capitalize ${
-                        viewMode === mode
+                      className={`px-3 py-1 text-xs font-semibold rounded-md transition-all capitalize ${viewMode === mode
                           ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
                           : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                      }`}
+                        }`}
                     >
                       {mode}
                     </button>
@@ -593,7 +588,7 @@ export default function OpeningBalanceEntry() {
                                 ?.filter(flat => {
                                   const q = searchQuery.toLowerCase();
                                   const alreadyAdded = selectedFlatsForEntry.has(flat.publicId) || (flatBalances.get(flat.publicId) || 0) !== 0;
-                                  return !alreadyAdded && (flat.flatNo.toLowerCase().includes(q) || flat.ownerName.toLowerCase().includes(q));
+                                  return !alreadyAdded && (flat.flatNo.toLowerCase().includes(q) || (flat.ownerName ?? '').toLowerCase().includes(q));
                                 })
                                 .map(flat => (
                                   <button
@@ -658,13 +653,12 @@ export default function OpeningBalanceEntry() {
                                   onChange={(e) => handleUpdateFlatBalance(flat.flatPublicId, e.target.value)}
                                   onKeyDown={(e) => handleInputKeyDown(e, index)}
                                   onFocus={handleInputFocus}
-                                  className={`input text-right w-32 py-1.5 font-semibold text-sm border-2 transition-colors ${
-                                    flat.openingBalance > 0
+                                  className={`input text-right w-32 py-1.5 font-semibold text-sm border-2 transition-colors ${flat.openingBalance > 0
                                       ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300'
                                       : flat.openingBalance < 0
-                                      ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300'
-                                      : 'border-slate-200 dark:border-slate-700'
-                                  }`}
+                                        ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300'
+                                        : 'border-slate-200 dark:border-slate-700'
+                                    }`}
                                   placeholder="0"
                                 />
                               </td>
@@ -711,13 +705,12 @@ export default function OpeningBalanceEntry() {
                             onChange={(e) => handleUpdateFlatBalance(flat.flatPublicId, e.target.value)}
                             onKeyDown={(e) => handleInputKeyDown(e, index)}
                             onFocus={handleInputFocus}
-                            className={`input w-full py-2 font-semibold text-sm border-2 transition-colors ${
-                              flat.openingBalance > 0
+                            className={`input w-full py-2 font-semibold text-sm border-2 transition-colors ${flat.openingBalance > 0
                                 ? 'border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300'
                                 : flat.openingBalance < 0
-                                ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300'
-                                : 'border-slate-200 dark:border-slate-700'
-                            }`}
+                                  ? 'border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300'
+                                  : 'border-slate-200 dark:border-slate-700'
+                              }`}
                             placeholder="Enter balance"
                           />
                           <div className="text-xs mt-1.5">
@@ -744,17 +737,15 @@ export default function OpeningBalanceEntry() {
             </div>
 
             {/* Step 3 */}
-            <div className={`rounded-2xl border-2 overflow-hidden shadow-sm transition-all ${
-              parseFloat(societyAmount) > 0 || Array.from(flatBalances.values()).some(v => v !== 0)
+            <div className={`rounded-2xl border-2 overflow-hidden shadow-sm transition-all ${parseFloat(societyAmount) > 0 || Array.from(flatBalances.values()).some(v => v !== 0)
                 ? 'border-emerald-300 dark:border-emerald-700'
                 : 'border-slate-200 dark:border-slate-800 opacity-60'
-            }`}>
+              }`}>
               <div className="bg-emerald-50 dark:bg-emerald-950/30 px-5 py-4 flex items-center gap-3 border-b border-emerald-200 dark:border-emerald-800">
-                <span className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${
-                  parseFloat(societyAmount) > 0 || Array.from(flatBalances.values()).some(v => v !== 0)
+                <span className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold flex-shrink-0 ${parseFloat(societyAmount) > 0 || Array.from(flatBalances.values()).some(v => v !== 0)
                     ? 'bg-emerald-600 text-white'
                     : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
-                }`}>3</span>
+                  }`}>3</span>
                 <div>
                   <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Review & Submit</h3>
                   <p className="text-xs text-emerald-600 dark:text-emerald-400">Complete steps 1 &amp; 2 to enable submission</p>

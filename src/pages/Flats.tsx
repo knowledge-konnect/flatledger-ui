@@ -24,9 +24,12 @@ import { formatCurrency } from '../lib/utils';
 
 const flatSchema = z.object({
   flatNumber: z.string().min(1, 'Flat number is required'),
-  ownerName: z.string().min(1, 'Owner name is required'),
+  ownerName: z.string().optional(),
   ownerEmail: z.string().optional(),
-  ownerPhone: z.string().min(10, 'Phone number must be at least 10 digits'),
+  ownerPhone: z.string().optional(),
+  tenantName: z.string().optional(),
+  tenantEmail: z.string().optional(),
+  tenantPhone: z.string().optional(),
   maintenanceAmount: z.string().refine(
     val => !isNaN(Number(val)) && Number(val) > 0,
     'Maintenance amount must be a positive number'
@@ -48,9 +51,12 @@ import { collectUserRoles, isAdminRole } from '../types/roles';
 type UIFLat = {
   publicId: string;
   flatNumber: string;
-  ownerName: string;
-  ownerEmail: string;
-  ownerPhone: string;
+  ownerName?: string;
+  ownerEmail?: string;
+  ownerPhone?: string;
+  tenantName?: string;
+  tenantEmail?: string;
+  tenantPhone?: string;
   maintenanceAmount: number;
   // UI display name for status
   status: string;
@@ -116,12 +122,6 @@ export default function Flats() {
   const safeApiFlats = useMemo(() => Array.isArray(apiFlats) ? apiFlats : [], [apiFlats]);
 
   const normalizeFlatNo = (value: string) => value.trim().toUpperCase();
-  const normalizeEmail = (value?: string | null) => (value || '').trim().toLowerCase();
-  const normalizeMobile = (value?: string | null) => {
-    const digits = (value || '').replace(/\D/g, '');
-    if (digits.length === 12 && digits.startsWith('91')) return digits.slice(2);
-    return digits;
-  };
 
   const statusOptions = useMemo(() => {
     const deduped = safeStatuses.filter(
@@ -156,6 +156,9 @@ export default function Flats() {
     ownerName: '',
     ownerEmail: '',
     ownerPhone: '',
+    tenantName: '',
+    tenantEmail: '',
+    tenantPhone: '',
     maintenanceAmount: '',
     statusCode: '',
   };
@@ -196,8 +199,6 @@ export default function Flats() {
       if (!user) throw new Error('User not authenticated');
 
       const enteredFlatNo = normalizeFlatNo(data.flatNumber);
-      const enteredEmail = normalizeEmail(data.ownerEmail);
-      const enteredMobile = normalizeMobile(data.ownerPhone);
       const editingPublicId = isEditing ? selectedFlat?.publicId : null;
 
       const duplicateFlatNo = safeApiFlats.some(
@@ -206,26 +207,6 @@ export default function Flats() {
       if (duplicateFlatNo) {
         setFormError('This flat number already exists.');
         return;
-      }
-
-      if (enteredEmail) {
-        const duplicateEmail = safeApiFlats.some(
-          (f) => f.publicId !== editingPublicId && normalizeEmail(f.contactEmail) === enteredEmail
-        );
-        if (duplicateEmail) {
-          setFormError('This owner email is already linked to another flat.');
-          return;
-        }
-      }
-
-      if (enteredMobile) {
-        const duplicateMobile = safeApiFlats.some(
-          (f) => f.publicId !== editingPublicId && normalizeMobile(f.contactMobile) === enteredMobile
-        );
-        if (duplicateMobile) {
-          setFormError('This owner mobile number is already linked to another flat.');
-          return;
-        }
       }
 
       let selectedStatusCode: string | undefined;
@@ -240,9 +221,12 @@ export default function Flats() {
         const payload = {
           publicId: selectedFlat.publicId,
           flatNo: enteredFlatNo,
-          ownerName: data.ownerName,
-          contactMobile: enteredMobile || undefined,
-          contactEmail: enteredEmail || undefined,
+          ownerName: data.ownerName || undefined,
+          contactMobile: data.ownerPhone || undefined,
+          contactEmail: data.ownerEmail || undefined,
+          tenantName: data.tenantName || undefined,
+          tenantMobile: data.tenantPhone || undefined,
+          tenantEmail: data.tenantEmail || undefined,
           maintenanceAmount: Number(data.maintenanceAmount),
           statusCode: selectedStatusCode,
         };
@@ -256,9 +240,12 @@ export default function Flats() {
         const isFirstFlat = safeApiFlats.length === 0;
         const payload = {
           flatNo: enteredFlatNo,
-          ownerName: data.ownerName,
-          contactMobile: enteredMobile || undefined,
-          contactEmail: enteredEmail || undefined,
+          ownerName: data.ownerName || undefined,
+          contactMobile: data.ownerPhone || undefined,
+          contactEmail: data.ownerEmail || undefined,
+          tenantName: data.tenantName || undefined,
+          tenantMobile: data.tenantPhone || undefined,
+          tenantEmail: data.tenantEmail || undefined,
           maintenanceAmount: Number(data.maintenanceAmount),
           statusCode: selectedStatusCode,
         };
@@ -321,6 +308,9 @@ export default function Flats() {
         ownerName: f.ownerName,
         ownerEmail: f.contactEmail ?? '',
         ownerPhone: f.contactMobile,
+        tenantName: (f as any).tenantName,
+        tenantEmail: (f as any).tenantEmail,
+        tenantPhone: (f as any).tenantMobile,
         maintenanceAmount: f.maintenanceAmount,
         status: f.statusName || matchingStatus?.displayName || '',
         statusCode: matchingStatus?.code,
@@ -337,7 +327,7 @@ export default function Flats() {
       if (!q) return true;
       return (
         flat.flatNumber.toLowerCase().includes(q) ||
-        flat.ownerName.toLowerCase().includes(q) ||
+        (flat.ownerName || '').toLowerCase().includes(q) ||
         (flat.ownerEmail || '').toLowerCase().includes(q) ||
         (flat.ownerPhone || '').toLowerCase().includes(q)
       );
@@ -346,7 +336,7 @@ export default function Flats() {
       if (sortBy === 'flatNumber') {
         cmp = a.flatNumber.localeCompare(b.flatNumber, undefined, { numeric: true });
       } else if (sortBy === 'ownerName') {
-        cmp = a.ownerName.localeCompare(b.ownerName);
+        cmp = (a.ownerName || '').localeCompare(b.ownerName || '');
       } else if (sortBy === 'maintenanceAmount') {
         cmp = a.maintenanceAmount - b.maintenanceAmount;
       }
@@ -624,9 +614,12 @@ export default function Flats() {
                                     setSelectedFlat(flat);
                                     reset({
                                       flatNumber: flat.flatNumber,
-                                      ownerName: flat.ownerName,
+                                      ownerName: flat.ownerName ?? '',
                                       ownerEmail: flat.ownerEmail ?? '',
-                                      ownerPhone: flat.ownerPhone,
+                                      ownerPhone: flat.ownerPhone ?? '',
+                                      tenantName: flat.tenantName ?? '',
+                                      tenantEmail: flat.tenantEmail ?? '',
+                                      tenantPhone: flat.tenantPhone ?? '',
                                       maintenanceAmount: String(flat.maintenanceAmount),
                                       statusCode: resolvedStatusCode,
                                     });
@@ -703,6 +696,11 @@ export default function Flats() {
                   {...register('flatNumber')}
                 />
 
+                {/* Owner Section */}
+                <div className="md:col-span-2">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Owner Information (Optional)</h3>
+                </div>
+
                 <Input
                   label="Owner Name"
                   type="text"
@@ -712,20 +710,50 @@ export default function Flats() {
                 />
 
                 <Input
-                  label="Email (Optional)"
+                  label="Owner Phone"
+                  type="tel"
+                  maxLength={10}
+                  placeholder="10-digit number"
+                  error={errors.ownerPhone?.message}
+                  {...register('ownerPhone')}
+                />
+
+                <Input
+                  label="Owner Email"
                   type="email"
                   placeholder="owner@example.com"
                   error={errors.ownerEmail?.message}
                   {...register('ownerEmail')}
                 />
 
+                {/* Tenant Section */}
+                <div className="md:col-span-2">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Tenant Information (Optional)</h3>
+                </div>
+
                 <Input
-                  label="Phone Number"
+                  label="Tenant Name"
+                  type="text"
+                  placeholder="Tenant full name"
+                  error={errors.tenantName?.message}
+                  {...register('tenantName')}
+                />
+
+                <Input
+                  label="Tenant Phone"
                   type="tel"
                   maxLength={10}
-                  placeholder="+1234567890"
-                  error={errors.ownerPhone?.message}
-                  {...register('ownerPhone')}
+                  placeholder="10-digit number"
+                  error={errors.tenantPhone?.message}
+                  {...register('tenantPhone')}
+                />
+
+                <Input
+                  label="Tenant Email"
+                  type="email"
+                  placeholder="tenant@example.com"
+                  error={errors.tenantEmail?.message}
+                  {...register('tenantEmail')}
                 />
 
                 <div className="md:col-span-2">

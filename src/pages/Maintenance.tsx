@@ -117,7 +117,6 @@ export default function Maintenance() {
   const [formError, setFormError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [allocationFilter, setAllocationFilter] = useState<'all' | 'current' | 'arrears'>('all');
   const [flatFilter, setFlatFilter] = useState('all');
   const [sortField, setSortField] = useState<'paymentDate' | 'flatNumber' | 'amount'>('paymentDate');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -294,35 +293,6 @@ export default function Maintenance() {
     });
     return map;
   }, [paymentFlatBulkSummaries]);
-  const appliedBucketsByPayment = useMemo(() => {
-    return new Map(
-      periodScopedPayments.map((payment) => {
-        const bucket = new Map<string, number>();
-        (payment.allocations || []).forEach((allocation) => {
-          if (!allocation.period) return;
-          const prev = bucket.get(allocation.period) || 0;
-          bucket.set(allocation.period, prev + allocation.allocatedAmount);
-        });
-
-        if (bucket.size === 0 && payment.paymentDate) {
-          const derivedPeriod = payment.paymentDate.slice(0, 7);
-          bucket.set(derivedPeriod, payment.amount);
-        }
-
-        const entries = [...bucket.entries()]
-          .sort(([a], [b]) => b.localeCompare(a))
-          .map(([periodValue, amount]) => ({
-            period: periodValue,
-            label: formatPeriodLabel(periodValue),
-            amount,
-            kind: periodValue < period ? 'Arrear' : 'Current',
-          }));
-
-        return [payment.publicId, entries] as const;
-      })
-    );
-  }, [periodScopedPayments, period]);
-
   const paymentBalanceById = useMemo(() => {
     const grouped = new Map<string, any[]>();
     periodScopedPayments.forEach((payment) => {
@@ -543,34 +513,39 @@ export default function Maintenance() {
       searchQuery
         ? periodScopedPayments.filter(p => {
           const q = searchQuery.toLowerCase();
+          const ownerName = (flatOwnerMap.get(p.flatPublicId) || '').toLowerCase();
+          const paymentDate = (p.paymentDate || '').toLowerCase();
+          const amountText = String(p.amount || '').toLowerCase();
+          const modeName = (p.paymentModeName || '').toLowerCase();
+          const forMonth = /^\d{4}-\d{2}$/.test((p.paymentDate || '').slice(0, 7))
+            ? formatPeriodLabel((p.paymentDate || '').slice(0, 7)).toLowerCase()
+            : '';
+          const statusText = normalizeBillStatus(p.billStatus || '').toLowerCase();
+
           return (
             (p.flatNumber || '').toLowerCase().includes(q) ||
-            (p.recordedByName || '').toLowerCase().includes(q) ||
+            ownerName.includes(q) ||
+            paymentDate.includes(q) ||
+            amountText.includes(q) ||
+            modeName.includes(q) ||
+            statusText.includes(q) ||
+            forMonth.includes(q) ||
             (p.notes || '').toLowerCase().includes(q) ||
             (p.referenceNumber || '').toLowerCase().includes(q) ||
-            (p.paymentModeName || '').toLowerCase().includes(q)
+            (p.recordedByName || '').toLowerCase().includes(q)
           );
         })
         : periodScopedPayments,
-    [periodScopedPayments, searchQuery]
+    [periodScopedPayments, searchQuery, flatOwnerMap]
   );
 
   const filteredPayments = useMemo(
     () =>
       searchFilteredPayments.filter((payment) => {
         if (flatFilter !== 'all' && payment.flatPublicId !== flatFilter) return false;
-
-        if (allocationFilter === 'all') return true;
-
-        const applied = appliedBucketsByPayment.get(payment.publicId) || [];
-        const hasCurrent = applied.some((entry) => entry.kind === 'Current');
-        const hasArrear = applied.some((entry) => entry.kind === 'Arrear');
-
-        if (allocationFilter === 'current') return hasCurrent;
-        if (allocationFilter === 'arrears') return hasArrear;
         return true;
       }),
-    [searchFilteredPayments, flatFilter, allocationFilter, appliedBucketsByPayment]
+    [searchFilteredPayments, flatFilter]
   );
 
   const sortedPayments = useMemo(
@@ -596,18 +571,16 @@ export default function Maintenance() {
 
   const hasActiveFilters =
     searchQuery.trim().length > 0 ||
-    allocationFilter !== 'all' ||
     flatFilter !== 'all';
 
   const clearAllFilters = () => {
     setSearchQuery('');
-    setAllocationFilter('all');
     setFlatFilter('all');
     setCurrentPage(1);
   };
 
   // Reset to page 1 whenever filters or sort change to avoid showing an empty page
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, allocationFilter, flatFilter, sortField, sortDir]);
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, flatFilter, sortField, sortDir]);
 
   // Server-side pagination: detect next-page existence by prefetching one page ahead.
   // This avoids false "next" visibility when the current page has exactly PAGE_SIZE rows.
@@ -822,7 +795,7 @@ export default function Maintenance() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search flat, mode, notes..."
+                  placeholder="Search flat, owner, date, amount, mode, status, month..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="input pl-9 py-1.5 text-sm w-full"
@@ -838,27 +811,6 @@ export default function Maintenance() {
                   </button>
                 )}
               </div>
-
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {[
-                  { key: 'all', label: 'All' },
-                  { key: 'current', label: 'Current Month' },
-                  { key: 'arrears', label: 'Arrears' },
-                ].map((filterItem) => (
-                  <button
-                    key={filterItem.key}
-                    type="button"
-                    onClick={() => setAllocationFilter(filterItem.key as 'all' | 'current' | 'arrears')}
-                    className={`px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors ${allocationFilter === filterItem.key
-                      ? 'bg-emerald-600 text-white border-emerald-600'
-                      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700'
-                      }`}
-                  >
-                    {filterItem.label}
-                  </button>
-                ))}
-              </div>
-
               <div className="flex items-center gap-2 min-w-0 w-full sm:w-auto">
                 <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">Flat</span>
                 <select
@@ -897,7 +849,7 @@ export default function Maintenance() {
                 No records match the current filters
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Try changing search text, flat selection, or allocation type.
+                Try changing search text or flat selection.
               </p>
               <div>
                 <Button size="sm" variant="outline" onClick={clearAllFilters}>
@@ -1295,7 +1247,7 @@ export default function Maintenance() {
                           {safeFlats
                             .filter(flat => {
                               const q = flatSearch.toLowerCase();
-                              return !q || flat.flatNo.toLowerCase().includes(q) || flat.ownerName.toLowerCase().includes(q);
+                              return !q || flat.flatNo.toLowerCase().includes(q) || (flat.ownerName ?? '').toLowerCase().includes(q);
                             })
                             .map(flat => {
                               const alreadyPaid = alreadyPaidFlatIds.has(flat.publicId);
@@ -1320,7 +1272,7 @@ export default function Maintenance() {
                             })}
                           {safeFlats.filter(flat => {
                             const q = flatSearch.toLowerCase();
-                            return !q || flat.flatNo.toLowerCase().includes(q) || flat.ownerName.toLowerCase().includes(q);
+                            return !q || flat.flatNo.toLowerCase().includes(q) || (flat.ownerName ?? '').toLowerCase().includes(q);
                           }).length === 0 && (
                               <li className="px-3 py-2 text-sm text-slate-400">No flats found</li>
                             )}

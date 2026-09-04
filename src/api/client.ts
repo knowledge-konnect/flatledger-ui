@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
-import { ApiError } from '../types/api';
 import { logger } from '../lib/logger';
 import { getGlobalToastFn } from '../lib/toastBridge';
+import { ApiError } from '../types/api';
 
 
 // Get API base URL from environment variables
@@ -59,7 +59,7 @@ export const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 seconds timeout
+  timeout: 90000, // 90 seconds timeout for slower popup/API workflows
   withCredentials: true, // Send httpOnly cookies (refreshToken) on every request
 });
 
@@ -84,7 +84,7 @@ apiClient.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
-    
+
     return config;
   },
   error => {
@@ -97,7 +97,12 @@ apiClient.interceptors.response.use(
   response => response,
   async (error: AxiosError<ApiError>) => {
     const originalRequest = error.config;
-    
+
+    // Normalize Axios timeout errors so UI popups show a clear message
+    if (error.code === 'ECONNABORTED' || (error.message ?? '').toLowerCase().includes('timeout')) {
+      return Promise.reject(new Error('Request timed out. Please try again.'));
+    }
+
     if (!originalRequest) {
       return Promise.reject(error);
     }
@@ -132,15 +137,15 @@ apiClient.interceptors.response.use(
 
         try {
           logger.log('[API Client] Attempting to refresh access token');
-          
+
           // Attempt refreshAccessToken() from AuthProvider
           const newAccessToken = await refreshAccessTokenCallback();
-          
+
           if (newAccessToken) {
             // Refresh succeeded — update in-memory token
             logger.log('[API Client] Token refreshed successfully');
             setInMemoryAccessToken(newAccessToken);
-            
+
             // Notify all waiting requests
             onRefreshed(newAccessToken);
             isRefreshing = false;
@@ -154,9 +159,9 @@ apiClient.interceptors.response.use(
             isRefreshing = false;
             // Signal failure to all queued requests so they reject instead of hanging
             onRefreshed(null);
-            
+
             logger.error('[API Client] Token refresh failed, logout initiated');
-            
+
             // Redirect to /login if not already there
             if (!isRedirecting && !window.location.pathname.includes('/login')) {
               isRedirecting = true;
@@ -165,7 +170,7 @@ apiClient.interceptors.response.use(
                 window.location.href = '/login';
               }, 100);
             }
-            
+
             return Promise.reject(error);
           }
         } catch (refreshError) {
@@ -173,9 +178,9 @@ apiClient.interceptors.response.use(
           isRefreshing = false;
           // Signal failure to all queued requests so they reject instead of hanging
           onRefreshed(null);
-          
+
           logger.error('[API Client] Exception during token refresh', refreshError);
-          
+
           // Redirect to /login
           if (!isRedirecting && !window.location.pathname.includes('/login')) {
             isRedirecting = true;
@@ -184,7 +189,7 @@ apiClient.interceptors.response.use(
               window.location.href = '/login';
             }, 100);
           }
-          
+
           return Promise.reject(refreshError);
         }
       }
