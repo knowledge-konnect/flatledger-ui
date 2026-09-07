@@ -27,7 +27,7 @@ import { useFlatFinancialSummary, useFlats } from '../hooks/useFlats';
 import { useMaintenanceConfig } from '../hooks/useSocieties';
 import { useSocietyPeriodBounds } from '../hooks/useSocietyPeriodBounds';
 import { getMonthOptions as buildMonthOptions } from '../lib/periodFilters';
-import { formatCurrency, formatDate } from '../lib/utils';
+import { formatCurrency, formatDate, formatPeriodLabel } from '../lib/utils';
 import { collectUserRoles, isAdminRole } from '../types/roles';
 
 const paymentSchema = z.object({
@@ -224,11 +224,7 @@ export default function Maintenance() {
     [safeFlats]
   );
 
-  const formatPeriodLabel = (periodValue: string) => {
-    const [yr, mo] = periodValue.split('-').map(Number);
-    if (!yr || !mo) return periodValue;
-    return new Date(yr, mo - 1, 1).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
-  };
+
 
   // Pre-fill the amount field from the society's default monthly charge when opening the add modal
   useEffect(() => {
@@ -518,7 +514,7 @@ export default function Maintenance() {
           const amountText = String(p.amount || '').toLowerCase();
           const modeName = (p.paymentModeName || '').toLowerCase();
           const forMonth = /^\d{4}-\d{2}$/.test((p.paymentDate || '').slice(0, 7))
-            ? formatPeriodLabel((p.paymentDate || '').slice(0, 7)).toLowerCase()
+            ? formatPeriodLabel((p.paymentDate || '').slice(0, 7), '', 'short').toLowerCase()
             : '';
           const statusText = normalizeBillStatus(p.billStatus || '').toLowerCase();
 
@@ -990,7 +986,7 @@ export default function Maintenance() {
                             if (!paymentPeriod) return <span className="text-xs text-slate-400">-</span>;
                             return (
                               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold whitespace-nowrap bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-                                {formatPeriodLabel(paymentPeriod)}
+                                {formatPeriodLabel(paymentPeriod, '', 'short')}
                               </span>
                             );
                           })()}

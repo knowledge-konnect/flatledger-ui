@@ -31,7 +31,7 @@ import { useFlats } from '../hooks/useFlats';
 import { useSetupProgress } from '../hooks/useSetupProgress';
 import { useSocietyPeriodBounds } from '../hooks/useSocietyPeriodBounds';
 import { axisLabelStyle, baseChartOptions, baseGrid, currencyK, currencyTooltip } from '../lib/chartOptions';
-import { cn, formatCurrency } from '../lib/utils';
+import { cn, formatCurrency, formatPeriodLabel } from '../lib/utils';
 import { collectUserRoles, isAdminRole } from '../types/roles';
 const ReactApexChart = lazy(() => import('react-apexcharts'));
 
@@ -214,6 +214,11 @@ export default function Dashboard() {
   } = useBillingStatus();
   const generateBilling = useGenerateBilling();
 
+  // Determine the currently selected billing period (YYYY-MM) from the date filter
+  const selectedPeriod = startDate?.slice(0, 7);
+  // Use billingStatus only when it refers to the same period; otherwise assume not generated
+  const isGeneratedForSelected = billingStatus?.currentMonth === selectedPeriod ? Boolean(billingStatus?.isGenerated) : false;
+
   const { showToast } = useToast();
 
   // Modal + selected period state for manual generation
@@ -222,6 +227,7 @@ export default function Dashboard() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [showConfirmGenerate, setShowConfirmGenerate] = useState(false);
 
   // When billingStatus becomes available, prefer its currentMonth as the default
   useEffect(() => {
@@ -232,21 +238,21 @@ export default function Dashboard() {
 
   const zeroAmountFlatsCount = useMemo(
     () => {
-      if (billingStatus?.isGenerated) return 0;
+      // If bills for the selected period are already generated, hide the zero-amount warning
+      const selectedPeriod = startDate?.slice(0, 7);
+      const isGeneratedForSelected = billingStatus?.currentMonth === selectedPeriod ? billingStatus?.isGenerated : false;
+      if (isGeneratedForSelected) return 0;
       // Prefer flat_summary from the dashboard API to avoid an extra network call
       if (flatSummary) return flatSummary.zero_amount_count ?? 0;
       return (flats as any[]).filter(f => !f.maintenanceAmount || f.maintenanceAmount === 0).length;
     },
-    [flats, flatSummary, billingStatus?.isGenerated]
+    [flats, flatSummary, billingStatus?.isGenerated, startDate]
   );
 
   const billingMonthLabel = useMemo(() => {
-    const period = billingStatus?.currentMonth;
-    if (!period) return 'Current Month';
-    const [year, month] = period.split('-').map(Number);
-    if (!year || !month) return period;
-    return new Date(year, month - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  }, [billingStatus?.currentMonth]);
+    const selected = startDate?.slice(0, 7) || billingStatus?.currentMonth;
+    return formatPeriodLabel(selected, 'Current Month');
+  }, [billingStatus?.currentMonth, startDate]);
 
 
 
@@ -398,13 +404,18 @@ export default function Dashboard() {
           <>
             <BillingReminderBanner
               monthLabel={billingMonthLabel}
-              isGenerated={!!billingStatus?.isGenerated}
+              isGenerated={isGeneratedForSelected}
               isLoading={billingStatusLoading}
               isGenerating={Boolean(generateBilling.isPending)}
               zeroAmountFlatsCount={zeroAmountFlatsCount}
               onGenerate={
-                // Only enable the banner's Generate Now action for admins — it will open the modal
-                isAdminRole(collectUserRoles(user)) ? () => setShowGenerateModal(true) : undefined
+                // Only enable the banner's Generate Now action for admins — it will open the modal for the selected period
+                isAdminRole(collectUserRoles(user))
+                  ? () => {
+                    if (selectedPeriod) setSelectedBillingPeriod(selectedPeriod);
+                    setShowGenerateModal(true);
+                  }
+                  : undefined
               }
             />
 
@@ -427,10 +438,35 @@ export default function Dashboard() {
                 <button className="btn btn-ghost" onClick={() => setShowGenerateModal(false)}>Cancel</button>
                 <button
                   className="btn btn-primary"
+                  onClick={() => setShowConfirmGenerate(true)}
+                  disabled={Boolean(generateBilling.isPending)}
+                >
+                  {generateBilling.isPending ? 'Generating...' : `Generate for ${selectedBillingPeriod}`}
+                </button>
+              </ModalFooter>
+            </Modal>
+
+            {/* Confirmation modal before actual generate */}
+            <Modal
+              isOpen={showConfirmGenerate}
+              onClose={() => setShowConfirmGenerate(false)}
+              title="Confirm Generate Bills"
+            >
+              <div className="p-6">
+                <p className="text-sm text-slate-700 dark:text-slate-300 mb-3">
+                  You are about to generate maintenance bills for <strong>{formatPeriodLabel(selectedBillingPeriod)}</strong>.
+                </p>
+                <p className="text-xs text-slate-500">This will create charges for all active flats in the society. This action cannot be undone.</p>
+              </div>
+              <ModalFooter>
+                <button className="btn btn-ghost" onClick={() => setShowConfirmGenerate(false)}>Cancel</button>
+                <button
+                  className="btn btn-danger"
                   onClick={async () => {
                     try {
                       await generateBilling.mutateAsync({ period: selectedBillingPeriod });
                       showToast(`Bills generated for ${selectedBillingPeriod}`, 'success');
+                      setShowConfirmGenerate(false);
                       setShowGenerateModal(false);
                     } catch (err: any) {
                       showToast(err?.message || 'Failed to generate bills', 'error');
@@ -438,7 +474,7 @@ export default function Dashboard() {
                   }}
                   disabled={Boolean(generateBilling.isPending)}
                 >
-                  {generateBilling.isPending ? 'Generating...' : `Generate for ${selectedBillingPeriod}`}
+                  {generateBilling.isPending ? 'Generating...' : `Confirm Generate`}
                 </button>
               </ModalFooter>
             </Modal>
@@ -527,7 +563,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="space-y-2.5 text-sm">
-              {!billingStatus?.isGenerated && (
+              {!isGeneratedForSelected && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 p-3 text-amber-700 dark:text-amber-300">
                   <div className="font-semibold">Billing has not been generated yet</div>
                   <div className="text-xs mt-1">Create the current month’s bills to keep maintenance tracking accurate.</div>
@@ -545,7 +581,7 @@ export default function Dashboard() {
                   <div className="text-xs mt-1">Use the dues report to follow up quickly.</div>
                 </div>
               )}
-              {billingStatus?.isGenerated && zeroAmountFlatsCount === 0 && pendingFlatsCount === 0 && (
+              {isGeneratedForSelected && zeroAmountFlatsCount === 0 && pendingFlatsCount === 0 && (
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/20 p-3 text-emerald-700 dark:text-emerald-300">
                   <div className="font-semibold">Everything looks on track</div>
                   <div className="text-xs mt-1">Bills are generated and there are no obvious follow-ups for the month.</div>

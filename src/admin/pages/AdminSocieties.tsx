@@ -1,14 +1,14 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Eye, Building2 } from 'lucide-react';
+import { Building2, Eye } from 'lucide-react';
+import { useState } from 'react';
+import { cn, formatDate } from '../../lib/utils';
 import { adminSocietiesApi } from '../api/adminSocietiesApi';
 import { AdminDataTable, type AdminColumn } from '../components/AdminDataTable';
+import { AdminDetailDrawer, DrawerField, DrawerSection } from '../components/AdminDetailDrawer';
+import { AdminPageHeader } from '../components/AdminPageHeader';
 import { AdminSearchBar } from '../components/AdminSearchBar';
 import { AdminStatusBadge } from '../components/AdminStatusBadge';
-import { AdminPageHeader } from '../components/AdminPageHeader';
-import { AdminDetailDrawer, DrawerSection, DrawerField } from '../components/AdminDetailDrawer';
 import type { AdminSocietyDto } from '../types/adminTypes';
-import { cn } from '../../lib/utils';
 
 export default function AdminSocieties() {
   const [page, setPage] = useState(1);
@@ -68,14 +68,7 @@ export default function AdminSocieties() {
     {
       key: 'createdAt',
       header: 'Onboarded',
-      cell: (row) =>
-        row.onboardingDate
-          ? new Date(row.onboardingDate).toLocaleDateString('en-IN', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric',
-            })
-          : '—',
+      cell: (row) => (row.onboardingDate ? formatDate(row.onboardingDate) : '—'),
     },
   ];
 
@@ -159,10 +152,7 @@ export default function AdminSocieties() {
                   </p>
                   {viewTarget.activeSubscription.currentPeriodEnd && (
                     <p className="text-[11px] text-indigo-500 dark:text-indigo-400 mt-0.5">
-                      Renews{' '}
-                      {new Date(viewTarget.activeSubscription.currentPeriodEnd).toLocaleDateString('en-IN', {
-                        year: 'numeric', month: 'short', day: 'numeric',
-                      })}
+                      Renews {formatDate(viewTarget.activeSubscription.currentPeriodEnd)}
                     </p>
                   )}
                 </div>
@@ -180,22 +170,8 @@ export default function AdminSocieties() {
                 label="Cycle"
                 value={<span className="capitalize">{viewTarget.defaultMaintenanceCycle}</span>}
               />
-              <DrawerField
-                label="Onboarded"
-                value={
-                  viewTarget.onboardingDate
-                    ? new Date(viewTarget.onboardingDate).toLocaleDateString('en-IN', {
-                        year: 'numeric', month: 'short', day: 'numeric',
-                      })
-                    : undefined
-                }
-              />
-              <DrawerField
-                label="Created"
-                value={new Date(viewTarget.createdAt).toLocaleDateString('en-IN', {
-                  year: 'numeric', month: 'short', day: 'numeric',
-                })}
-              />
+              <DrawerField label="Onboarded" value={viewTarget.onboardingDate ? formatDate(viewTarget.onboardingDate) : undefined} />
+              <DrawerField label="Created" value={formatDate(viewTarget.createdAt)} />
             </DrawerSection>
           </>
         )}

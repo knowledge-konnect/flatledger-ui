@@ -27,25 +27,68 @@ export function formatCurrency(amount?: number | null): string {
 /**
  * Formats a date string or Date object as a short Indian locale date (e.g. 14 Apr 2026).
  */
-export function formatDate(date: string | Date): string {
-  return new Intl.DateTimeFormat('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(date));
+export function formatDate(date?: string | Date | null): string {
+  if (!date) return '—';
+  try {
+    return new Intl.DateTimeFormat('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    }).format(new Date(date));
+  } catch {
+    return '—';
+  }
 }
 
 /**
  * Formats a date string or Date object as a short Indian locale date + time (e.g. 14 Apr 2026, 02:30 PM).
  */
-export function formatDateTime(date: string | Date): string {
-  return new Intl.DateTimeFormat('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(date));
+export function formatDateTime(date?: string | Date | null): string {
+  if (!date) return '—';
+  try {
+    return new Intl.DateTimeFormat('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(date));
+  } catch {
+    return '—';
+  }
+}
+
+/**
+ * Formats a date as short day + short month (e.g. '14 Apr').
+ */
+export function formatDayMonth(date?: string | Date | null): string {
+  if (!date) return '';
+  try {
+    return new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short' }).format(new Date(date));
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Formats a billing period string `YYYY-MM` as a localized month + year label.
+ * Returns `defaultLabel` when period is falsy or invalid.
+ */
+export function formatPeriodLabel(
+  period?: string,
+  defaultLabel = 'Current Month',
+  monthFormat: 'long' | 'short' = 'long'
+): string {
+  if (!period) return defaultLabel;
+  const parts = period.split('-').map(Number);
+  if (parts.length !== 2) return defaultLabel;
+  const [year, month] = parts;
+  if (!year || !month) return defaultLabel;
+  try {
+    return new Intl.DateTimeFormat('en-IN', { month: monthFormat, year: 'numeric' }).format(new Date(year, month - 1, 1));
+  } catch {
+    return defaultLabel;
+  }
 }
 
 /**

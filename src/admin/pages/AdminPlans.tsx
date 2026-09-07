@@ -1,19 +1,20 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Eye, Pencil, PowerOff, X, AlertTriangle, CreditCard } from 'lucide-react';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle, CreditCard, Eye, Pencil, Plus, PowerOff, X } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { z } from 'zod';
+import { formatDate } from '../../lib/utils';
+import { getAdminErrorMessage } from '../api/adminClient';
 import { adminPlansApi } from '../api/adminPlansApi';
+import { AdminConfirmDialog } from '../components/AdminConfirmDialog';
 import { AdminDataTable, type AdminColumn } from '../components/AdminDataTable';
+import { AdminDetailDrawer, DrawerField, DrawerSection } from '../components/AdminDetailDrawer';
+import { AdminPageHeader } from '../components/AdminPageHeader';
 import { AdminSearchBar } from '../components/AdminSearchBar';
 import { AdminStatusBadge } from '../components/AdminStatusBadge';
-import { AdminPageHeader } from '../components/AdminPageHeader';
-import { AdminConfirmDialog } from '../components/AdminConfirmDialog';
-import { AdminDetailDrawer, DrawerSection, DrawerField } from '../components/AdminDetailDrawer';
-import { getAdminErrorMessage } from '../api/adminClient';
-import type { AdminPlanDto, AdminPlanCreateRequest, AdminPlanUpdateRequest } from '../types/adminTypes';
+import type { AdminPlanCreateRequest, AdminPlanDto, AdminPlanUpdateRequest } from '../types/adminTypes';
 
 const planSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -291,14 +292,7 @@ export default function AdminPlans() {
                 />
               }
             />
-            {viewTarget.createdAt && (
-              <DrawerField
-                label="Created"
-                value={new Date(viewTarget.createdAt).toLocaleDateString('en-IN', {
-                  year: 'numeric', month: 'short', day: 'numeric',
-                })}
-              />
-            )}
+            {viewTarget.createdAt && <DrawerField label="Created" value={formatDate(viewTarget.createdAt)} />}
           </DrawerSection>
         )}
       </AdminDetailDrawer>

@@ -1,7 +1,8 @@
-﻿import { Lock, Calendar, User, Building2, ArrowLeft, CheckCircle2, TrendingDown, TrendingUp, ShieldCheck, FileBarChart2, AlertCircle } from 'lucide-react';
+﻿import { AlertCircle, ArrowLeft, Building2, Calendar, CheckCircle2, FileBarChart2, Lock, ShieldCheck, TrendingDown, TrendingUp, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { OpeningBalanceStatus } from '../../types/openingBalance.types';
 import { useOpeningBalanceSummary } from '../../hooks/useOpeningBalance';
+import { formatCurrency, formatDate } from '../../lib/utils';
+import { OpeningBalanceStatus } from '../../types/openingBalance.types';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 
@@ -15,33 +16,16 @@ export default function OpeningBalanceAlreadyApplied({ status }: OpeningBalanceA
   const appliedSummary =
     summaryData ??
     (status.societyOpeningAmount !== undefined ||
-    status.totalMemberDues !== undefined ||
-    status.totalMemberAdvance !== undefined
+      status.totalMemberDues !== undefined ||
+      status.totalMemberAdvance !== undefined
       ? {
-          societyOpeningAmount: status.societyOpeningAmount,
-          totalMemberDues: status.totalMemberDues,
-          totalMemberAdvance: status.totalMemberAdvance,
-        }
+        societyOpeningAmount: status.societyOpeningAmount,
+        totalMemberDues: status.totalMemberDues,
+        totalMemberAdvance: status.totalMemberAdvance,
+      }
       : null);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
 
   const whyPoints = [
     { icon: ShieldCheck, text: 'Data integrity and audit compliance' },
@@ -110,8 +94,8 @@ export default function OpeningBalanceAlreadyApplied({ status }: OpeningBalanceA
               {appliedSummary?.societyOpeningAmount !== undefined
                 ? formatCurrency(appliedSummary.societyOpeningAmount)
                 : isSummaryLoading
-                ? <span className="text-sm text-slate-400 dark:text-slate-500">Loading...</span>
-                : <span className="text-slate-300 dark:text-slate-600">—</span>}
+                  ? <span className="text-sm text-slate-400 dark:text-slate-500">Loading...</span>
+                  : <span className="text-slate-300 dark:text-slate-600">—</span>}
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Initial bank balance</p>
           </Card>
@@ -127,8 +111,8 @@ export default function OpeningBalanceAlreadyApplied({ status }: OpeningBalanceA
               {appliedSummary?.totalMemberDues !== undefined
                 ? formatCurrency(appliedSummary.totalMemberDues)
                 : isSummaryLoading
-                ? <span className="text-sm text-slate-400 dark:text-slate-500">Loading...</span>
-                : <span className="text-slate-300 dark:text-slate-600">—</span>}
+                  ? <span className="text-sm text-slate-400 dark:text-slate-500">Loading...</span>
+                  : <span className="text-slate-300 dark:text-slate-600">—</span>}
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Dues from flats</p>
           </Card>
@@ -144,8 +128,8 @@ export default function OpeningBalanceAlreadyApplied({ status }: OpeningBalanceA
               {appliedSummary?.totalMemberAdvance !== undefined
                 ? formatCurrency(appliedSummary.totalMemberAdvance)
                 : isSummaryLoading
-                ? <span className="text-sm text-slate-400 dark:text-slate-500">Loading...</span>
-                : <span className="text-slate-300 dark:text-slate-600">—</span>}
+                  ? <span className="text-sm text-slate-400 dark:text-slate-500">Loading...</span>
+                  : <span className="text-slate-300 dark:text-slate-600">—</span>}
             </div>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Prepaid by flats</p>
           </Card>

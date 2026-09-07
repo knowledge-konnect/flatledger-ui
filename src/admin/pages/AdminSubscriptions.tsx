@@ -1,12 +1,13 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, Layers } from 'lucide-react';
+import { useState } from 'react';
+import { formatDate } from '../../lib/utils';
 import { adminSubscriptionsApi } from '../api/adminSubscriptionsApi';
 import { AdminDataTable, type AdminColumn } from '../components/AdminDataTable';
+import { AdminDetailDrawer, DrawerField, DrawerSection } from '../components/AdminDetailDrawer';
+import { AdminPageHeader } from '../components/AdminPageHeader';
 import { AdminSearchBar } from '../components/AdminSearchBar';
 import { AdminStatusBadge } from '../components/AdminStatusBadge';
-import { AdminPageHeader } from '../components/AdminPageHeader';
-import { AdminDetailDrawer, DrawerSection, DrawerField } from '../components/AdminDetailDrawer';
 import type { AdminSubscriptionDto, SubscriptionStatus } from '../types/adminTypes';
 
 const STATUS_OPTIONS: Array<{ value: SubscriptionStatus | ''; label: string }> = [
@@ -18,14 +19,6 @@ const STATUS_OPTIONS: Array<{ value: SubscriptionStatus | ''; label: string }> =
   { value: 'expired', label: 'Expired' },
 ];
 
-function formatDate(iso: string | null) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-IN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
 
 export default function AdminSubscriptions() {
   const [page, setPage] = useState(1);
@@ -53,10 +46,10 @@ export default function AdminSubscriptions() {
   // Client-side filter for user search (server doesn't have a text search param for subscriptions)
   const items = search
     ? rawItems.filter(
-        (s) =>
-          s.userName.toLowerCase().includes(search.toLowerCase()) ||
-          s.userEmail?.toLowerCase().includes(search.toLowerCase()),
-      )
+      (s) =>
+        s.userName.toLowerCase().includes(search.toLowerCase()) ||
+        s.userEmail?.toLowerCase().includes(search.toLowerCase()),
+    )
     : rawItems;
 
   const columns: AdminColumn<AdminSubscriptionDto>[] = [

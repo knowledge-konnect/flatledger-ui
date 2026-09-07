@@ -1,22 +1,14 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, User } from 'lucide-react';
+import { useState } from 'react';
+import { formatDate } from '../../lib/utils';
 import { adminUsersApi } from '../api/adminUsersApi';
 import { AdminDataTable, type AdminColumn } from '../components/AdminDataTable';
+import { AdminDetailDrawer, DrawerField, DrawerSection } from '../components/AdminDetailDrawer';
+import { AdminPageHeader } from '../components/AdminPageHeader';
 import { AdminSearchBar } from '../components/AdminSearchBar';
 import { AdminStatusBadge } from '../components/AdminStatusBadge';
-import { AdminPageHeader } from '../components/AdminPageHeader';
-import { AdminDetailDrawer, DrawerSection, DrawerField } from '../components/AdminDetailDrawer';
 import type { AdminUserDto } from '../types/adminTypes';
-
-function formatDate(iso: string | undefined | null) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-IN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
 
 export default function AdminUsers() {
   const [page, setPage] = useState(1);

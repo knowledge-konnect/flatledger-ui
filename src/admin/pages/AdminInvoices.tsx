@@ -1,11 +1,12 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, Receipt } from 'lucide-react';
+import { useState } from 'react';
+import { formatDate } from '../../lib/utils';
 import { adminInvoicesApi } from '../api/adminInvoicesApi';
 import { AdminDataTable, type AdminColumn } from '../components/AdminDataTable';
-import { AdminStatusBadge } from '../components/AdminStatusBadge';
+import { AdminDetailDrawer, DrawerField, DrawerSection } from '../components/AdminDetailDrawer';
 import { AdminPageHeader } from '../components/AdminPageHeader';
-import { AdminDetailDrawer, DrawerSection, DrawerField } from '../components/AdminDetailDrawer';
+import { AdminStatusBadge } from '../components/AdminStatusBadge';
 import type { AdminInvoiceDto } from '../types/adminTypes';
 
 const STATUS_OPTIONS = [
@@ -17,14 +18,7 @@ const STATUS_OPTIONS = [
   { value: 'void', label: 'Void' },
 ];
 
-function formatDate(iso: string | undefined | null) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-IN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
+
 
 export default function AdminInvoices() {
   const [page, setPage] = useState(1);

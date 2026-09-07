@@ -1,19 +1,27 @@
-﻿import { useState, useEffect, useCallback, useRef } from 'react';
+﻿import { BookOpen, Loader2, RefreshCw, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
-import { BookOpen, TrendingUp, TrendingDown, Wallet, Loader2, RefreshCw } from 'lucide-react';
-import DashboardLayout from '../../components/layout/DashboardLayout';
-import Card, { CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
-import PageHeader from '../../components/ui/PageHeader';
-import Button from '../../components/ui/Button';
-import Pagination from '../../components/ui/Pagination';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFoot } from '../../components/ui/Table';
-import { cn } from '../../lib/utils';
 import reportsApi, { FundLedgerData } from '../../api/reportsApi';
-import {
-  ReportState, initialState, ReportLoading, ReportError, StatCard,
-  QuickDatePresets, startOfMonth, today, fmtDate, formatCurrency, DatePresetKey,
-} from './_shared';
+import DashboardLayout from '../../components/layout/DashboardLayout';
+import Button from '../../components/ui/Button';
+import Card, { CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import PageHeader from '../../components/ui/PageHeader';
+import Pagination from '../../components/ui/Pagination';
+import { Table, TableBody, TableCell, TableFoot, TableHead, TableHeader, TableRow } from '../../components/ui/Table';
 import { useSocietyPeriodBounds } from '../../hooks/useSocietyPeriodBounds';
+import { cn, formatDayMonth } from '../../lib/utils';
+import {
+  DatePresetKey,
+  fmtDate, formatCurrency,
+  initialState,
+  QuickDatePresets,
+  ReportError,
+  ReportLoading,
+  ReportState,
+  startOfMonth,
+  StatCard,
+  today,
+} from './_shared';
 
 export default function FundLedgerPage() {
   const [startDate, setStartDate] = useState(startOfMonth());
@@ -58,9 +66,9 @@ export default function FundLedgerPage() {
   };
 
   const d = state.data;
-  const openingBalance   = d?.opening_balance   ?? 0;
-  const totalCollections = d?.total_collections ?? d?.total_credits  ?? 0;
-  const totalExpenses    = d?.total_expenses    ?? d?.total_debits   ?? 0;
+  const openingBalance = d?.opening_balance ?? 0;
+  const totalCollections = d?.total_collections ?? d?.total_credits ?? 0;
+  const totalExpenses = d?.total_expenses ?? d?.total_debits ?? 0;
   const totalOpeningFund = d?.total_opening_fund ?? 0;
 
   const entriesAsc = [...(d?.entries ?? [])].sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
@@ -68,7 +76,7 @@ export default function FundLedgerPage() {
 
   const balanceChartData = entriesAsc.map(e => ({
     name: e.date
-      ? new Date(e.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })
+      ? formatDayMonth(e.date)
       : '',
     Balance: e.running_balance,
   }));
@@ -78,7 +86,7 @@ export default function FundLedgerPage() {
   const footerCollections = d?.entries.reduce((s, e) => s + (e.entry_type === 'credit' ? (e.credit || 0) : 0), 0) ?? 0;
   const footerOpeningFund = d?.entries.reduce((s, e) => s + (e.entry_type === 'opening_fund' ? (e.credit || 0) : 0), 0) ?? 0;
   const footerCredit = footerCollections + footerOpeningFund;
-  const footerDebit  = d?.entries.reduce((s, e) => s + (e.debit || 0), 0) ?? 0;
+  const footerDebit = d?.entries.reduce((s, e) => s + (e.debit || 0), 0) ?? 0;
 
   const startIndex = page * pageSize;
   const paginatedEntries = entriesDesc.slice(startIndex, startIndex + pageSize);
@@ -190,10 +198,10 @@ export default function FundLedgerPage() {
                       </TableRow>
                     ) : paginatedEntries.map((e, idx) => {
                       const type = e.entry_type;
-                      const isCredit      = type === 'credit';
+                      const isCredit = type === 'credit';
                       const isOpeningFund = type === 'opening_fund';
-                      const isDebit       = type === 'debit';
-                      const actualIndex   = startIndex + idx + 1;
+                      const isDebit = type === 'debit';
+                      const actualIndex = startIndex + idx + 1;
                       return (
                         <TableRow key={idx}>
                           <TableCell className="text-slate-400 dark:text-slate-600 text-xs tabular-nums">{actualIndex}</TableCell>

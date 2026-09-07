@@ -1,13 +1,14 @@
-import { useState, useRef, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Check, Pencil } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Check, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { adminSettingsApi } from '../api/adminSettingsApi';
-import { AdminDataTable, type AdminColumn } from '../components/AdminDataTable';
-import { AdminSearchBar } from '../components/AdminSearchBar';
-import { AdminPageHeader } from '../components/AdminPageHeader';
-import { AdminConfirmDialog } from '../components/AdminConfirmDialog';
+import { formatDate } from '../../lib/utils';
 import { getAdminErrorMessage } from '../api/adminClient';
+import { adminSettingsApi } from '../api/adminSettingsApi';
+import { AdminConfirmDialog } from '../components/AdminConfirmDialog';
+import { AdminDataTable, type AdminColumn } from '../components/AdminDataTable';
+import { AdminPageHeader } from '../components/AdminPageHeader';
+import { AdminSearchBar } from '../components/AdminSearchBar';
 import type { PlatformSettingDto } from '../types/adminTypes';
 
 // ─── Inline Editable Value Cell ───────────────────────────────────────────────
@@ -257,12 +258,7 @@ export default function AdminSettings() {
     {
       key: 'updatedAt',
       header: 'Last Updated',
-      cell: (row) =>
-        new Date(row.updatedAt).toLocaleDateString('en-IN', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric',
-        }),
+      cell: (row) => formatDate(row.updatedAt),
     },
   ];
 

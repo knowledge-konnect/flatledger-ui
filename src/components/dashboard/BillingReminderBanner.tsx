@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2, Home } from 'lucide-react';
+import { useId } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../ui/Button';
 
@@ -20,6 +21,7 @@ export default function BillingReminderBanner({
   onGenerate,
 }: BillingReminderBannerProps) {
   const navigate = useNavigate();
+  const explainId = useId();
 
   if (isLoading) {
     return (
@@ -79,17 +81,21 @@ export default function BillingReminderBanner({
             <p className="text-xs text-red-700 dark:text-red-300 mt-0.5">
               Generate bills to create monthly maintenance charges for all flats. Residents can then be notified and tracked for payment.
             </p>
+            <p id={explainId} className="text-xs text-slate-600 dark:text-slate-400 mt-1">Why generate? It updates KPIs, enables resident payments, and makes reports accurate.</p>
           </div>
         </div>
         {onGenerate && (
           <Button
             size="sm"
+            variant="primary"
             onClick={onGenerate}
             isLoading={isGenerating}
             disabled={isGenerating}
-            className="flex-shrink-0"
+            title={`Generate bills for ${monthLabel} (admin only).`}
+            aria-describedby={explainId}
+            className={`flex-shrink-0 ${!isGenerating ? 'animate-pulse ring-2 ring-amber-300/30' : ''}`}
           >
-            Generate Now
+            {`Generate for ${monthLabel}`}
           </Button>
         )}
       </div>

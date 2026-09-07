@@ -1,11 +1,12 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Eye, X, CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, Eye, X, XCircle } from 'lucide-react';
+import { useState } from 'react';
+import { formatDate, formatDateTime } from '../../lib/utils';
 import { adminPaymentsApi } from '../api/adminPaymentsApi';
 import { AdminDataTable, type AdminColumn } from '../components/AdminDataTable';
+import { AdminPageHeader } from '../components/AdminPageHeader';
 import { AdminSearchBar } from '../components/AdminSearchBar';
 import { AdminStatusBadge } from '../components/AdminStatusBadge';
-import { AdminPageHeader } from '../components/AdminPageHeader';
 import type { AdminPaymentDto } from '../types/adminTypes';
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -18,15 +19,6 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
     </div>
   );
 }
-
-function formatDateTime(iso: string | null) {
-  if (!iso) return null;
-  return new Intl.DateTimeFormat('en-IN', {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  }).format(new Date(iso));
-}
-
 const PAYMENT_TYPES = [
   'maintenance',
   'expense',
@@ -35,14 +27,7 @@ const PAYMENT_TYPES = [
   'other',
 ];
 
-function formatDate(iso: string | null) {
-  if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-IN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-}
+
 
 export default function AdminPayments() {
   const [page, setPage] = useState(1);

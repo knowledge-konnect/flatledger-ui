@@ -1,6 +1,6 @@
-import { memo } from 'react';
 import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
-import { formatCurrency } from '../../lib/utils';
+import { memo } from 'react';
+import { formatCurrency, formatDate } from '../../lib/utils';
 
 interface ActivityItemProps {
   type: 'payment' | 'expense';
@@ -19,7 +19,7 @@ function formatActivityDate(dateStr: string): string {
     if (date.toDateString() === today.toDateString()) return 'Today';
     if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
 
-    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    return formatDate(date);
   } catch {
     return dateStr;
   }
@@ -32,11 +32,10 @@ export const ActivityItem = memo(function ActivityItem({ type, description, amou
     <div className="flex items-center justify-between gap-4 px-3 py-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors duration-150">
       {/* Icon */}
       <div
-        className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
-          isPayment
+        className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${isPayment
             ? 'bg-green-50 dark:bg-green-950/30'
             : 'bg-red-50 dark:bg-red-950/30'
-        }`}
+          }`}
       >
         {isPayment ? (
           <ArrowDownCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -53,9 +52,8 @@ export const ActivityItem = memo(function ActivityItem({ type, description, amou
 
       {/* Amount */}
       <span
-        className={`flex-shrink-0 text-sm font-semibold ${
-          isPayment ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-        }`}
+        className={`flex-shrink-0 text-sm font-semibold ${isPayment ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+          }`}
       >
         {isPayment ? '+' : '−'}{formatCurrency(Math.abs(amount))}
       </span>
