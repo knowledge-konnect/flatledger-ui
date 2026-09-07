@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   billingApi,
-  BillingStatusDto,
   BillingResult,
+  BillingStatusDto,
+  CatchupBillingRequest,
   GenerateBillingRequest,
   GenerateBillingResponse,
-  CatchupBillingRequest,
 } from '../api/billingApi';
 
 /**
@@ -14,12 +14,12 @@ import {
  * Used by the Dashboard and BillingReminderBanner to determine whether
  * bills have been generated for the current period.
  */
-export function useBillingStatus() {
+export function useBillingStatus(period?: string) {
   return useQuery({
-    queryKey: ['billing-status'],
+    queryKey: period ? ['billing-status', period] : ['billing-status'],
     staleTime: 5 * 60_000, // Changes at most once per month; mutations invalidate this cache
     queryFn: async (): Promise<BillingStatusDto> => {
-      return billingApi.getStatus();
+      return billingApi.getStatus(period);
     },
   });
 }

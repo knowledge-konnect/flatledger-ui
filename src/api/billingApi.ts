@@ -38,8 +38,9 @@ export interface CatchupBillingRequest {
 }
 
 export const billingApi = {
-  async getStatus(): Promise<BillingStatusDto> {
-    const response = await apiClient.get<ApiResponse<BillingStatusDto>>('/billing/status');
+  async getStatus(period?: string): Promise<BillingStatusDto> {
+    const url = period ? `/billing/status?period=${encodeURIComponent(period)}` : '/billing/status';
+    const response = await apiClient.get<ApiResponse<BillingStatusDto>>(url);
     return response.data.data;
   },
 

@@ -207,17 +207,24 @@ export default function Dashboard() {
   // Fall back to useFlats for OccupancyCard until the backend includes flat_summary.
   const flatSummary = (dashboardData as any)?.flat_summary;
   const { data: flats = [], isLoading: flatsLoading } = useFlats();
+  // Determine the currently selected billing period (YYYY-MM) from the date filter
+  const selectedPeriod = startDate?.slice(0, 7);
 
   const {
     data: billingStatus,
     isLoading: billingStatusLoading,
-  } = useBillingStatus();
+  } = useBillingStatus(selectedPeriod);
   const generateBilling = useGenerateBilling();
+  // Use billingStatus when it refers to the same period. Otherwise infer generation
+  // from the dashboard snapshot (if any bills were created for the selected period).
+  // snapshot used for KPIs
 
-  // Determine the currently selected billing period (YYYY-MM) from the date filter
-  const selectedPeriod = startDate?.slice(0, 7);
-  // Use billingStatus only when it refers to the same period; otherwise assume not generated
-  const isGeneratedForSelected = billingStatus?.currentMonth === selectedPeriod ? Boolean(billingStatus?.isGenerated) : false;
+  const snap = dashboardData?.snapshot;
+
+  const billedTotalForSelected = snap?.total_billed ?? 0;
+  const isGeneratedForSelected = billingStatus?.currentMonth === selectedPeriod
+    ? Boolean(billingStatus?.isGenerated)
+    : billedTotalForSelected > 0;
 
   const { showToast } = useToast();
 
@@ -236,18 +243,13 @@ export default function Dashboard() {
 
   // Billing generation is now handled by backend service. Manual trigger removed.
 
-  const zeroAmountFlatsCount = useMemo(
-    () => {
-      // If bills for the selected period are already generated, hide the zero-amount warning
-      const selectedPeriod = startDate?.slice(0, 7);
-      const isGeneratedForSelected = billingStatus?.currentMonth === selectedPeriod ? billingStatus?.isGenerated : false;
-      if (isGeneratedForSelected) return 0;
-      // Prefer flat_summary from the dashboard API to avoid an extra network call
-      if (flatSummary) return flatSummary.zero_amount_count ?? 0;
-      return (flats as any[]).filter(f => !f.maintenanceAmount || f.maintenanceAmount === 0).length;
-    },
-    [flats, flatSummary, billingStatus?.isGenerated, startDate]
-  );
+  const zeroAmountFlatsCount = useMemo(() => {
+    // If bills for the selected period are already generated, hide the zero-amount warning
+    if (isGeneratedForSelected) return 0;
+    // Prefer flat_summary from the dashboard API to avoid an extra network call
+    if (flatSummary) return flatSummary.zero_amount_count ?? 0;
+    return (flats as any[]).filter((f) => !f.maintenanceAmount || f.maintenanceAmount === 0).length;
+  }, [flats, flatSummary, isGeneratedForSelected]);
 
   const billingMonthLabel = useMemo(() => {
     const selected = startDate?.slice(0, 7) || billingStatus?.currentMonth;
@@ -256,7 +258,6 @@ export default function Dashboard() {
 
 
 
-  const snap = dashboardData?.snapshot;
   const trends = dashboardData?.trends ?? [];
   const expBreakdown = dashboardData?.expense_breakdown ?? [];
   const topDefaulters = dashboardData?.top_defaulters ?? [];
