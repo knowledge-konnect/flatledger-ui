@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
-import { cn } from '../../lib/utils';
+import { AlertCircle, AlertTriangle, CheckCircle, Info, X } from 'lucide-react';
+import { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import { AlertMessages } from '../../lib/alertMessages';
 import { setGlobalToastFn } from '../../lib/toastBridge';
+import { cn } from '../../lib/utils';
 
 // Prevent Vite HMR from partially replacing this module. A new ToastContext
 // would be created while lazy-loaded consumers still reference the old instance,
@@ -47,8 +48,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     const handleSessionExpiring = () => {
       showToast('Your session expires in 2 minutes. Save your work.', 'warning');
     };
+    const handleLogoutSuccess = () => {
+      showToast(AlertMessages.success.logoutSuccess, 'success');
+    };
     window.addEventListener('flatledger:session-expiring', handleSessionExpiring);
-    return () => window.removeEventListener('flatledger:session-expiring', handleSessionExpiring);
+    window.addEventListener('flatledger:logout-success', handleLogoutSuccess);
+    return () => {
+      window.removeEventListener('flatledger:session-expiring', handleSessionExpiring);
+      window.removeEventListener('flatledger:logout-success', handleLogoutSuccess);
+    };
   }, [showToast]);
 
   const removeToast = (id: string) => {
@@ -76,7 +84,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((toast) => {
           const Icon = icons[toast.type];
           return (
-// ...existing code...
+            // ...existing code...
             <div
               key={toast.id}
               className={cn(

@@ -26,6 +26,7 @@ import { useBillingStatus } from '../hooks/useBillingStatus';
 import { useFlatFinancialSummary, useFlats } from '../hooks/useFlats';
 import { useMaintenanceConfig } from '../hooks/useSocieties';
 import { useSocietyPeriodBounds } from '../hooks/useSocietyPeriodBounds';
+import { resolvePaymentStatus } from '../lib/paymentStatus';
 import { getMonthOptions as buildMonthOptions } from '../lib/periodFilters';
 import { formatCurrency, formatDate, formatPeriodLabel } from '../lib/utils';
 import { collectUserRoles, isAdminRole } from '../types/roles';
@@ -139,6 +140,8 @@ export default function Maintenance() {
     }
   };
 
+
+
   // SortIcon is defined at module level as MtSortIcon — see above
   const [selectedPayment, setSelectedPayment] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -178,6 +181,10 @@ export default function Maintenance() {
       notes: '',
     },
   });
+
+  // Handlers for the two save actions in the Add Payment modal
+  const handleSaveAdd = handleSubmit((data: PaymentFormData) => onSubmit(data, { closeAfterSave: false }));
+  const handleSaveClose = handleSubmit((data: PaymentFormData) => onSubmit(data, { closeAfterSave: true }));
 
   const paymentDateValue = watch('paymentDate');
   // Derive the billing period from the entered payment date (YYYY-MM).
@@ -219,6 +226,11 @@ export default function Maintenance() {
     { enabled: showAddModal && !isEditing }
   );
 
+  const maintenanceOnlyCurrentPeriodPayments = useMemo(
+    () => allCurrentPeriodPayments.filter((p) => (p.category ?? 'maintenance') === 'maintenance'),
+    [allCurrentPeriodPayments]
+  );
+
   const flatOwnerMap = useMemo(
     () => new Map(safeFlats.map(f => [f.publicId, f.ownerName])),
     [safeFlats]
@@ -251,11 +263,11 @@ export default function Maintenance() {
   // Flats that already have at least one payment recorded in the entered period.
   const alreadyPaidFlatIds = useMemo(
     () => new Set(
-      allCurrentPeriodPayments
+      maintenanceOnlyCurrentPeriodPayments
         .filter((p) => (p.paymentDate || '').slice(0, 7) === enteredPeriod)
         .map((p) => p.flatPublicId)
     ),
-    [allCurrentPeriodPayments, enteredPeriod]
+    [maintenanceOnlyCurrentPeriodPayments, enteredPeriod]
   );
 
   // True when the flat already has a payment recorded for the entered period.
@@ -266,7 +278,10 @@ export default function Maintenance() {
   // Guard against any backend period leakage: only keep rows whose payment date
   // falls in the selected month for table/filter rendering.
   const periodScopedPayments = useMemo(
-    () => payments.filter((p) => (p.paymentDate || '').slice(0, 7) === period),
+    () => payments.filter((p) =>
+      (p.paymentDate || '').slice(0, 7) === period &&
+      ((p.category ?? 'maintenance') === 'maintenance')
+    ),
     [payments, period]
   );
 
@@ -348,7 +363,12 @@ export default function Maintenance() {
     return result;
   }, [periodScopedPayments, paymentFlatOutstandingNowMap]);
 
-  const onSubmit = async (data: PaymentFormData) => {
+  const onSubmit = async (data: PaymentFormData, optionsOrEvent?: any) => {
+    // Accept either an options object or an event (from react-hook-form).
+    const options: { closeAfterSave?: boolean } | undefined = (optionsOrEvent && typeof optionsOrEvent === 'object' && 'closeAfterSave' in optionsOrEvent)
+      ? optionsOrEvent as { closeAfterSave?: boolean }
+      : undefined;
+
     if (localSubmitting) return;
     setLocalSubmitting(true);
     setFormError(null); // Reset error at start
@@ -415,8 +435,25 @@ export default function Maintenance() {
         });
 
         showToast('Payment recorded and allocated successfully', 'success');
-        setShowAddModal(false);
-        reset();
+
+        // After successful create: either close the modal or keep it open to add another.
+        // Preserve payment date and payment mode for convenience, but clear flat, amount and notes.
+        if (options?.closeAfterSave) {
+          setShowAddModal(false);
+          // fully reset form state
+          reset();
+        } else {
+          reset({
+            flatPublicId: '',
+            amount: '',
+            paymentModeId: data.paymentModeId,
+            paymentDate: data.paymentDate,
+            notes: '',
+          });
+          // clear selection UI state
+          setFlatSearch('');
+          setFlatDropdownOpen(false);
+        }
       }
     } catch (error: any) {
       // Prefer formError for business/general errors
@@ -957,12 +994,11 @@ export default function Maintenance() {
                               ? normalizeBillStatus(payment.billStatus)
                               : null;
 
-                            const displayStatus: string =
-                              apiStatus === 'paid' ? 'Cleared'
-                                : apiStatus === 'partial' ? 'Partial'
-                                  : apiStatus === 'overdue' ? 'Overdue'
-                                    : apiStatus === 'unpaid' ? 'Unpaid'
-                                      : balance?.status || 'Unpaid';
+                            const displayStatus = resolvePaymentStatus({
+                              apiStatus,
+                              computedStatus: balance?.status,
+                              paymentAmount: payment.amount,
+                            });
 
                             const statusClass =
                               displayStatus === 'Cleared'
@@ -1119,7 +1155,7 @@ export default function Maintenance() {
           size="xl"
         >
 
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
+          <form onSubmit={handleSubmit((d) => onSubmit(d, { closeAfterSave: true }))} className="flex flex-col">
             {/* -- General/Business Rule Error Banner -- */}
             {formError && (
               <div className="mx-6 mt-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3">
@@ -1495,8 +1531,10 @@ export default function Maintenance() {
               >
                 Cancel
               </Button>
+
               <Button
-                type="submit"
+                type="button"
+                onClick={handleSaveAdd}
                 disabled={
                   isSubmitting ||
                   localSubmitting ||
@@ -1508,10 +1546,24 @@ export default function Maintenance() {
                 }
               >
                 <CreditCard className="w-4 h-4 mr-2" />
-                {isSubmitting || createPayment.isPending || updatePayment.isPending || isRefreshingLedger
-                  ? (isEditing ? 'Updating...' : 'Saving...')
-                  : (isEditing ? 'Update Payment' : 'Add Payment')
+                {isSubmitting || createPayment.isPending || updatePayment.isPending || isRefreshingLedger ? 'Saving...' : 'Save & Add Another'}
+              </Button>
+
+              <Button
+                type="button"
+                onClick={handleSaveClose}
+                disabled={
+                  isSubmitting ||
+                  localSubmitting ||
+                  createPayment.isPending ||
+                  updatePayment.isPending ||
+                  paymentModesLoading ||
+                  !!paymentModesError ||
+                  isRefreshingLedger
                 }
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                {isSubmitting || createPayment.isPending || updatePayment.isPending || isRefreshingLedger ? (isEditing ? 'Updating...' : 'Saving...') : (isEditing ? 'Update Payment' : 'Save & Close')}
               </Button>
             </ModalFooter>
           </form>
@@ -1531,12 +1583,11 @@ export default function Maintenance() {
 
           // Use the authoritative billStatus from the API; fall back to client-computed balance
           const apiStatus = normalizeBillStatus(viewTarget.billStatus);
-          const vStatus: 'Cleared' | 'Partial' | 'Overdue' | 'Unpaid' =
-            apiStatus === 'paid' ? 'Cleared'
-              : apiStatus === 'partial' ? 'Partial'
-                : apiStatus === 'overdue' ? 'Overdue'
-                  : apiStatus === 'unpaid' ? 'Unpaid'
-                    : vBalance?.status || 'Unpaid';
+          const vStatus = resolvePaymentStatus({
+            apiStatus,
+            computedStatus: vBalance?.status,
+            paymentAmount: viewTarget.amount,
+          });
 
           const isToday = !!viewTarget.paymentDate &&
             new Date(viewTarget.paymentDate).toDateString() === new Date().toDateString();

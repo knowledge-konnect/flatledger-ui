@@ -243,7 +243,6 @@ export default function SettingsPageRedesigned() {
       setPasswordFormData({ currentPassword: "", newPassword: "", confirmPassword: "" })
       setTimeout(async () => {
         await logout()
-        navigate('/')
       }, 1500)
     } catch (error: any) {
       const data = error?.response?.data

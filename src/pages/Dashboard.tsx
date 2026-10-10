@@ -24,6 +24,7 @@ import Card from '../components/ui/Card';
 import Modal, { ModalFooter } from '../components/ui/Modal';
 import { useToast } from '../components/ui/Toast';
 import { useAuth } from '../contexts/AuthProvider';
+import { useMaintenanceSummary } from '../hooks/useBilling';
 import { useBillingStatus, useGenerateBilling } from '../hooks/useBillingStatus';
 import { useDashboard } from '../hooks/useDashboard';
 import { useDebounce } from '../hooks/useDebounce';
@@ -118,23 +119,23 @@ type PeriodTab = 'this-month' | 'last-month' | 'custom';
 
 function getThisMonthRange() {
   const now = new Date();
-  return {
-    start: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0],
-    end: new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0],
-  };
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return { start: fmt(start), end: fmt(end) };
 }
 
 function getLastMonthRange() {
   const now = new Date();
-  return {
-    start: new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0],
-    end: new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0],
-  };
+  const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const end = new Date(now.getFullYear(), now.getMonth(), 0);
+  const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return { start: fmt(start), end: fmt(end) };
 }
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { minDate, minMonth, maxMonth, clampDate } = useSocietyPeriodBounds();
+  const { minDate, minMonth, maxMonth, clampDate, clampMonth } = useSocietyPeriodBounds();
   // ...existing code...
   const navigate = useNavigate();
   const {
@@ -168,6 +169,11 @@ export default function Dashboard() {
   const [periodTab, setPeriodTab] = useState<PeriodTab>('this-month');
   const [startDate, setStartDate] = useState(() => getThisMonthRange().start);
   const [endDate, setEndDate] = useState(() => getThisMonthRange().end);
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return clampMonth(currentMonth) ?? currentMonth;
+  });
   const canUseLastMonth = !minMonth || minMonth < maxMonth;
 
   useEffect(() => {
@@ -188,10 +194,14 @@ export default function Dashboard() {
     setPeriodTab(tab);
     if (tab === 'this-month') {
       const r = getThisMonthRange();
+      const month = clampMonth(`${r.start.slice(0, 7)}`) ?? `${r.start.slice(0, 7)}`;
+      setSelectedMonth(month);
       setStartDate(clampDate(r.start));
       setEndDate(r.end);
     } else if (tab === 'last-month') {
       const r = getLastMonthRange();
+      const month = clampMonth(`${r.start.slice(0, 7)}`) ?? `${r.start.slice(0, 7)}`;
+      setSelectedMonth(month);
       setStartDate(clampDate(r.start));
       setEndDate(clampDate(r.end));
     }
@@ -208,12 +218,13 @@ export default function Dashboard() {
   const flatSummary = (dashboardData as any)?.flat_summary;
   const { data: flats = [], isLoading: flatsLoading } = useFlats();
   // Determine the currently selected billing period (YYYY-MM) from the date filter
-  const selectedPeriod = startDate?.slice(0, 7);
+  const selectedPeriod = periodTab === 'custom' ? startDate?.slice(0, 7) : selectedMonth;
 
   const {
     data: billingStatus,
     isLoading: billingStatusLoading,
   } = useBillingStatus(selectedPeriod);
+  const { data: maintenanceSummary, isLoading: maintenanceSummaryLoading } = useMaintenanceSummary(selectedPeriod);
   const generateBilling = useGenerateBilling();
   // Use billingStatus when it refers to the same period. Otherwise infer generation
   // from the dashboard snapshot (if any bills were created for the selected period).
@@ -232,14 +243,18 @@ export default function Dashboard() {
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [selectedBillingPeriod, setSelectedBillingPeriod] = useState<string>(() => {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return clampMonth(currentMonth) ?? currentMonth;
   });
   const [showConfirmGenerate, setShowConfirmGenerate] = useState(false);
 
   // When billingStatus becomes available, prefer its currentMonth as the default
   useEffect(() => {
-    if (billingStatus?.currentMonth) setSelectedBillingPeriod(billingStatus.currentMonth);
-  }, [billingStatus?.currentMonth]);
+    if (billingStatus?.currentMonth) {
+      const nextMonth = clampMonth(billingStatus.currentMonth) ?? billingStatus.currentMonth;
+      setSelectedBillingPeriod(nextMonth);
+    }
+  }, [billingStatus?.currentMonth, clampMonth]);
 
   // Billing generation is now handled by backend service. Manual trigger removed.
 
@@ -252,9 +267,9 @@ export default function Dashboard() {
   }, [flats, flatSummary, isGeneratedForSelected]);
 
   const billingMonthLabel = useMemo(() => {
-    const selected = startDate?.slice(0, 7) || billingStatus?.currentMonth;
+    const selected = periodTab === 'custom' ? startDate?.slice(0, 7) || billingStatus?.currentMonth : selectedMonth || billingStatus?.currentMonth;
     return formatPeriodLabel(selected, 'Current Month');
-  }, [billingStatus?.currentMonth, startDate]);
+  }, [billingStatus?.currentMonth, startDate, selectedMonth, periodTab]);
 
 
 
@@ -273,7 +288,7 @@ export default function Dashboard() {
   const currentBillCoverage = totalBilled > 0 ? (Math.min(totalCollected, totalBilled) / totalBilled) * 100 : 0;
   const pendingFlatsCount = snap?.pending_flats_count ?? topDefaulters?.length ?? 0;
 
-  const allTimeOutstanding = snap?.all_time_member_outstanding ?? snap?.total_member_outstanding ?? 0;
+  const periodOutstanding = snap?.period_bill_outstanding ?? snap?.total_member_outstanding ?? 0;
   const presentBalance = snap?.present_balance ?? snap?.closing_fund_balance ?? snap?.bank_balance ?? 0;
   const lastUpdated = new Date().toLocaleString('en-IN', {
     day: '2-digit',
@@ -347,6 +362,27 @@ export default function Dashboard() {
                   </button>
                 ))}
               </div>
+              {periodTab !== 'custom' && (
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  min={minMonth}
+                  max={maxMonth}
+                  onChange={(e) => {
+                    const v = clampMonth(e.target.value) ?? e.target.value;
+                    setSelectedMonth(v);
+                    const [y, m] = v.split('-');
+                    const start = `${y}-${m}-01`;
+                    const monthIndex = Number(m) - 1;
+                    const lastDay = new Date(Number(y), monthIndex + 1, 0).getDate();
+                    const end = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
+                    setStartDate(clampDate(start));
+                    setEndDate(clampDate(end));
+                  }}
+                  className="input input-sm ml-2"
+                  aria-label="Select month"
+                />
+              )}
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center flex-wrap gap-2">
@@ -373,26 +409,110 @@ export default function Dashboard() {
             )}
           </div>
           {periodTab === 'custom' && (
-            <div className="flex flex-col sm:flex-row gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2 flex-1">
-                <label className="text-xs font-medium text-slate-500 whitespace-nowrap">From</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(clampDate(e.target.value))}
-                  min={minDate}
-                  className="input input-sm flex-1"
-                />
+            <div className="flex flex-col gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-medium text-slate-500 mr-2">Quick ranges:</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                      const r = getThisMonthRange();
+                      setStartDate(clampDate(r.start));
+                      setEndDate(r.end);
+                    }}
+                  >This Month</button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                      const r = getLastMonthRange();
+                      setStartDate(clampDate(r.start));
+                      setEndDate(clampDate(r.end));
+                    }}
+                  >Last Month</button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                      const now = new Date();
+                      const end = new Date(now.getFullYear(), now.getMonth(), 0);
+                      const start = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+                      const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                      setStartDate(clampDate(fmt(start)));
+                      setEndDate(fmt(end));
+                    }}
+                  >Last 3 Months</button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                      const now = new Date();
+                      const start = new Date(now.getFullYear(), 0, 1);
+                      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                      const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                      setStartDate(clampDate(fmt(start)));
+                      setEndDate(fmt(end));
+                    }}
+                  >Year to date</button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                      const now = new Date();
+                      const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+                      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                      const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                      setStartDate(clampDate(fmt(start)));
+                      setEndDate(fmt(end));
+                    }}
+                  >Last 12 Months</button>
+                </div>
               </div>
-              <div className="flex items-center gap-2 flex-1">
-                <label className="text-xs font-medium text-slate-500 whitespace-nowrap">To</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(clampDate(e.target.value))}
-                  min={minDate}
-                  className="input input-sm flex-1"
-                />
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex items-center gap-2 flex-1">
+                  <label className="text-xs font-medium text-slate-500 whitespace-nowrap">From</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    min={minDate}
+                    className="input input-sm flex-1"
+                  />
+                </div>
+                <div className="flex items-center gap-2 flex-1">
+                  <label className="text-xs font-medium text-slate-500 whitespace-nowrap">To</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    min={minDate}
+                    className="input input-sm flex-1"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {startDate && endDate && startDate > endDate && (
+                  <div className="text-xs text-red-600">Invalid range: "From" must be before "To".</div>
+                )}
+                <div className="ml-auto flex items-center gap-2">
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => {
+                      const r = getThisMonthRange();
+                      setPeriodTab('this-month');
+                      setSelectedMonth(r.start.slice(0, 7));
+                      setStartDate(clampDate(r.start));
+                      setEndDate(r.end);
+                    }}
+                  >Reset</button>
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => {
+                      // Re-clamp and apply current values
+                      setStartDate(clampDate(startDate));
+                      setEndDate(clampDate(endDate));
+                    }}
+                    disabled={!startDate || !endDate || startDate > endDate}
+                  >Apply</button>
+                </div>
               </div>
             </div>
           )}
@@ -430,7 +550,12 @@ export default function Dashboard() {
                 <input
                   type="month"
                   value={selectedBillingPeriod}
-                  onChange={(e) => setSelectedBillingPeriod(e.target.value)}
+                  min={minMonth}
+                  max={maxMonth}
+                  onChange={(e) => {
+                    const nextPeriod = clampMonth(e.target.value) ?? e.target.value;
+                    setSelectedBillingPeriod(nextPeriod);
+                  }}
                   className="input mt-2 mb-4 w-full"
                 />
                 <p className="text-xs text-slate-500">Default: {billingStatus?.currentMonth ?? 'current month'}</p>
@@ -483,7 +608,7 @@ export default function Dashboard() {
         )}
 
         {/* ── 4 KPI Cards ───────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)
           ) : (
@@ -498,8 +623,8 @@ export default function Dashboard() {
               />
               <KpiCard
                 label="Pending Dues"
-                value={formatCurrency(allTimeOutstanding)}
-                color={allTimeOutstanding > 0 ? 'red' : 'emerald'}
+                value={formatCurrency(periodOutstanding)}
+                color={periodOutstanding > 0 ? 'red' : 'emerald'}
                 sub={`${pendingFlatsCount} flat${pendingFlatsCount !== 1 ? 's' : ''} pending`}
                 onClick={() => navigate('/reports/defaulters')}
               />
@@ -514,6 +639,13 @@ export default function Dashboard() {
                 value={formatCurrency(presentBalance)}
                 color={presentBalance >= 0 ? 'emerald' : 'red'}
                 onClick={() => navigate('/reports/fund-ledger')}
+              />
+              <KpiCard
+                label="Other Income"
+                value={formatCurrency(maintenanceSummary?.otherIncome ?? 0)}
+                color="indigo"
+                sub={maintenanceSummaryLoading ? 'Loading…' : undefined}
+                onClick={() => navigate('/income')}
               />
             </>
           )}

@@ -1,6 +1,7 @@
-import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { FlatLedgerIcon, FLAT_LEDGER_ICON_SIZES } from '../components/ui/FlatLedgerIcon';
+import { Link } from 'react-router-dom';
+import Button from '../components/ui/Button';
+import { FLAT_LEDGER_ICON_SIZES, FlatLedgerIcon } from '../components/ui/FlatLedgerIcon';
 
 export default function NotFound() {
   return (
@@ -11,12 +12,11 @@ export default function NotFound() {
       <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-xs">
         The page you're looking for doesn't exist or has been moved.
       </p>
-      <Link
-        to="/"
-        className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Back to Home
+      <Link to="/">
+        <Button variant="primary" className="gap-2">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Home
+        </Button>
       </Link>
     </div>
   );

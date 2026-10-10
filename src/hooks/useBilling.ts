@@ -1,14 +1,15 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  maintenanceApi, 
-  MaintenancePaymentDto, 
-  CreateMaintenancePaymentDto, 
-  CreateMaintenancePaymentResponse,
-  UpdateMaintenancePaymentDto,
-  PaymentModeDto,
-  MaintenanceSummaryDto
-} from '../api/maintenanceApi';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createActivityLog } from '../api/activityLogsApi';
+import {
+  CreateMaintenancePaymentDto,
+  CreateMaintenancePaymentResponse,
+  incomeApi,
+  maintenanceApi,
+  MaintenancePaymentDto,
+  MaintenanceSummaryDto,
+  PaymentModeDto,
+  UpdateMaintenancePaymentDto
+} from '../api/maintenanceApi';
 import { useAuth } from '../contexts/AuthProvider';
 import { logger } from '../lib/logger';
 
@@ -59,6 +60,25 @@ export function useMaintenanceSummary(period?: string) {
   });
 }
 
+export function useIncomePayments(
+  period?: string,
+  page = 1,
+  pageSize = 50,
+  category?: string,
+  options?: { enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: ['income-payments', period, page, pageSize, category],
+    queryFn: async (): Promise<MaintenancePaymentDto[]> => {
+      const result = await incomeApi.listBySociety(period, page, pageSize, category);
+      return result;
+    },
+    staleTime: 0,
+    refetchOnWindowFocus: false,
+    enabled: options?.enabled !== undefined ? options.enabled : true,
+  });
+}
+
 /**
  * Hook: useCreateMaintenancePayment
  * Purpose: Records a new maintenance payment and invalidates all related caches.
@@ -87,7 +107,7 @@ export function useCreateMaintenancePayment() {
       // Invalidate the bulk summary cache so the modal dropdown reflects the new balance on next open
       qc.invalidateQueries({ queryKey: ['flat-financial-summary-bulk'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
-      
+
       if (user) {
         try {
           await createActivityLog({
@@ -99,9 +119,8 @@ export function useCreateMaintenancePayment() {
             entityName: `Flat Payment #${variables.payload.flatPublicId}`,
             amount: data.totalPaid,
             societyId: user.societyId,
-            details: `Created maintenance payment of ₹${data.totalPaid} via ${variables.payload.paymentModeId}${
-              data.remainingAdvance > 0 ? ` with ₹${data.remainingAdvance} advance` : ''
-            }`,
+            details: `Created maintenance payment of ₹${data.totalPaid} via ${variables.payload.paymentModeId}${data.remainingAdvance > 0 ? ` with ₹${data.remainingAdvance} advance` : ''
+              }`,
           });
         } catch (error) {
           // Activity log failure is non-critical — do not block the UI
@@ -130,7 +149,7 @@ export function useUpdateMaintenancePayment() {
       qc.invalidateQueries({ queryKey: ['flat-financial-summary', data.flatPublicId] });
       qc.invalidateQueries({ queryKey: ['flat-ledger', data.flatPublicId] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
-      
+
       if (user) {
         try {
           await createActivityLog({
@@ -172,7 +191,7 @@ export function useDeleteMaintenancePayment() {
       qc.invalidateQueries({ queryKey: ['flat-financial-summary'] });
       qc.invalidateQueries({ queryKey: ['flat-ledger'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
-      
+
       if (user) {
         try {
           await createActivityLog({
@@ -223,7 +242,7 @@ export function useRestorePayment() {
     onSuccess: async (data) => {
       qc.invalidateQueries({ queryKey: ['maintenance-payments'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
-      
+
       if (user) {
         try {
           await createActivityLog({

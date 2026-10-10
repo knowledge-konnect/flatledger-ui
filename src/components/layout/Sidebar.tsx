@@ -26,6 +26,7 @@ const navGroups = [
     items: [
       { name: 'Flats', href: '/flats', icon: Building2, iconColor: 'text-emerald-500', iconBg: 'bg-emerald-50 dark:bg-emerald-950/60' },
       { name: 'Maintenance', href: '/maintenance', icon: Wrench, iconColor: 'text-orange-500', iconBg: 'bg-orange-50 dark:bg-orange-950/60' },
+      { name: 'Income', href: '/income', icon: IndianRupee, iconColor: 'text-indigo-500', iconBg: 'bg-indigo-50 dark:bg-indigo-950/60' },
       { name: 'Expenses', href: '/expenses', icon: IndianRupee, iconColor: 'text-red-500', iconBg: 'bg-red-50 dark:bg-red-950/60' },
       { name: 'Reports', href: '/reports', icon: BarChart3, iconColor: 'text-violet-500', iconBg: 'bg-violet-50 dark:bg-violet-950/60' },
     ],
@@ -243,7 +244,6 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen?: bo
                   setIsLoggingOut(true);
                   try {
                     await logout();
-                    showToast(AlertMessages.success.logoutSuccess, 'success');
                   } catch {
                     showToast(AlertMessages.error.logoutFailed, 'error');
                     setIsLoggingOut(false);

@@ -1,43 +1,50 @@
-﻿import { useState, useEffect, useCallback, useRef } from 'react';
+﻿import { CreditCard, Receipt, TrendingUp } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
-import { CreditCard, TrendingUp, Receipt, Loader2, RefreshCw } from 'lucide-react';
-import DashboardLayout from '../../components/layout/DashboardLayout';
-import Card, { CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
-import PageHeader from '../../components/ui/PageHeader';
-import Button from '../../components/ui/Button';
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFoot } from '../../components/ui/Table';
-import reportsApi, { PaymentRegisterEntry } from '../../api/reportsApi';
 import type { PaymentRegisterPage } from '../../api/reportsApi';
-import {
-  ReportState, initialState, ReportLoading, ReportError,
-  QuickDatePresets, startOfMonth, today, fmtDate, fmtPeriod, CHART_COLORS, formatCurrency, DatePresetKey,
-} from './_shared';
+import reportsApi, { PaymentRegisterEntry } from '../../api/reportsApi';
+import FilterBar from '../../components/FilterBar';
+import DashboardLayout from '../../components/layout/DashboardLayout';
+import Card, { CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import PageHeader from '../../components/ui/PageHeader';
+import { Table, TableBody, TableCell, TableFoot, TableHead, TableHeader, TableRow } from '../../components/ui/Table';
 import { useSocietyPeriodBounds } from '../../hooks/useSocietyPeriodBounds';
+import { formatLocalDateInput } from '../../lib/utils';
+import {
+  CHART_COLORS,
+  fmtDate, fmtPeriod,
+  formatCurrency,
+  initialState,
+  ReportError,
+  ReportLoading,
+  ReportState,
+  startOfMonth, today
+} from './_shared';
 
 /* ─── Payment Register helpers ─── */
 
 const PERIOD_LABEL_FILTER_OPTIONS = ['All', 'Current', 'Arrear', 'Advance'] as const;
 
 interface GroupedPaymentRow {
-  key:            string;
-  date_paid:      string;
-  flat_no:        string;
-  owner_name:     string;
-  current:        number;
-  arrear:         number;
-  advance:        number;
-  unlinked:       number;
+  key: string;
+  date_paid: string;
+  flat_no: string;
+  owner_name: string;
+  current: number;
+  arrear: number;
+  advance: number;
+  unlinked: number;
   unlinked_notes: string[];
-  total:          number;
-  modes:          string[];
-  recorded_by:    string;
+  total: number;
+  modes: string[];
+  recorded_by: string;
 }
 
 function normalizePeriodLabel(raw: unknown): 'Current' | 'Arrear' | 'Advance' | null {
   if (!raw) return null;
   const s = String(raw).trim().toLowerCase();
   if (s === 'current') return 'Current';
-  if (s === 'arrear')  return 'Arrear';
+  if (s === 'arrear') return 'Arrear';
   if (s === 'advance') return 'Advance';
   return null;
 }
@@ -49,19 +56,19 @@ function buildGroupedRows(rows: PaymentRegisterEntry[]): GroupedPaymentRow[] {
     if (!map[key]) {
       map[key] = {
         key,
-        date_paid:      p.date_paid ?? '—',
-        flat_no:        p.flat_no,
-        owner_name:     p.owner_name,
+        date_paid: p.date_paid ?? '—',
+        flat_no: p.flat_no,
+        owner_name: p.owner_name,
         current: 0, arrear: 0, advance: 0,
         unlinked: 0, unlinked_notes: [],
         total: 0, modes: [], recorded_by: p.recorded_by ?? '—',
       };
     }
-    const g   = map[key];
+    const g = map[key];
     const lbl = normalizePeriodLabel(p.period_label);
     const amt = Number(p.amount) || 0;
-    if      (lbl === 'Current') g.current += amt;
-    else if (lbl === 'Arrear')  g.arrear  += amt;
+    if (lbl === 'Current') g.current += amt;
+    else if (lbl === 'Arrear') g.arrear += amt;
     else if (lbl === 'Advance') g.advance += amt;
     else {
       g.unlinked += amt;
@@ -78,12 +85,11 @@ function buildGroupedRows(rows: PaymentRegisterEntry[]): GroupedPaymentRow[] {
 export default function PaymentRegisterPage() {
   const [startDate, setStartDate] = useState(startOfMonth());
   const [endDate, setEndDate] = useState(today());
-  const [activeDatePreset, setActiveDatePreset] = useState<DatePresetKey | null>('thisMonth');
   const [labelFilter, setLabelFilter] = useState<typeof PERIOD_LABEL_FILTER_OPTIONS[number]>('All');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   const [state, setState] = useState<ReportState<PaymentRegisterPage>>(initialState());
-  const { minDate, maxDate, clampDate } = useSocietyPeriodBounds();
+  const { clampDate } = useSocietyPeriodBounds();
 
   useEffect(() => {
     const nextStart = clampDate(startDate);
@@ -108,15 +114,6 @@ export default function PaymentRegisterPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const applyPreset = (preset: DatePresetKey, sd: string, ed: string) => {
-    const safeStart = clampDate(sd);
-    const safeEnd = clampDate(ed);
-    setActiveDatePreset(preset);
-    setStartDate(safeStart);
-    setEndDate(safeEnd);
-    setPage(1);
-    fetchData(safeStart, safeEnd, 1, pageSize);
-  };
   const goToPage = (p: number) => { setPage(p); fetchData(clampDate(startDate), clampDate(endDate), p, pageSize); };
   const changePageSize = (ps: number) => { setPageSize(ps); setPage(1); fetchData(clampDate(startDate), clampDate(endDate), 1, ps); };
 
@@ -133,20 +130,20 @@ export default function PaymentRegisterPage() {
   const allGrouped = buildGroupedRows(entries);
   const rows = labelFilter === 'All' ? allGrouped : allGrouped.filter(g => {
     if (labelFilter === 'Current') return g.current > 0;
-    if (labelFilter === 'Arrear')  return g.arrear  > 0;
+    if (labelFilter === 'Arrear') return g.arrear > 0;
     if (labelFilter === 'Advance') return g.advance > 0;
     return true;
   });
 
   const totalCurrent = rows.reduce((s, g) => s + g.current, 0);
-  const totalArrear  = rows.reduce((s, g) => s + g.arrear, 0);
+  const totalArrear = rows.reduce((s, g) => s + g.arrear, 0);
   const totalAdvance = rows.reduce((s, g) => s + g.advance, 0);
-  const totalAmount  = rows.reduce((s, g) => s + g.total, 0);
+  const totalAmount = rows.reduce((s, g) => s + g.total, 0);
 
   const flatRows = labelFilter === 'All' ? entries : entries.filter(p => {
     const lbl = normalizePeriodLabel(p.period_label);
     if (labelFilter === 'Current') return lbl === 'Current';
-    if (labelFilter === 'Arrear')  return lbl === 'Arrear';
+    if (labelFilter === 'Arrear') return lbl === 'Arrear';
     if (labelFilter === 'Advance') return lbl === 'Advance';
     return true;
   });
@@ -169,37 +166,32 @@ export default function PaymentRegisterPage() {
           icon={CreditCard}
         />
 
-        {/* Filter Bar */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg px-4 py-2.5 shadow-sm">
-          <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase tracking-widest whitespace-nowrap">Date</span>
-          <div className="flex items-center gap-1.5">
-            <input
-              type="date"
-              value={startDate}
-              min={minDate}
-              max={maxDate}
-              onChange={e => { setStartDate(clampDate(e.target.value)); setActiveDatePreset(null); }}
-              className="h-8 px-2.5 text-xs font-medium rounded-md border border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
-            />
-            <span className="text-slate-500 dark:text-slate-400 text-sm select-none">–</span>
-            <input
-              type="date"
-              value={endDate}
-              min={minDate}
-              max={maxDate}
-              onChange={e => { setEndDate(clampDate(e.target.value)); setActiveDatePreset(null); }}
-              className="h-8 px-2.5 text-xs font-medium rounded-md border border-slate-400 dark:border-slate-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors"
-            />
-          </div>
-          <div className="w-px h-5 bg-slate-300 dark:bg-slate-600 self-center" />
-          <QuickDatePresets onSelect={applyPreset} activeKey={activeDatePreset} />
-          <div className="flex-1" />
-          <Button variant="primary" size="sm" onClick={() => { setPage(1); fetchData(clampDate(startDate), clampDate(endDate), 1, pageSize); }} disabled={state.loading}>
-            {state.loading
-              ? <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Loading…</>
-              : <><RefreshCw className="w-3 h-3 mr-1" /> Apply</>}
-          </Button>
-        </div>
+        <FilterBar
+          draftStartDate={formatLocalDateInput(new Date(startDate))}
+          draftEndDate={formatLocalDateInput(new Date(endDate))}
+          draftSearchTerm={''}
+          draftCategoryFilter={''}
+          draftSortBy={'date-desc'}
+          setDraftStartDate={(v) => setStartDate(clampDate(v))}
+          setDraftEndDate={(v) => setEndDate(clampDate(v))}
+          setDraftSearchTerm={() => { }}
+          setDraftCategoryFilter={() => { }}
+          setDraftSortBy={() => { }}
+          startDate={startDate}
+          endDate={endDate}
+          setStartDate={(v) => setStartDate(clampDate(v))}
+          setEndDate={(v) => setEndDate(clampDate(v))}
+          searchTerm={''}
+          setSearchTerm={() => { }}
+          selectedCategoryFilter={''}
+          setSelectedCategoryFilter={() => { }}
+          setSortBy={() => { }}
+          sortBy={'date-desc'}
+          categories={[]}
+          firstDayOfMonth={formatLocalDateInput(new Date(startOfMonth()))}
+          today={formatLocalDateInput(new Date(today()))}
+          onApply={() => { setPage(1); fetchData(clampDate(startDate), clampDate(endDate), 1, pageSize); }}
+        />
 
         {state.loading && <ReportLoading label="Payment Register" />}
         {state.error && <ReportError message={state.error} onRetry={() => fetchData(clampDate(startDate), clampDate(endDate), page, pageSize)} />}
@@ -212,11 +204,10 @@ export default function PaymentRegisterPage() {
                 <button
                   key={opt}
                   onClick={() => setLabelFilter(opt)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors duration-200 ${
-                    labelFilter === opt
-                      ? 'bg-emerald-600 text-white border-emerald-600'
-                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-emerald-400'
-                  }`}
+                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors duration-200 ${labelFilter === opt
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-emerald-400'
+                    }`}
                 >
                   {opt}
                 </button>
@@ -337,9 +328,9 @@ export default function PaymentRegisterPage() {
                           </TableCell>
                           <TableCell>
                             {lbl === 'Current' && <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 whitespace-nowrap">Current</span>}
-                            {lbl === 'Arrear'  && <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 whitespace-nowrap">Arrear</span>}
+                            {lbl === 'Arrear' && <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 whitespace-nowrap">Arrear</span>}
                             {lbl === 'Advance' && <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 whitespace-nowrap">Advance</span>}
-                            {lbl === null      && <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 whitespace-nowrap">Opening</span>}
+                            {lbl === null && <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 whitespace-nowrap">Opening</span>}
                           </TableCell>
                           <TableCell className="text-slate-500 dark:text-slate-400 text-xs whitespace-nowrap">{p.recorded_by}</TableCell>
                         </TableRow>
@@ -372,11 +363,10 @@ export default function PaymentRegisterPage() {
                     <button
                       key={ps}
                       onClick={() => changePageSize(ps)}
-                      className={`px-2.5 py-1 rounded text-xs font-semibold border transition-colors duration-150 ${
-                        currentPageSize === ps
-                          ? 'bg-emerald-600 text-white border-emerald-600'
-                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-emerald-400'
-                      }`}
+                      className={`px-2.5 py-1 rounded text-xs font-semibold border transition-colors duration-150 ${currentPageSize === ps
+                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:border-emerald-400'
+                        }`}
                     >
                       {ps}
                     </button>

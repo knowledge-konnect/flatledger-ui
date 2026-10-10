@@ -44,6 +44,26 @@ let isRefreshing = false;
 // They receive the new token (or null on failure) once the refresh settles.
 let refreshSubscribers: Array<(token: string | null) => void> = [];
 let isRedirecting = false; // Prevents multiple simultaneous redirects to /login
+let isLogoutInProgress = false;
+
+export const setLogoutInProgress = (value: boolean): void => {
+  isLogoutInProgress = value;
+};
+
+const redirectToLogin = (reason: 'session_expired' | 'logout' = 'session_expired') => {
+  if (isRedirecting) return;
+  const currentPath = window.location.pathname;
+  const isAlreadyOnLogin = currentPath === '/login' || currentPath.startsWith('/login/');
+  if (isAlreadyOnLogin) return;
+
+  isRedirecting = true;
+  const target = reason === 'logout' ? '/login' : '/login?reason=session_expired';
+  window.location.assign(target);
+
+  setTimeout(() => {
+    isRedirecting = false;
+  }, 300);
+};
 
 function onRefreshed(token: string | null): void {
   refreshSubscribers.forEach(callback => callback(token));
@@ -109,6 +129,12 @@ apiClient.interceptors.response.use(
 
     // If response status is 401, attempt token refresh
     if (error.response?.status === 401) {
+      // Manual logout should not be treated as session expiry.
+      if (isLogoutInProgress) {
+        logger.log('[API Client] Logout in progress; skipping refresh and session-expired redirect');
+        return Promise.reject(error);
+      }
+
       // Never retry token-refresh or login requests — avoids infinite refresh loops
       const requestUrl = originalRequest.url || '';
       const isAuthEndpoint = UNAUTHENTICATED_PATHS.some(path => requestUrl.includes(path));
@@ -129,6 +155,8 @@ apiClient.interceptors.response.use(
       // Check if refresh callback is registered
       if (!refreshAccessTokenCallback) {
         logger.warn('[API Client] No refresh token callback registered');
+        setInMemoryAccessToken(null);
+        redirectToLogin('session_expired');
         return Promise.reject(error);
       }
 
@@ -161,15 +189,7 @@ apiClient.interceptors.response.use(
             onRefreshed(null);
 
             logger.error('[API Client] Token refresh failed, logout initiated');
-
-            // Redirect to /login if not already there
-            if (!isRedirecting && !window.location.pathname.includes('/login')) {
-              isRedirecting = true;
-              setTimeout(() => {
-                isRedirecting = false;
-                window.location.href = '/login';
-              }, 100);
-            }
+            redirectToLogin('session_expired');
 
             return Promise.reject(error);
           }
@@ -180,15 +200,7 @@ apiClient.interceptors.response.use(
           onRefreshed(null);
 
           logger.error('[API Client] Exception during token refresh', refreshError);
-
-          // Redirect to /login
-          if (!isRedirecting && !window.location.pathname.includes('/login')) {
-            isRedirecting = true;
-            setTimeout(() => {
-              isRedirecting = false;
-              window.location.href = '/login';
-            }, 100);
-          }
+          redirectToLogin('session_expired');
 
           return Promise.reject(refreshError);
         }

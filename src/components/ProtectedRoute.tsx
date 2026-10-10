@@ -18,6 +18,8 @@ interface ProtectedRouteProps {
  *   children: The protected page/component to render
  *   roles: Optional list of allowed role codes. If omitted, any authenticated user can access.
  */
+const wasManualLogout = () => sessionStorage.getItem('__flatledger_manual_logout') === '1';
+
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
 
@@ -33,16 +35,19 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, roles 
     );
   }
 
-  // Redirect unauthenticated users to the landing page with a session-expired hint
-  if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+  // Redirect unauthenticated users to the login page. If the session expired,
+  // the login screen will display the session-expired toast from the query hint.
+  // During a manual logout, skip the expiry redirect entirely and allow the login page
+  // to show the normal logout confirmation message.
+  if (!isAuthenticated && !wasManualLogout()) {
+    return <Navigate to="/login?reason=session_expired" replace />;
   }
 
   // Role-based access control: check both the roles array and the legacy role string
   if (roles && roles.length > 0) {
-    const hasRequiredRole = user?.roles?.some(userRole => roles.includes(userRole)) || 
-                           (user?.role && roles.includes(user.role));
-    
+    const hasRequiredRole = user?.roles?.some(userRole => roles.includes(userRole)) ||
+      (user?.role && roles.includes(user.role));
+
     if (!hasRequiredRole) {
       return <Navigate to="/unauthorized" replace />;
     }

@@ -205,7 +205,9 @@ const filterSensitiveInfo = (message: string): string => {
  */
 export const getMessageByErrorCode = (code: string): string => {
   const errorCodeMap: Record<string, string> = {
-    'UNAUTHORIZED': AlertMessages.error.sessionExpired,
+    // Generic 401s are not always true session expiry; the login page itself handles
+    // the real session-expired redirect flow and displays the specific toast there.
+    'UNAUTHORIZED': 'Please log in again.',
     'FORBIDDEN': 'You don\'t have permission to perform this action.',
     'NOT_FOUND': 'The resource you\'re looking for doesn\'t exist.',
     'VALIDATION_ERROR': AlertMessages.error.fillAllFields,

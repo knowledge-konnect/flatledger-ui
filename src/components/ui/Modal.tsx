@@ -1,5 +1,5 @@
-import { ReactNode, useEffect, Children, isValidElement } from 'react';
 import { X } from 'lucide-react';
+import { Children, isValidElement, ReactNode, useEffect } from 'react';
 import { cn } from '../../lib/utils';
 
 export interface ModalProps {
@@ -33,10 +33,10 @@ export default function Modal({
   if (!isOpen) return null;
 
   const sizes = {
-    sm: 'max-w-modal-sm',
-    md: 'max-w-modal',
-    lg: 'max-w-modal-lg',
-    xl: 'max-w-4xl',
+    sm: 'max-w-md',
+    md: 'max-w-2xl',
+    lg: 'max-w-4xl',
+    xl: 'max-w-5xl',
   };
 
   // Separate ModalFooter from other children
@@ -62,38 +62,35 @@ export default function Modal({
       {/* Modal content, always above overlay, no blur */}
       <div
         className={cn(
-          'relative z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl w-full',
+          'relative z-50 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900',
           'max-h-[90vh] flex flex-col animate-scale-in',
           sizes[size]
         )}
         data-testid="modal-content"
       >
-        {/* Header - fixed at top */}
         {(title || showCloseButton) && (
-          <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex-shrink-0 flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-3 dark:border-slate-800 sm:px-5">
             {title && (
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white">
                 {title}
               </h2>
             )}
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-2 -mr-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="-mr-2 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                 data-testid="modal-close-btn"
               >
-                <X className="w-5 h-5 text-slate-500" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
         )}
-        
-        {/* Body - scrollable in the middle */}
-        <div className="flex-1 overflow-y-auto">
+
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5">
           {bodyContent}
         </div>
-        
-        {/* Footer - fixed at bottom */}
+
         {footerContent}
       </div>
     </div>
@@ -102,7 +99,7 @@ export default function Modal({
 
 export function ModalFooter({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('flex-shrink-0 flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-800', className)}>
+    <div className={cn('flex-shrink-0 border-t border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/40 sm:px-5', 'flex items-center justify-end gap-2.5', className)}>
       {children}
     </div>
   );

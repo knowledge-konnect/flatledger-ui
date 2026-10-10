@@ -71,6 +71,17 @@ export function formatDayMonth(date?: string | Date | null): string {
 }
 
 /**
+ * Formats a Date object as a `YYYY-MM-DD` string using local date components
+ * (avoids UTC/timezone shifts caused by `toISOString`).
+ */
+export function formatLocalDateInput(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/**
  * Formats a billing period string `YYYY-MM` as a localized month + year label.
  * Returns `defaultLabel` when period is falsy or invalid.
  */

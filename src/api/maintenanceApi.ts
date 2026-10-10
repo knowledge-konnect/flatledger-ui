@@ -1,6 +1,6 @@
 import { ApiResponse } from '../types/api';
-import { unwrapArrayData } from './responseUtils';
 import apiClient from './client';
+import { unwrapArrayData } from './responseUtils';
 
 /**
  * Payment Mode DTO
@@ -27,6 +27,7 @@ export interface MaintenancePaymentDto {
   referenceNumber?: string | null; // Transaction/cheque reference
   receiptUrl?: string | null; // URL to receipt/proof
   notes?: string | null;
+  category?: string | null;
   // Audit fields
   recordedByName?: string; // Recorded by user name
   createdAt: string;
@@ -54,6 +55,7 @@ export interface CreateMaintenancePaymentDto {
   referenceNumber?: string;
   receiptUrl?: string;  // URL to receipt/proof
   notes?: string;
+  category?: string; // optional category for one-time incomes (e.g., 'lift_usage_charges')
 }
 
 export interface PaymentAllocationDto {
@@ -94,13 +96,15 @@ export interface MaintenanceSummaryDto {
   billOutstanding: number;
   /** Remaining opening balance not yet cleared by payments */
   openingBalanceRemaining: number;
-  /** billOutstanding + openingBalanceRemaining */
+  /** selected-period unpaid bill balance only; opening balance is shown separately */
   totalOutstanding: number;
   collectionPercentage: number;
   /** Optional — not always returned by backend */
   totalFlats?: number;
   flatsPaid?: number;
   flatsPending?: number;
+  /** Other income collected in the period (one-time incomes) */
+  otherIncome?: number;
 }
 
 /**
@@ -120,12 +124,13 @@ export const maintenanceApi = {
     const body = {
       ...payload,
       paymentModeCode: payload.paymentModeCode ?? payload.paymentModeId,
+      ...(payload.category ? { category: payload.category } : {}),
     };
     const response = await apiClient.post<ApiResponse<CreateMaintenancePaymentResponse>>('/maintenance-payments', body, {
       headers: idempotencyKey
         ? {
-            'Idempotency-Key': idempotencyKey,
-          }
+          'Idempotency-Key': idempotencyKey,
+        }
         : undefined,
     });
     return response.data.data;
@@ -215,5 +220,24 @@ export const maintenanceApi = {
       params: { period }
     });
     return response.data.data;
+  },
+};
+
+export const incomeApi = {
+  /**
+   * List non-maintenance income records for the society.
+   * GET /income-payments?period=2026-03&page=1&pageSize=50&category=lift_usage_charges
+   */
+  async listBySociety(period?: string, page = 1, pageSize = 50, category?: string): Promise<MaintenancePaymentDto[]> {
+    if (period && !/^\d{4}-\d{2}$/.test(period)) {
+      throw new Error('Period must be in YYYY-MM format (e.g., 2026-04)');
+    }
+
+    const params: Record<string, string | number> = { page, pageSize };
+    if (period) params.period = period;
+    if (category) params.category = category;
+
+    const response = await apiClient.get<ApiResponse<unknown>>('/income-payments', { params });
+    return unwrapArrayData<MaintenancePaymentDto>(response.data.data, 'payments');
   },
 };

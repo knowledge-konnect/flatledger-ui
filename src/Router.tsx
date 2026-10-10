@@ -1,11 +1,11 @@
-﻿import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { lazy, Suspense, memo } from 'react';
-import MobileFAB from './components/ui/MobileFAB';
+﻿import { lazy, memo, Suspense } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { useAuth, AuthProvider } from './contexts/AuthProvider';
-import { FlatLedgerIcon, FLAT_LEDGER_ICON_SIZES } from './components/ui/FlatLedgerIcon';
-import { RoleCode } from './types/roles';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
+import { FLAT_LEDGER_ICON_SIZES, FlatLedgerIcon } from './components/ui/FlatLedgerIcon';
+import MobileFAB from './components/ui/MobileFAB';
+import { AuthProvider, useAuth } from './contexts/AuthProvider';
+import { RoleCode } from './types/roles';
 
 // Every top-level component is lazy-loaded so its code is NOT part of the
 // initial JS bundle. This keeps the entry chunk small and only loads each
@@ -27,6 +27,7 @@ const ChangePassword = lazy(() => import('./pages/ChangePassword'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Flats = lazy(() => import('./pages/Flats'));
 const Maintenance = lazy(() => import('./pages/Maintenance'));
+const Income = lazy(() => import('./pages/Income'));
 const MaintenanceLedger = lazy(() => import('./pages/MaintenanceLedger'));
 const Expenses = lazy(() => import('./pages/Expenses'));
 const CollectionSummary = lazy(() => import('./pages/reports/CollectionSummary'));
@@ -76,6 +77,7 @@ function UserRoutes() {
   const protectedPaths = [
     '/dashboard', '/flats', '/maintenance', '/expenses', '/reports', '/users', '/settings', '/setup', '/payment', '/subscription/manage', '/subscription/renew', '/flats/', '/reports/'
   ];
+  const wasManualLogout = sessionStorage.getItem('__flatledger_manual_logout') === '1';
 
   if (isLoading && !publicPaths.includes(pathname)) {
     return <PageLoader />;
@@ -83,9 +85,9 @@ function UserRoutes() {
 
   // Redirect unauthenticated users away from protected paths.
   // Using startsWith handles nested routes like /flats/:id/ledger.
-  const isProtected = protectedPaths.some(p => pathname === p || pathname.startsWith(p + '/') );
-  if (!isAuthenticated && !isLoading && isProtected) {
-    return <Navigate to="/" replace />;
+  const isProtected = protectedPaths.some(p => pathname === p || pathname.startsWith(p + '/'));
+  if (!isAuthenticated && !isLoading && isProtected && !wasManualLogout) {
+    return <Navigate to="/login?reason=session_expired" replace />;
   }
 
   if (isAuthenticated && user && user.forcePasswordChange === true) {
@@ -118,6 +120,7 @@ function UserRoutes() {
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/flats" element={<ProtectedRoute><Flats /></ProtectedRoute>} />
           <Route path="/maintenance" element={<ProtectedRoute><Maintenance /></ProtectedRoute>} />
+          <Route path="/income" element={<ProtectedRoute><Income /></ProtectedRoute>} />
           <Route path="/flats/:publicId/ledger" element={<ProtectedRoute><MaintenanceLedger /></ProtectedRoute>} />
           <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
           <Route path="/reports" element={<Navigate to="/reports/collection-summary" replace />} />
@@ -150,7 +153,7 @@ export default function Router() {
     <Routes>
       {/* Admin panel — isolated with its own AdminAuthProvider and error boundary */}
       <Route path="/admin/*" element={<AdminApp />} />
-      
+
       {/*
        * All society-facing routes — wrapped in AuthProvider so auth state is
        * available throughout the tree, and in ErrorBoundary to catch render errors.

@@ -16,10 +16,8 @@ export interface DashboardSnapshot {
   collection_rate: number;
   bill_outstanding: number;
   period_bill_outstanding?: number;
-  all_time_bill_outstanding?: number;
   opening_dues_remaining: number;
   total_member_outstanding: number;
-  all_time_member_outstanding?: number;
   total_expense: number;
   net_cash_flow: number;
   bank_balance: number;
@@ -28,7 +26,7 @@ export interface DashboardSnapshot {
   period_fund_outflow?: number;
   closing_fund_balance?: number;
   present_balance?: number;
-  /** Total count of flats with any outstanding dues (all-time). Added in dashboard v2. */
+  /** Total count of flats with any outstanding dues in the selected period. */
   pending_flats_count?: number;
 }
 

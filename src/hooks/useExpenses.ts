@@ -1,12 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  expensesApi,
-  CreateExpenseRequest,
-  UpdateExpenseRequest,
-  ExpenseResponse,
-  ExpenseCategory,
-} from '../api/expensesApi';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createActivityLog } from '../api/activityLogsApi';
+import {
+  CreateExpenseRequest,
+  ExpenseCategory,
+  ExpenseResponse,
+  expensesApi,
+  UpdateExpenseRequest,
+} from '../api/expensesApi';
 import { useAuth } from '../contexts/AuthProvider';
 import { logger } from '../lib/logger';
 
@@ -22,7 +22,7 @@ import { logger } from '../lib/logger';
  */
 export function useExpenses() {
   return useQuery({
-    queryKey: ['expenses'],
+    queryKey: ['expenses', 'list'],
     queryFn: async (): Promise<ExpenseResponse[]> => {
       const result = await expensesApi.listExpenses();
       return result;
@@ -113,7 +113,7 @@ export function useCreateExpense() {
     onSuccess: async (data) => {
       qc.invalidateQueries({ queryKey: ['expenses'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
-      
+
       if (user) {
         try {
           await createActivityLog({
@@ -151,12 +151,12 @@ export function useUpdateExpense() {
     onSuccess: async (data, variables) => {
       qc.invalidateQueries({ queryKey: ['expenses'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
-      
+
       if (user) {
         try {
           let action: 'updated' | 'approved' | 'rejected' = 'updated';
           let details = `Updated expense details`;
-          
+
           // Use a more specific action label when the status is explicitly changed
           if ((variables.payload as any).status === 'APPROVED') {
             action = 'approved';
@@ -165,7 +165,7 @@ export function useUpdateExpense() {
             action = 'rejected';
             details = `Rejected expense of ₹${data.amount}`;
           }
-          
+
           await createActivityLog({
             userId: user.id,
             userName: user.name,
@@ -199,7 +199,7 @@ export function useDeleteExpense() {
     onSuccess: async (_, publicId) => {
       qc.invalidateQueries({ queryKey: ['expenses'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
-      
+
       if (user) {
         try {
           await createActivityLog({

@@ -20,16 +20,15 @@ import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut';
 import { useMaintenanceConfig } from '../hooks/useSocieties';
 import { exportCsv as exportCsvLib } from '../lib/exportCsv';
 import { logger } from '../lib/logger';
-import { formatCurrency } from '../lib/utils';
 
 const flatSchema = z.object({
   flatNumber: z.string().min(1, 'Flat number is required'),
-  ownerName: z.string().optional(),
-  ownerEmail: z.string().optional(),
-  ownerPhone: z.string().optional(),
-  tenantName: z.string().optional(),
-  tenantEmail: z.string().optional(),
-  tenantPhone: z.string().optional(),
+  ownerName: z.string().trim().min(1, 'Owner name is required'),
+  ownerEmail: z.string().optional().or(z.literal('')),
+  ownerPhone: z.string().trim().min(1, 'Owner phone is required'),
+  tenantName: z.string().optional().or(z.literal('')),
+  tenantEmail: z.string().optional().or(z.literal('')),
+  tenantPhone: z.string().optional().or(z.literal('')),
   maintenanceAmount: z.string().refine(
     val => !isNaN(Number(val)) && Number(val) > 0,
     'Maintenance amount must be a positive number'
@@ -549,11 +548,11 @@ export default function Flats() {
                         <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors" onClick={() => toggleSort('ownerName')}>
                           <span className="inline-flex items-center">Owner <FlatSortIcon field="ownerName" sortBy={sortBy} sortDir={sortDir} /></span>
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">
-                          Contact
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden lg:table-cell">
+                          Tenant
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider cursor-pointer select-none hover:bg-emerald-700/50 dark:hover:bg-emerald-900/50 transition-colors whitespace-nowrap" onClick={() => toggleSort('maintenanceAmount')}>
-                          <span className="inline-flex items-center justify-end w-full">Monthly Charge <FlatSortIcon field="maintenanceAmount" sortBy={sortBy} sortDir={sortDir} /></span>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden md:table-cell">
+                          Owner Contact
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-slate-100 dark:text-slate-100 uppercase tracking-wider hidden sm:table-cell">
                           Status
@@ -588,6 +587,27 @@ export default function Flats() {
                               )}
                             </div>
                           </td>
+                          <td className="px-6 py-3 align-middle hidden lg:table-cell">
+                            {flat.tenantName ? (
+                              <div className="flex flex-col">
+                                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                  {flat.tenantName}
+                                </span>
+                                {flat.tenantPhone && (
+                                  <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    {flat.tenantPhone}
+                                  </span>
+                                )}
+                                {flat.tenantEmail && (
+                                  <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-xs">
+                                    {flat.tenantEmail}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-slate-400 dark:text-slate-500">—</span>
+                            )}
+                          </td>
                           <td className="px-6 py-3 whitespace-nowrap align-middle hidden md:table-cell">
                             <div className="flex items-center gap-1.5">
                               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
@@ -595,11 +615,6 @@ export default function Flats() {
                                 {flat.ownerPhone}
                               </span>
                             </div>
-                          </td>
-                          <td className="px-6 py-3 whitespace-nowrap text-right align-middle">
-                            <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                              {formatCurrency(flat.maintenanceAmount)}
-                            </span>
                           </td>
                           <td className="px-6 py-3 whitespace-nowrap align-middle hidden sm:table-cell">
                             <StatusBadge code={flat.status} id={flat.statusId} label={flat.status} kind="flat" />
@@ -676,108 +691,159 @@ export default function Flats() {
               setSelectedFlat(null);
             }}
             title={isEditing ? 'Edit Flat' : 'Add New Flat'}
-            size="lg"
+            size="md"
           >
-            <form onSubmit={handleSubmit(onSubmit)} className="form-group space-y-4 md:space-y-6 p-4 sm:p-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               {formError && (
-                <div className="mb-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3">
-                  <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-red-900 dark:text-red-100">{formError}</p>
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span className="font-medium">{formError}</span>
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <Input
-                  label="Flat Number"
-                  type="text"
-                  placeholder="e.g., A-101"
-                  error={errors.flatNumber?.message}
-                  {...register('flatNumber')}
-                />
 
-                {/* Owner Section */}
-                <div className="md:col-span-2">
-                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Owner Information (Optional)</h3>
-                </div>
+              <div className="space-y-4">
+                <section className="rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                      <Home className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-emerald-800 dark:text-emerald-200">
+                        Flat Details
+                      </h3>
+                    </div>
+                  </div>
 
-                <Input
-                  label="Owner Name"
-                  type="text"
-                  placeholder="Full name"
-                  error={errors.ownerName?.message}
-                  {...register('ownerName')}
-                />
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <Input
+                      label="Flat Number"
+                      type="text"
+                      placeholder="e.g., A-101"
+                      required
+                      error={errors.flatNumber?.message}
+                      {...register('flatNumber')}
+                    />
 
-                <Input
-                  label="Owner Phone"
-                  type="tel"
-                  maxLength={10}
-                  placeholder="10-digit number"
-                  error={errors.ownerPhone?.message}
-                  {...register('ownerPhone')}
-                />
+                    <Input
+                      label="Monthly Charge"
+                      type="number"
+                      placeholder="5000"
+                      step="0.01"
+                      required
+                      error={errors.maintenanceAmount?.message}
+                      {...register('maintenanceAmount')}
+                    />
 
-                <Input
-                  label="Owner Email"
-                  type="email"
-                  placeholder="owner@example.com"
-                  error={errors.ownerEmail?.message}
-                  {...register('ownerEmail')}
-                />
+                    <div className="md:col-span-2">
+                      <Select
+                        label="Status"
+                        options={[
+                          { value: '', label: 'Select Status' },
+                          ...statusOptions,
+                        ]}
+                        required
+                        error={errors.statusCode?.message}
+                        {...register('statusCode')}
+                      />
+                    </div>
+                  </div>
+                </section>
 
-                {/* Tenant Section */}
-                <div className="md:col-span-2">
-                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Tenant Information (Optional)</h3>
-                </div>
+                <section className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                        <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" />
+                        <path d="M12 14c-4.4 0-8 2.7-8 6h16c0-3.3-3.6-6-8-6Z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-800 dark:text-slate-200">
+                        Owner Information
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Required details for emergency and contact purposes</p>
+                    </div>
+                  </div>
 
-                <Input
-                  label="Tenant Name"
-                  type="text"
-                  placeholder="Tenant full name"
-                  error={errors.tenantName?.message}
-                  {...register('tenantName')}
-                />
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <Input
+                      label="Owner Name"
+                      type="text"
+                      placeholder="Full name"
+                      required
+                      error={errors.ownerName?.message}
+                      {...register('ownerName')}
+                    />
 
-                <Input
-                  label="Tenant Phone"
-                  type="tel"
-                  maxLength={10}
-                  placeholder="10-digit number"
-                  error={errors.tenantPhone?.message}
-                  {...register('tenantPhone')}
-                />
+                    <Input
+                      label="Owner Phone"
+                      type="tel"
+                      maxLength={10}
+                      placeholder="10-digit number"
+                      required
+                      error={errors.ownerPhone?.message}
+                      {...register('ownerPhone')}
+                    />
 
-                <Input
-                  label="Tenant Email"
-                  type="email"
-                  placeholder="tenant@example.com"
-                  error={errors.tenantEmail?.message}
-                  {...register('tenantEmail')}
-                />
+                    <div className="md:col-span-2">
+                      <Input
+                        label="Owner Email"
+                        type="email"
+                        placeholder="owner@example.com"
+                        error={errors.ownerEmail?.message}
+                        {...register('ownerEmail')}
+                      />
+                    </div>
+                  </div>
+                </section>
 
-                <div className="md:col-span-2">
-                  <Input
-                    label="Monthly Charge"
-                    type="number"
-                    placeholder="5000"
-                    step="0.01"
-                    error={errors.maintenanceAmount?.message}
-                    {...register('maintenanceAmount')}
-                  />
-                </div>
+                <section className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                        <path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" />
+                        <path d="M12 14c-4.4 0-8 2.7-8 6h16c0-3.3-3.6-6-8-6Z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-800 dark:text-slate-200">
+                        Tenant Information
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Required details for contact and urgent follow-up</p>
+                    </div>
+                  </div>
 
-                <div className="md:col-span-2">
-                  <Select
-                    label="Status"
-                    options={[
-                      { value: '', label: 'Select Status' },
-                      ...statusOptions,
-                    ]}
-                    error={errors.statusCode?.message}
-                    {...register('statusCode')}
-                  />
-                </div>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <Input
+                      label="Tenant Name"
+                      type="text"
+                      placeholder="Tenant full name"
+                      error={errors.tenantName?.message}
+                      {...register('tenantName')}
+                    />
+
+                    <Input
+                      label="Tenant Phone"
+                      type="tel"
+                      maxLength={10}
+                      placeholder="10-digit number"
+                      error={errors.tenantPhone?.message}
+                      {...register('tenantPhone')}
+                    />
+
+                    <div className="md:col-span-2">
+                      <Input
+                        label="Tenant Email"
+                        type="email"
+                        placeholder="tenant@example.com"
+                        error={errors.tenantEmail?.message}
+                        {...register('tenantEmail')}
+                      />
+                    </div>
+                  </div>
+                </section>
               </div>
 
               <ModalFooter>
@@ -798,8 +864,8 @@ export default function Flats() {
                   disabled={isSubmitting || (isEditing ? updateFlat.isPending : createFlat.isPending)}
                 >
                   {isEditing
-                    ? (updateFlat.isPending ? 'Saving...' : (isSubmitting ? 'Saving...' : 'Save'))
-                    : (createFlat.isPending ? 'Adding...' : (isSubmitting ? 'Adding...' : 'Add Flat'))}
+                    ? (updateFlat.isPending ? 'Saving...' : (isSubmitting ? 'Saving...' : 'Save Flat'))
+                    : (createFlat.isPending ? 'Adding...' : (isSubmitting ? 'Adding...' : 'Save Flat'))}
                 </Button>
               </ModalFooter>
             </form>

@@ -1,15 +1,15 @@
-﻿import { Mail, Lock, Building2, IndianRupee, BarChart3, LayoutDashboard, Receipt, PieChart, Eye, EyeOff } from 'lucide-react';
+﻿import { zodResolver } from '@hookform/resolvers/zod';
+import { BarChart3, Building2, Eye, EyeOff, IndianRupee, LayoutDashboard, Lock, Mail, PieChart, Receipt } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import Input from '../components/ui/Input';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { z } from 'zod';
 import Button from '../components/ui/Button';
-import { FlatLedgerIcon, FLAT_LEDGER_ICON_SIZES } from '../components/ui/FlatLedgerIcon';
-import { useAuth } from '../contexts/AuthProvider';
+import { FLAT_LEDGER_ICON_SIZES, FlatLedgerIcon } from '../components/ui/FlatLedgerIcon';
+import Input from '../components/ui/Input';
 import { useToast } from '../components/ui/Toast';
+import { useAuth } from '../contexts/AuthProvider';
 import { useApiErrorToast } from '../hooks/useApiErrorHandler';
 import { AlertMessages } from '../lib/alertMessages';
 
@@ -45,10 +45,16 @@ export default function Login() {
 
   useEffect(() => {
     const reason = searchParams.get('reason');
-    if (reason === 'session_expired') {
+    const wasManualLogout = sessionStorage.getItem('__flatledger_manual_logout') === '1';
+
+    if (reason === 'session_expired' && !wasManualLogout) {
       showToast(AlertMessages.error.sessionExpired, 'warning');
       searchParams.delete('reason');
       navigate({ search: searchParams.toString() }, { replace: true });
+    }
+
+    if (wasManualLogout) {
+      sessionStorage.removeItem('__flatledger_manual_logout');
     }
   }, [searchParams, showToast, navigate]);
 
@@ -164,8 +170,8 @@ export default function Login() {
       </div>
 
       {/* ── Right panel ── */}
-      <div className="w-full lg:w-[48%] h-full flex flex-col items-center justify-center px-8">
-        <div className="w-full max-w-[380px] animate-fade-in">
+      <div className="w-full lg:w-[48%] h-full flex flex-col items-center justify-center px-8 lg:px-12">
+        <div className="w-full max-w-[440px] animate-fade-in">
           {/* Back link */}
           <Link
             to="/"

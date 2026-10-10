@@ -1,6 +1,6 @@
 ﻿import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, BarChart2, Divide, Droplet, Edit, Hammer, Home, IndianRupee, Lightbulb, Plus, Search, Shield, Trash2, TrendingDown, TrendingUp, Wrench, X, Zap } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import ReactApexChart from 'react-apexcharts';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -72,9 +72,15 @@ export default function Expenses() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('date-desc');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
+  const [draftStartDate, setDraftStartDate] = useState(firstDayOfMonth.toISOString().substring(0, 10));
+  const [draftEndDate, setDraftEndDate] = useState(today.toISOString().substring(0, 10));
+  const [draftSearchTerm, setDraftSearchTerm] = useState('');
+  const [draftCategoryFilter, setDraftCategoryFilter] = useState('');
+  const [draftSortBy, setDraftSortBy] = useState('date-desc');
   const [selectedExpense, setSelectedExpense] = useState<ExpenseResponse | null>(null);
   // New: formError state for business/general errors
   const [formError, setFormError] = useState<string | null>(null);
+  const [localSubmitting, setLocalSubmitting] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ExpenseResponse | null>(null);
 
   // API hooks
@@ -103,6 +109,22 @@ export default function Expenses() {
     if (!expensesData.length) return null;
     return [...expensesData].sort((a, b) => new Date(b.dateIncurred).getTime() - new Date(a.dateIncurred).getTime())[0];
   }, [expensesData]);
+
+  const applyExpenseFilters = () => {
+    setStartDate(draftStartDate);
+    setEndDate(draftEndDate);
+    setSearchTerm(draftSearchTerm);
+    setSelectedCategoryFilter(draftCategoryFilter);
+    setSortBy(draftSortBy);
+  };
+
+  useEffect(() => {
+    setDraftStartDate(startDate);
+    setDraftEndDate(endDate);
+    setDraftSearchTerm(searchTerm);
+    setDraftCategoryFilter(selectedCategoryFilter);
+    setDraftSortBy(sortBy);
+  }, [startDate, endDate, searchTerm, selectedCategoryFilter, sortBy]);
 
   /* =====================================================
      HELPER FUNCTIONS
@@ -313,7 +335,13 @@ export default function Expenses() {
     return { topCategory: top, topCategorySharePct: pct };
   }, [categoryData, totalExpenses]);
 
-  const onSubmit = async (data: ExpenseFormData) => {
+  const onSubmit = async (data: ExpenseFormData, optionsOrEvent?: any) => {
+    const options: { closeAfterSave?: boolean } | undefined = (optionsOrEvent && typeof optionsOrEvent === 'object' && 'closeAfterSave' in optionsOrEvent)
+      ? optionsOrEvent as { closeAfterSave?: boolean }
+      : undefined;
+
+    if (localSubmitting) return;
+    setLocalSubmitting(true);
     setFormError(null); // Reset error at start
     try {
       const vendorInput = (data.vendor || '').trim();
@@ -363,9 +391,26 @@ export default function Expenses() {
           amount: Number(data.amount),
         });
         showToast((createdExpense as any).__message || 'Expense added successfully', 'success');
+
+        // After successful create: either close the modal or keep it open to add another.
+        // Preserve date and category for convenience, but clear vendor, description and amount.
+        if (options?.closeAfterSave) {
+          handleCloseModal();
+        } else {
+          reset({
+            date: data.date,
+            categoryCode: data.categoryCode,
+            vendor: '',
+            description: '',
+            amount: '',
+          });
+        }
       }
 
-      handleCloseModal();
+      if (selectedExpense) {
+        // After update, close modal (existing behavior)
+        handleCloseModal();
+      }
     } catch (error: any) {
       if (error?.response?.data) {
         const errorData = error.response.data;
@@ -411,7 +456,13 @@ export default function Expenses() {
         showToast(fallbackMessage, 'error');
       }
     }
+    finally {
+      setLocalSubmitting(false);
+    }
   };
+
+  const handleSaveAdd = handleSubmit((data: ExpenseFormData) => onSubmit(data, { closeAfterSave: false }));
+  const handleSaveClose = handleSubmit((data: ExpenseFormData) => onSubmit(data, { closeAfterSave: true }));
 
   const openAddExpenseModal = (prefill?: Partial<ExpenseFormData>) => {
     setSelectedExpense(null);
@@ -522,18 +573,48 @@ export default function Expenses() {
           icon={TrendingDown}
           actions={
             isAdmin && (
-              <Button size="md" onClick={() => openAddExpenseModal(lastExpense ? {
-                categoryCode: lastExpense.categoryCode,
-                vendor: lastExpense.vendor ?? '',
-                description: lastExpense.description ?? '',
-                amount: String(lastExpense.amount),
-              } : undefined)}>
+              <Button size="md" onClick={() => openAddExpenseModal()}>
                 <Plus className="w-4 h-4" />
                 Add Expense
               </Button>
             )
           }
         />
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 dark:border-slate-700 dark:bg-slate-800/80">
+                <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">From</label>
+                <input
+                  type="date"
+                  value={draftStartDate}
+                  onChange={(e) => setDraftStartDate(e.target.value)}
+                  className="h-8 rounded-md border border-slate-300 bg-white px-2.5 text-xs text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 dark:border-slate-700 dark:bg-slate-800/80">
+                <label className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">To</label>
+                <input
+                  type="date"
+                  value={draftEndDate}
+                  onChange={(e) => setDraftEndDate(e.target.value)}
+                  className="h-8 rounded-md border border-slate-300 bg-white px-2.5 text-xs text-slate-900 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                {filteredAndSortedExpenses.length} records
+              </span>
+              <Button size="sm" onClick={applyExpenseFilters}>
+                Apply
+              </Button>
+            </div>
+          </div>
+        </div>
 
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -609,26 +690,9 @@ export default function Expenses() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div>
-                  <CardTitle className="text-xl font-bold mb-1">Spending Breakdown</CardTitle>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">By category</p>
-                </div>
-                <div className="flex gap-2 items-center text-xs">
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                  <span className="text-gray-500 dark:text-gray-400">to</span>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
+              <div>
+                <CardTitle className="text-xl font-bold mb-1">Spending Breakdown</CardTitle>
+                <p className="text-xs text-gray-600 dark:text-gray-400">By category</p>
               </div>
             </CardHeader>
             <CardContent className="p-6">
@@ -782,12 +846,7 @@ export default function Expenses() {
                     className="!py-2 text-sm"
                   />
                   {isAdmin && (
-                    <Button size="sm" onClick={() => openAddExpenseModal(lastExpense ? {
-                      categoryCode: lastExpense.categoryCode,
-                      vendor: lastExpense.vendor ?? '',
-                      description: lastExpense.description ?? '',
-                      amount: String(lastExpense.amount),
-                    } : undefined)}>
+                    <Button size="sm" onClick={() => openAddExpenseModal()}>
                       <Plus className="w-4 h-4 mr-1" />
                       Add Expense
                     </Button>
@@ -865,12 +924,7 @@ export default function Expenses() {
                   {searchTerm ? 'No expenses match your search. Try adjusting your filters.' : 'Start tracking expenses to get insights into your spending patterns.'}
                 </p>
                 {!searchTerm && isAdmin && (
-                  <Button onClick={() => openAddExpenseModal(lastExpense ? {
-                    categoryCode: lastExpense.categoryCode,
-                    vendor: lastExpense.vendor ?? '',
-                    description: lastExpense.description ?? '',
-                    amount: String(lastExpense.amount),
-                  } : undefined)}>
+                  <Button onClick={() => openAddExpenseModal()}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Your First Expense
                   </Button>
@@ -971,7 +1025,7 @@ export default function Expenses() {
                 title={selectedExpense ? 'Edit Expense' : 'Add New Expense'}
                 size="xl"
               >
-                <form onSubmit={handleSubmit(onSubmit)}>
+                <form onSubmit={handleSubmit((d) => onSubmit(d, { closeAfterSave: true }))}>
                   {/* ── General/Business Rule Error Banner ── */}
                   {formError && (
                     <div className="mb-3 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3 flex items-start gap-3">
@@ -1041,21 +1095,35 @@ export default function Expenses() {
                     type="button"
                     variant="outline"
                     onClick={handleCloseModal}
-                    disabled={createMutation.isPending || updateMutation.isPending}
+                    disabled={createMutation.isPending || updateMutation.isPending || localSubmitting}
                   >
                     Cancel
                   </Button>
+
                   <Button
-                    type="submit"
-                    disabled={createMutation.isPending || updateMutation.isPending}
-                    onClick={handleSubmit(onSubmit)}
+                    type="button"
+                    onClick={handleSaveAdd}
+                    disabled={createMutation.isPending || updateMutation.isPending || localSubmitting}
                   >
-                    {createMutation.isPending || updateMutation.isPending ? (
+                    {createMutation.isPending || updateMutation.isPending || localSubmitting ? (
                       <>
                         <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        {selectedExpense ? 'Updating...' : 'Adding...'}
+                        {selectedExpense ? 'Updating...' : 'Saving...'}
                       </>
-                    ) : selectedExpense ? 'Update Expense' : 'Add Expense'}
+                    ) : 'Save & Add Another'}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={handleSaveClose}
+                    disabled={createMutation.isPending || updateMutation.isPending || localSubmitting}
+                  >
+                    {createMutation.isPending || updateMutation.isPending || localSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        {selectedExpense ? 'Updating...' : 'Saving...'}
+                      </>
+                    ) : selectedExpense ? 'Update Expense' : 'Save & Close'}
                   </Button>
                 </ModalFooter>
               </Modal>

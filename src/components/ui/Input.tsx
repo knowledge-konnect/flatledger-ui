@@ -5,20 +5,24 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: React.ReactNode;
   error?: string;
   helperText?: string;
+  required?: boolean;
   icon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   'data-testid'?: string;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, helperText, icon, rightIcon, type = 'text', id, ...props }, ref) => {
+  ({ className, label, error, helperText, required, icon, rightIcon, type = 'text', id, ...props }, ref) => {
     const inputId = id || props.name || `input-${Math.random().toString(36).substr(2, 9)}`;
-    
+    const errorId = `${inputId}-error`;
+    const helperId = `${inputId}-helper`;
+
     return (
       <div className="form-group">
         {label && (
           <label htmlFor={inputId} className="label">
-            {label}
+            <span>{label}</span>
+            {required && <span className="ml-1 text-red-500" aria-hidden="true">*</span>}
           </label>
         )}
         <div className="relative">
@@ -31,6 +35,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             type={type}
             ref={ref}
+            required={required}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? errorId : helperText ? helperId : undefined}
             className={cn(
               'input',
               icon && 'pl-10',
@@ -47,8 +54,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             </div>
           )}
         </div>
-        {error && <p className="error-text">{error}</p>}
-        {helperText && !error && <p className="helper-text">{helperText}</p>}
+        {error && <p id={errorId} className="error-text">{error}</p>}
+        {helperText && !error && <p id={helperId} className="helper-text">{helperText}</p>}
       </div>
     );
   }

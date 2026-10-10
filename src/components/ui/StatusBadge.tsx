@@ -37,21 +37,25 @@ export default function StatusBadge({ code, id, label, className, kind = 'flat',
     flat: {
       owner_occupied: { variant: 'success', text: 'Active' },
       active: { variant: 'success', text: 'Active' },
+      inactive: { variant: 'neutral', text: 'Inactive' },
       rented: { variant: 'warning', text: 'Rented' },
       vacant: { variant: 'default', text: 'Vacant' },
     },
     payment: {
       paid: { variant: 'success', text: 'Paid' },
-      pending: { variant: 'info', text: 'Pending' },
+      pending: { variant: 'warning', text: 'Pending' },
       failed: { variant: 'error', text: 'Failed' },
       overdue: { variant: 'error', text: 'Overdue' },
+      inactive: { variant: 'neutral', text: 'Inactive' },
       refunded: { variant: 'info', text: 'Refunded' },
     },
     billing: {
       draft: { variant: 'default', text: 'Draft' },
       sent: { variant: 'info', text: 'Sent' },
       paid: { variant: 'success', text: 'Paid' },
+      pending: { variant: 'warning', text: 'Pending' },
       overdue: { variant: 'error', text: 'Overdue' },
+      inactive: { variant: 'neutral', text: 'Inactive' },
     },
   };
 
@@ -63,9 +67,10 @@ export default function StatusBadge({ code, id, label, className, kind = 'flat',
     const mapped = resolvedMap[key];
     if (mapped) return { variant: mapped.variant, text: label ?? mapped.text ?? String(c) };
 
-    if (key === 'active' || key === 'paid' || key === 'owner_occupied') return { variant: 'success' as BadgeVariant, text: label ?? String(c) };
-    if (key === 'rented' || key === 'pending') return { variant: 'warning' as BadgeVariant, text: label ?? String(c) };
-    if (key === 'failed' || key === 'overdue') return { variant: 'error' as BadgeVariant, text: label ?? String(c) };
+    if (key === 'active' || key === 'paid' || key === 'owner_occupied' || key === 'approved') return { variant: 'success' as BadgeVariant, text: label ?? String(c) };
+    if (key === 'inactive' || key === 'disabled' || key === 'cancelled' || key === 'closed') return { variant: 'neutral' as BadgeVariant, text: label ?? String(c) };
+    if (key === 'rented' || key === 'pending' || key === 'waiting' || key === 'processing') return { variant: 'warning' as BadgeVariant, text: label ?? String(c) };
+    if (key === 'failed' || key === 'overdue' || key === 'late') return { variant: 'error' as BadgeVariant, text: label ?? String(c) };
     return { variant: 'default' as BadgeVariant, text: label ?? String(c) };
   };
 

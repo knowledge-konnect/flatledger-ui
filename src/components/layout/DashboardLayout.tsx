@@ -1,17 +1,17 @@
-﻿import { ReactNode, useState, useEffect, useCallback } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+﻿import { AlertTriangle, LogOut, Menu, Moon, Settings, Sun, X } from 'lucide-react';
+import { ReactNode, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Moon, Sun, LogOut, Settings, Menu, X, AlertTriangle } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 // import NotificationPanel from '../notifications/NotificationPanel'; // Hidden for MVP
 // import { useNotificationCount } from '../../hooks/useNotificationCount'; // Hidden for MVP
-import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthProvider';
-import { useToast } from '../ui/Toast';
-import { cn } from '../../lib/utils';
-import { AlertMessages } from '../../lib/alertMessages';
-import { getPrimaryRoleLabel } from '../../types/roles';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useCurrentSubscription } from '../../hooks/useCurrentSubscription';
+import { AlertMessages } from '../../lib/alertMessages';
+import { cn } from '../../lib/utils';
+import { getPrimaryRoleLabel } from '../../types/roles';
+import { useToast } from '../ui/Toast';
 
 const DISMISS_KEY = 'sub_expiry_banner_dismissed';
 
@@ -87,7 +87,6 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
     setIsLoggingOut(true);
     try {
       await logout();
-      showToast(AlertMessages.success.logoutSuccess, 'success');
     } catch {
       showToast(AlertMessages.error.logoutFailed, 'error');
       setIsLoggingOut(false);
@@ -158,10 +157,10 @@ export default function DashboardLayout({ children, title }: DashboardLayoutProp
                   </span>
                 )}
               </button>
-              
-              <NotificationPanel 
-                isOpen={isNotificationPanelOpen} 
-                onClose={() => setIsNotificationPanelOpen(false)} 
+
+              <NotificationPanel
+                isOpen={isNotificationPanelOpen}
+                onClose={() => setIsNotificationPanelOpen(false)}
               />
             </div> */}
 

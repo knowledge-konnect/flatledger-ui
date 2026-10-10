@@ -3,7 +3,7 @@ import { jwtDecode } from 'jwt-decode';
 import React, { createContext, useCallback, useContext, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/authApi';
-import { setInMemoryAccessToken, setRefreshTokenCallback } from '../api/client';
+import { setInMemoryAccessToken, setLogoutInProgress, setRefreshTokenCallback } from '../api/client';
 import { handleApiError as categorizeError } from '../api/errorHandler';
 import { subscriptionApi } from '../api/subscriptionApi';
 import { logger } from '../lib/logger';
@@ -36,7 +36,7 @@ interface JwtPayload {
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<AuthResponse>;
   register: (credentials: RegisterCredentials) => Promise<AuthResponse>;
-  logout: () => Promise<void>;
+  logout: (reason?: 'session_expired') => Promise<void>;
   updateUser: (user: Partial<User>) => void;
   refreshAccessToken: () => Promise<string | null>;
 }
@@ -211,6 +211,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       expiryWarningTimer.current = null;
     }
 
+    const redirectToLogin = (reason?: 'session_expired') => {
+      if (!shouldNavigate) return;
+      const currentPath = window.location.pathname;
+      const isAlreadyOnLogin = currentPath === '/login' || currentPath.startsWith('/login/');
+      if (isAlreadyOnLogin) return;
+      const target = reason ? '/login?reason=session_expired' : '/login';
+      navigate(target, { replace: true });
+    };
+
     if (token) {
       const user = decodeJwtToken(token, authResponse);
 
@@ -259,9 +268,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isAuthenticated: false,
           isLoading: false,
         });
-        if (shouldNavigate) navigate('/login', { replace: true });
+        redirectToLogin('session_expired');
       }
     } else {
+      const wasManualLogout = sessionStorage.getItem('__flatledger_manual_logout') === '1';
       clearAllAuthData();
       setState({
         user: null,
@@ -269,7 +279,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: false,
         isLoading: false,
       });
-      if (shouldNavigate) navigate('/login', { replace: true });
+      if (!wasManualLogout && shouldNavigate) {
+        redirectToLogin('session_expired');
+      }
     }
   };
 
@@ -337,14 +349,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = async () => {
+  const logout = async (reason?: 'session_expired' | 'logout') => {
     logger.log(`[AuthProvider.logout] Starting logout`);
 
-    // Navigate FIRST — before clearing auth state. This ensures the URL is already
-    // on a public route (/) when isAuthenticated becomes false, so ProtectedRoute
-    // never sees the unauthenticated state on a protected path and cannot redirect to /login.
-    navigate('/');
-    logger.log(`[AuthProvider.logout] Redirected to /`);
+    const isSessionExpired = reason === 'session_expired';
+    const currentPath = window.location.pathname;
+    const isAlreadyOnLogin = currentPath === '/login' || currentPath.startsWith('/login/');
+    const target = isSessionExpired ? '/login?reason=session_expired' : '/login';
+
+    if (!isSessionExpired) {
+      sessionStorage.setItem('__flatledger_manual_logout', '1');
+    } else {
+      sessionStorage.removeItem('__flatledger_manual_logout');
+    }
+
+    setLogoutInProgress(!isSessionExpired);
+
+    // Navigate FIRST — before clearing auth state. This keeps the app on a public
+    // route and sends the user to the login page instead of the landing page.
+    if (!isAlreadyOnLogin) {
+      navigate(target, { replace: true });
+      logger.log(`[AuthProvider.logout] Redirected to ${target}`);
+    } else {
+      logger.log(`[AuthProvider.logout] Already on login screen; skipping redirect`);
+    }
 
     // Clear in-memory access token and React state (no further navigation — already handled above)
     setAuthState(null, undefined, false);
@@ -357,9 +385,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Notify server to revoke the refreshToken httpOnly cookie
       await authApi.logout();
       logger.log(`[AuthProvider.logout] Server logout successful`);
+      if (!isSessionExpired) {
+        window.dispatchEvent(new CustomEvent('flatledger:logout-success'));
+      }
     } catch (error) {
       // Logout failed on server, but local state is already cleared
       logger.warn(`[AuthProvider.logout] Server logout failed (local state already cleared)`, error);
+    } finally {
+      setLogoutInProgress(false);
     }
   };
 
@@ -404,7 +437,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return authResponse.accessToken;
     } catch (error) {
       logger.error(`[AuthProvider.refreshAccessToken] Token refresh failed`, error);
-      await logout();
+      await logout('session_expired');
       return null;
     }
   }, []);
@@ -487,10 +520,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+const EMPTY_AUTH_CONTEXT: AuthContextType = {
+  user: null,
+  accessToken: null,
+  isAuthenticated: false,
+  isLoading: false,
+  login: async () => {
+    throw new Error('AuthProvider is not available');
+  },
+  register: async () => {
+    throw new Error('AuthProvider is not available');
+  },
+  logout: async () => undefined,
+  updateUser: () => undefined,
+  refreshAccessToken: async () => null,
+};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return context ?? EMPTY_AUTH_CONTEXT;
 };
