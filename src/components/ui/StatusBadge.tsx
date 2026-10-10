@@ -1,6 +1,6 @@
 ﻿import Badge from './Badge';
 
-type BadgeVariant = 'default' | 'success' | 'warning' | 'error' | 'info';
+type BadgeVariant = 'default' | 'success' | 'warning' | 'error' | 'info' | 'neutral';
 
 interface Props {
   code?: string;
@@ -85,6 +85,7 @@ export default function StatusBadge({ code, id, label, className, kind = 'flat',
     warning: 'bg-yellow-500 text-white',
     error: 'bg-red-600 text-white',
     info: 'bg-emerald-600 text-white',
+    neutral: 'bg-slate-500 text-white',
   };
 
   const extra = `${variantOverride[variant]} px-3 py-1 text-sm font-semibold rounded-full ${className ?? ''}`.trim();
